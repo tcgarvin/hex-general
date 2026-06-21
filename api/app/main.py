@@ -5,7 +5,7 @@ from supabase import Client
 from app import __version__
 from app.config import get_settings
 from app.db import get_supabase_client
-from app.stats import count_active_users
+from app.stats import count_active_users, count_games
 
 app = FastAPI(title="Hex General API", version=__version__)
 
@@ -33,7 +33,10 @@ def version() -> dict[str, str]:
 def stats(client: Client = Depends(get_supabase_client)) -> dict[str, int]:
     """Return live game stats sourced from Supabase.
 
-    Demonstrates the full browser -> Cloud Run -> Supabase chain: the count is
+    Demonstrates the full browser -> Cloud Run -> Supabase chain: the counts are
     read server-side with the service-role key.
     """
-    return {"active_users": count_active_users(client)}
+    return {
+        "active_users": count_active_users(client),
+        "game_count": count_games(client),
+    }

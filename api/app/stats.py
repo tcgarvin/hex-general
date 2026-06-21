@@ -25,3 +25,17 @@ def count_active_users(client: Client) -> int:
     if count is None:
         raise RuntimeError("Supabase returned no count for active_users")
     return count
+
+
+def count_games(client: Client) -> int:
+    """Return the total number of game instances.
+
+    Queries the ``games`` table for an exact row count. Raises if Supabase
+    returns no count rather than silently reporting zero, so a broken query
+    surfaces as an error.
+    """
+    response = client.table("games").select("id", count=CountMethod.exact).execute()
+    count = response.count
+    if count is None:
+        raise RuntimeError("Supabase returned no count for games")
+    return count

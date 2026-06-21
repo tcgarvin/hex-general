@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 
 import { API_URL } from "@/lib/api";
 
-type Stats = { active_users: number };
+type Stats = { active_users: number; game_count: number };
 
 type State =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; activeUsers: number };
+  | { status: "ready"; activeUsers: number; gameCount: number };
 
 /**
  * Live stats page.
@@ -33,7 +33,11 @@ export default function StatsPage() {
       })
       .then((data) => {
         if (!cancelled) {
-          setState({ status: "ready", activeUsers: data.active_users });
+          setState({
+            status: "ready",
+            activeUsers: data.active_users,
+            gameCount: data.game_count,
+          });
         }
       })
       .catch((err: unknown) => {
@@ -52,33 +56,46 @@ export default function StatsPage() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex w-full max-w-md flex-col items-center gap-8 px-8 py-24 text-center">
-        <h1 className="text-sm font-medium uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-          Active users
-        </h1>
-
-        {state.status === "loading" && (
-          <p className="text-6xl font-semibold text-zinc-300 dark:text-zinc-700">
-            …
-          </p>
-        )}
-
-        {state.status === "error" && (
+      <main className="flex w-full max-w-md flex-col items-center gap-12 px-8 py-24 text-center">
+        {state.status === "error" ? (
           <p className="max-w-xs text-sm text-red-600 dark:text-red-400">
             Couldn’t reach the API: {state.message}
           </p>
-        )}
-
-        {state.status === "ready" && (
-          <p className="text-7xl font-semibold tabular-nums text-black dark:text-zinc-50">
-            {state.activeUsers}
-          </p>
+        ) : (
+          <div className="flex w-full justify-center gap-16">
+            <Stat
+              label="Active users"
+              value={state.status === "ready" ? state.activeUsers : undefined}
+            />
+            <Stat
+              label="Games"
+              value={state.status === "ready" ? state.gameCount : undefined}
+            />
+          </div>
         )}
 
         <p className="text-xs leading-5 text-zinc-400 dark:text-zinc-600">
           browser → Cloud Run → Supabase
         </p>
       </main>
+    </div>
+  );
+}
+
+/** A single labelled stat; renders a placeholder until its value loads. */
+function Stat({ label, value }: { label: string; value: number | undefined }) {
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+        {label}
+      </h2>
+      {value === undefined ? (
+        <p className="text-6xl font-semibold text-zinc-300 dark:text-zinc-700">…</p>
+      ) : (
+        <p className="text-7xl font-semibold tabular-nums text-black dark:text-zinc-50">
+          {value}
+        </p>
+      )}
     </div>
   );
 }
