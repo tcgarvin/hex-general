@@ -46,5 +46,6 @@ Before committing api changes, run all four — CI fails otherwise:
 ## Working agreements
 
 - Confirm before outward-facing/irreversible actions (pushing, deploying, IAM/billing changes).
+- After committing deployable changes, the **`release-monitor`** subagent (`.claude/agents/`) watches the CI/CD pipelines and runs `verify-stack`, returning a compact verdict (keeps the noisy polling/log output out of the main thread). It only pushes when its launch prompt says to, and it diagnoses failures rather than fixing them.
 - Prefer `gh` for GitHub (variables/secrets/runs); it's installed and authenticated.
 - Live API: `https://hex-api-qfzj5tg56a-uc.a.run.app` (`/health`, `/version`).
