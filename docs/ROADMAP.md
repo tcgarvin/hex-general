@@ -72,16 +72,30 @@ Settle these before Phase 1 — they shape every phase.
 **Demonstrable:** load scenario → valid `GameState`
 (`tests/engine/test_scenario.py::test_starter_scenario_loads_and_is_self_consistent`).
 
-## Phase 2 — Execution engine: movement (the riskiest core)
+## Phase 2 — Execution engine: movement (the riskiest core) ✅ done
 
 **Goal:** §11.2, §8, §7.1 — movement pulses, no combat yet.
 
-- Pulse loop, exact-path following, road +1 movement (§3.3), river/bridge
-  passability, ZOC stop (§8.3), stacking (§8.1), friendly traffic jams (§8.2).
-- Emits movement events.
-- Built strictly test-first — this is where determinism bugs hide.
+- ✅ Pure `resolve_movement(state, orders) -> (new_state, events)`
+  (`api/app/engine/movement.py`): pulse loop, exact-path following with no
+  reroute, road +1 movement (§3.3, from the full planned path), river/bridge
+  passability (§3.4), ZOC stop-on-entry (§8.3), stacking (§8.1), friendly
+  traffic jams (§8.2). Simultaneous within-pulse resolution settles
+  follow-the-leader chains via a fixpoint.
+- ✅ Serializable, discriminated `Event` log (`api/app/engine/events.py`):
+  `UnitMoved`, `MoveBlocked` (reason enum), `TrafficJam`, `ZoneOfControlStop` —
+  the replay; combat events join this union in Phase 3.
+- ✅ Test-first (`tests/engine/test_movement.py`): per-mechanic tests plus
+  whole-event-log golden traces of multi-unit scenarios.
 
-**Demonstrable:** golden-file tests of multi-unit movement scenarios.
+**Seams to Phase 3 (documented in `movement.py`):** running into an enemy stops
+the unit with no damage and a `MoveBlocked(reason=enemy|contested)` marking where
+combat will resolve. True cycles (2-unit swaps, pure rotations) can't resolve
+without stacking, so those units stay put — a v0.1 limitation; enemy swaps are
+§12.9 combat.
+
+**Demonstrable:** golden-file tests of multi-unit movement scenarios
+(`tests/engine/test_movement.py`).
 
 ## Phase 3 — Execution engine: combat & barrage
 
