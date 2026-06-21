@@ -30,20 +30,28 @@ Settle these before Phase 1 — they shape every phase.
 4. **Fog is enforced server-side.** The API computes each player's visible set and
    returns a *filtered* state. The browser never receives hidden units (matches
    the CLAUDE.md rule that the browser only sees what the API hands it).
+5. **Town/City are terrain types, not overlays.** A settlement hex *is* town/city
+   terrain (SPEC §4.1/§4.2 lists them with their own +2 defense); there is no base
+   terrain underneath. The only dynamic fact is ownership, so `Settlement` is a
+   thin control record (`coord`, `controlled_by`) and the kind is read from the
+   map terrain — one source of truth. Road stays a boolean layer on `Hex`.
 
 ---
 
-## Phase 0 — Domain model & game state (no rules yet)
+## Phase 0 — Domain model & game state (no rules yet) ✅ done
 
 **Goal:** a typed, serializable representation of everything in §3–6.
 
-- Pydantic models: `Hex`/terrain enum, `Settlement`, `Unit` (type, hp, owner,
-  position), `Player` (bank, controlled settlements), `GameState`, `Order` union
-  (Move/Barrage/Rest/Hold).
-- Hex coordinate library (axial + cube, neighbors, distance) with tests.
-- JSON (de)serialization round-trip tests.
+- ✅ Pydantic models in `api/app/engine/models.py`: `Hex` + `Terrain` enum,
+  `Settlement` (control overlay), `Unit` (type, hp, owner, position), `Player`
+  (bank; control derived from settlements), `GameState`, `Order` union
+  (Move/Barrage/Rest/Hold). Reference stat tables in `engine/stats.py`.
+- ✅ Hex coordinate library (`engine/hex_coords.py`): axial + cube, neighbors,
+  distance, with tests.
+- ✅ JSON (de)serialization round-trip tests (`tests/engine/`).
 
 **Demonstrable:** load a hand-written state, serialize, reload — identical.
+(`tests/engine/test_models.py::test_game_state_json_round_trip`.)
 
 ## Phase 1 — Map & scenario
 
