@@ -1,0 +1,19 @@
+# OS
+.DS_Store
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Python (backend / Cloud Run API, added later)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Vercel
+.vercel
