@@ -28,6 +28,16 @@ API (`cd api`): `uv sync`, then `uv run uvicorn app.main:app --reload --port 808
 Before committing api changes, run all four — CI fails otherwise:
 `uv run pytest` · `uv run black --check .` · `uv run ruff check .` · `uv run mypy .`
 
+## API code standards: trust internal invariants, validate only at boundaries
+
+The `api/` engine is a pure, deterministic core. Write it to **trust its own invariants** and crash loudly when they're violated. Do **not** pepper internal code with null checks, `isinstance` guards, or `hasattr` to defend against states that "can't happen." If such a state does happen, that's a bug to fix at its source — a bare `KeyError`/`AttributeError` with a stack trace is a *better* outcome than silently coping and resolving a turn into a wrong game state. Prefer this even to a fault: when unsure whether a guard is needed, leave it out and let it crash.
+
+- **Validate at boundaries, assume within.** *Boundaries* are where untrusted/external data enters: the scenario loader (`scenario.py`), settings (`config.py`), DB responses (`stats.py`), and HTTP request bodies. There, validate explicitly and raise a typed error with context (`ScenarioError`, `RuntimeError`, pydantic `ValidationError`); `isinstance`/`is None` checks belong here. Once data has crossed a boundary it is trusted — internal engine code indexes dicts directly (`units[uid]`), accesses attributes directly, and lets an invariant violation raise.
+- **Fail loud, never silent.** Logging an error then returning a "safe" default, swallowing an exception, or substituting `None`/`0`/`[]` for a value you couldn't compute are all banned. If you can't produce a correct result, raise.
+- **`None` means one well-defined thing, or don't use it.** `X | None` is only for genuine domain optionality with a single documented meaning (`Settlement.controlled_by is None` ⇒ neutral; `unit_at()` ⇒ "no unit here"). Never use `None` for "not computed yet," as an error signal, or for two different kinds of absence.
+- **These are *not* "excessive caution" — they're fine:** boundary validation that raises; `*_at()` probes returning `X | None` because absence is a real answer; union dispatch like `isinstance(order, MoveOrder)` to pick an algorithm branch; and engine contract guards that **raise** with context (`EngineError` for an unknown unit or non-contiguous path) — those convert a bad caller into a clear failure, which is fail-loud, not silent-coping.
+- **Smell test:** if a check, when it fails, would silently skip work or return a plausible-but-wrong value, delete the check and let it crash — then fix whatever produced the bad state.
+
 ## Conventions & gotchas (things that have bitten us)
 
 - **Backend uses uv, never pip.** Deps in `api/pyproject.toml` (`[project.dependencies]` + `[dependency-groups] dev`); Python pinned in `api/.python-version`; lockfile `uv.lock` is committed. The Dockerfile installs via `uv sync --frozen --no-dev`.
