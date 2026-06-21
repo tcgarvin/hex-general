@@ -7,9 +7,10 @@ can walk into the hex it vacated.
 
 from __future__ import annotations
 
-from app.engine.events import BarrageResolved, UnitMoved
+from app.engine.events import BarrageResolved, SettlementCaptured, UnitMoved
 from app.engine.execution import resolve_execution
-from app.engine.models import Order
+from app.engine.models import GameState, Order
+from app.engine.victory import VictoryReason, victory_status
 from engine.helpers import alive, at, barrage, build, hp_of, move
 
 
@@ -60,4 +61,46 @@ def test_units_without_orders_hold_through_execution() -> None:
     new_state, events = resolve_execution(state, [])
     assert at(new_state, 1, 0) == 1
     assert hp_of(new_state, 1) == 10
-    assert events == []
+    # No movement/combat happened; the only events are the end-of-turn economy
+    # accounting (one per player), and the turn advanced.
+    assert {e.kind for e in events} == {"economy_resolved"}
+    assert new_state.turn == state.turn + 1
+
+
+def _march_order(state: GameState, unit_id: int, target_q: int) -> Order:
+    """Plot the remaining straight-line steps for ``unit_id`` toward ``target_q``."""
+    unit = next(u for u in state.units if u.id == unit_id)
+    steps = [(q, 0) for q in range(unit.coord.q + 1, target_q + 1)]
+    return move(unit_id, *steps)
+
+
+def test_headless_game_drives_to_city_elimination_victory() -> None:
+    # Milestone (roadmap P4): the engine drives a full game start→victory with no
+    # UI. Blue armor marches across an undefended corridor into red's lone city;
+    # capturing it leaves red with zero cities, so blue wins by elimination.
+    state = build(
+        ["c.....c"],
+        [{"type": "armor", "owner": "blue", "q": 1, "r": 0}],
+        settlements=[
+            {"q": 0, "r": 0, "owner": "blue"},
+            {"q": 6, "r": 0, "owner": "red"},
+        ],
+        players=["blue", "red"],
+    )
+
+    status = victory_status(state)
+    assert status.reason is VictoryReason.ONGOING
+
+    captures: list[SettlementCaptured] = []
+    turns = 0
+    while not status.decided and turns < 10:
+        state, events = resolve_execution(state, [_march_order(state, 1, 6)])
+        captures += [e for e in events if isinstance(e, SettlementCaptured)]
+        status = victory_status(state)
+        turns += 1
+
+    assert status.reason is VictoryReason.CITY_ELIMINATION
+    assert status.winner == "blue"
+    assert turns == 2  # armor (move 4) needs two turns to cross five hexes
+    assert state.turn == 2  # the engine advanced the turn each resolution
+    assert any(c.coord.q == 6 and c.captured_by == "blue" for c in captures)

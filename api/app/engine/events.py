@@ -6,9 +6,9 @@ replay: the frontend steps through it (SPEC §16.2) and renders combat
 explanations (SPEC §16.3) entirely from these records. Events are serializable so
 the log can be stored alongside the resolved state in a ``turns`` row.
 
-Phase 2 defined the movement-phase events; Phase 3 adds the barrage and combat
-events. Capture, repair, and economy events join this union in later phases; the
-discriminated ``kind`` tag keeps the log forward-compatible.
+Phase 2 defined the movement-phase events; Phase 3 added the barrage and combat
+events; Phase 4 adds the end-of-turn events (capture, repair, economy,
+recruitment). The discriminated ``kind`` tag keeps the log forward-compatible.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.engine.hex_coords import Axial
 from app.engine.models import PlayerId, UnitId
-from app.engine.stats import UnitType
+from app.engine.stats import Terrain, UnitType
 
 
 class MoveBlockedReason(StrEnum):
@@ -167,8 +167,89 @@ class BarrageResolved(BaseModel):
     hit: BarrageHit | None = None
 
 
+class SettlementCaptured(BaseModel):
+    """An infantry/armor unit captured a town or city (SPEC §14.1, §11.3 Phase 3).
+
+    Emitted only when control actually changes — a unit sitting on a settlement
+    it already controls produces no event. ``previous_owner`` is ``None`` when the
+    settlement was neutral before capture (a single, well-defined meaning).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["settlement_captured"] = "settlement_captured"
+    coord: Axial
+    settlement: Terrain
+    captured_by: PlayerId
+    previous_owner: PlayerId | None
+    unit_id: UnitId
+
+
+class UnitRepaired(BaseModel):
+    """A resting, undamaged unit recovered HP (SPEC §7.3, §11.3 Phase 4).
+
+    Emitted only when HP actually increases. ``in_settlement`` records whether the
+    unit rested on a town/city (the +2-up-to-10 tier) versus anywhere else (the
+    +1-up-to-7 tier).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["unit_repaired"] = "unit_repaired"
+    unit_id: UnitId
+    hp_before: int
+    hp_after: int
+    in_settlement: bool
+
+
+class EconomyResolved(BaseModel):
+    """One player's muster accounting for the turn (SPEC §6.2–6.4, §11.3 Phase 5).
+
+    ``net`` is ``income - upkeep`` (may be negative; the shortfall is paid from the
+    bank, which floors at 0). ``lost_to_cap`` is muster discarded because the bank
+    would exceed its cap (SPEC §6.4). ``bank_after`` is the resulting bank.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["economy_resolved"] = "economy_resolved"
+    player: PlayerId
+    income: int
+    upkeep: int
+    net: int
+    bank_before: int
+    bank_after: int
+    lost_to_cap: int
+
+
+class UnitRecruited(BaseModel):
+    """A player recruited a new unit at a friendly city (SPEC §6.5, §11.3 Phase 6).
+
+    ``unit_id`` is the id assigned to the new unit; ``bank_after`` is the player's
+    bank once ``cost`` was deducted.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["unit_recruited"] = "unit_recruited"
+    unit_id: UnitId
+    unit_type: UnitType
+    owner: PlayerId
+    coord: Axial
+    cost: int
+    bank_after: int
+
+
 Event = Annotated[
-    UnitMoved | MoveBlocked | TrafficJam | CombatResolved | BarrageResolved,
+    UnitMoved
+    | MoveBlocked
+    | TrafficJam
+    | CombatResolved
+    | BarrageResolved
+    | SettlementCaptured
+    | UnitRepaired
+    | EconomyResolved
+    | UnitRecruited,
     Field(discriminator="kind"),
 ]
 """Tagged union of all execution events, discriminated on ``kind``."""

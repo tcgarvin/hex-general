@@ -133,17 +133,33 @@ breakthrough continuation (`api/tests/engine/test_combat.py`, `test_barrage.py`,
 > a hex already in an edge swap is blocked rather than merged; pure friendly
 > cycles still deadlock in place.
 
-## Phase 4 — Execution engine: end-of-turn phases
+## Phase 4 — Execution engine: end-of-turn phases ✅ done
 
 **Goal:** §11.3 phases 3–6 + victory.
 
-- Capture (§14, infantry/armor only), repair (§7.3 tiers), economy (§6.2–6.4
-  income/upkeep/bank cap), recruitment validation (§6.5, cap §6.1), victory
-  check (§15).
+- ✅ Capture (`api/app/engine/capture.py`): infantry/armor occupying a town/city
+  flips control; artillery cannot capture and empty settlements are never
+  abandoned (§14.1–14.2). Runs before economy so a fresh capture earns income.
+- ✅ Repair (`api/app/engine/repair.py`): undamaged resting units heal +1-up-to-7
+  anywhere or +2-up-to-10 on a settlement (§7.3); "up to" is a ceiling, never a
+  reduction. Damage taken this turn (the caller's diff over execution) cancels repair.
+- ✅ Economy (`api/app/engine/economy.py`): per-player `income - upkeep` (§6.2–6.4),
+  bank floored at 0 on a shortfall and clamped to the cap with overflow reported
+  as `lost_to_cap`.
+- ✅ Recruitment (`api/app/engine/recruitment.py`): a new `Recruitment` input deploys
+  a unit at an empty friendly **city**, validating cost, the unit cap (§6.1), and
+  placement and raising `EngineError` on any violation (§6.5); applied in order so
+  each request spends the running bank.
+- ✅ Victory (`api/app/engine/victory.py`): pure `victory_status` query — city
+  elimination first (§15.1), then turn-limit settlement scoring (§15.2), with ties
+  as draws.
+- ✅ `resolve_execution` now composes all six phases (barrage → movement+combat →
+  capture → repair → economy → recruitment) and advances the turn; `Event` gained
+  `SettlementCaptured`/`UnitRepaired`/`EconomyResolved`/`UnitRecruited`.
 
-**Milestone — headless playable game:** a test can drive a full game
-start→victory with no UI. The spec's central question is now *mechanically*
-answered.
+**Milestone — headless playable game ✅:** a test drives a full game start→victory
+with no UI (`tests/engine/test_execution.py::test_headless_game_drives_to_city_elimination_victory`).
+The spec's central question is now *mechanically* answered.
 
 ## Phase 5 — Turn lifecycle API & persistence (async two-player)
 

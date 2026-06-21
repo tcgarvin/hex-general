@@ -201,3 +201,20 @@ Order = Annotated[
     Field(discriminator="kind"),
 ]
 """Tagged union of the four order types, discriminated on ``kind``."""
+
+
+class Recruitment(BaseModel):
+    """A planning-phase request to recruit a new unit (SPEC §6.5).
+
+    Recruitment is not a per-unit `Order` — it creates a unit that does not exist
+    yet, so it has no ``unit_id``. A request names the owning player, the unit
+    ``type`` to build, and the friendly-city ``coord`` to deploy it on; the
+    recruitment phase validates affordability, the unit cap, and placement, then
+    assigns the new unit's id (SPEC §11.3 Phase 6).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    owner: PlayerId
+    type: UnitType
+    coord: Axial
