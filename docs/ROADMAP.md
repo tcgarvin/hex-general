@@ -1,0 +1,179 @@
+# Hex Wargame v0.1 Development Roadmap
+
+A phased plan to implement [`SPEC.md`](./SPEC.md). The deploy stack
+(Vercel → Cloud Run → Supabase) already works; the scaffold ships a trivial
+`games` table and `/stats`. Everything below is the actual game.
+
+**Player model for v0.1:** async two-browser play. Each player submits orders
+from their own client; the server executes once both have locked in. This makes
+player identity, order ownership, and **server-enforced fog of war** first-class
+concerns rather than afterthoughts.
+
+---
+
+## Foundational architecture decisions
+
+Settle these before Phase 1 — they shape every phase.
+
+1. **The engine is a pure function.** `resolve_turn(state, orders) -> (new_state, event_log)`
+   — no I/O, no DB, no randomness. Everything in §11–14 lives here. The hardest
+   part of the spec becomes unit-testable headless, and replay falls out for free
+   (the event log *is* the replay).
+2. **Game state is JSONB in one row, not a wide relational schema.** A `games`
+   row holds the canonical state blob (map + units + turn number + banks). Don't
+   model units/hexes as tables — the state is small (40×40, ≤40 units) and churns
+   every turn; relational modeling fights the pure-engine design. Keep `players`
+   and `turns` (order submissions + resolved event logs) as real tables for
+   ownership/history.
+3. **Axial hex coordinates** (`q, r`) with cube conversion for distance/LOS. Pick
+   this once; it's load-bearing for movement, range, and vision.
+4. **Fog is enforced server-side.** The API computes each player's visible set and
+   returns a *filtered* state. The browser never receives hidden units (matches
+   the CLAUDE.md rule that the browser only sees what the API hands it).
+
+---
+
+## Phase 0 — Domain model & game state (no rules yet)
+
+**Goal:** a typed, serializable representation of everything in §3–6.
+
+- Pydantic models: `Hex`/terrain enum, `Settlement`, `Unit` (type, hp, owner,
+  position), `Player` (bank, controlled settlements), `GameState`, `Order` union
+  (Move/Barrage/Rest/Hold).
+- Hex coordinate library (axial + cube, neighbors, distance) with tests.
+- JSON (de)serialization round-trip tests.
+
+**Demonstrable:** load a hand-written state, serialize, reload — identical.
+
+## Phase 1 — Map & scenario
+
+**Goal:** §3, §4, §15 victory data exist as concrete content.
+
+- A scenario file format (JSON) defining the 40×40 map: terrain per hex, roads,
+  rivers/bridges, towns/cities, starting units per player, victory config.
+- Map loader + validation (every hex has terrain; bridges sit on rivers; etc.).
+- One real starter scenario authored.
+
+**Demonstrable:** load scenario → valid `GameState`.
+
+## Phase 2 — Execution engine: movement (the riskiest core)
+
+**Goal:** §11.2, §8, §7.1 — movement pulses, no combat yet.
+
+- Pulse loop, exact-path following, road +1 movement (§3.3), river/bridge
+  passability, ZOC stop (§8.3), stacking (§8.1), friendly traffic jams (§8.2).
+- Emits movement events.
+- Built strictly test-first — this is where determinism bugs hide.
+
+**Demonstrable:** golden-file tests of multi-unit movement scenarios.
+
+## Phase 3 — Execution engine: combat & barrage
+
+**Goal:** §12, §13, §7.2 — the heart of the spec.
+
+- Combat formula (§13.1), simultaneous damage, terrain/Hold modifiers on
+  stationary defenders only (§12.10), multi-unit attacks, lead-entrant occupation
+  rules (§12.5–12.6), edge swaps (§12.9), multi-side contests (§12.8).
+- Barrage resolves pre-movement (§7.2).
+- Rich combat event objects carrying the §16.3 explanation data.
+
+**Demonstrable:** exhaustive combat unit tests including the nasty cases
+(dogpiles, swaps, three-way contests).
+
+> **Schedule risk.** The multi-side / edge-swap / lead-entrant interactions
+> (§12.5–12.9) are where simultaneous resolution gets genuinely subtle. Budget
+> accordingly.
+
+## Phase 4 — Execution engine: end-of-turn phases
+
+**Goal:** §11.3 phases 3–6 + victory.
+
+- Capture (§14, infantry/armor only), repair (§7.3 tiers), economy (§6.2–6.4
+  income/upkeep/bank cap), recruitment validation (§6.5, cap §6.1), victory
+  check (§15).
+
+**Milestone — headless playable game:** a test can drive a full game
+start→victory with no UI. The spec's central question is now *mechanically*
+answered.
+
+## Phase 5 — Turn lifecycle API & persistence (async two-player)
+
+**Goal:** wire the engine to the deployed stack with real identity.
+
+- Tables: `players`, `turn_orders` (per player, per turn), resolved `turns`
+  (event log). Remember the `service_role` GRANT gotcha on each new table.
+- Player identity (lightweight token/session — enough to own orders; full auth
+  deferred).
+- Endpoints: create/join game, fetch my view, submit & lock orders, server
+  executes when **both** locked, fetch replay log. Order validation server-side
+  (paths legal, range, costs).
+
+**Demonstrable:** play a full game via curl from two "players."
+
+## Phase 6 — Fog of war (server-enforced)
+
+**Goal:** §9 — visibility before any rendering exists.
+
+- LOS with woods blocking (§9.2), vision radius per unit (§9.3), per-player
+  visible-hex computation.
+- The "fetch my view" endpoint returns filtered state + filtered event log (you
+  only see combat you can witness).
+
+**Demonstrable:** tests proving hidden enemy units never appear in a player's
+payload.
+
+## Phase 7 — Frontend: map & state rendering
+
+**Goal:** §16, read-only first.
+
+- Hex grid render (terrain, settlements, roads, rivers/bridges), your units, fog.
+  Consume the filtered view from Phase 6.
+
+**Demonstrable:** look at your board in the browser.
+
+## Phase 8 — Frontend: planning UI
+
+**Goal:** §16.1.
+
+- Select unit → movement range → assign exact path; assign Barrage/Rest/Hold;
+  predicted pulses; own-unit traffic-conflict warnings; review-all + lock.
+- Submits to Phase 5 endpoints.
+
+**Demonstrable:** plan a real turn end-to-end in the browser.
+
+## Phase 9 — Frontend: replay
+
+**Goal:** §16.2–16.3.
+
+- Step-through of the event log: moves, blocks, traffic jams, combat with the
+  §16.3 explanation text, destructions, captures, economy delta.
+
+**Milestone — first full playable match in two browsers.**
+
+## Phase 10 — Tuning, scenario polish, success criteria
+
+**Goal:** §18 / §13.2.
+
+- Playtest, tune the prototype stat tables, optionally trial HP scaling (§13.2),
+  author a scenario that produces §18's situations (road feints, woods
+  uncertainty, bridge chokepoints).
+
+---
+
+## Why this order
+
+The engine (Phases 2→4) is both the risk and the value, and it's pure/headless,
+so the rules can be validated completely before touching pixels. Fog (Phase 6)
+lands before rendering so the frontend is built against already-filtered data and
+can never accidentally leak hidden units. Each phase has a demonstrable artifact,
+and there are three real milestones:
+
+- **P4 — headless-playable** (engine drives a full game in tests)
+- **P5 — API-playable** (full game via curl, two players)
+- **P9 — browser-playable** (first full match in two browsers)
+
+## Open decision: auth depth
+
+Phase 5 is scoped to lightweight tokens (enough to own orders). Real accounts
+would be a small insert between P5 and P9 — but the spec's "no live-service"
+framing suggests keeping it minimal for v0.1.
