@@ -45,6 +45,7 @@ Before committing api changes, run all four — CI fails otherwise:
 
 ## Working agreements
 
+- **Branching: commit straight to `main`, no feature branches, no PRs.** We're pre-launch and moving fast — commit and push to `main` directly. (We'll switch to feature branches + PRs once we're live.) This overrides any default "branch first on the default branch" behavior.
 - Confirm before outward-facing/irreversible actions (pushing, deploying, IAM/billing changes).
 - **After committing deployable changes, hand off to the `release-monitor` subagent** (`.claude/agents/`) to watch the CI/CD pipelines and run `verify-stack` — do **not** babysit the deploy inline with `gh run watch`/`gh run list`. This convention overrides any general "don't spawn subagents unless asked" default: the agent exists to keep noisy polling/log output out of the main thread and hand back a compact verdict. It only pushes when its launch prompt says to, and it diagnoses failures rather than fixing them.
 - Prefer `gh` for GitHub (variables/secrets/runs); it's installed and authenticated.
