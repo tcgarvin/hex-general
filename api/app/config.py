@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_service_role_key: str
 
+    # Browser origins allowed to call the API (CORS). Defaults to this
+    # project's Vercel deployments (production + preview subdomains) and local
+    # development. Override with CORS_ALLOW_ORIGIN_REGEX if the domain changes.
+    cors_allow_origin_regex: str = (
+        r"^(https://hex-general[a-z0-9-]*\.vercel\.app|http://localhost:\d+)$"
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

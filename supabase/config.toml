@@ -1,0 +1,4 @@
+# Supabase project config. Migrations live in supabase/migrations/ and are
+# applied to the linked project (ref amhkpsrvjlthmmemwssc) by the
+# `.github/workflows/supabase.yml` workflow on push to main.
+project_id = "amhkpsrvjlthmmemwssc"
