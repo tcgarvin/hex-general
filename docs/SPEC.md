@@ -163,21 +163,25 @@ These numbers are prototype defaults and should be tuned after playtesting.
 
 #### Infantry
 
-Infantry is slow and durable. It is good at holding terrain and towns.
+Infantry is slow and durable. It is good at holding terrain, towns, and cities.
 
-Infantry may move, but it may only intentionally attack an enemy if that enemy is adjacent at the start of execution.
+Infantry follows the normal movement and Zone of Control rules. Infantry may attack by moving into an adjacent enemy-occupied hex as part of a Move order.
 
 #### Armor
 
-Armor is fast and offensively strong. It can move into enemy contact as part of its movement path.
+Armor is fast and offensively strong.
 
-Armor may move and attack in the same turn because movement into enemy contact creates combat.
+Armor follows the same Zone of Control rules as infantry. Armor does not ignore Zones of Control and does not receive a special breakthrough rule.
+
+Armor's advantage comes from high movement and strong attack. If armor destroys an enemy unit and successfully enters the contested hex, it may continue along its plotted path if it has movement pulses remaining. This can create breakthrough behavior naturally, without a separate armor-only rule.
 
 #### Artillery
 
-Artillery is slow, weak in direct combat, and attacks at range.
+Artillery is slow, weak in direct combat, and attacks primarily at range.
 
 Artillery may either move or barrage. It may not move and barrage in the same turn.
+
+Artillery may defend itself if attacked. Artillery may not intentionally attack by moving into an enemy-occupied hex.
 
 Artillery cannot capture towns or cities.
 
@@ -248,14 +252,18 @@ Town-based deployment, barracks, factories, and unit unlocks are deferred.
 
 Each unit receives one order during the planning phase.
 
-| Order   | Applies To                 | Effect                                                                    |
-| ------- | -------------------------- | ------------------------------------------------------------------------- |
-| Move    | Infantry, Armor, Artillery | Follow an exact planned hex path. Combat occurs if enemy contact happens. |
-| Barrage | Artillery                  | Fire at a visible target hex within range.                                |
-| Rest    | All units                  | Do not move or attack; repair HP if not damaged during execution.         |
-| Hold    | All units                  | Do not move; gain defensive bonus if attacked.                            |
+| Order   | Applies To                 | Effect                                                                     |
+| ------- | -------------------------- | -------------------------------------------------------------------------- |
+| Move    | Infantry, Armor, Artillery | Follow an exact planned hex path. Infantry and armor may attack by moving into enemy-occupied hexes. |
+| Barrage | Artillery                  | Fire at a visible target hex within range.                                 |
+| Rest    | All units                  | Do not move or attack; repair HP if not damaged during execution.          |
+| Hold    | All units                  | Do not move; gain defensive bonus if attacked.                             |
 
-There is no separate Attack order. For infantry and armor, attacking is a consequence of movement/contact.
+There is no separate Attack order in v0.1.
+
+For infantry and armor, attacking is a consequence of a Move order that attempts to enter an enemy-occupied hex.
+
+Artillery attacks using Barrage, not by intentionally moving into enemy-occupied hexes.
 
 ### 7.1 Move Order
 
@@ -269,7 +277,9 @@ Unit A path: H12 -> H13 -> H14 -> H15
 
 The unit attempts to move one hex per movement pulse.
 
-If the path becomes blocked, the unit does not reroute automatically.
+If the path becomes blocked, illegal, or impossible, the unit does not reroute automatically. It remains in place and stops moving for the turn.
+
+A movement step may become illegal because of terrain, stacking, friendly traffic, enemy occupation, or Zone of Control restrictions.
 
 ### 7.2 Barrage Order
 
@@ -325,13 +335,62 @@ If multiple friendly units attempt to enter the same hex during the same movemen
 
 ### 8.3 Zones of Control
 
-Enemy units exert a zone of control into adjacent hexes.
+Every non-destroyed unit exerts a Zone of Control into each adjacent hex.
 
-Prototype ZOC rule:
+A unit is in enemy ZOC if its current hex is adjacent to at least one enemy unit.
 
-> A unit entering an enemy ZOC must stop moving.
+Zones of Control are recalculated:
 
-A unit may attack into an enemy-occupied hex if otherwise allowed.
+1. after Barrage resolution, before the first movement pulse
+2. after each movement pulse
+3. after destroyed units are removed
+
+ZOC is based on the current positions of surviving units.
+
+ZOC does not cause combat by itself. ZOC controls movement.
+
+### 8.4 ZOC Movement Rule
+
+A unit that begins a movement pulse outside enemy ZOC may move normally.
+
+It may:
+
+* move into an uncontrolled empty hex
+* move into an enemy-controlled empty hex
+* attack by moving into an enemy-occupied hex, if the unit is allowed to attack by movement
+
+A unit that begins a movement pulse in enemy ZOC is engaged.
+
+An engaged unit may only:
+
+* hold position
+* attack an adjacent enemy-occupied hex
+* withdraw into a hex that is not in enemy ZOC
+
+An engaged unit may not move from one enemy-controlled hex to another enemy-controlled hex as normal movement.
+
+In short:
+
+```text
+Allowed:
+uncontrolled hex -> enemy ZOC
+enemy ZOC -> enemy-occupied hex, as an attack
+enemy ZOC -> uncontrolled hex, as withdrawal
+Not allowed:
+enemy ZOC -> enemy ZOC, as normal movement
+```
+
+If a unit's plotted path attempts an illegal ZOC-to-ZOC movement step, the unit remains in its current hex and stops moving for the turn.
+
+Armor follows the same ZOC rules as other units.
+
+### 8.5 ZOC Timing During Simultaneous Movement
+
+ZOC legality is checked using the ZOC map at the start of the movement pulse.
+
+Enemy movement during the same pulse may still create new contact, contests, traffic problems, or combat. Those results are resolved normally, and then ZOC is recalculated for the next pulse.
+
+This means players do not need to predict a continuous moving ZOC field. ZOC updates only between pulses.
 
 ---
 
@@ -399,11 +458,29 @@ Pulse 3: units with at least 3 movement attempt their third path step
 Pulse 4: units with at least 4 movement attempt their fourth path step
 ```
 
-### 11.2 Combat Ends Movement
+### 11.2 Combat and Continuing Movement
 
-If a unit enters combat during a movement pulse, its movement ends for the turn.
+Combat does not always end movement.
 
-Even if the unit destroys its opponent, it does not continue moving after that combat.
+A unit stops moving if:
+
+* its movement step is illegal
+* it is blocked by terrain
+* it is stopped by a friendly traffic jam
+* it attacks and fails to enter the contested hex
+* it survives combat but does not successfully complete its movement step
+* its path attempts illegal ZOC-to-ZOC movement
+
+A unit may continue moving if:
+
+* it successfully completes its movement step
+* it attacks, destroys all opposition in the destination hex, and enters that hex
+* it has remaining movement pulses
+* its next movement step is legal under the updated ZOC map
+
+This rule applies to all eligible moving units. It is not an armor-only breakthrough rule.
+
+Armor benefits from this rule because it has higher movement and stronger attack, making it more likely to destroy a defender and still have movement remaining.
 
 ### 11.3 Execution Sequence
 
@@ -414,18 +491,24 @@ All artillery Barrage orders resolve simultaneously.
 * Barrage targets a hex.
 * If a unit occupies that hex at the start of execution, it may take damage.
 * Barrage occurs before movement.
+* Destroyed units are removed before movement begins.
+* ZOC is recalculated after Barrage resolution.
 
 #### Phase 2: Movement Pulses
 
 For each movement pulse:
 
 1. Identify all units with remaining path steps.
-2. Each eligible unit attempts to move one hex along its path.
-3. Invalid moves fail and end movement.
-4. Friendly conflicts become traffic jams.
-5. Enemy conflicts become combat events.
-6. Units that successfully move may continue in the next pulse.
-7. Units that fight, collide, or are blocked stop moving for the turn.
+2. Determine each eligible unit's attempted next hex.
+3. Check terrain, path validity, stacking, and ZOC legality using the current board state.
+4. Invalid movement attempts fail; those units remain in place and stop moving.
+5. Friendly conflicts become traffic jams.
+6. Enemy conflicts become combat events.
+7. Resolve combat simultaneously.
+8. Move units that successfully completed their movement step.
+9. Remove destroyed units.
+10. Recalculate ZOC.
+11. Units with remaining movement and legal remaining path steps may continue in the next pulse.
 
 #### Phase 3: Capture
 
@@ -460,6 +543,10 @@ Examples:
 * Enemy units attempt to swap hexes.
 * A moving unit is blocked by an enemy unit in its path.
 
+ZOC alone does not cause combat.
+
+A unit may be in enemy ZOC without fighting. Combat requires an attack, collision, contested hex, or contested edge.
+
 ### 12.2 Simultaneous Damage
 
 Combat damage is simultaneous.
@@ -470,9 +557,11 @@ Both attackers and defenders can take damage.
 
 ### 12.3 No Retreat
 
-There is no retreat in v0.1.
+There is no forced retreat in v0.1.
 
-Units either survive in place, fail to enter contested space, or are destroyed.
+Units either survive in place, fail to enter contested space, successfully enter contested space, or are destroyed.
+
+Withdrawal exists only as a voluntary movement step from enemy ZOC into a hex that is not in enemy ZOC.
 
 ### 12.4 Multi-Unit Attacks
 
@@ -482,7 +571,7 @@ Each attacking unit applies its full attack value.
 
 There is no reduced support-only attack in v0.1.
 
-This is intentional and follows the *Panzer General* / *Civil War General* pattern: a position should be defended by a network of units, not by a single isolated unit expected to survive a dogpile.
+This is intentional: a position should be defended by a network of units, not by a single isolated unit expected to survive a dogpile.
 
 ### 12.5 Occupying a Contested Hex
 
@@ -494,7 +583,13 @@ Default rule:
 
 If opposing survivors remain, nobody newly enters the hex.
 
-If multiple friendly entrants survive and the enemy is destroyed, the designated lead entrant enters if it survived. If the lead entrant is destroyed, no fallback entrant enters in v0.1.
+If all opposition is destroyed and the lead entrant survives, the lead entrant enters the contested hex.
+
+If the lead entrant enters the hex and has movement pulses remaining, it may continue along its plotted path, subject to updated ZOC after the pulse.
+
+If the lead entrant is destroyed, no fallback entrant enters in v0.1.
+
+Non-lead attackers do not enter the hex. They remain in their previous hexes and stop moving.
 
 ### 12.6 Lead Entrant
 
@@ -524,15 +619,18 @@ If units from more than two sides attempt to enter or occupy the same hex:
 4. If multiple sides have survivors, no one enters and survivors remain in their previous hexes.
 5. If all units are destroyed, the hex remains empty.
 
+A surviving lead entrant that successfully enters may continue moving if it has remaining movement pulses and its next movement step is legal.
+
 ### 12.9 Edge Swaps
 
 If opposing units attempt to swap hexes across the same edge during the same pulse:
 
 * they fight an edge clash
-* both units stop moving
-* if both survive, both remain in their original hexes
+* if both survive, both remain in their original hexes and stop moving
 * if one is destroyed and the other survives, the survivor completes the move
 * if both are destroyed, both hexes become empty
+
+A surviving unit that successfully completes an edge-swap move may continue moving if it has remaining movement pulses and its next movement step is legal.
 
 ### 12.10 Terrain in Combat
 
@@ -635,9 +733,18 @@ The player must be able to:
 * see movement range
 * assign an exact path
 * assign Barrage, Rest, or Hold
+* see the current visible enemy ZOC
 * see predicted movement pulses
 * see likely traffic conflicts with own units
+* see when a planned path appears to enter enemy ZOC
+* see when a planned path appears to attempt illegal ZOC-to-ZOC movement
 * review all orders before locking
+
+The planner should communicate ZOC in plain language:
+
+> "This unit is in enemy ZOC. It may attack, hold, or withdraw. It cannot move along the enemy line."
+
+Planning predictions are advisory. Hidden enemy units and simultaneous enemy movement may change what happens during execution.
 
 ### 16.2 Execution Replay
 
@@ -648,9 +755,14 @@ The replay should make clear:
 * where each unit tried to move
 * where movement was blocked
 * where traffic jams occurred
+* where ZOC changed movement legality
+* where a unit entered enemy ZOC
+* where a unit attempted illegal ZOC-to-ZOC movement
 * where combat occurred
 * which units took damage
 * which units were destroyed
+* which units successfully entered contested hexes
+* which units continued moving after successful combat
 * which towns/cities changed control
 * how much muster was gained/spent/lost to upkeep
 
@@ -663,7 +775,17 @@ Blue Armor attacked Red Infantry in Woods.
 Red Infantry received +2 terrain defense.
 Blue Armor dealt 2 damage.
 Red Infantry dealt 1 damage.
-Both units survived; Blue Armor did not enter the hex.
+Red Infantry was destroyed.
+Blue Armor entered the hex and continued moving.
+```
+
+Or:
+
+```text
+Blue Infantry began the pulse in enemy ZOC.
+Its planned move would enter another enemy-controlled hex.
+That movement is illegal.
+Blue Infantry held position and stopped moving.
 ```
 
 ---
@@ -693,12 +815,15 @@ The following are intentionally excluded:
 * unit upgrades
 * experience levels
 * random combat results
-* retreats
-* overrun/continuing movement after combat
+* forced retreats
+* armor-specific ZOC exceptions
+* armor-only breakthrough abilities
 * stacking
 * simultaneous multi-turn queued orders
 * asynchronous live-service timers
 * pay-to-win progression
+
+Continuing movement after successful combat is included in v0.1. It is not a special overrun ability. It is the normal result of successfully completing a contested movement step while having movement pulses remaining.
 
 ---
 
@@ -735,13 +860,17 @@ No villages
 No supply
 No readiness
 No stacking
-No retreat
+No forced retreat
 No randomness initially
 Orders: Move, Barrage, Rest, Hold
 Movement: exact path, resolved in simultaneous pulses
+ZOC: adjacent enemy units control movement, recalculated after each pulse
+ZOC rule: units in enemy ZOC may attack, hold, or withdraw; they may not move ZOC-to-ZOC
+Armor: follows normal ZOC rules; advantage comes from speed and attack
 Combat: simultaneous damage
 Multi-unit attacks: full attack from each participating unit
 Occupation: only if opposition is destroyed and lead entrant survives
+Continuation: successful entrants may continue moving if pulses remain and the next step is legal
 Rivers: hex terrain, impassable except bridge hexes
 Victory: scenario-defined; default city elimination or VP at turn limit
 ```

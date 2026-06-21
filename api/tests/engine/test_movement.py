@@ -9,60 +9,18 @@ loader so terrain/road parsing is exercised end to end; unit ids are assigned
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from app.engine.events import (
+    CombatResolved,
     MoveBlocked,
     MoveBlockedReason,
     TrafficJam,
     UnitMoved,
-    ZoneOfControlStop,
 )
-from app.engine.hex_coords import Axial
-from app.engine.models import GameState, MoveOrder, Order, RestOrder
+from app.engine.models import Order, RestOrder
 from app.engine.movement import EngineError, resolve_movement
-from app.engine.scenario import load_scenario
-
-
-def build(
-    terrain: list[str],
-    units: list[dict[str, Any]],
-    roads: list[str] | None = None,
-) -> GameState:
-    """Build a turn-0 state from compact terrain/road grids and a unit list."""
-    width = len(terrain[0])
-    height = len(terrain)
-    scenario: dict[str, Any] = {
-        "name": "Movement Fixture",
-        "description": "Synthetic map for movement tests.",
-        "width": width,
-        "height": height,
-        "terrain": terrain,
-        "settlements": [],
-        "units": units,
-        "players": sorted({u["owner"] for u in units}) or ["blue"],
-        "victory": {"turn_limit": 10},
-    }
-    if roads is not None:
-        scenario["roads"] = roads
-    return load_scenario(scenario)
-
-
-def at(state: GameState, q: int, r: int) -> int | None:
-    """Return the id of the unit at ``(q, r)``, or None."""
-    unit = state.unit_at(Axial(q=q, r=r))
-    return unit.id if unit is not None else None
-
-
-def ax(q: int, r: int) -> Axial:
-    return Axial(q=q, r=r)
-
-
-def move(unit_id: int, *steps: tuple[int, int]) -> MoveOrder:
-    return MoveOrder(unit_id=unit_id, path=[ax(q, r) for q, r in steps])
-
+from engine.helpers import at, ax, build, move
 
 # --- Basic path following ---------------------------------------------------
 
@@ -85,7 +43,7 @@ def test_movement_capped_by_move_stat() -> None:
     new_state, events = resolve_movement(state, [move(1, (1, 0), (2, 0), (3, 0))])
 
     assert at(new_state, 2, 0) == 1
-    assert [e.pulse for e in events] == [1, 2]
+    assert [e.pulse for e in events if isinstance(e, UnitMoved)] == [1, 2]
 
 
 def test_armor_moves_four_hexes() -> None:
@@ -131,7 +89,7 @@ def test_road_bonus_grants_extra_step() -> None:
     new_state, events = resolve_movement(state, [move(1, (1, 0), (2, 0), (3, 0))])
 
     assert at(new_state, 3, 0) == 1
-    assert [e.pulse for e in events] == [1, 2, 3]
+    assert [e.pulse for e in events if isinstance(e, UnitMoved)] == [1, 2, 3]
 
 
 def test_no_road_bonus_when_one_hex_off_road() -> None:
@@ -230,28 +188,6 @@ def test_blocked_by_stationary_friendly_unit() -> None:
     ]
 
 
-def test_move_into_stationary_enemy_is_combat_seam() -> None:
-    state = build(
-        ["..."],
-        [
-            {"type": "armor", "owner": "blue", "q": 0, "r": 0},
-            {"type": "infantry", "owner": "red", "q": 1, "r": 0},
-        ],
-    )
-    new_state, events = resolve_movement(state, [move(1, (1, 0))])
-
-    assert at(new_state, 0, 0) == 1  # no damage, no entry in Phase 2
-    assert events == [
-        MoveBlocked(
-            pulse=1,
-            unit_id=1,
-            origin=ax(0, 0),
-            target=ax(1, 0),
-            reason=MoveBlockedReason.ENEMY,
-        )
-    ]
-
-
 # --- Follow-the-leader (simultaneous vacate-and-fill) -----------------------
 
 
@@ -276,9 +212,9 @@ def test_follow_the_leader_chain_resolves_in_one_pulse() -> None:
     assert at(new_state, 1, 0) == 1
     assert at(new_state, 2, 0) == 2
     assert at(new_state, 3, 0) == 3
-    pulse1 = [e for e in events if e.pulse == 1]
-    assert all(isinstance(e, UnitMoved) for e in pulse1)
-    assert {e.unit_id for e in pulse1 if isinstance(e, UnitMoved)} == {1, 2, 3}
+    assert all(isinstance(e, UnitMoved) for e in events)
+    pulse1 = [e for e in events if isinstance(e, UnitMoved) and e.pulse == 1]
+    assert {e.unit_id for e in pulse1} == {1, 2, 3}
 
 
 def test_swap_deadlocks_and_both_stop() -> None:
@@ -324,63 +260,69 @@ def test_friendly_traffic_jam_stops_all_involved() -> None:
     assert jams == [TrafficJam(pulse=2, coord=ax(2, 0), unit_ids=[1, 2])]
 
 
-def test_enemy_contest_for_empty_hex_is_combat_seam() -> None:
+# --- Zones of control (SPEC §8.3–8.5) ---------------------------------------
+
+
+def test_engaged_unit_cannot_move_zoc_to_zoc() -> None:
+    # Blue infantry at (1,0) is adjacent to red at (2,0), so it begins the pulse
+    # engaged. Its planned step to (1,1) — itself adjacent to red — is an illegal
+    # ZOC→ZOC move (SPEC §8.4), so it stays put.
     state = build(
-        ["..."],
+        ["...", "..."],
         [
-            {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 1, "r": 0},
             {"type": "infantry", "owner": "red", "q": 2, "r": 0},
         ],
     )
-    new_state, events = resolve_movement(state, [move(1, (1, 0)), move(2, (1, 0))])
+    new_state, events = resolve_movement(state, [move(1, (1, 1))])
 
-    assert at(new_state, 0, 0) == 1  # neither entered the contested hex
-    assert at(new_state, 2, 0) == 2
-    assert {e.reason for e in events if isinstance(e, MoveBlocked)} == {
-        MoveBlockedReason.CONTESTED
-    }
+    assert at(new_state, 1, 0) == 1  # never left its hex
+    assert events == [
+        MoveBlocked(
+            pulse=1,
+            unit_id=1,
+            origin=ax(1, 0),
+            target=ax(1, 1),
+            reason=MoveBlockedReason.ZOC_LOCKED,
+        )
+    ]
 
 
-# --- Zones of control (SPEC §8.3) -------------------------------------------
-
-
-def test_unit_halts_on_entering_enemy_zoc() -> None:
-    # Blue armor (move 4) heads east along row 0; red sits at (2,1). Reaching
-    # (2,0) in pulse 2 puts blue adjacent to red, so it halts there instead of
-    # continuing to (3,0)/(4,0).
+def test_engaged_unit_may_withdraw_to_a_free_hex() -> None:
+    # Blue at (1,0) is engaged by red at (0,0). Stepping to (2,0) — not adjacent
+    # to red, so not in its ZOC — is a legal withdrawal (SPEC §8.4).
     state = build(
-        ["......", "......"],
+        ["...."],
         [
-            {"type": "armor", "owner": "blue", "q": 0, "r": 0},
-            {"type": "infantry", "owner": "red", "q": 2, "r": 1},
-        ],
-    )
-    new_state, events = resolve_movement(
-        state, [move(1, (1, 0), (2, 0), (3, 0), (4, 0))]
-    )
-
-    assert at(new_state, 2, 0) == 1  # halted at the ZOC, did not reach (3,0)
-    zoc = [e for e in events if isinstance(e, ZoneOfControlStop)]
-    assert zoc == [ZoneOfControlStop(pulse=2, unit_id=1, coord=ax(2, 0))]
-    assert not any(e.pulse > 2 for e in events)
-
-
-def test_unit_may_leave_a_zoc_it_started_in() -> None:
-    # Blue starts at (1,0), adjacent to red at (0,0). Its first step to (0,1)
-    # (still adjacent to red) succeeds, then ZOC halts it — it is not frozen in
-    # place from the start.
-    state = build(
-        ["..", "..", ".."],
-        [
-            {"type": "armor", "owner": "blue", "q": 1, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 1, "r": 0},
             {"type": "infantry", "owner": "red", "q": 0, "r": 0},
         ],
     )
-    new_state, events = resolve_movement(state, [move(1, (0, 1), (0, 2))])
+    new_state, events = resolve_movement(state, [move(1, (2, 0))])
 
-    assert at(new_state, 0, 1) == 1
-    assert any(isinstance(e, UnitMoved) for e in events)
-    assert any(isinstance(e, ZoneOfControlStop) for e in events)
+    assert at(new_state, 2, 0) == 1
+    assert events == [UnitMoved(pulse=1, unit_id=1, origin=ax(1, 0), dest=ax(2, 0))]
+
+
+def test_unengaged_unit_may_step_into_enemy_controlled_empty_hex() -> None:
+    # Blue armor begins each pulse unengaged until it actually reaches red's ZOC.
+    # Stepping onto (2,0) — adjacent to red at (3,0) — is allowed (it only becomes
+    # engaged for the *next* pulse), and entering ZOC never causes combat.
+    state = build(
+        ["....."],
+        [
+            {"type": "armor", "owner": "blue", "q": 0, "r": 0},
+            {"type": "infantry", "owner": "red", "q": 3, "r": 0},
+        ],
+    )
+    new_state, events = resolve_movement(state, [move(1, (1, 0), (2, 0))])
+
+    assert at(new_state, 2, 0) == 1  # reached the enemy-controlled hex
+    assert not any(isinstance(e, CombatResolved) for e in events)
+    assert [e for e in events if isinstance(e, UnitMoved)] == [
+        UnitMoved(pulse=1, unit_id=1, origin=ax(0, 0), dest=ax(1, 0)),
+        UnitMoved(pulse=2, unit_id=1, origin=ax(1, 0), dest=ax(2, 0)),
+    ]
 
 
 # --- Order validation -------------------------------------------------------

@@ -97,22 +97,41 @@ without stacking, so those units stay put — a v0.1 limitation; enemy swaps are
 **Demonstrable:** golden-file tests of multi-unit movement scenarios
 (`tests/engine/test_movement.py`).
 
-## Phase 3 — Execution engine: combat & barrage
+## Phase 3 — Execution engine: combat & barrage ✅ done
 
 **Goal:** §12, §13, §7.2 — the heart of the spec.
 
-- Combat formula (§13.1), simultaneous damage, terrain/Hold modifiers on
-  stationary defenders only (§12.10), multi-unit attacks, lead-entrant occupation
-  rules (§12.5–12.6), edge swaps (§12.9), multi-side contests (§12.8).
-- Barrage resolves pre-movement (§7.2).
-- Rich combat event objects carrying the §16.3 explanation data.
+- ✅ During this phase the spec's movement/ZOC/combat model was rewritten
+  (SPEC §5.4, §7–8, §11–12, §16–17, §19): **ZOC restricts movement but never
+  causes combat** (engaged units may only attack, hold, or withdraw — no ZOC→ZOC
+  move, §8.4), and **combat no longer ends movement** — a surviving lead entrant
+  continues along its path, so breakthroughs emerge with no armor-only rule
+  (§11.2, §12.5).
+- ✅ Pure combat math (`api/app/engine/combat.py`): formula (§13.1) clamped 1..5
+  with a single HP-scaling hook for §13.2 (deferred to P10); simultaneous damage
+  where every unit hits every opponent (a lone defender retaliates against all
+  attackers, §12.4); terrain + Hold modifiers on the stationary defender only
+  (§12.10); lead-entrant tie-break and occupation (§12.5–12.6, §12.8).
+- ✅ Barrage phase (`api/app/engine/barrage.py`): resolves pre-movement against
+  the start-of-phase occupant, terrain/Hold mods, no retaliation, destroyed units
+  removed before the first pulse (§7.2, §11.3); range/type are boundary-validated
+  (`EngineError`).
+- ✅ Movement reworked (`api/app/engine/movement.py`) to the new ZOC model with
+  combat interleaved per pulse — into-enemy attacks, empty-hex contests, edge
+  swaps (§12.9), and continuation — plus `resolve_execution`
+  (`api/app/engine/execution.py`) composing **barrage → movement+combat**.
+- ✅ Rich `CombatResolved`/`BarrageResolved` events carry the §16.3 explanation
+  data; `MoveBlockedReason` gained `ZOC_LOCKED`/`ATTACK_FORBIDDEN`.
 
-**Demonstrable:** exhaustive combat unit tests including the nasty cases
-(dogpiles, swaps, three-way contests).
+**Demonstrable:** exhaustive combat/barrage/execution unit tests including the
+nasty cases — dogpiles, lead-entrant selection, three-way contests, edge swaps,
+breakthrough continuation (`api/tests/engine/test_combat.py`, `test_barrage.py`,
+`test_execution.py`).
 
-> **Schedule risk.** The multi-side / edge-swap / lead-entrant interactions
-> (§12.5–12.9) are where simultaneous resolution gets genuinely subtle. Budget
-> accordingly.
+> **Documented v0.1 simplifications** (rare simultaneity corners, see
+> `movement.py`): an attacked occupant is pinned to defend; a third unit hitting
+> a hex already in an edge swap is blocked rather than merged; pure friendly
+> cycles still deadlock in place.
 
 ## Phase 4 — Execution engine: end-of-turn phases
 
