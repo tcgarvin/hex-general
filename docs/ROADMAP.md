@@ -53,16 +53,24 @@ Settle these before Phase 1 — they shape every phase.
 **Demonstrable:** load a hand-written state, serialize, reload — identical.
 (`tests/engine/test_models.py::test_game_state_json_round_trip`.)
 
-## Phase 1 — Map & scenario
+## Phase 1 — Map & scenario ✅ done
 
 **Goal:** §3, §4, §15 victory data exist as concrete content.
 
-- A scenario file format (JSON) defining the 40×40 map: terrain per hex, roads,
-  rivers/bridges, towns/cities, starting units per player, victory config.
-- Map loader + validation (every hex has terrain; bridges sit on rivers; etc.).
-- One real starter scenario authored.
+- ✅ A scenario file format (JSON) defining the map: terrain and roads as two
+  parallel character grids (`.wh~=tc` / `#`), plus settlement ownership, starting
+  units per player, player roster, and victory config (`api/app/engine/scenario.py`).
+- ✅ Map loader + validation: `load_scenario` / `load_scenario_file` build a turn-0
+  `GameState`, raising `ScenarioError` with context on grid-geometry, river/bridge/road
+  (§3.4), settlement-terrain, unit-placement (passable, unstacked §8.1), and ownership
+  problems. Settlement records are derived from town/city terrain (single source of
+  truth); the scenario supplies only ownership.
+- ✅ One real 40×40 starter scenario authored (`api/app/scenarios/twin_rivers.json`):
+  a river split with three bridged road corridors, a city+town per side, two neutral
+  contested towns, and starting units.
 
-**Demonstrable:** load scenario → valid `GameState`.
+**Demonstrable:** load scenario → valid `GameState`
+(`tests/engine/test_scenario.py::test_starter_scenario_loads_and_is_self_consistent`).
 
 ## Phase 2 — Execution engine: movement (the riskiest core)
 
