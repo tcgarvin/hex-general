@@ -42,13 +42,42 @@ class SubmitOrdersRequest(BaseModel):
     recruitments: list[Recruitment] = Field(default_factory=list)
 
 
+class JoinGameRequest(BaseModel):
+    """Body for ``POST /games/{id}/join``: the invite token from the share link."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    invite_token: str
+
+
 class PlayerCredentials(BaseModel):
-    """Returned on create/join: the token the client must keep to act as its slot."""
+    """Returned on create/join: which slot the caller now holds, and the share link.
+
+    Identity is the Supabase JWT (not returned here); ``invite_token`` lets the
+    holder share the open slot.
+    """
 
     game_id: str
     slot: PlayerId
-    token: str
     status: str
+    invite_token: str
+
+
+class ActiveGame(BaseModel):
+    """The game a user is currently in (the dispatcher's redirect target)."""
+
+    game_id: str
+    slot: PlayerId
+
+
+class DispatchView(BaseModel):
+    """Where login should send a user: their active game, or nothing (start screen).
+
+    ``active_game`` is ``None`` with exactly one meaning — the user holds no slot in
+    any un-finished game, so the frontend shows the create / paste-join screen.
+    """
+
+    active_game: ActiveGame | None
 
 
 class GameView(BaseModel):
@@ -67,6 +96,8 @@ class GameView(BaseModel):
     locked: dict[PlayerId, bool]
     state: GameState
     victory: VictoryStatus
+    # The invite token for the still-open slot, or None once the game is full.
+    invite_token: str | None
 
 
 class SubmitResult(BaseModel):

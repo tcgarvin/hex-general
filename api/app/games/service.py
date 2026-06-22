@@ -20,6 +20,7 @@ a completed set is expected to resolve without the engine raising.
 from __future__ import annotations
 
 import re
+import secrets
 from pathlib import Path
 
 from pydantic import TypeAdapter
@@ -30,10 +31,19 @@ from app.engine.fog import filter_events, redact_state
 from app.engine.models import GameState, Order, Recruitment
 from app.engine.scenario import load_scenario_file
 from app.engine.victory import victory_status
-from app.games.identity import generate_player_token
 from app.games.repo import GameRecord, GameRepo, PlayerRecord
-from app.games.schemas import GameView, PlayerCredentials, SubmitResult, TurnReplay
+from app.games.schemas import (
+    ActiveGame,
+    DispatchView,
+    GameView,
+    PlayerCredentials,
+    SubmitResult,
+    TurnReplay,
+)
 from app.games.validation import validate_submission
+
+# Bytes of entropy behind a game's invite token (token_urlsafe ~1.3 chars/byte).
+_INVITE_TOKEN_BYTES = 24
 
 _SCENARIOS_DIR = Path(__file__).resolve().parent.parent / "scenarios"
 _SCENARIO_NAME = re.compile(r"^[a-z0-9_]+$")
@@ -55,6 +65,14 @@ class GameFull(GameError):
     """Every scenario slot is already claimed; no room to join."""
 
 
+class GameAlreadyActive(GameError):
+    """The user already holds a slot in an un-finished game (one active game each)."""
+
+
+class InvalidInvite(GameError):
+    """The supplied invite token does not match the game's."""
+
+
 class GameNotActive(GameError):
     """The game is not accepting orders (still in lobby, or already finished)."""
 
@@ -73,33 +91,59 @@ class GameService:
     def __init__(self, repo: GameRepo) -> None:
         self._repo = repo
 
-    def create_game(self, scenario: str) -> PlayerCredentials:
-        """Create a game from ``scenario`` and claim its first slot for the caller."""
+    def create_game(self, scenario: str, user_id: str) -> PlayerCredentials:
+        """Create a game from ``scenario`` and claim its first slot for ``user_id``."""
+        self._require_no_active_game(user_id)
         state = _load_scenario_state(scenario)
-        game = self._repo.create_game(scenario, state)
+        invite_token = secrets.token_urlsafe(_INVITE_TOKEN_BYTES)
+        game = self._repo.create_game(scenario, state, invite_token)
         first_slot = state.players[0].id
-        player = self._repo.create_player(game.id, first_slot, generate_player_token())
+        player = self._repo.create_player(game.id, first_slot, user_id)
         return PlayerCredentials(
-            game_id=game.id, slot=player.slot, token=player.token, status=game.status
+            game_id=game.id,
+            slot=player.slot,
+            status=game.status,
+            invite_token=game.invite_token,
         )
 
-    def join_game(self, game_id: str) -> PlayerCredentials:
-        """Claim the next open slot. Activates the game once every slot is filled."""
+    def join_game(
+        self, game_id: str, user_id: str, invite_token: str
+    ) -> PlayerCredentials:
+        """Claim the next open slot for ``user_id``, gated by the invite token.
+
+        Activates the game once every slot is filled.
+        """
         game = self._require_game(game_id)
+        if not secrets.compare_digest(invite_token, game.invite_token):
+            raise InvalidInvite(f"invalid invite token for game {game_id}")
+        self._require_no_active_game(user_id)
+
         present = {p.slot for p in self._repo.list_players(game_id)}
         open_slots = [p.id for p in game.state.players if p.id not in present]
         if not open_slots:
             raise GameFull(f"game {game_id} has no open slots")
 
         slot = open_slots[0]
-        player = self._repo.create_player(game_id, slot, generate_player_token())
+        player = self._repo.create_player(game_id, slot, user_id)
 
         status = game.status
         if len(present) + 1 == len(game.state.players):
             status = "active"
             self._repo.set_game_state(game_id, game.state, status)
         return PlayerCredentials(
-            game_id=game_id, slot=player.slot, token=player.token, status=status
+            game_id=game_id,
+            slot=player.slot,
+            status=status,
+            invite_token=game.invite_token,
+        )
+
+    def get_dispatch(self, user_id: str) -> DispatchView:
+        """Return where login should send ``user_id``: their active game, or none."""
+        player = self._repo.get_active_player_for_user(user_id)
+        if player is None:
+            return DispatchView(active_game=None)
+        return DispatchView(
+            active_game=ActiveGame(game_id=player.game_id, slot=player.slot)
         )
 
     def get_view(self, player: PlayerRecord) -> GameView:
@@ -113,6 +157,9 @@ class GameService:
             for o in self._repo.list_turn_orders(player.game_id, game.state.turn)
         }
         locked = {slot: slot in submitted for slot in slots_present}
+        # The invite link is only useful while a slot is still open (lobby); once
+        # the game is active there is nothing to share, so hide it.
+        invite_token = game.invite_token if game.status == "lobby" else None
         # Victory is a global fact (settlement control), so it is computed from the
         # authoritative full state; only the returned `state` is fogged.
         return GameView(
@@ -124,6 +171,7 @@ class GameService:
             locked=locked,
             state=redact_state(game.state, player.slot),
             victory=victory_status(game.state),
+            invite_token=invite_token,
         )
 
     def submit_orders(
@@ -228,6 +276,14 @@ class GameService:
         if game is None:
             raise GameNotFound(f"no game with id {game_id}")
         return game
+
+    def _require_no_active_game(self, user_id: str) -> None:
+        """Enforce one active game per user before a create/join (SPEC: Phase 7)."""
+        existing = self._repo.get_active_player_for_user(user_id)
+        if existing is not None:
+            raise GameAlreadyActive(
+                f"user already holds slot {existing.slot!r} in game {existing.game_id}"
+            )
 
 
 def _load_scenario_state(scenario: str) -> GameState:

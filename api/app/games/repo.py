@@ -4,10 +4,10 @@ This is an **I/O boundary**: it is the only code in the games package that talks
 to Supabase, and it validates every response before handing typed records back to
 the service. A query that should have returned a row but did not raises
 `RepoError` rather than silently coping — a missing row for a known game id is a
-broken invariant, not a domain answer. The two genuinely-optional lookups
-(`get_game`, `get_player_by_token`) return ``None`` for "no such game / token",
-which the service maps to a 404/401; that is real domain optionality, not an
-error signal.
+broken invariant, not a domain answer. The genuinely-optional lookups
+(`get_game`, `get_player`, `get_active_player_for_user`) return ``None`` for "no
+such game / not a player / no active game", which the service maps to a 404/403;
+that is real domain optionality, not an error signal.
 
 The service depends on the `GameRepo` *protocol*, not the Supabase class, so the
 lifecycle logic is unit-testable against an in-memory fake.
@@ -38,17 +38,18 @@ class GameRecord(BaseModel):
     scenario: str
     status: str
     state: GameState
+    invite_token: str
 
 
 class PlayerRecord(BaseModel):
-    """A players row: an opaque token bound to one game slot."""
+    """A players row: a Supabase Auth user bound to one game slot."""
 
     model_config = ConfigDict(frozen=True)
 
     id: str
     game_id: str
     slot: str
-    token: str
+    user_id: str
 
 
 class OrdersRecord(BaseModel):
@@ -75,17 +76,21 @@ class TurnRecord(BaseModel):
 class GameRepo(Protocol):
     """Persistence operations the lifecycle service depends on."""
 
-    def create_game(self, scenario: str, state: GameState) -> GameRecord: ...
+    def create_game(
+        self, scenario: str, state: GameState, invite_token: str
+    ) -> GameRecord: ...
 
     def get_game(self, game_id: str) -> GameRecord | None: ...
 
     def set_game_state(self, game_id: str, state: GameState, status: str) -> None: ...
 
-    def create_player(self, game_id: str, slot: str, token: str) -> PlayerRecord: ...
+    def create_player(self, game_id: str, slot: str, user_id: str) -> PlayerRecord: ...
 
     def list_players(self, game_id: str) -> list[PlayerRecord]: ...
 
-    def get_player_by_token(self, token: str) -> PlayerRecord | None: ...
+    def get_player(self, game_id: str, user_id: str) -> PlayerRecord | None: ...
+
+    def get_active_player_for_user(self, user_id: str) -> PlayerRecord | None: ...
 
     def record_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
@@ -122,13 +127,36 @@ def _one_row(response: Any, context: str) -> dict[str, Any]:
     return rows[0]
 
 
+def _game_record(row: dict[str, Any]) -> GameRecord:
+    """Build a `GameRecord` from a games row, parsing the JSONB state blob."""
+    return GameRecord(
+        id=row["id"],
+        scenario=row["scenario"],
+        status=row["status"],
+        state=GameState.model_validate(row["state"]),
+        invite_token=row["invite_token"],
+    )
+
+
+def _player_record(row: dict[str, Any]) -> PlayerRecord:
+    """Build a `PlayerRecord` from a players row."""
+    return PlayerRecord(
+        id=row["id"],
+        game_id=row["game_id"],
+        slot=row["slot"],
+        user_id=row["user_id"],
+    )
+
+
 class SupabaseGameRepo:
     """`GameRepo` backed by Supabase (service-role key; bypasses RLS)."""
 
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def create_game(self, scenario: str, state: GameState) -> GameRecord:
+    def create_game(
+        self, scenario: str, state: GameState, invite_token: str
+    ) -> GameRecord:
         response = (
             self._client.table("games")
             .insert(
@@ -137,22 +165,18 @@ class SupabaseGameRepo:
                     "scenario": scenario,
                     "status": "lobby",
                     "state": state.model_dump(mode="json"),
+                    "invite_token": invite_token,
                 }
             )
             .execute()
         )
         row = _one_row(response, "create_game")
-        return GameRecord(
-            id=row["id"],
-            scenario=row["scenario"],
-            status=row["status"],
-            state=GameState.model_validate(row["state"]),
-        )
+        return _game_record(row)
 
     def get_game(self, game_id: str) -> GameRecord | None:
         response = (
             self._client.table("games")
-            .select("id, scenario, status, state")
+            .select("id, scenario, status, state, invite_token")
             .eq("id", game_id)
             .execute()
         )
@@ -160,12 +184,7 @@ class SupabaseGameRepo:
         if not rows:
             return None
         row = _one_row(response, "get_game")
-        return GameRecord(
-            id=row["id"],
-            scenario=row["scenario"],
-            status=row["status"],
-            state=GameState.model_validate(row["state"]),
-        )
+        return _game_record(row)
 
     def set_game_state(self, game_id: str, state: GameState, status: str) -> None:
         response = (
@@ -182,45 +201,54 @@ class SupabaseGameRepo:
         )
         _one_row(response, "set_game_state")
 
-    def create_player(self, game_id: str, slot: str, token: str) -> PlayerRecord:
+    def create_player(self, game_id: str, slot: str, user_id: str) -> PlayerRecord:
         response = (
             self._client.table("players")
-            .insert({"game_id": game_id, "slot": slot, "token": token})
+            .insert({"game_id": game_id, "slot": slot, "user_id": user_id})
             .execute()
         )
-        row = _one_row(response, "create_player")
-        return PlayerRecord(
-            id=row["id"], game_id=row["game_id"], slot=row["slot"], token=row["token"]
-        )
+        return _player_record(_one_row(response, "create_player"))
 
     def list_players(self, game_id: str) -> list[PlayerRecord]:
         response = (
             self._client.table("players")
-            .select("id, game_id, slot, token")
+            .select("id, game_id, slot, user_id")
             .eq("game_id", game_id)
             .execute()
         )
-        return [
-            PlayerRecord(
-                id=r["id"], game_id=r["game_id"], slot=r["slot"], token=r["token"]
-            )
-            for r in _rows(response)
-        ]
+        return [_player_record(r) for r in _rows(response)]
 
-    def get_player_by_token(self, token: str) -> PlayerRecord | None:
+    def get_player(self, game_id: str, user_id: str) -> PlayerRecord | None:
         response = (
             self._client.table("players")
-            .select("id, game_id, slot, token")
-            .eq("token", token)
+            .select("id, game_id, slot, user_id")
+            .eq("game_id", game_id)
+            .eq("user_id", user_id)
             .execute()
         )
         rows = _rows(response)
         if not rows:
             return None
-        row = _one_row(response, "get_player_by_token")
-        return PlayerRecord(
-            id=row["id"], game_id=row["game_id"], slot=row["slot"], token=row["token"]
+        return _player_record(_one_row(response, "get_player"))
+
+    def get_active_player_for_user(self, user_id: str) -> PlayerRecord | None:
+        """Return the user's single un-finished player row (the dispatcher target).
+
+        Joins ``games`` so a player row from a finished game does not count: a user
+        is "active" only while they hold a slot in a lobby/active game.
+        """
+        response = (
+            self._client.table("players")
+            .select("id, game_id, slot, user_id, games!inner(status)")
+            .eq("user_id", user_id)
+            .neq("games.status", "finished")
+            .execute()
         )
+        rows = _rows(response)
+        if not rows:
+            return None
+        row = _one_row(response, "get_active_player_for_user")
+        return _player_record(row)
 
     def record_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]

@@ -18,6 +18,16 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_service_role_key: str
 
+    # Comma-separated Supabase user ids allowed to use the dev profile switcher
+    # (impersonate another user via the X-Dev-Profile header). Empty by default,
+    # so impersonation is denied unless an env explicitly names dev accounts.
+    dev_user_ids: str = ""
+
+    @property
+    def dev_user_id_set(self) -> frozenset[str]:
+        """The dev allowlist as a set (empty entries from the CSV are dropped)."""
+        return frozenset(u.strip() for u in self.dev_user_ids.split(",") if u.strip())
+
     # Browser origins allowed to call the API (CORS). Defaults to this
     # project's Vercel deployments (production + preview subdomains) and local
     # development. Override with CORS_ALLOW_ORIGIN_REGEX if the domain changes.

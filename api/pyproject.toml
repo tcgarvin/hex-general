@@ -12,6 +12,7 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "pydantic-settings>=2.4",
     "supabase>=2.7",
+    "pyjwt[crypto]>=2.9",
 ]
 
 [dependency-groups]

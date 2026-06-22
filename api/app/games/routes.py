@@ -1,13 +1,16 @@
-"""HTTP routes for the turn lifecycle (roadmap Phase 5).
+"""HTTP routes for the turn lifecycle (roadmap Phase 5, accounts in Phase 7).
 
 Thin adapter over `GameService`: it parses requests, resolves the caller's
-identity from the ``X-Player-Token`` header, calls the service, and maps the
-service's typed `GameError`s onto HTTP status codes. All game logic lives in the
-service; this module only translates between HTTP and the domain.
+identity from the Supabase JWT, calls the service, and maps the service's typed
+`GameError`s onto HTTP status codes. All game logic lives in the service; this
+module only translates between HTTP and the domain.
 
-Auth model: every per-game endpoint requires a token that resolves to a player in
-*that* game. A token for a different game is treated as forbidden, so one game's
-credentials can never read or act on another.
+Auth model (Phase 7): every authenticated request carries a Supabase
+``Authorization: Bearer <jwt>``; `current_identity` verifies it at the boundary
+(401 on failure). A dev (allowlisted in config) may additionally send
+``X-Dev-Profile: <user_id>`` to impersonate another user for solo playtesting —
+honored only for devs (403 otherwise), the same on local and deployed stacks.
+Per-game endpoints then require that the user holds a slot in *that* game.
 """
 
 from __future__ import annotations
@@ -16,10 +19,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Path
 from supabase import Client
 
 from app.db import get_supabase_client
+from app.games.auth import AuthError, AuthIdentity, is_dev, verify_jwt
 from app.games.repo import GameRepo, PlayerRecord, SupabaseGameRepo
 from app.games.schemas import (
     CreateGameRequest,
+    DispatchView,
     GameView,
+    JoinGameRequest,
     PlayerCredentials,
     SubmitOrdersRequest,
     SubmitResult,
@@ -27,10 +33,12 @@ from app.games.schemas import (
 )
 from app.games.service import (
     AlreadySubmitted,
+    GameAlreadyActive,
     GameFull,
     GameNotActive,
     GameNotFound,
     GameService,
+    InvalidInvite,
     ReplayNotFound,
 )
 from app.games.validation import OrderValidationError
@@ -48,43 +56,87 @@ def get_service(repo: GameRepo = Depends(get_repo)) -> GameService:
     return GameService(repo)
 
 
+def current_identity(
+    authorization: str | None = Header(default=None),
+    x_dev_profile: str | None = Header(default=None),
+) -> AuthIdentity:
+    """Resolve the caller from the Supabase bearer JWT, honoring dev impersonation.
+
+    401 if the token is missing/malformed/invalid. If ``X-Dev-Profile`` is present
+    the *verified* caller must be a dev (403 otherwise); the effective identity then
+    becomes the named user, so a dev can drive both sides of a game.
+    """
+    if authorization is None:
+        raise HTTPException(status_code=401, detail="missing Authorization header")
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        raise HTTPException(status_code=401, detail="expected a Bearer token")
+    try:
+        identity = verify_jwt(token)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    if x_dev_profile is not None:
+        if not is_dev(identity.user_id):
+            raise HTTPException(
+                status_code=403, detail="not authorized to impersonate users"
+            )
+        return AuthIdentity(user_id=x_dev_profile)
+    return identity
+
+
 def require_player(
     game_id: str = Path(...),
-    x_player_token: str = Header(...),
+    identity: AuthIdentity = Depends(current_identity),
     repo: GameRepo = Depends(get_repo),
 ) -> PlayerRecord:
-    """Resolve the caller's player from the token and bind it to the path's game.
-
-    401 if the token is unknown; 403 if it belongs to a different game.
-    """
-    player = repo.get_player_by_token(x_player_token)
+    """Resolve the caller's player in the path's game (403 if they are not in it)."""
+    player = repo.get_player(game_id, identity.user_id)
     if player is None:
-        raise HTTPException(status_code=401, detail="unknown player token")
-    if player.game_id != game_id:
-        raise HTTPException(status_code=403, detail="token is for a different game")
+        raise HTTPException(status_code=403, detail="not a player in this game")
     return player
 
 
 @router.post("", status_code=201)
 def create_game(
-    body: CreateGameRequest, service: GameService = Depends(get_service)
+    body: CreateGameRequest,
+    identity: AuthIdentity = Depends(current_identity),
+    service: GameService = Depends(get_service),
 ) -> PlayerCredentials:
-    """Create a game from a scenario and return the creator's credentials."""
+    """Create a game from a scenario and claim its first slot for the caller."""
     try:
-        return service.create_game(body.scenario)
+        return service.create_game(body.scenario, identity.user_id)
     except GameNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except GameAlreadyActive as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/active")
+def get_active_game(
+    identity: AuthIdentity = Depends(current_identity),
+    service: GameService = Depends(get_service),
+) -> DispatchView:
+    """Dispatcher: the caller's active game (or none → start screen)."""
+    return service.get_dispatch(identity.user_id)
 
 
 @router.post("/{game_id}/join", status_code=201)
 def join_game(
-    game_id: str, service: GameService = Depends(get_service)
+    game_id: str,
+    body: JoinGameRequest,
+    identity: AuthIdentity = Depends(current_identity),
+    service: GameService = Depends(get_service),
 ) -> PlayerCredentials:
-    """Claim the next open slot in a game."""
+    """Claim the next open slot in a game, gated by its invite token."""
     try:
-        return service.join_game(game_id)
+        return service.join_game(game_id, identity.user_id, body.invite_token)
     except GameNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except InvalidInvite as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except GameAlreadyActive as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except GameFull as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 

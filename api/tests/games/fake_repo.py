@@ -25,9 +25,15 @@ class FakeGameRepo:
         self._orders: dict[tuple[str, int, str], OrdersRecord] = {}
         self._turns: dict[tuple[str, int], TurnRecord] = {}
 
-    def create_game(self, scenario: str, state: GameState) -> GameRecord:
+    def create_game(
+        self, scenario: str, state: GameState, invite_token: str
+    ) -> GameRecord:
         game = GameRecord(
-            id=str(uuid.uuid4()), scenario=scenario, status="lobby", state=state
+            id=str(uuid.uuid4()),
+            scenario=scenario,
+            status="lobby",
+            state=state,
+            invite_token=invite_token,
         )
         self._games[game.id] = game
         return game
@@ -41,11 +47,16 @@ class FakeGameRepo:
             update={"state": state, "status": status}
         )
 
-    def create_player(self, game_id: str, slot: str, token: str) -> PlayerRecord:
+    def create_player(self, game_id: str, slot: str, user_id: str) -> PlayerRecord:
         if any(p.game_id == game_id and p.slot == slot for p in self._players.values()):
             raise RepoError(f"slot {slot} already claimed in game {game_id}")
+        if any(
+            p.game_id == game_id and p.user_id == user_id
+            for p in self._players.values()
+        ):
+            raise RepoError(f"user {user_id} already in game {game_id}")
         player = PlayerRecord(
-            id=str(uuid.uuid4()), game_id=game_id, slot=slot, token=token
+            id=str(uuid.uuid4()), game_id=game_id, slot=slot, user_id=user_id
         )
         self._players[player.id] = player
         return player
@@ -53,9 +64,17 @@ class FakeGameRepo:
     def list_players(self, game_id: str) -> list[PlayerRecord]:
         return [p for p in self._players.values() if p.game_id == game_id]
 
-    def get_player_by_token(self, token: str) -> PlayerRecord | None:
+    def get_player(self, game_id: str, user_id: str) -> PlayerRecord | None:
         for player in self._players.values():
-            if player.token == token:
+            if player.game_id == game_id and player.user_id == user_id:
+                return player
+        return None
+
+    def get_active_player_for_user(self, user_id: str) -> PlayerRecord | None:
+        for player in self._players.values():
+            if player.user_id != user_id:
+                continue
+            if self._games[player.game_id].status != "finished":
                 return player
         return None
 
