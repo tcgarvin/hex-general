@@ -242,6 +242,15 @@ Vite SPA** (decision 6) — replacing the create-next-app boilerplate — adds
 up **local Supabase** so a dev can play a full match offline. See
 [`FRONTEND.md`](./FRONTEND.md) for personas, journeys, and page structure.
 
+**Progress — backend slice ✅ shipped & live** (the auth/account/dispatcher bullets
+below; the frontend re-scaffold and local-dev loop remain): the API now validates
+the Supabase JWT (ES256 via the project JWKS) at the boundary and identifies callers
+by `user_id`; `players` gained `user_id` and the opaque `token`/`X-Player-Token`
+retired; `games` gained an `invite_token`; create/join enforce **one active game per
+user** and invite-gated joins; `GET /games/active` is the dispatcher; and the dev
+role + `X-Dev-Profile` impersonation (below) is enforced. Remaining work splits into
+**Slice 2** (Vite SPA re-scaffold) and **Slice 3** (`supabase start` local loop).
+
 - **Vite + React + TS + Tailwind v4 SPA** with client-side routing (login /
   dispatcher / join / game shell); `frontend.yml` builds a static bundle, deployed
   to Vercel. Env vars move from `NEXT_PUBLIC_` to `VITE_`.
@@ -259,9 +268,13 @@ up **local Supabase** so a dev can play a full match offline. See
   advance triggers a replay fetch. Game-context provider exposes the current
   `GameView`, your slot, and lock state to the tree; the **game shell** renders
   your-move vs waiting-on-them and is where later phases mount board/planning/replay.
-- **Dev profile switcher** (dev build only): a corner overlay listing seeded
-  identities; pick one → reload authenticated as that user, for solo two-sided
-  playtesting. Backed by a dev-only auth path the deployed API rejects.
+- **Dev profile switcher**: a corner overlay listing seeded identities; pick one →
+  act as that user, for solo two-sided playtesting. Works **on the deployed stack
+  too**, gated by a *very lightweight* role system — a user is a dev iff their id is
+  in the API's `DEV_USER_IDS` allowlist (no role table), and a dev (only a dev) may
+  impersonate another user via the `X-Dev-Profile` header (403 otherwise). Locally,
+  the same switcher rides on a seeded dev's local-Auth session. (This revises the
+  earlier "deployed API rejects the dev path" plan — see Resolved: auth depth.)
 - **Local dev playtesting:** `supabase start` runs the full local stack (Postgres +
   Auth) from `supabase/config.toml` + migrations; the local API and Vite dev server
   point at it via env; a seed creates dev users (+ optional starter game). Real

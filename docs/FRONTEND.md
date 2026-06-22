@@ -82,7 +82,7 @@ every later phase mounts inside it.
 | `/join/{id}#invite=…` | Log in → claim open slot → redirect to game | J2 | 7 |
 | `/game/{id}` | **Game shell**: persistent context. P7 = status dashboard (turn #, both slots, your slot, your-move vs waiting banner, share link while a slot is open). Board (P8) + planning (P9) mount here. | J3 | 7→9 |
 | `/game/{id}/replay/{turn}` | Step-through replay with §16.3 combat explanations | J3 orient, J5 | 10 |
-| corner overlay | Dev profile switcher (dev build only) | J6 | 7 |
+| corner overlay | Dev profile switcher (shown to dev-role users) | J6 | 7 |
 
 The "lobby" collapses to **login → dispatcher → create-or-join → game shell**.
 
@@ -107,9 +107,10 @@ stack or configuring Google OAuth.
   at the remote project — the re-scaffold redirects local dev at the local stack so
   playtesting never dirties shared/deployed state.)*
 - **Auth locally:** real Google OAuth (redirect URIs, client secret) is configured
-  **only on deployed envs**. Local playtesting uses the **dev profile switcher**
-  against seeded local-Auth users — no OAuth round-trip. The dev-only auth path the
-  switcher relies on is gated by an env flag the **deployed API rejects**.
+  **only on deployed envs**. Local playtesting signs a seeded dev user into the
+  **local** Supabase Auth (no OAuth round-trip), then the **dev profile switcher**
+  impersonates the other seeded identities. The switcher is **not** local-only — it
+  works on the deployed stack too, gated by the dev role (below).
 - **Seed:** a seed script creates the dev users (+ optionally a starter game) so a
   fresh `supabase start` is immediately playable.
 
@@ -117,7 +118,14 @@ stack or configuring Google OAuth.
 
 - **Identity:** SSO accounts (Supabase Auth/Google) replace localStorage opaque
   token + secret-in-link. Adds backend work (JWT validation, `players.user_id`) the
-  v0.1 framing had deferred — the part of Phase 7 most likely to balloon.
+  v0.1 framing had deferred — the part of Phase 7 most likely to balloon. **Shipped**
+  (backend slice): JWT verified via the project JWKS (ES256), `players.user_id`,
+  invite-gated join, `GET /games/active` dispatcher.
+- **Dev switcher on deployed, gated by a role:** revises the original "deployed API
+  rejects the dev path." A *very lightweight* role system instead — a dev is a user
+  whose id is in the API's `DEV_USER_IDS` allowlist (no DB role table); a dev (only a
+  dev) may impersonate another user via the `X-Dev-Profile` header (403 otherwise).
+  The path exists everywhere; non-devs are rejected. **Shipped** (backend slice).
 - **Env prefix:** `NEXT_PUBLIC_` → `VITE_` (Vite inlines `VITE_`-prefixed vars).
   The `||`-not-`??` default rule (CLAUDE.md) still applies — unset vars inline as
   `""`.
