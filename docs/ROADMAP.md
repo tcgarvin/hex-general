@@ -161,19 +161,33 @@ breakthrough continuation (`api/tests/engine/test_combat.py`, `test_barrage.py`,
 with no UI (`tests/engine/test_execution.py::test_headless_game_drives_to_city_elimination_victory`).
 The spec's central question is now *mechanically* answered.
 
-## Phase 5 — Turn lifecycle API & persistence (async two-player)
+## Phase 5 — Turn lifecycle API & persistence (async two-player) ✅ done
 
 **Goal:** wire the engine to the deployed stack with real identity.
 
-- Tables: `players`, `turn_orders` (per player, per turn), resolved `turns`
-  (event log). Remember the `service_role` GRANT gotcha on each new table.
-- Player identity (lightweight token/session — enough to own orders; full auth
-  deferred).
-- Endpoints: create/join game, fetch my view, submit & lock orders, server
-  executes when **both** locked, fetch replay log. Order validation server-side
-  (paths legal, range, costs).
+- ✅ Tables (`supabase/migrations/`): `games` extended with the canonical `state`
+  JSONB blob + `scenario`/`status` lifecycle; `players` (opaque token ↔ scenario
+  slot), `turn_orders` (one locked submission per player per turn), resolved
+  `turns` (event log + state + victory). Each new table enables RLS and grants
+  DML to `service_role` (the GRANT gotcha).
+- ✅ Player identity: lightweight opaque bearer tokens (`secrets.token_urlsafe`)
+  presented as `X-Player-Token`; a token resolves to one game slot and can only
+  act on its own game (`app/games/identity.py`, `routes.require_player`).
+- ✅ Endpoints (`app/games/routes.py`): `POST /games` (create + claim first slot),
+  `POST /games/{id}/join` (claim the open slot, activate when full),
+  `GET /games/{id}` (full view — fog is Phase 6), `POST /games/{id}/orders`
+  (validate + lock; resolve synchronously when **both** are in),
+  `GET /games/{id}/turns/{turn}` (replay).
+- ✅ Server-side order validation at the boundary (`app/games/validation.py`):
+  ownership, one-order-per-unit, contiguous/on-map/passable paths, artillery +
+  in-range barrage, recruit cost/cap/controlled-city — the engine stays pure and
+  trusts its input. Lifecycle orchestration is `GameService` over a `GameRepo`
+  protocol (`app/games/service.py`, `repo.py`), unit-testable via an in-memory
+  fake.
 
-**Demonstrable:** play a full game via curl from two "players."
+**Demonstrable:** a full two-player game over HTTP — create → join → submit →
+execute → replay → turn-limit victory — driven through the real FastAPI app
+(`tests/games/test_routes.py`, `test_service.py`).
 
 ## Phase 6 — Fog of war (server-enforced)
 

@@ -5,6 +5,7 @@ from supabase import Client
 from app import __version__
 from app.config import get_settings
 from app.db import get_supabase_client
+from app.games.routes import router as games_router
 from app.stats import count_active_users, count_games
 
 app = FastAPI(title="Hex General API", version=__version__)
@@ -12,9 +13,11 @@ app = FastAPI(title="Hex General API", version=__version__)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=get_settings().cors_allow_origin_regex,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+app.include_router(games_router)
 
 
 @app.get("/health")
