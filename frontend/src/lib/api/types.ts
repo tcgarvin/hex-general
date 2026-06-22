@@ -8,6 +8,7 @@ export type DispatchView = components["schemas"]["DispatchView"];
 export type ActiveGame = components["schemas"]["ActiveGame"];
 export type PlayerCredentials = components["schemas"]["PlayerCredentials"];
 export type MeView = components["schemas"]["MeView"];
+export type DevProfile = components["schemas"]["DevProfile"];
 export type SubmitResult = components["schemas"]["SubmitResult"];
 export type TurnReplay = components["schemas"]["TurnReplay"];
 export type VictoryStatus = components["schemas"]["VictoryStatus"];

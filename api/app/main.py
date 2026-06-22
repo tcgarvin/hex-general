@@ -1,14 +1,15 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import Client
 
 from app import __version__
+from app.accounts import list_dev_profiles
 from app.config import get_settings
 from app.db import get_supabase_client
 from app.games.auth import AuthIdentity, is_dev
 from app.games.routes import real_identity
 from app.games.routes import router as games_router
-from app.games.schemas import MeView
+from app.games.schemas import DevProfile, MeView
 from app.stats import count_active_users, count_games
 
 app = FastAPI(title="Hex General API", version=__version__)
@@ -43,6 +44,23 @@ def me(identity: AuthIdentity = Depends(real_identity)) -> MeView:
     dev switcher stays visible for a dev even while they act as another user.
     """
     return MeView(user_id=identity.user_id, is_dev=is_dev(identity.user_id))
+
+
+@app.get("/dev/profiles")
+def dev_profiles(
+    identity: AuthIdentity = Depends(real_identity),
+    client: Client = Depends(get_supabase_client),
+) -> list[DevProfile]:
+    """List the accounts the dev switcher can impersonate.
+
+    Dev-only (403 otherwise). Returns the calling dev's own account plus every
+    ``@hex.local`` test account, read server-side via the service-role admin API.
+    """
+    if not is_dev(identity.user_id):
+        raise HTTPException(
+            status_code=403, detail="not authorized to list dev profiles"
+        )
+    return list_dev_profiles(client, identity.user_id)
 
 
 @app.get("/stats")

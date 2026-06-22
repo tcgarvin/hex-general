@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 import app.main as main_module
 from app.games.auth import AuthIdentity
 from app.games.repo import GameRepo
+from app.games.schemas import DevProfile
 from app.games.routes import current_identity, get_repo, real_identity
 from app.main import app
 from games.fake_repo import FakeGameRepo
@@ -149,6 +150,41 @@ def test_me_reports_identity_and_dev_role(
 
 def test_me_requires_auth(client: TestClient) -> None:
     assert client.get("/me").status_code == 401  # no X-Test-User
+
+
+def test_dev_profiles_lists_self_and_hex_local_accounts(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(main_module, "is_dev", lambda user_id: user_id == BLUE_USER)
+    monkeypatch.setattr(
+        main_module,
+        "list_dev_profiles",
+        lambda _client, self_user_id: [
+            DevProfile(
+                user_id=self_user_id, email="dev@gmail.com", is_self=True
+            ),
+            DevProfile(
+                user_id="test-red", email="red@hex.local", is_self=False
+            ),
+        ],
+    )
+    response = client.get("/dev/profiles", headers=_as(BLUE_USER))
+    assert response.status_code == 200
+    assert response.json() == [
+        {"user_id": BLUE_USER, "email": "dev@gmail.com", "is_self": True},
+        {"user_id": "test-red", "email": "red@hex.local", "is_self": False},
+    ]
+
+
+def test_dev_profiles_forbidden_for_non_devs(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(main_module, "is_dev", lambda user_id: False)
+    assert client.get("/dev/profiles", headers=_as(RED_USER)).status_code == 403
+
+
+def test_dev_profiles_requires_auth(client: TestClient) -> None:
+    assert client.get("/dev/profiles").status_code == 401
 
 
 def test_dispatcher_reports_active_game(client: TestClient) -> None:

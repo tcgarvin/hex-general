@@ -74,6 +74,19 @@ class MeView(BaseModel):
     is_dev: bool
 
 
+class DevProfile(BaseModel):
+    """A selectable account in the dev profile switcher.
+
+    The switcher lists the calling dev's own account plus the ``@hex.local`` test
+    accounts, so a dev picks who to impersonate from a menu rather than pasting a
+    raw user id. ``is_self`` marks the dev's real account.
+    """
+
+    user_id: str
+    email: str
+    is_self: bool
+
+
 class ActiveGame(BaseModel):
     """The game a user is currently in (the dispatcher's redirect target)."""
 

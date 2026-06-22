@@ -4,6 +4,29 @@
  */
 
 export interface paths {
+    "/dev/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dev Profiles
+         * @description List the accounts the dev switcher can impersonate.
+         *
+         *     Dev-only (403 otherwise). Returns the calling dev's own account plus every
+         *     ``@hex.local`` test account, read server-side via the service-role admin API.
+         */
+        get: operations["dev_profiles_dev_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games": {
         parameters: {
             query?: never;
@@ -261,6 +284,22 @@ export interface components {
              * @default twin_rivers
              */
             scenario: string;
+        };
+        /**
+         * DevProfile
+         * @description A selectable account in the dev profile switcher.
+         *
+         *     The switcher lists the calling dev's own account plus the ``@hex.local`` test
+         *     accounts, so a dev picks who to impersonate from a menu rather than pasting a
+         *     raw user id. ``is_self`` marks the dev's real account.
+         */
+        DevProfile: {
+            /** Email */
+            email: string;
+            /** Is Self */
+            is_self: boolean;
+            /** User Id */
+            user_id: string;
         };
         /**
          * DispatchView
@@ -661,6 +700,37 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    dev_profiles_dev_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevProfile"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_game_games_post: {
         parameters: {
             query?: never;
