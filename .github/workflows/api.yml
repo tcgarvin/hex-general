@@ -68,5 +68,5 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --service-account "$RUNTIME_SA" \
-            --set-env-vars "SUPABASE_URL=https://amhkpsrvjlthmmemwssc.supabase.co" \
+            --set-env-vars "^@^SUPABASE_URL=https://amhkpsrvjlthmmemwssc.supabase.co@DEV_USER_IDS=1d151034-f72a-44a3-ab37-bdcac928edb0" \
             --update-secrets "SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest"
