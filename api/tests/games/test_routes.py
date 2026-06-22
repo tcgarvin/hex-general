@@ -160,12 +160,8 @@ def test_dev_profiles_lists_self_and_hex_local_accounts(
         main_module,
         "list_dev_profiles",
         lambda _client, self_user_id: [
-            DevProfile(
-                user_id=self_user_id, email="dev@gmail.com", is_self=True
-            ),
-            DevProfile(
-                user_id="test-red", email="red@hex.local", is_self=False
-            ),
+            DevProfile(user_id=self_user_id, email="dev@gmail.com", is_self=True),
+            DevProfile(user_id="test-red", email="red@hex.local", is_self=False),
         ],
     )
     response = client.get("/dev/profiles", headers=_as(BLUE_USER))
