@@ -75,6 +75,37 @@ def test_full_two_player_game_over_http(client: TestClient) -> None:
     assert replay.json()["state_after"]["turn"] == 1
 
 
+def test_view_hides_enemy_units_in_the_fog(client: TestClient) -> None:
+    # twin_rivers starts the two sides far apart, so neither player's view should
+    # ever contain one of the other's units (roadmap P6 demonstrable).
+    create = client.post("/games", json={"scenario": "twin_rivers"}).json()
+    game_id = create["game_id"]
+    join = client.post(f"/games/{game_id}/join").json()
+
+    blue_view = client.get(f"/games/{game_id}", headers=_auth(create["token"])).json()
+    assert {u["owner"] for u in blue_view["state"]["units"]} == {"blue"}
+
+    red_view = client.get(f"/games/{game_id}", headers=_auth(join["token"])).json()
+    assert {u["owner"] for u in red_view["state"]["units"]} == {"red"}
+
+
+def test_replay_hides_enemy_units_and_keeps_economy_private(client: TestClient) -> None:
+    create = client.post("/games", json={"scenario": "twin_rivers"}).json()
+    game_id = create["game_id"]
+    join = client.post(f"/games/{game_id}/join").json()
+    client.post(f"/games/{game_id}/orders", json={}, headers=_auth(create["token"]))
+    client.post(f"/games/{game_id}/orders", json={}, headers=_auth(join["token"]))
+
+    replay = client.get(
+        f"/games/{game_id}/turns/0", headers=_auth(create["token"])
+    ).json()
+    assert {u["owner"] for u in replay["state_after"]["units"]} == {"blue"}
+    economy_players = {
+        e["player"] for e in replay["events"] if e["kind"] == "economy_resolved"
+    }
+    assert economy_players <= {"blue"}  # the enemy's economy never leaks
+
+
 def test_view_requires_token(client: TestClient) -> None:
     create = client.post("/games", json={}).json()
     response = client.get(f"/games/{create['game_id']}")

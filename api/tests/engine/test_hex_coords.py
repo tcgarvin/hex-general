@@ -8,6 +8,7 @@ from app.engine.hex_coords import (
     distance,
     from_cube,
     is_adjacent,
+    line,
     neighbor,
     neighbors,
     to_cube,
@@ -75,6 +76,39 @@ def test_is_adjacent() -> None:
     assert is_adjacent(origin, neighbor(origin, 0))
     assert not is_adjacent(origin, origin)
     assert not is_adjacent(origin, Axial(q=2, r=0))
+
+
+def test_line_to_self_is_single_hex() -> None:
+    a = Axial(q=2, r=-1)
+    assert line(a, a) == [a]
+
+
+def test_line_endpoints_and_length() -> None:
+    a = Axial(q=0, r=0)
+    b = Axial(q=4, r=0)
+    path = line(a, b)
+    assert path[0] == a
+    assert path[-1] == b
+    assert len(path) == distance(a, b) + 1
+
+
+def test_line_is_a_contiguous_walk_of_neighbours() -> None:
+    # Every consecutive pair on a drawn line is one hex apart.
+    a = Axial(q=0, r=0)
+    b = Axial(q=3, r=-2)
+    path = line(a, b)
+    assert all(distance(path[i], path[i + 1]) == 1 for i in range(len(path) - 1))
+
+
+def test_line_straight_along_axis_is_exact() -> None:
+    a = Axial(q=0, r=0)
+    b = Axial(q=3, r=0)
+    assert line(a, b) == [
+        Axial(q=0, r=0),
+        Axial(q=1, r=0),
+        Axial(q=2, r=0),
+        Axial(q=3, r=0),
+    ]
 
 
 def test_coords_serialize_to_json() -> None:

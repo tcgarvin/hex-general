@@ -52,7 +52,12 @@ class PlayerCredentials(BaseModel):
 
 
 class GameView(BaseModel):
-    """A player's view of a game (full state; fog of war arrives in Phase 6)."""
+    """A player's fog-filtered view of a game (SPEC §9).
+
+    ``state`` is redacted to the caller's perspective: enemy units on hexes the
+    caller cannot see are removed (the map, settlement control, and banks are
+    public in v0.1). ``victory`` is the authoritative global outcome.
+    """
 
     game_id: str
     status: str

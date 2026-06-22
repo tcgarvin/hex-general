@@ -189,17 +189,31 @@ The spec's central question is now *mechanically* answered.
 execute → replay → turn-limit victory — driven through the real FastAPI app
 (`tests/games/test_routes.py`, `test_service.py`).
 
-## Phase 6 — Fog of war (server-enforced)
+## Phase 6 — Fog of war (server-enforced) ✅ done
 
 **Goal:** §9 — visibility before any rendering exists.
 
-- LOS with woods blocking (§9.2), vision radius per unit (§9.3), per-player
-  visible-hex computation.
-- The "fetch my view" endpoint returns filtered state + filtered event log (you
-  only see combat you can witness).
+- ✅ LOS with woods blocking (§9.2) via hex line-drawing (`hex_coords.line`),
+  vision radius per unit (§9.3), and per-player visible-hex computation as pure
+  queries (`api/app/engine/visibility.py`): `has_line_of_sight`,
+  `unit_visible_hexes`, `visible_hexes`. Binary visibility (§9.1) — the observer
+  sees into an adjacent/unobstructed woods hex but not through it.
+- ✅ Redaction (`api/app/engine/fog.py`): `redact_state` drops enemy units on
+  hexes the viewer can't see (own units always kept); `filter_events` keeps only
+  events the viewer could witness — combat/movement on visible hexes plus anything
+  involving their own units, with per-player economy private to its owner.
+- ✅ The "fetch my view" endpoints apply fog: `GET /games/{id}` returns the
+  redacted state, `GET /games/{id}/turns/{turn}` returns redacted state + filtered
+  event log. Victory stays computed from the authoritative full state.
+- **v0.1 scope (documented):** only enemy *units* are secret; the static map,
+  settlement control, and player banks are public. Replay visibility is computed
+  from the post-turn state (a unit that fled into the fog mid-turn isn't
+  reconstructed).
 
-**Demonstrable:** tests proving hidden enemy units never appear in a player's
-payload.
+**Demonstrable:** hidden enemy units never appear in a player's payload — unit
+tests (`tests/engine/test_visibility.py`, `test_fog.py`) plus HTTP integration
+(`tests/games/test_routes.py::test_view_hides_enemy_units_in_the_fog`,
+`::test_replay_hides_enemy_units_and_keeps_economy_private`).
 
 ## Phase 7 — Frontend: map & state rendering
 

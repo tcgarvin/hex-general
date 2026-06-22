@@ -96,3 +96,44 @@ def distance(a: Axial, b: Axial) -> int:
 def is_adjacent(a: Axial, b: Axial) -> bool:
     """Return whether two distinct coordinates share an edge."""
     return distance(a, b) == 1
+
+
+def _cube_round(x: float, y: float, z: float) -> Cube:
+    """Round fractional cube coordinates to the nearest valid hex (x+y+z == 0).
+
+    Rounds each component, then resets whichever drifted most so the cube
+    constraint holds — the standard hex-rounding fix-up.
+    """
+    rx, ry, rz = round(x), round(y), round(z)
+    dx, dy, dz = abs(rx - x), abs(ry - y), abs(rz - z)
+    if dx > dy and dx > dz:
+        rx = -ry - rz
+    elif dy > dz:
+        ry = -rx - rz
+    else:
+        rz = -rx - ry
+    return Cube(x=rx, y=ry, z=rz)
+
+
+def line(a: Axial, b: Axial) -> list[Axial]:
+    """Return the hexes on the straight line from ``a`` to ``b``, inclusive.
+
+    Used for line-of-sight: the result is the ordered sequence of hexes a
+    sightline from ``a`` to ``b`` passes through, starting at ``a`` and ending at
+    ``b`` (length ``distance(a, b) + 1``). A tiny epsilon nudges the sample points
+    off exact hex boundaries so a sightline that grazes a vertex resolves the same
+    way every time — the line is deterministic but computed from ``a`` outward, so
+    it is not guaranteed identical when reversed.
+    """
+    steps = distance(a, b)
+    if steps == 0:
+        return [a]
+    start, end = to_cube(a), to_cube(b)
+    result: list[Axial] = []
+    for i in range(steps + 1):
+        t = i / steps
+        x = start.x + (end.x - start.x) * t + 1e-6
+        y = start.y + (end.y - start.y) * t + 1e-6
+        z = start.z + (end.z - start.z) * t - 2e-6
+        result.append(from_cube(_cube_round(x, y, z)))
+    return result

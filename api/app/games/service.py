@@ -24,7 +24,9 @@ from pathlib import Path
 
 from pydantic import TypeAdapter
 
+from app.engine.events import Event
 from app.engine.execution import resolve_execution
+from app.engine.fog import filter_events, redact_state
 from app.engine.models import GameState, Order, Recruitment
 from app.engine.scenario import load_scenario_file
 from app.engine.victory import victory_status
@@ -38,6 +40,7 @@ _SCENARIO_NAME = re.compile(r"^[a-z0-9_]+$")
 
 _ORDERS = TypeAdapter(list[Order])
 _RECRUITMENTS = TypeAdapter(list[Recruitment])
+_EVENTS = TypeAdapter(list[Event])
 
 
 class GameError(Exception):
@@ -100,7 +103,7 @@ class GameService:
         )
 
     def get_view(self, player: PlayerRecord) -> GameView:
-        """Return ``player``'s view of their game (full state; fog is Phase 6)."""
+        """Return ``player``'s fog-filtered view of their game (SPEC §9)."""
         game = self._require_game(player.game_id)
         players = self._repo.list_players(player.game_id)
         slot_by_player_id = {p.id: p.slot for p in players}
@@ -110,6 +113,8 @@ class GameService:
             for o in self._repo.list_turn_orders(player.game_id, game.state.turn)
         }
         locked = {slot: slot in submitted for slot in slots_present}
+        # Victory is a global fact (settlement control), so it is computed from the
+        # authoritative full state; only the returned `state` is fogged.
         return GameView(
             game_id=game.id,
             status=game.status,
@@ -117,7 +122,7 @@ class GameService:
             your_slot=player.slot,
             slots_present=slots_present,
             locked=locked,
-            state=game.state,
+            state=redact_state(game.state, player.slot),
             victory=victory_status(game.state),
         )
 
@@ -166,14 +171,22 @@ class GameService:
         )
 
     def get_replay(self, player: PlayerRecord, turn: int) -> TurnReplay:
-        """Return the resolved replay for ``turn`` of ``player``'s game."""
+        """Return ``player``'s fog-filtered replay for ``turn`` (SPEC §9, §16.2).
+
+        The viewer sees the resulting state with hidden enemy units removed and
+        only the events they could witness — combat and movement on hexes they can
+        see, plus anything involving their own units.
+        """
         record = self._repo.get_turn(player.game_id, turn)
         if record is None:
             raise ReplayNotFound(f"game {player.game_id} has no resolved turn {turn}")
+        viewer = player.slot
+        events = _EVENTS.validate_python(record.events)
+        witnessed = filter_events(events, record.state_after, viewer)
         return TurnReplay(
             turn=record.turn,
-            events=record.events,
-            state_after=record.state_after,
+            events=[event.model_dump(mode="json") for event in witnessed],
+            state_after=redact_state(record.state_after, viewer),
             victory=record.victory,
         )
 
