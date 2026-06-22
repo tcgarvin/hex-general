@@ -1,4 +1,50 @@
 # Supabase project config. Migrations live in supabase/migrations/ and are
 # applied to the linked project (ref amhkpsrvjlthmmemwssc) by the
 # `.github/workflows/supabase.yml` workflow on push to main.
+#
+# Everything below the project_id is **local-stack only** (`supabase start`).
+# The deploy workflow runs `supabase db push` (migrations) — it never runs
+# `supabase config push` — so these sections never reach the deployed project.
+# See docs/LOCAL_DEV.md for the laptop playtest loop.
 project_id = "amhkpsrvjlthmmemwssc"
+
+[api]
+# Default local API gateway (Kong). The API + frontend point SUPABASE_URL /
+# VITE_SUPABASE_URL here. Schemas exposed to PostgREST (defaults).
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+# Postgres major version. Matches the deployed project.
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# The frontend (Vite dev server) origin — used as the redirect allow-list.
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+# Asymmetric ES256 JWT signing — keeps the API's identity boundary
+# (api/app/games/auth.py: ES256 via JWKS) byte-identical to the deployed
+# project, so no local-only auth code path is needed. dev-up.sh generates this
+# file (`supabase gen signing-key --algorithm ES256`) before `supabase start`;
+# it is gitignored (a throwaway local key — never commit signing keys).
+signing_keys_path = "./signing_keys.json"
+# Dev profiles sign in with email + password against local Auth (no Google
+# OAuth locally — that is configured only on deployed envs). The seed
+# (api/scripts/seed_dev.py) creates the @hex.local users with email_confirm.
+enable_signup = true
+minimum_password_length = 6
+
+[auth.email]
+enable_signup = true
+# No SMTP locally; seeded users are pre-confirmed via the admin API, so no
+# confirmation email round-trip is needed for playtesting.
+enable_confirmations = false

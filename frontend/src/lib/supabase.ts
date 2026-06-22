@@ -22,3 +22,10 @@ if (!supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Whether the app is pointed at a local `supabase start` stack. Gates the
+ * email/password dev sign-in (local Auth has no Google OAuth — see
+ * docs/LOCAL_DEV.md); the deployed app always uses Google SSO.
+ */
+export const isLocalSupabase = /\/\/(127\.0\.0\.1|localhost)\b/.test(supabaseUrl);

@@ -233,7 +233,7 @@ tests (`tests/engine/test_visibility.py`, `test_fog.py`) plus HTTP integration
 (`tests/games/test_routes.py::test_view_hides_enemy_units_in_the_fog`,
 `::test_replay_hides_enemy_units_and_keeps_economy_private`).
 
-## Phase 7 — Frontend foundation: lobby, accounts & local dev
+## Phase 7 — Frontend foundation: lobby, accounts & local dev ✅ done
 
 **Goal:** an authenticated, live-updating game context for every later phase to
 build on, plus a working laptop playtest loop. **Re-scaffolds the frontend as a
@@ -242,7 +242,8 @@ Vite SPA** (decision 6) — replacing the create-next-app boilerplate — adds
 up **local Supabase** so a dev can play a full match offline. See
 [`FRONTEND.md`](./FRONTEND.md) for personas, journeys, and page structure.
 
-**Progress — backend slice ✅ shipped & live; Slice 2 (Vite SPA) ✅ shipped.** The
+**Progress — Phase 7 ✅ done.** Backend slice shipped & live; Slice 2 (Vite SPA)
+shipped; Slice 3 (local stack + seed) shipped. The
 API validates the Supabase JWT (ES256 via the project JWKS) at the boundary and
 identifies callers by `user_id`; `players` gained `user_id` and the opaque
 `token`/`X-Player-Token` retired; `games` gained an `invite_token`; create/join
@@ -252,8 +253,11 @@ the dispatcher; `GET /me` reports the caller's id + dev role; and the dev role +
 **Vite + React + TS + Tailwind v4 SPA** (React Router) with Supabase-Auth/Google
 login, a typed API client generated from the OpenAPI schema, the dispatcher /
 join / game-shell routes with a polling-driven live `GameView`, and the dev profile
-switcher. **Remaining: Slice 3** — the `supabase start` local stack + seed for offline
-laptop playtesting.
+switcher. Slice 3 ships the `supabase start` local stack + seed for offline
+laptop playtesting: `supabase/config.toml` configures local ES256 JWT signing
+keys (so the API's JWKS auth boundary is unchanged), `api/app/dev_seed.py` seeds
+the `@hex.local` dev accounts, and `scripts/dev-up.sh` / `dev-down.sh` bring the
+stack up/down and wire the env files. See [`LOCAL_DEV.md`](./LOCAL_DEV.md).
 
 - **Vite + React + TS + Tailwind v4 SPA** with client-side routing (login /
   dispatcher / join / game shell); `frontend.yml` builds a static bundle, deployed

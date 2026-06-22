@@ -12,6 +12,11 @@ export interface AuthState {
   loading: boolean;
   /** Begin the Google OAuth flow; returns to `redirectPath` after sign-in. */
   signInWithGoogle: (redirectPath?: string) => Promise<void>;
+  /**
+   * Sign in with email + password against local Auth (dev playtesting only —
+   * the deployed app uses Google SSO). See docs/LOCAL_DEV.md.
+   */
+  signInWithPassword: (email: string, password: string) => Promise<void>;
   /** Sign out and clear the local session. */
   signOut: () => Promise<void>;
 }

@@ -31,12 +31,18 @@ infra/setup-gcp.sh      One-time GCP provisioning (WIF, deployer/runtime SAs, Ar
 
 ## Local development
 
-### Frontend
+To run the full stack on a laptop and play a match offline (local Supabase +
+seeded dev accounts), see **[`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md)** — `./scripts/dev-up.sh`
+brings up Postgres + Auth, seeds dev accounts, and wires the env files.
+
+Running a tier on its own against existing config:
+
+### Frontend (Vite SPA)
 ```bash
 cd frontend
 npm install
 cp .env.example .env.local   # fill in (values are browser-safe public keys)
-npm run dev                  # http://localhost:3000
+npm run dev                  # http://localhost:5173
 ```
 
 ### API

@@ -17,3 +17,9 @@ venv/
 
 # Vercel
 .vercel
+
+# Local Supabase stack (scripts/dev-up.sh): throwaway ES256 signing key + temp
+# state. Never commit signing keys, even local ones.
+supabase/signing_keys.json
+supabase/.branches/
+supabase/.temp/
