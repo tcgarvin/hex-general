@@ -7,10 +7,10 @@ description: Smoke-test the deployed hex-general stack end to end (browser → C
 
 Runs one pass of checks against the **live** stack and reports pass/fail per
 check. Built to catch the failure classes that local checks (pytest, mypy,
-`next build`) can't see because they only appear after deploy:
+`vite build`) can't see because they only appear after deploy:
 
 - the API 500ing because a new table lacks a `service_role` GRANT
-- the frontend fetching a relative `/stats` because an unset `NEXT_PUBLIC_` var
+- the frontend bundle missing the absolute API URL because an unset `VITE_` var
   inlined as `""` (`??` doesn't fall back on empty string — use `||`)
 
 ## How to run
@@ -38,8 +38,8 @@ Defaults: `HEX_API_URL=https://hex-api-qfzj5tg56a-uc.a.run.app`,
 4. CORS: `/stats` echoes `Access-Control-Allow-Origin` for the web origin
 5. CORS: a disallowed origin gets **no** ACAO header
 6. The frontend `/stats` page returns 200
-7. The frontend JS bundle fetches an **absolute** API URL, not a relative
-   `fetch("/stats")`
+7. The frontend `/assets/index-<hash>.js` bundle references the **absolute**
+   API host (proves `VITE_API_URL` was inlined, not empty)
 
 ## Interpreting failures
 
@@ -49,8 +49,8 @@ Defaults: `HEX_API_URL=https://hex-api-qfzj5tg56a-uc.a.run.app`,
   `gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="hex-api" AND severity>=ERROR' --project=hex-general --freshness=10m`
 - **Check 4/5 fail:** the CORS `allow_origin_regex` in `api/app/config.py`
   doesn't match the real web origin (or matches too much).
-- **Check 7 fails (relative fetch):** `NEXT_PUBLIC_API_URL` inlined empty;
-  ensure `src/lib/api.ts` uses `||` (not `??`) for the default. After a
+- **Check 7 fails (no absolute host):** `VITE_API_URL` inlined empty; ensure
+  `src/lib/api/client.ts` uses `||` (not `??`) for the default. After a
   frontend fix, the Vercel CDN may serve the old bundle briefly.
 
 When a check fails, fix the root cause and re-run; don't paper over it.

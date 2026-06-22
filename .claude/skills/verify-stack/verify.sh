@@ -53,20 +53,24 @@ echo "[web] /stats page & bundle"
 code=$(curl -fsS -o /dev/null -w '%{http_code}' "$WEB/stats" 2>/dev/null)
 [ "$code" = "200" ] && pass "$WEB/stats -> 200" || bad "$WEB/stats -> ${code:-<error>}"
 
+# Vite SPA: index.html (served for every route via the SPA rewrite) loads
+# /assets/index-<hash>.js. The build inlines VITE_API_URL as a string literal, so
+# the absolute API host must appear in the bundle. If it does not, VITE_API_URL
+# was inlined empty (use || not ?? in src/lib/api/client.ts) or the build is stale.
 html=$(curl -fsS "$WEB/stats" 2>/dev/null)
-chunks=$(echo "$html" | grep -oE '/_next/static/chunks/[^"]+\.js' | sort -u)
-found_rel=0; found_abs=0
-for c in $chunks; do
-  body=$(curl -fsS "$WEB$c" 2>/dev/null)
-  echo "$body" | grep -q 'fetch("/stats")' && found_rel=1
+assets=$(echo "$html" | grep -oE '/assets/[^"]+\.js' | sort -u)
+found_abs=0; got_bundle=0
+for a in $assets; do
+  body=$(curl -fsS "$WEB$a" 2>/dev/null) || continue
+  got_bundle=1
   echo "$body" | grep -qF "$API_HOST" && found_abs=1
 done
-if [ "$found_rel" = "1" ]; then
-  bad "bundle uses relative fetch(\"/stats\") — NEXT_PUBLIC_API_URL inlined empty; use || not ?? in src/lib/api.ts"
-elif [ "$found_abs" = "1" ]; then
+if [ "$found_abs" = "1" ]; then
   pass "bundle references the absolute API host ($API_HOST)"
+elif [ "$got_bundle" = "1" ]; then
+  bad "bundle does not reference $API_HOST — VITE_API_URL inlined empty? use || not ?? in src/lib/api/client.ts"
 else
-  bad "could not find the /stats fetch in the bundle (chunk names changed? inspect manually)"
+  bad "could not load any /assets/*.js bundle from $WEB (asset names changed? inspect manually)"
 fi
 
 echo
