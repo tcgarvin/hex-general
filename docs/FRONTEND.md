@@ -128,6 +128,11 @@ stack or configuring Google OAuth.
   The path exists everywhere; non-devs are rejected. **Shipped** (backend slice).
 - **Env prefix:** `NEXT_PUBLIC_` → `VITE_` (Vite inlines `VITE_`-prefixed vars).
   The `||`-not-`??` default rule (CLAUDE.md) still applies — unset vars inline as
-  `""`.
+  `""`. **Shipped** (Slice 2).
+- **Vite SPA re-scaffold:** the create-next-app boilerplate is replaced by a Vite +
+  React + TS + Tailwind v4 SPA (React Router); login/dispatcher/join/game-shell +
+  `/stats`, a typed API client (`openapi-fetch` over generated types), polling game
+  view, and the dev profile switcher (gated by `GET /me`'s `is_dev`). **Shipped**
+  (Slice 2).
 - **Local dev:** Phase 7 now explicitly owns the `supabase start` laptop loop, not
-  just the deployed path.
+  just the deployed path. **Remaining** (Slice 3).

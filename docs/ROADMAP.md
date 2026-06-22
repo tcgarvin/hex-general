@@ -242,14 +242,18 @@ Vite SPA** (decision 6) — replacing the create-next-app boilerplate — adds
 up **local Supabase** so a dev can play a full match offline. See
 [`FRONTEND.md`](./FRONTEND.md) for personas, journeys, and page structure.
 
-**Progress — backend slice ✅ shipped & live** (the auth/account/dispatcher bullets
-below; the frontend re-scaffold and local-dev loop remain): the API now validates
-the Supabase JWT (ES256 via the project JWKS) at the boundary and identifies callers
-by `user_id`; `players` gained `user_id` and the opaque `token`/`X-Player-Token`
-retired; `games` gained an `invite_token`; create/join enforce **one active game per
-user** and invite-gated joins; `GET /games/active` is the dispatcher; and the dev
-role + `X-Dev-Profile` impersonation (below) is enforced. Remaining work splits into
-**Slice 2** (Vite SPA re-scaffold) and **Slice 3** (`supabase start` local loop).
+**Progress — backend slice ✅ shipped & live; Slice 2 (Vite SPA) ✅ shipped.** The
+API validates the Supabase JWT (ES256 via the project JWKS) at the boundary and
+identifies callers by `user_id`; `players` gained `user_id` and the opaque
+`token`/`X-Player-Token` retired; `games` gained an `invite_token`; create/join
+enforce **one active game per user** and invite-gated joins; `GET /games/active` is
+the dispatcher; `GET /me` reports the caller's id + dev role; and the dev role +
+`X-Dev-Profile` impersonation (below) is enforced. The frontend is re-scaffolded as a
+**Vite + React + TS + Tailwind v4 SPA** (React Router) with Supabase-Auth/Google
+login, a typed API client generated from the OpenAPI schema, the dispatcher /
+join / game-shell routes with a polling-driven live `GameView`, and the dev profile
+switcher. **Remaining: Slice 3** — the `supabase start` local stack + seed for offline
+laptop playtesting.
 
 - **Vite + React + TS + Tailwind v4 SPA** with client-side routing (login /
   dispatcher / join / game shell); `frontend.yml` builds a static bundle, deployed

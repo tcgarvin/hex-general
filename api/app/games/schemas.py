@@ -63,6 +63,17 @@ class PlayerCredentials(BaseModel):
     invite_token: str
 
 
+class MeView(BaseModel):
+    """The authenticated caller's own identity and dev role.
+
+    Backs the frontend dev profile switcher: ``is_dev`` decides whether the switcher
+    is shown, and reflects the *real* account (impersonation is not applied).
+    """
+
+    user_id: str
+    is_dev: bool
+
+
 class ActiveGame(BaseModel):
     """The game a user is currently in (the dispatcher's redirect target)."""
 

@@ -5,7 +5,10 @@ from supabase import Client
 from app import __version__
 from app.config import get_settings
 from app.db import get_supabase_client
+from app.games.auth import AuthIdentity, is_dev
+from app.games.routes import real_identity
 from app.games.routes import router as games_router
+from app.games.schemas import MeView
 from app.stats import count_active_users, count_games
 
 app = FastAPI(title="Hex General API", version=__version__)
@@ -30,6 +33,16 @@ def health() -> dict[str, str]:
 def version() -> dict[str, str]:
     """Return the running API version."""
     return {"version": __version__}
+
+
+@app.get("/me")
+def me(identity: AuthIdentity = Depends(real_identity)) -> MeView:
+    """Return the authenticated caller's own identity and dev role.
+
+    Reports the *real* account (dev impersonation is not applied), so the frontend
+    dev switcher stays visible for a dev even while they act as another user.
+    """
+    return MeView(user_id=identity.user_id, is_dev=is_dev(identity.user_id))
 
 
 @app.get("/stats")

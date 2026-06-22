@@ -56,15 +56,14 @@ def get_service(repo: GameRepo = Depends(get_repo)) -> GameService:
     return GameService(repo)
 
 
-def current_identity(
+def real_identity(
     authorization: str | None = Header(default=None),
-    x_dev_profile: str | None = Header(default=None),
 ) -> AuthIdentity:
-    """Resolve the caller from the Supabase bearer JWT, honoring dev impersonation.
+    """Resolve the *real* authenticated caller from the Supabase bearer JWT.
 
-    401 if the token is missing/malformed/invalid. If ``X-Dev-Profile`` is present
-    the *verified* caller must be a dev (403 otherwise); the effective identity then
-    becomes the named user, so a dev can drive both sides of a game.
+    401 if the token is missing/malformed/invalid. Ignores ``X-Dev-Profile`` — this
+    is the underlying account, so ``GET /me`` can report a dev's own role even while
+    that dev is impersonating someone else via `current_identity`.
     """
     if authorization is None:
         raise HTTPException(status_code=401, detail="missing Authorization header")
@@ -72,10 +71,21 @@ def current_identity(
     if scheme.lower() != "bearer" or not token:
         raise HTTPException(status_code=401, detail="expected a Bearer token")
     try:
-        identity = verify_jwt(token)
+        return verify_jwt(token)
     except AuthError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
+
+def current_identity(
+    identity: AuthIdentity = Depends(real_identity),
+    x_dev_profile: str | None = Header(default=None),
+) -> AuthIdentity:
+    """Resolve the *effective* caller, honoring dev impersonation.
+
+    If ``X-Dev-Profile`` is present the verified caller must be a dev (403 otherwise);
+    the effective identity then becomes the named user, so a dev can drive both sides
+    of a game.
+    """
     if x_dev_profile is not None:
         if not is_dev(identity.user_id):
             raise HTTPException(

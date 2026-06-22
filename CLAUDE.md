@@ -7,14 +7,14 @@ Guidance for working in this repo. See `README.md` for the human overview and `d
 A turn-based hex wargame (planning phase → simultaneous execution). Three deployed tiers:
 
 ```
-Browser ──> Vercel (Next.js, frontend/) ──> Cloud Run (FastAPI, api/) ──> Supabase (Postgres)
+Browser ──> Vercel (Vite SPA, frontend/) ──> Cloud Run (FastAPI, api/) ──> Supabase (Postgres)
 ```
 
 The `api/` service is the real workload: it will host the deterministic execution engine (movement pulses, simultaneous combat, capture/economy). The frontend is the planning + replay UI. Supabase holds game state.
 
 ## Layout
 
-- `frontend/` — Next.js 16 app (has its own `AGENTS.md`/`CLAUDE.md`).
+- `frontend/` — Vite + React + TS SPA (has its own `AGENTS.md`/`CLAUDE.md`).
 - `api/` — FastAPI service, **managed with uv** (not pip).
 - `infra/setup-gcp.sh` — idempotent GCP provisioning (re-run safely).
 - `.github/workflows/` — `frontend.yml`, `api.yml`, `supabase.yml`.
@@ -22,7 +22,7 @@ The `api/` service is the real workload: it will host the deterministic executio
 
 ## Commands
 
-Frontend (`cd frontend`): `npm run dev`, `npm run build`, `npm run lint`.
+Frontend (`cd frontend`): `npm run dev` (Vite, port 5173), `npm run build` (`tsc -b && vite build`), `npm run lint`. After changing API request/response models, regenerate the typed client with `npm run gen:api`.
 
 API (`cd api`): `uv sync`, then `uv run uvicorn app.main:app --reload --port 8080`.
 Before committing api changes, run all four — CI fails otherwise:
@@ -41,15 +41,15 @@ The `api/` engine is a pure, deterministic core. Write it to **trust its own inv
 ## Conventions & gotchas (things that have bitten us)
 
 - **Backend uses uv, never pip.** Deps in `api/pyproject.toml` (`[project.dependencies]` + `[dependency-groups] dev`); Python pinned in `api/.python-version`; lockfile `uv.lock` is committed. The Dockerfile installs via `uv sync --frozen --no-dev`.
-- **Next.js 16 is newer than most training data.** `frontend/AGENTS.md` says to read the bundled docs in `frontend/node_modules/next/dist/docs/` before writing app code. Honor that.
+- **Frontend is a Vite SPA, not Next.js.** Vite + React 19 + React Router v8 + Tailwind v4; no server/SSR, no `next/*`. See `frontend/AGENTS.md`. The API types in `frontend/src/lib/api/schema.d.ts` are generated (`npm run gen:api`) — don't hand-edit; import model types from `@/lib/api/types`.
 - **GCP access is keyless.** Local `gcloud` impersonates `llm-agent-owner@hex-general.iam.gserviceaccount.com` (config `auth/impersonate_service_account`). CI uses Workload Identity Federation. **Never create, download, or commit a service-account JSON key.**
 - **Fresh-project API quirk:** impersonated calls bill quota to `hex-general`, so a GCP API must be enabled there (`gcloud services enable …`) before it works, even for reads. Billing must be linked for Cloud Run / Build / Artifact Registry / Secret Manager.
 - **Secrets are split by purpose:**
   - Deploy-time → GitHub (`production` environment): `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`. Non-secret CI config → GitHub variables: `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`.
   - Runtime → GCP Secret Manager: `supabase-service-role-key`, mounted into Cloud Run.
-- **Supabase key usage:** frontend uses the **publishable** key (`NEXT_PUBLIC_SUPABASE_ANON_KEY`) and is constrained by RLS. The API uses the **service-role** key server-side (bypasses RLS) — it must never reach the browser.
+- **Supabase key usage:** frontend uses the **publishable** key (`VITE_SUPABASE_ANON_KEY`) and is constrained by RLS. The API uses the **service-role** key server-side (bypasses RLS) — it must never reach the browser.
 - **New tables need a `service_role` GRANT.** `service_role` bypasses RLS but still needs table-level privileges, which a migration-created table does **not** get by default — the API will 500 with `permission denied for table …`. Add `grant select, insert, update, delete on table public.<t> to service_role;` in the migration.
-- **`NEXT_PUBLIC_` defaults: use `||`, not `??`.** The bundler inlines an unset `NEXT_PUBLIC_` var as `""`, and `??` only falls back on null/undefined — so `??` leaves an empty string and the value silently breaks. Use `||` for env-var defaults in frontend code.
+- **`VITE_` defaults: use `||`, not `??`.** Vite inlines an unset `VITE_` var as `""`, and `??` only falls back on null/undefined — so `??` leaves an empty string and the value silently breaks. Use `||` for env-var defaults in frontend code. (Browser config is `VITE_`-prefixed and read via `import.meta.env`.)
 - **Deploys are path-filtered.** Touching `api/**` deploys the API; `frontend/**` deploys the frontend. `supabase.yml` only fires on `supabase/**`.
 - **Smoke-test a deploy** with the `verify-stack` skill (`.claude/skills/verify-stack/`) — it checks the full browser → Cloud Run → Supabase chain and catches the two gotchas above.
 

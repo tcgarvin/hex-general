@@ -1,0 +1,198 @@
+import { useState } from "react";
+import { Navigate, useParams } from "react-router";
+
+import { useAuth } from "@/auth/useAuth";
+import { Button, ErrorBanner } from "@/components/ui";
+import { GameProvider } from "@/game/GameProvider";
+import { useGame } from "@/game/useGame";
+import { api } from "@/lib/api/client";
+import { describeApiError } from "@/lib/api/errors";
+import { SLOTS, type GameView } from "@/lib/api/types";
+
+/**
+ * Persistent game shell (journey J3). The polling GameProvider lives here and every
+ * later phase mounts inside: Phase 7 renders a status dashboard (turn, slots, lock
+ * state, share link, your-move/waiting banner), Phase 8 the board, Phase 9 planning.
+ */
+export function GameShell() {
+  const { id } = useParams<{ id: string }>();
+  if (id === undefined) {
+    return <Navigate to="/" replace />;
+  }
+  return (
+    <GameProvider gameId={id}>
+      <Dashboard />
+    </GameProvider>
+  );
+}
+
+function Dashboard() {
+  const { view, refresh } = useGame();
+  const { signOut } = useAuth();
+
+  return (
+    <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Game {view.game_id.slice(0, 8)}</h1>
+          <p className="text-sm text-zinc-400">
+            Turn {view.turn} · {view.status} · you are{" "}
+            <span className="font-medium text-zinc-200">{view.your_slot}</span>
+          </p>
+        </div>
+        <Button variant="ghost" onClick={() => void signOut()}>
+          Sign out
+        </Button>
+      </header>
+
+      <StatusBanner view={view} onLocked={refresh} />
+      <Slots view={view} />
+      {view.invite_token !== null && <ShareInvite view={view} />}
+
+      <p className="mt-auto text-xs text-zinc-600">
+        Board, planning, and replay arrive in Phases 8–10. The view above refreshes
+        live as the other player acts.
+      </p>
+    </div>
+  );
+}
+
+/** The headline state: lobby / your-move / waiting / decided. */
+function StatusBanner({
+  view,
+  onLocked,
+}: {
+  view: GameView;
+  onLocked: () => void;
+}) {
+  if (view.victory.reason !== "ongoing") {
+    const outcome =
+      view.victory.winner === null
+        ? "Draw."
+        : view.victory.winner === view.your_slot
+          ? "You win!"
+          : "You lose.";
+    return (
+      <Panel tone="accent">
+        Game over — {outcome} ({view.victory.reason.replace("_", " ")})
+      </Panel>
+    );
+  }
+
+  if (view.status === "lobby") {
+    return <Panel>Waiting for an opponent to join. Share the invite below.</Panel>;
+  }
+
+  const youLocked = view.locked[view.your_slot] === true;
+  if (!youLocked) {
+    return <YourMove view={view} onLocked={onLocked} />;
+  }
+  return <Panel>Orders locked. Waiting on the other player…</Panel>;
+}
+
+/** Your-move banner with a placeholder "lock turn" action (planning UI is Phase 9). */
+function YourMove({ view, onLocked }: { view: GameView; onLocked: () => void }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function lockTurn() {
+    setSubmitting(true);
+    setError(null);
+    const { error: apiError } = await api.POST("/games/{game_id}/orders", {
+      params: { path: { game_id: view.game_id } },
+      body: { orders: [], recruitments: [] },
+    });
+    setSubmitting(false);
+    if (apiError) {
+      setError(describeApiError(apiError));
+      return;
+    }
+    onLocked();
+  }
+
+  return (
+    <Panel tone="accent">
+      <div className="flex flex-col gap-3">
+        <span>It&apos;s your move.</span>
+        <Button onClick={() => void lockTurn()} disabled={submitting}>
+          {submitting ? "Locking…" : "Lock turn (no orders)"}
+        </Button>
+        {error !== null && <ErrorBanner message={error} />}
+      </div>
+    </Panel>
+  );
+}
+
+/** Per-slot presence + lock state. */
+function Slots({ view }: { view: GameView }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {SLOTS.map((slot) => {
+        const present = view.slots_present.includes(slot);
+        const locked = view.locked[slot] === true;
+        return (
+          <div
+            key={slot}
+            className="rounded-lg border border-zinc-800 p-4 text-sm"
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-medium capitalize">{slot}</span>
+              {slot === view.your_slot && (
+                <span className="text-xs text-indigo-400">you</span>
+              )}
+            </div>
+            <p className="mt-1 text-zinc-400">
+              {present ? (locked ? "locked in" : "planning") : "open slot"}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Shareable invite link, shown while a slot is still open. */
+function ShareInvite({ view }: { view: GameView }) {
+  const [copied, setCopied] = useState(false);
+  const link = `${window.location.origin}/join/${view.game_id}#invite=${view.invite_token}`;
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-zinc-800 p-4">
+      <span className="text-sm font-medium text-zinc-300">Invite link</span>
+      <code className="overflow-x-auto rounded bg-zinc-900 px-3 py-2 text-xs text-zinc-400">
+        {link}
+      </code>
+      <Button
+        variant="ghost"
+        onClick={() => {
+          navigator.clipboard.writeText(link).then(
+            () => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            },
+            () => setCopied(false),
+          );
+        }}
+      >
+        {copied ? "Copied!" : "Copy link"}
+      </Button>
+    </div>
+  );
+}
+
+/** Simple highlighted panel. */
+function Panel({
+  children,
+  tone = "neutral",
+}: {
+  children: React.ReactNode;
+  tone?: "neutral" | "accent";
+}) {
+  const styles =
+    tone === "accent"
+      ? "border-indigo-700 bg-indigo-950/40 text-indigo-100"
+      : "border-zinc-800 bg-zinc-900/40 text-zinc-300";
+  return (
+    <div className={`rounded-lg border p-4 text-sm ${styles}`}>{children}</div>
+  );
+}

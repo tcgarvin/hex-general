@@ -15,9 +15,10 @@ import pytest
 from fastapi import Header, HTTPException
 from fastapi.testclient import TestClient
 
+import app.main as main_module
 from app.games.auth import AuthIdentity
 from app.games.repo import GameRepo
-from app.games.routes import current_identity, get_repo
+from app.games.routes import current_identity, get_repo, real_identity
 from app.main import app
 from games.fake_repo import FakeGameRepo
 
@@ -37,6 +38,7 @@ def client() -> Iterator[TestClient]:
     repo: GameRepo = FakeGameRepo()
     app.dependency_overrides[get_repo] = lambda: repo
     app.dependency_overrides[current_identity] = _fake_identity
+    app.dependency_overrides[real_identity] = _fake_identity
     try:
         yield TestClient(app)
     finally:
@@ -129,6 +131,24 @@ def test_replay_hides_enemy_units_and_keeps_economy_private(client: TestClient) 
         e["player"] for e in replay["events"] if e["kind"] == "economy_resolved"
     }
     assert economy_players <= {"blue"}  # the enemy's economy never leaks
+
+
+def test_me_reports_identity_and_dev_role(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(main_module, "is_dev", lambda user_id: user_id == BLUE_USER)
+    assert client.get("/me", headers=_as(BLUE_USER)).json() == {
+        "user_id": BLUE_USER,
+        "is_dev": True,
+    }
+    assert client.get("/me", headers=_as(RED_USER)).json() == {
+        "user_id": RED_USER,
+        "is_dev": False,
+    }
+
+
+def test_me_requires_auth(client: TestClient) -> None:
+    assert client.get("/me").status_code == 401  # no X-Test-User
 
 
 def test_dispatcher_reports_active_game(client: TestClient) -> None:

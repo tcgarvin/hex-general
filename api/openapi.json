@@ -1,0 +1,1376 @@
+{
+  "components": {
+    "schemas": {
+      "ActiveGame": {
+        "description": "The game a user is currently in (the dispatcher's redirect target).",
+        "properties": {
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "game_id",
+          "slot"
+        ],
+        "title": "ActiveGame",
+        "type": "object"
+      },
+      "Axial": {
+        "description": "An axial hex coordinate.\n\n``q`` is the column-ish axis and ``r`` the row-ish axis. Frozen so two\ncoordinates with the same values are equal and hashable.",
+        "properties": {
+          "q": {
+            "title": "Q",
+            "type": "integer"
+          },
+          "r": {
+            "title": "R",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "q",
+          "r"
+        ],
+        "title": "Axial",
+        "type": "object"
+      },
+      "BarrageOrder": {
+        "description": "Artillery fires at a visible target hex within range (SPEC \u00a77.2).",
+        "properties": {
+          "kind": {
+            "const": "barrage",
+            "default": "barrage",
+            "title": "Kind",
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "target"
+        ],
+        "title": "BarrageOrder",
+        "type": "object"
+      },
+      "CreateGameRequest": {
+        "additionalProperties": false,
+        "description": "Body for ``POST /games``: which authored scenario to instantiate.",
+        "properties": {
+          "scenario": {
+            "default": "twin_rivers",
+            "title": "Scenario",
+            "type": "string"
+          }
+        },
+        "title": "CreateGameRequest",
+        "type": "object"
+      },
+      "DispatchView": {
+        "description": "Where login should send a user: their active game, or nothing (start screen).\n\n``active_game`` is ``None`` with exactly one meaning \u2014 the user holds no slot in\nany un-finished game, so the frontend shows the create / paste-join screen.",
+        "properties": {
+          "active_game": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActiveGame"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "active_game"
+        ],
+        "title": "DispatchView",
+        "type": "object"
+      },
+      "GameConfig": {
+        "description": "Per-game limits and victory config (SPEC \u00a76.1, \u00a76.4, \u00a715).",
+        "properties": {
+          "muster_bank_cap": {
+            "default": 20,
+            "title": "Muster Bank Cap",
+            "type": "integer"
+          },
+          "unit_cap": {
+            "default": 20,
+            "title": "Unit Cap",
+            "type": "integer"
+          },
+          "victory": {
+            "$ref": "#/components/schemas/VictoryConfig"
+          }
+        },
+        "required": [
+          "victory"
+        ],
+        "title": "GameConfig",
+        "type": "object"
+      },
+      "GameMap": {
+        "description": "Static board geometry: dimensions and the terrain of every hex.\n\nHolds only content that does not change during play. Dynamic facts\n(settlement control, unit positions) live on `GameState`, not here.",
+        "properties": {
+          "height": {
+            "exclusiveMinimum": 0.0,
+            "title": "Height",
+            "type": "integer"
+          },
+          "hexes": {
+            "items": {
+              "$ref": "#/components/schemas/Hex"
+            },
+            "title": "Hexes",
+            "type": "array"
+          },
+          "width": {
+            "exclusiveMinimum": 0.0,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "hexes"
+        ],
+        "title": "GameMap",
+        "type": "object"
+      },
+      "GameState": {
+        "additionalProperties": false,
+        "description": "The canonical, serializable state of one game at one turn.\n\nThis is the blob stored in the ``games`` row and the value threaded through\nthe engine: ``resolve_turn(state, orders) -> (new_state, event_log)``.\nLookups (`hex_at`, `unit_at`, `settlement_at`) are convenience helpers built\non demand; the stored representation is plain lists so it serializes cleanly\n(axial coords can't be JSON object keys).",
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/GameConfig"
+          },
+          "map": {
+            "$ref": "#/components/schemas/GameMap"
+          },
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/Player"
+            },
+            "title": "Players",
+            "type": "array"
+          },
+          "settlements": {
+            "items": {
+              "$ref": "#/components/schemas/Settlement"
+            },
+            "title": "Settlements",
+            "type": "array"
+          },
+          "turn": {
+            "minimum": 0.0,
+            "title": "Turn",
+            "type": "integer"
+          },
+          "units": {
+            "items": {
+              "$ref": "#/components/schemas/Unit"
+            },
+            "title": "Units",
+            "type": "array"
+          }
+        },
+        "required": [
+          "turn",
+          "map",
+          "config"
+        ],
+        "title": "GameState",
+        "type": "object"
+      },
+      "GameView": {
+        "description": "A player's fog-filtered view of a game (SPEC \u00a79).\n\n``state`` is redacted to the caller's perspective: enemy units on hexes the\ncaller cannot see are removed (the map, settlement control, and banks are\npublic in v0.1). ``victory`` is the authoritative global outcome.",
+        "properties": {
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "invite_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invite Token"
+          },
+          "locked": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Locked",
+            "type": "object"
+          },
+          "slots_present": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slots Present",
+            "type": "array"
+          },
+          "state": {
+            "$ref": "#/components/schemas/GameState"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          },
+          "victory": {
+            "$ref": "#/components/schemas/VictoryStatus"
+          },
+          "your_slot": {
+            "title": "Your Slot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "game_id",
+          "status",
+          "turn",
+          "your_slot",
+          "slots_present",
+          "locked",
+          "state",
+          "victory",
+          "invite_token"
+        ],
+        "title": "GameView",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Hex": {
+        "description": "A single map cell: its coordinate, base terrain, and road layer.\n\n``road`` is a layer on top of terrain (SPEC \u00a73.3, \u00a74.1): a unit whose entire\npath follows connected road hexes gets +1 movement. A bridge hex (terrain\n``BRIDGE``) is what a road becomes where it crosses a river (SPEC \u00a73.4).",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "road": {
+            "default": false,
+            "title": "Road",
+            "type": "boolean"
+          },
+          "terrain": {
+            "$ref": "#/components/schemas/Terrain"
+          }
+        },
+        "required": [
+          "coord",
+          "terrain"
+        ],
+        "title": "Hex",
+        "type": "object"
+      },
+      "HoldOrder": {
+        "description": "Do not move; gain a defensive bonus if attacked (SPEC \u00a77.4).",
+        "properties": {
+          "kind": {
+            "const": "hold",
+            "default": "hold",
+            "title": "Kind",
+            "type": "string"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id"
+        ],
+        "title": "HoldOrder",
+        "type": "object"
+      },
+      "JoinGameRequest": {
+        "additionalProperties": false,
+        "description": "Body for ``POST /games/{id}/join``: the invite token from the share link.",
+        "properties": {
+          "invite_token": {
+            "title": "Invite Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invite_token"
+        ],
+        "title": "JoinGameRequest",
+        "type": "object"
+      },
+      "MeView": {
+        "description": "The authenticated caller's own identity and dev role.\n\nBacks the frontend dev profile switcher: ``is_dev`` decides whether the switcher\nis shown, and reflects the *real* account (impersonation is not applied).",
+        "properties": {
+          "is_dev": {
+            "title": "Is Dev",
+            "type": "boolean"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "is_dev"
+        ],
+        "title": "MeView",
+        "type": "object"
+      },
+      "MoveOrder": {
+        "description": "Follow an exact planned path of adjacent hexes (SPEC \u00a77.1).\n\n``path`` is the sequence of hexes to enter, in order, one per movement\npulse. Combat occurs if enemy contact happens; the unit does not reroute if\nblocked.",
+        "properties": {
+          "kind": {
+            "const": "move",
+            "default": "move",
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "items": {
+              "$ref": "#/components/schemas/Axial"
+            },
+            "minItems": 1,
+            "title": "Path",
+            "type": "array"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "path"
+        ],
+        "title": "MoveOrder",
+        "type": "object"
+      },
+      "Player": {
+        "description": "A participant's mutable economy state (SPEC \u00a76).\n\n``bank`` is the muster bank, clamped to 0..`MUSTER_BANK_CAP` (SPEC \u00a76.3,\n\u00a76.4). Settlement control is not duplicated here \u2014 derive it from\n`GameState.settlements` to keep one source of truth.",
+        "properties": {
+          "bank": {
+            "default": 0,
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Bank",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "Player",
+        "type": "object"
+      },
+      "PlayerCredentials": {
+        "description": "Returned on create/join: which slot the caller now holds, and the share link.\n\nIdentity is the Supabase JWT (not returned here); ``invite_token`` lets the\nholder share the open slot.",
+        "properties": {
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "invite_token": {
+            "title": "Invite Token",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "game_id",
+          "slot",
+          "status",
+          "invite_token"
+        ],
+        "title": "PlayerCredentials",
+        "type": "object"
+      },
+      "Recruitment": {
+        "additionalProperties": false,
+        "description": "A planning-phase request to recruit a new unit (SPEC \u00a76.5).\n\nRecruitment is not a per-unit `Order` \u2014 it creates a unit that does not exist\nyet, so it has no ``unit_id``. A request names the owning player, the unit\n``type`` to build, and the friendly-city ``coord`` to deploy it on; the\nrecruitment phase validates affordability, the unit cap, and placement, then\nassigns the new unit's id (SPEC \u00a711.3 Phase 6).",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "owner",
+          "type",
+          "coord"
+        ],
+        "title": "Recruitment",
+        "type": "object"
+      },
+      "RestOrder": {
+        "description": "Do not move; repair HP if undamaged during execution (SPEC \u00a77.3).",
+        "properties": {
+          "kind": {
+            "const": "rest",
+            "default": "rest",
+            "title": "Kind",
+            "type": "string"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id"
+        ],
+        "title": "RestOrder",
+        "type": "object"
+      },
+      "Settlement": {
+        "description": "Dynamic ownership of a settlement hex (SPEC \u00a73.2, \u00a714).\n\nThe settlement's *kind* (town vs city) is the terrain at ``coord`` \u2014\n``Terrain.TOWN``/``Terrain.CITY`` on the map \u2014 not stored here, so there is\none source of truth. This record carries only the part that changes during\nplay: ``controlled_by``, where ``None`` means neutral / uncontrolled (a\nsingle, well-defined meaning). Control changes only via the capture phase\n(SPEC \u00a714.1).",
+        "properties": {
+          "controlled_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Controlled By"
+          },
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          }
+        },
+        "required": [
+          "coord"
+        ],
+        "title": "Settlement",
+        "type": "object"
+      },
+      "SubmitOrdersRequest": {
+        "additionalProperties": false,
+        "description": "Body for ``POST /games/{id}/orders``: a player's full plan for the turn.\n\nBoth lists default to empty: a player may legitimately submit no orders (every\nunit holds) and no recruits. FastAPI parses ``orders`` into the discriminated\n`Order` union, so unknown order shapes are rejected as 422 at the wire.",
+        "properties": {
+          "orders": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "barrage": "#/components/schemas/BarrageOrder",
+                  "hold": "#/components/schemas/HoldOrder",
+                  "move": "#/components/schemas/MoveOrder",
+                  "rest": "#/components/schemas/RestOrder"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MoveOrder"
+                },
+                {
+                  "$ref": "#/components/schemas/BarrageOrder"
+                },
+                {
+                  "$ref": "#/components/schemas/RestOrder"
+                },
+                {
+                  "$ref": "#/components/schemas/HoldOrder"
+                }
+              ]
+            },
+            "title": "Orders",
+            "type": "array"
+          },
+          "recruitments": {
+            "items": {
+              "$ref": "#/components/schemas/Recruitment"
+            },
+            "title": "Recruitments",
+            "type": "array"
+          }
+        },
+        "title": "SubmitOrdersRequest",
+        "type": "object"
+      },
+      "SubmitResult": {
+        "description": "Outcome of submitting orders: always locked; executed iff all players in.",
+        "properties": {
+          "executed": {
+            "title": "Executed",
+            "type": "boolean"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "locked",
+          "executed",
+          "turn",
+          "status"
+        ],
+        "title": "SubmitResult",
+        "type": "object"
+      },
+      "Terrain": {
+        "description": "Terrain of a hex (SPEC \u00a74.1).\n\nTown and City are terrain types in their own right \u2014 a settlement hex *is*\ntown/city terrain, not a marker layered on plains/woods. Their dynamic\nownership is tracked separately by `app.engine.models.Settlement`, but the\nterrain identity, defense bonus, and income all live here. Road, by\ncontrast, is a boolean modifier layered onto terrain (`Hex.road`).",
+        "enum": [
+          "plains",
+          "woods",
+          "hills",
+          "river",
+          "bridge",
+          "town",
+          "city"
+        ],
+        "title": "Terrain",
+        "type": "string"
+      },
+      "TurnReplay": {
+        "description": "A resolved turn's replay: the event log, resulting state, victory snapshot.",
+        "properties": {
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "state_after": {
+            "$ref": "#/components/schemas/GameState"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          },
+          "victory": {
+            "$ref": "#/components/schemas/VictoryStatus"
+          }
+        },
+        "required": [
+          "turn",
+          "events",
+          "state_after",
+          "victory"
+        ],
+        "title": "TurnReplay",
+        "type": "object"
+      },
+      "Unit": {
+        "description": "A single unit instance (SPEC \u00a75).\n\nStatic type stats (move, attack, vision, \u2026) are looked up from\n`app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives\nhere. ``hp`` is clamped to 0..10 (SPEC \u00a75.2); a unit at 0 HP is destroyed.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "hp": {
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Hp",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "owner",
+          "coord",
+          "hp"
+        ],
+        "title": "Unit",
+        "type": "object"
+      },
+      "UnitType": {
+        "description": "The three v0.1 unit types (SPEC \u00a75.1).",
+        "enum": [
+          "infantry",
+          "armor",
+          "artillery"
+        ],
+        "title": "UnitType",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VictoryConfig": {
+        "description": "Scenario-defined victory parameters (SPEC \u00a715).\n\nDefaults match the recommended v0.1 rules: lose at zero controlled cities,\notherwise score settlements at the turn limit (town=1, city=3).",
+        "properties": {
+          "city_elimination": {
+            "default": true,
+            "title": "City Elimination",
+            "type": "boolean"
+          },
+          "city_points": {
+            "default": 3,
+            "title": "City Points",
+            "type": "integer"
+          },
+          "town_points": {
+            "default": 1,
+            "title": "Town Points",
+            "type": "integer"
+          },
+          "turn_limit": {
+            "exclusiveMinimum": 0.0,
+            "title": "Turn Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turn_limit"
+        ],
+        "title": "VictoryConfig",
+        "type": "object"
+      },
+      "VictoryReason": {
+        "description": "Why the game is (not) decided (SPEC \u00a715).",
+        "enum": [
+          "ongoing",
+          "city_elimination",
+          "turn_limit"
+        ],
+        "title": "VictoryReason",
+        "type": "string"
+      },
+      "VictoryStatus": {
+        "additionalProperties": false,
+        "description": "The outcome of a victory check (SPEC \u00a715).\n\n``winner`` is set only on a decisive result; it is ``None`` when the game is\nongoing (``reason == ONGOING``) or drawn (a decided ``reason`` with no single\nwinner). ``eliminated`` lists players controlling zero cities while city\nelimination is in effect. ``scores`` is each player's settlement victory-point\ntotal (\u00a715.2), always computed so a UI can show standings mid-game.",
+        "properties": {
+          "eliminated": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Eliminated",
+            "type": "array"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/VictoryReason"
+          },
+          "scores": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Scores",
+            "type": "object"
+          },
+          "winner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner"
+          }
+        },
+        "required": [
+          "reason",
+          "winner",
+          "eliminated",
+          "scores"
+        ],
+        "title": "VictoryStatus",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Hex General API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/games": {
+      "post": {
+        "description": "Create a game from a scenario and claim its first slot for the caller.",
+        "operationId": "create_game_games_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerCredentials"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Game",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/games/active": {
+      "get": {
+        "description": "Dispatcher: the caller's active game (or none \u2192 start screen).",
+        "operationId": "get_active_game_games_active_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Active Game",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/games/{game_id}": {
+      "get": {
+        "description": "Return the caller's view of the game.",
+        "operationId": "get_game_games__game_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Game",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/games/{game_id}/join": {
+      "post": {
+        "description": "Claim the next open slot in a game, gated by its invite token.",
+        "operationId": "join_game_games__game_id__join_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerCredentials"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Join Game",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/games/{game_id}/orders": {
+      "post": {
+        "description": "Validate and lock the caller's orders; resolve the turn if both are in.",
+        "operationId": "submit_orders_games__game_id__orders_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitOrdersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Orders",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/games/{game_id}/turns/{turn}": {
+      "get": {
+        "description": "Return the resolved replay (event log + state + victory) for a turn.",
+        "operationId": "get_replay_games__game_id__turns__turn__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turn",
+            "required": true,
+            "schema": {
+              "title": "Turn",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TurnReplay"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Replay",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Liveness probe for Cloud Run and uptime checks. No external dependencies.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/me": {
+      "get": {
+        "description": "Return the authenticated caller's own identity and dev role.\n\nReports the *real* account (dev impersonation is not applied), so the frontend\ndev switcher stays visible for a dev even while they act as another user.",
+        "operationId": "me_me_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Me"
+      }
+    },
+    "/stats": {
+      "get": {
+        "description": "Return live game stats sourced from Supabase.\n\nDemonstrates the full browser -> Cloud Run -> Supabase chain: the counts are\nread server-side with the service-role key.",
+        "operationId": "stats_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Stats Stats Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Stats"
+      }
+    },
+    "/version": {
+      "get": {
+        "description": "Return the running API version.",
+        "operationId": "version_version_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Version Version Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Version"
+      }
+    }
+  }
+}
