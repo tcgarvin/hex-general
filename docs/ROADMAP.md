@@ -233,26 +233,45 @@ tests (`tests/engine/test_visibility.py`, `test_fog.py`) plus HTTP integration
 (`tests/games/test_routes.py::test_view_hides_enemy_units_in_the_fog`,
 `::test_replay_hides_enemy_units_and_keeps_economy_private`).
 
-## Phase 7 — Frontend: lobby, identity & foundation
+## Phase 7 — Frontend foundation: lobby, accounts & local dev
 
 **Goal:** an authenticated, live-updating game context for every later phase to
-build on. **Re-scaffolds the frontend as a Vite SPA** (decision 6) — replacing the
-create-next-app boilerplate — and rewires the Vercel deploy + CI accordingly.
+build on, plus a working laptop playtest loop. **Re-scaffolds the frontend as a
+Vite SPA** (decision 6) — replacing the create-next-app boilerplate — adds
+**lightweight SSO accounts** (resolves the auth-depth decision below), and stands
+up **local Supabase** so a dev can play a full match offline. See
+[`FRONTEND.md`](./FRONTEND.md) for personas, journeys, and page structure.
 
-- Vite + React + TS + Tailwind v4 SPA with client-side routing (lobby / board /
-  replay); `frontend.yml` builds a static bundle, deployed to Vercel.
-- Typed API client over Cloud Run: TS types **generated from FastAPI's OpenAPI
-  schema** (single source of truth for `GameState`/`Order`/events), wrapping the
-  `X-Player-Token` header.
-- Identity & onboarding: `POST /games` to create; store the opaque token in
-  localStorage keyed by game; a shareable join link the second browser opens to
-  `POST /games/{id}/join` and claim the open slot.
-- Polling hook on `GET /games/{id}` surfacing `turn`/`status`/`locked[slot]`; an
+- **Vite + React + TS + Tailwind v4 SPA** with client-side routing (login /
+  dispatcher / join / game shell); `frontend.yml` builds a static bundle, deployed
+  to Vercel. Env vars move from `NEXT_PUBLIC_` to `VITE_`.
+- **Accounts via Supabase Auth (Google SSO).** The frontend holds the Supabase
+  session; the API **validates the Supabase JWT** to identify the user (`Authorization:
+  Bearer`). `players` gains `user_id`; the opaque `X-Player-Token` retires to an
+  internal detail. **One active game per user** — login dispatches straight to it.
+- **Auth-aware typed API client:** TS types **generated from FastAPI's OpenAPI
+  schema** (single source of truth for `GameState`/`Order`/events), requests carry
+  the Supabase JWT.
+- **Dispatcher + onboarding:** after login, a user with an active player row lands
+  in their game; otherwise the create / paste-join screen. A shareable invite link
+  (game id + unguessable invite token) opens to log in → claim the open slot.
+- **Polling hook** on `GET /games/{id}` surfacing `turn`/`status`/`locked[slot]`; an
   advance triggers a replay fetch. Game-context provider exposes the current
-  `GameView`, your slot, and lock state to the tree.
+  `GameView`, your slot, and lock state to the tree; the **game shell** renders
+  your-move vs waiting-on-them and is where later phases mount board/planning/replay.
+- **Dev profile switcher** (dev build only): a corner overlay listing seeded
+  identities; pick one → reload authenticated as that user, for solo two-sided
+  playtesting. Backed by a dev-only auth path the deployed API rejects.
+- **Local dev playtesting:** `supabase start` runs the full local stack (Postgres +
+  Auth) from `supabase/config.toml` + migrations; the local API and Vite dev server
+  point at it via env; a seed creates dev users (+ optional starter game). Real
+  Google is configured only on deployed envs — **local playtesting uses dev profiles
+  against local Auth**, so no OAuth setup is needed to play on a laptop.
 
-**Demonstrable:** two browsers create/join the same game and each sees its own
-live `GameView` (turn, slots, lock state) refresh as the other acts — no board yet.
+**Demonstrable:** two identities (dev profiles locally, or two Google logins on the
+deploy) create/join one game and each sees its `GameView` (turn, slots, lock state)
+refresh live as the other acts — no board yet — and a dev can run the whole loop on
+a laptop via `supabase start`.
 
 ## Phase 8 — Frontend: map & state rendering (PixiJS pixel-art)
 
@@ -314,9 +333,13 @@ and there are three real milestones:
 - **P5 — API-playable** (full game via curl, two players)
 - **P10 — browser-playable** (first full match in two browsers)
 
-## Open decision: auth depth
+## Resolved: auth depth
 
-Phase 5 is scoped to lightweight tokens (enough to own orders), and Phase 7 wraps
-them in localStorage + a shareable join link. Real accounts would be a small
-insert at Phase 7 — but the spec's "no live-service" framing suggests keeping it
-minimal for v0.1.
+Phase 5 shipped lightweight opaque tokens (enough to own orders). Phase 7 trades
+the originally-planned localStorage-token + secret-link scheme for **lightweight
+SSO accounts via Supabase Auth (Google)** — the frontend audience is "you +
+recruited friends," and accounts give a clean "log in, land back in your game"
+loop with one active game per user. This adds backend work the v0.1 framing had
+deferred (JWT validation in FastAPI, `players.user_id`), so it is the part of
+Phase 7 most likely to balloon; everything else in the phase is small. Full
+rationale and the page/identity model live in [`FRONTEND.md`](./FRONTEND.md).
