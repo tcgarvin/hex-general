@@ -30,6 +30,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# .env.production holds only public, browser-safe values (committed on purpose so
+# the production build is self-contained); see the file's header.
+!.env.production
 
 # vercel
 .vercel
