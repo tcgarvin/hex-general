@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "supabase/**"
+  workflow_dispatch: {}
 
 jobs:
   migrate:
@@ -18,6 +19,15 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+      # config.toml sets [auth].signing_keys_path for the local stack, and the
+      # CLI parses the whole config (failing if the file is missing) even though
+      # `db push` only pushes migrations and never uses auth signing keys. The
+      # real key is local-only and gitignored, so generate a throwaway one here
+      # purely to satisfy the parser. It is never pushed anywhere.
+      - name: Generate throwaway signing key (config parse only)
+        run: |
+          echo '[]' > supabase/signing_keys.json
+          supabase gen signing-key --algorithm ES256 --append
       - name: Link project
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
         env:
