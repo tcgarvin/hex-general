@@ -35,6 +35,24 @@ Settle these before Phase 1 — they shape every phase.
    terrain underneath. The only dynamic fact is ownership, so `Settlement` is a
    thin control record (`coord`, `controlled_by`) and the kind is read from the
    map terrain — one source of truth. Road stays a boolean layer on `Hex`.
+6. **The frontend is a Vite SPA, not Next.js.** The app is a client-rendered Pixi
+   canvas talking to the external FastAPI API — Next's SSR/RSC/server-actions/
+   image-opt go unused, and SSR actively fights Pixi. Stack: Vite + React + TS +
+   Tailwind v4, client-side routing for lobby/board/replay, deployed to Vercel as
+   a static build. (Replaces the create-next-app scaffold; chosen while the
+   frontend was still empty, so no app code was lost.)
+7. **The board renders in PixiJS with AI-generated pixel art.** A WebGL/Canvas 2D
+   scene via `@pixi/react` v8 (declarative, React 19); no SSR workarounds needed
+   on Vite. Sprites are AI-generated as a fixed-style, fixed-dimension set;
+   **player colour comes from Pixi tinting one base unit sprite** (not per-colour
+   art) and damage is an overlay — keeps the generated set small and consistent.
+   Fog/ZOC/range/path overlays are Pixi graphics layers above the tile layer.
+8. **The client learns turn progress by polling**, not Supabase Realtime.
+   `GET /games/{id}` on an interval; when `turn`/`locked` advances, fetch the
+   replay. One data path (the REST API), no RLS/subscription surface in v0.1.
+9. **Frontend types are generated from the API.** FastAPI's OpenAPI schema is the
+   single source of truth for `GameState`/`Order`/event shapes; TS types are
+   codegen'd so the churning engine can't drift from the client.
 
 ---
 
@@ -215,35 +233,66 @@ tests (`tests/engine/test_visibility.py`, `test_fog.py`) plus HTTP integration
 (`tests/games/test_routes.py::test_view_hides_enemy_units_in_the_fog`,
 `::test_replay_hides_enemy_units_and_keeps_economy_private`).
 
-## Phase 7 — Frontend: map & state rendering
+## Phase 7 — Frontend: lobby, identity & foundation
 
-**Goal:** §16, read-only first.
+**Goal:** an authenticated, live-updating game context for every later phase to
+build on. **Re-scaffolds the frontend as a Vite SPA** (decision 6) — replacing the
+create-next-app boilerplate — and rewires the Vercel deploy + CI accordingly.
 
-- Hex grid render (terrain, settlements, roads, rivers/bridges), your units, fog.
-  Consume the filtered view from Phase 6.
+- Vite + React + TS + Tailwind v4 SPA with client-side routing (lobby / board /
+  replay); `frontend.yml` builds a static bundle, deployed to Vercel.
+- Typed API client over Cloud Run: TS types **generated from FastAPI's OpenAPI
+  schema** (single source of truth for `GameState`/`Order`/events), wrapping the
+  `X-Player-Token` header.
+- Identity & onboarding: `POST /games` to create; store the opaque token in
+  localStorage keyed by game; a shareable join link the second browser opens to
+  `POST /games/{id}/join` and claim the open slot.
+- Polling hook on `GET /games/{id}` surfacing `turn`/`status`/`locked[slot]`; an
+  advance triggers a replay fetch. Game-context provider exposes the current
+  `GameView`, your slot, and lock state to the tree.
 
-**Demonstrable:** look at your board in the browser.
+**Demonstrable:** two browsers create/join the same game and each sees its own
+live `GameView` (turn, slots, lock state) refresh as the other acts — no board yet.
 
-## Phase 8 — Frontend: planning UI
+## Phase 8 — Frontend: map & state rendering (PixiJS pixel-art)
+
+**Goal:** §16, read-only.
+
+- PixiJS scene (`@pixi/react`) laying hexes out from axial `q,r`, pan/zoom with
+  integer scaling for crisp pixels; per-hex hit-testing (clicks → `q,r`) so
+  Phase 9 has its input surface.
+- Terrain/settlement/road/river/bridge tiles + your units, consuming the
+  fog-filtered Phase 6 view (hidden enemy units are simply absent from the payload).
+- AI-generated sprite set (fixed style/dimensions); player colour via Pixi tint,
+  damage as an overlay.
+
+**Demonstrable:** your real board in the browser — terrain, settlements, your
+units, fog.
+
+## Phase 9 — Frontend: planning UI
 
 **Goal:** §16.1.
 
-- Select unit → movement range → assign exact path; assign Barrage/Rest/Hold;
-  predicted pulses; own-unit traffic-conflict warnings; review-all + lock.
-- Submits to Phase 5 endpoints.
+- Select unit → show movement range → assign exact path; assign Barrage/Rest/Hold;
+  recruit at controlled cities; review-all + lock → `POST /games/{id}/orders`.
+- Advisory predictions: predicted pulses, own-unit traffic-conflict warnings,
+  plain-language enemy-ZOC warnings ("may attack, hold, or withdraw; cannot move
+  along the enemy line") and illegal ZOC-to-ZOC flags (§16.1).
+- Overlays (range halo, path, ZOC) as Pixi graphics layers above the tiles.
 
-**Demonstrable:** plan a real turn end-to-end in the browser.
+**Demonstrable:** plan a real turn end-to-end in the browser and lock it in.
 
-## Phase 9 — Frontend: replay
+## Phase 10 — Frontend: replay
 
 **Goal:** §16.2–16.3.
 
-- Step-through of the event log: moves, blocks, traffic jams, combat with the
-  §16.3 explanation text, destructions, captures, economy delta.
+- Step-through of the event log from `GET /games/{id}/turns/{turn}`: moves, blocks,
+  traffic jams, combat with the §16.3 explanation text, destructions, captures,
+  economy delta.
 
 **Milestone — first full playable match in two browsers.**
 
-## Phase 10 — Tuning, scenario polish, success criteria
+## Phase 11 — Tuning, scenario polish, success criteria
 
 **Goal:** §18 / §13.2.
 
@@ -263,10 +312,11 @@ and there are three real milestones:
 
 - **P4 — headless-playable** (engine drives a full game in tests)
 - **P5 — API-playable** (full game via curl, two players)
-- **P9 — browser-playable** (first full match in two browsers)
+- **P10 — browser-playable** (first full match in two browsers)
 
 ## Open decision: auth depth
 
-Phase 5 is scoped to lightweight tokens (enough to own orders). Real accounts
-would be a small insert between P5 and P9 — but the spec's "no live-service"
-framing suggests keeping it minimal for v0.1.
+Phase 5 is scoped to lightweight tokens (enough to own orders), and Phase 7 wraps
+them in localStorage + a shareable join link. Real accounts would be a small
+insert at Phase 7 — but the spec's "no live-service" framing suggests keeping it
+minimal for v0.1.
