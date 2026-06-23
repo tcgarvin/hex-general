@@ -9,6 +9,7 @@ import { useGame } from "@/game/useGame";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 import { SLOTS, type GameView } from "@/lib/api/types";
+import { usePlanning, type Planning } from "@/planning/usePlanning";
 
 /**
  * Persistent game shell (journey J3). The polling GameProvider lives here and every
@@ -30,6 +31,12 @@ export function GameShell() {
 function Dashboard() {
   const { view, refresh } = useGame();
   const { signOut } = useAuth();
+
+  const planning = usePlanning(view.state, view.your_slot, view.turn);
+  const isPlanning =
+    view.status === "active" &&
+    view.victory.reason === "ongoing" &&
+    view.locked[view.your_slot] !== true;
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-6 p-6">
@@ -54,7 +61,11 @@ function Dashboard() {
         </div>
       </header>
 
-      <StatusBanner view={view} onLocked={refresh} />
+      <StatusBanner
+        view={view}
+        planning={isPlanning ? planning : null}
+        onLocked={refresh}
+      />
 
       {view.status === "active" && view.victory.reason === "ongoing" && (
         <ResignControl view={view} onResigned={refresh} />
@@ -62,7 +73,11 @@ function Dashboard() {
 
       {view.status !== "lobby" && (
         <div className="h-[60vh] min-h-80">
-          <Board state={view.state} yourSlot={view.your_slot} />
+          <Board
+            state={view.state}
+            yourSlot={view.your_slot}
+            planning={isPlanning ? planning : undefined}
+          />
         </div>
       )}
 
@@ -70,8 +85,10 @@ function Dashboard() {
       {view.invite_token !== null && <ShareInvite view={view} />}
 
       <p className="mt-auto text-xs text-zinc-600">
-        Read-only board (Phase 8). Planning and replay arrive in Phases 9–10; the
-        view refreshes live as the other player acts.
+        Movement planning (Phase 9, Slice 1): select a unit, click within its
+        range to lay an exact path, then lock. Barrage/Rest/Hold, recruitment, and
+        replay arrive in later slices; the view refreshes live as the other player
+        acts.
       </p>
     </div>
   );
@@ -80,9 +97,11 @@ function Dashboard() {
 /** The headline state: lobby / your-move / waiting / decided. */
 function StatusBanner({
   view,
+  planning,
   onLocked,
 }: {
   view: GameView;
+  planning: Planning | null;
   onLocked: () => void;
 }) {
   if (view.victory.reason !== "ongoing") {
@@ -104,23 +123,40 @@ function StatusBanner({
   }
 
   const youLocked = view.locked[view.your_slot] === true;
-  if (!youLocked) {
-    return <YourMove view={view} onLocked={onLocked} />;
+  if (!youLocked && planning !== null) {
+    return <PlanningPanel view={view} planning={planning} onLocked={onLocked} />;
   }
   return <Panel>Orders locked. Waiting on the other player…</Panel>;
 }
 
-/** Your-move banner with a placeholder "lock turn" action (planning UI is Phase 9). */
-function YourMove({ view, onLocked }: { view: GameView; onLocked: () => void }) {
+/** Format a staged move for the review list, e.g. "armor → (12, 4) · 3 hexes". */
+function describeMove({ unit, path }: Planning["staged"][number]): string {
+  const dest = path[path.length - 1];
+  const hexes = path.length === 1 ? "1 hex" : `${path.length} hexes`;
+  return `${unit.type} → (${dest.q}, ${dest.r}) · ${hexes}`;
+}
+
+/** Your-move planning panel: staged orders + lock (Phase 9, Slice 1). */
+function PlanningPanel({
+  view,
+  planning,
+  onLocked,
+}: {
+  view: GameView;
+  planning: Planning;
+  onLocked: () => void;
+}) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const count = planning.staged.length;
 
   async function lockTurn() {
     setSubmitting(true);
     setError(null);
     const { error: apiError } = await api.POST("/games/{game_id}/orders", {
       params: { path: { game_id: view.game_id } },
-      body: { orders: [], recruitments: [] },
+      body: { orders: planning.orders, recruitments: [] },
     });
     setSubmitting(false);
     if (apiError) {
@@ -133,9 +169,48 @@ function YourMove({ view, onLocked }: { view: GameView; onLocked: () => void }) 
   return (
     <Panel tone="accent">
       <div className="flex flex-col gap-3">
-        <span>It&apos;s your move.</span>
+        <div className="flex items-center justify-between">
+          <span>
+            {count === 0
+              ? "It's your move. Select a unit, then click within its range to plan a move."
+              : `It's your move. ${count} unit${count === 1 ? "" : "s"} ordered.`}
+          </span>
+          {count > 0 && (
+            <button
+              onClick={planning.clearAll}
+              className="rounded-md border border-indigo-700 px-2 py-1 text-xs font-medium text-indigo-200 hover:bg-indigo-900/40"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+
+        {count > 0 && (
+          <ul className="flex flex-col gap-1 text-sm">
+            {planning.staged.map((move) => (
+              <li
+                key={move.unit.id}
+                className="flex items-center justify-between rounded-md bg-indigo-950/50 px-3 py-1.5"
+              >
+                <span className="capitalize">{describeMove(move)}</span>
+                <button
+                  onClick={() => planning.clearOrder(move.unit.id)}
+                  aria-label={`Remove order for ${move.unit.type}`}
+                  className="text-indigo-300 hover:text-white"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
         <Button onClick={() => void lockTurn()} disabled={submitting}>
-          {submitting ? "Locking…" : "Lock turn (no orders)"}
+          {submitting
+            ? "Locking…"
+            : count === 0
+              ? "Lock turn (no orders)"
+              : `Lock ${count} order${count === 1 ? "" : "s"}`}
         </Button>
         {error !== null && <ErrorBanner message={error} />}
       </div>

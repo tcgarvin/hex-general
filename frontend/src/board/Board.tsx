@@ -1,18 +1,23 @@
-// Phase 8, Slice 1: read-only PixiJS board. Renders a fog-filtered GameState as
+// Phase 8 board + Phase 9 planning input. Renders a fog-filtered GameState as
 // flat-colour hex tiles + tinted unit markers, with pan/zoom and click→(q,r)
-// hit-testing (the input surface Phase 9's planner mounts on). No sprites yet —
-// terrain is solid fills (see palette.ts); Slice 2 swaps Graphics for the
-// AI-generated sprite set.
+// hit-testing. When a `planning` controller is supplied (your move), clicks drive
+// unit selection / exact-path building and the board overlays the movement range
+// and staged paths. No sprites yet — terrain is solid fills (see palette.ts);
+// Phase 8 Slice 2 swaps Graphics for the AI-generated sprite set.
 
 import { Application, extend } from "@pixi/react";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
+import { reachableHexes } from "@/planning/reach";
+import type { PlanningController } from "@/planning/usePlanning";
 
 import {
+  AXIAL_DIRECTIONS,
   axialToPixel,
   hexCornerPoints,
+  hexKey,
   mapPixelBounds,
   pixelToAxial,
   type Axial,
@@ -36,15 +41,11 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 const DRAG_THRESHOLD_PX = 4;
 
-// Pointy-top axial neighbour directions, used to wire up the road network.
-const NEIGHBOR_DIRS: readonly Axial[] = [
-  { q: 1, r: 0 },
-  { q: 1, r: -1 },
-  { q: 0, r: -1 },
-  { q: -1, r: 0 },
-  { q: -1, r: 1 },
-  { q: 0, r: 1 },
-];
+// Planning overlay colours (range halo + staged path).
+const RANGE_FILL = 0xffe066;
+const RANGE_ALPHA = 0.16;
+const PATH_COLOR = 0xffe066;
+const PATH_DIM_COLOR = 0x8a8a8a;
 
 const hpStyle = new TextStyle({
   fontFamily: "monospace",
@@ -53,10 +54,6 @@ const hpStyle = new TextStyle({
   fill: 0xffffff,
   stroke: { color: 0x000000, width: 3 },
 });
-
-function hexKey(q: number, r: number): string {
-  return `${q},${r}`;
-}
 
 interface View {
   x: number;
@@ -68,9 +65,11 @@ export interface BoardProps {
   state: GameState;
   /** The viewer's slot; reserved for own-unit emphasis in later slices. */
   yourSlot: string;
+  /** Planning controller, supplied only when it is the viewer's move to plan. */
+  planning?: PlanningController;
 }
 
-export function Board({ state }: BoardProps) {
+export function Board({ state, planning }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -91,6 +90,18 @@ export function Board({ state }: BoardProps) {
     for (const s of settlements) m.set(hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null);
     return m;
   }, [settlements]);
+
+  // --- planning overlays (only when a controller is supplied) ---
+  const selectedUnitId = planning?.selectedUnitId ?? null;
+  const selectedUnit = useMemo(() => {
+    if (selectedUnitId === null) return null;
+    return units.find((u) => u.id === selectedUnitId) ?? null;
+  }, [selectedUnitId, units]);
+
+  const reachable = useMemo(
+    () => (selectedUnit === null ? null : reachableHexes(selectedUnit, hexByKey)),
+    [selectedUnit, hexByKey],
+  );
 
   // Track the wrapper's pixel size so Pixi's canvas matches it.
   useEffect(() => {
@@ -163,12 +174,19 @@ export function Board({ state }: BoardProps) {
     const drag = dragRef.current;
     dragRef.current = null;
     if (drag === null || view === null) return;
-    if (!drag.moved) {
-      const world = screenToWorld(e.clientX, e.clientY, view);
-      const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
-      setSelected(hexByKey.has(hexKey(ax.q, ax.r)) ? ax : null);
+    if (drag.moved) return;
+
+    const world = screenToWorld(e.clientX, e.clientY, view);
+    const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
+    const onMap = hexByKey.has(hexKey(ax.q, ax.r));
+    if (planning !== undefined) {
+      // Planning mode: clicks select units and build paths (off-map is ignored).
+      if (onMap) planning.onHexClick(ax);
+    } else {
+      // Inspect mode: clicks surface hex info.
+      setSelected(onMap ? ax : null);
     }
-  }, [view, screenToWorld, hexByKey]);
+  }, [view, screenToWorld, hexByKey, planning]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     setView((v) => {
@@ -203,7 +221,7 @@ export function Board({ state }: BoardProps) {
       for (const h of hexes) {
         if (!h.road && h.terrain !== "bridge") continue;
         const c = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
-        for (const d of NEIGHBOR_DIRS) {
+        for (const d of AXIAL_DIRECTIONS) {
           const n = hexByKey.get(hexKey(h.coord.q + d.q, h.coord.r + d.r));
           if (n === undefined) continue;
           if (!n.road && n.terrain !== "bridge") continue;
@@ -240,6 +258,59 @@ export function Board({ state }: BoardProps) {
     [selected],
   );
 
+  // Planning layer: range halo for the selected unit, the staged paths (the
+  // selected unit's emphasized), and a ring on the selected unit.
+  const drawPlanning = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      if (planning === undefined) return;
+
+      // movement range halo for the selected unit
+      if (reachable !== null) {
+        for (const key of reachable) {
+          const hex = hexByKey.get(key);
+          if (hex === undefined) continue;
+          const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
+          g.poly(hexCornerPoints(x, y, HEX_SIZE));
+          g.fill({ color: RANGE_FILL, alpha: RANGE_ALPHA });
+        }
+      }
+
+      // staged paths: a polyline from each unit through its planned hexes
+      const unitById = new Map(units.map((u) => [u.id, u] as const));
+      for (const [idStr, path] of Object.entries(planning.paths)) {
+        if (path.length === 0) continue;
+        const unit = unitById.get(Number(idStr));
+        if (unit === undefined) continue;
+        const active = Number(idStr) === planning.selectedUnitId;
+        const color = active ? PATH_COLOR : PATH_DIM_COLOR;
+
+        const start = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
+        g.moveTo(start.x, start.y);
+        for (const step of path) {
+          const p = axialToPixel(step.q, step.r, HEX_SIZE);
+          g.lineTo(p.x, p.y);
+        }
+        g.stroke({ width: active ? 3 : 2, color, alpha: active ? 1 : 0.7 });
+
+        // a node at each waypoint; the destination larger
+        path.forEach((step, i) => {
+          const p = axialToPixel(step.q, step.r, HEX_SIZE);
+          g.circle(p.x, p.y, i === path.length - 1 ? 4 : 2.5);
+          g.fill({ color });
+        });
+      }
+
+      // ring on the selected unit
+      if (selectedUnit !== null) {
+        const { x, y } = axialToPixel(selectedUnit.coord.q, selectedUnit.coord.r, HEX_SIZE);
+        g.poly(hexCornerPoints(x, y, HEX_SIZE));
+        g.stroke({ width: 2.5, color: 0xffffff });
+      }
+    },
+    [planning, reachable, hexByKey, units, selectedUnit],
+  );
+
   return (
     <div
       ref={wrapperRef}
@@ -260,13 +331,14 @@ export function Board({ state }: BoardProps) {
           <pixiContainer x={view.x} y={view.y} scale={view.zoom}>
             <pixiGraphics draw={drawTerrain} />
             <pixiGraphics draw={drawSelection} />
+            <pixiGraphics draw={drawPlanning} />
             {units.map((u) => (
               <UnitMarker key={u.id} unit={u} />
             ))}
           </pixiContainer>
         </Application>
       )}
-      {selected !== null && (
+      {planning === undefined && selected !== null && (
         <HexInfo state={state} selected={selected} />
       )}
     </div>

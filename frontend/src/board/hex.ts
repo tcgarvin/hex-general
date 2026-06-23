@@ -13,6 +13,41 @@ export interface Axial {
   r: number;
 }
 
+// --- Axial topology (orientation-independent; mirrors the engine's adjacency in
+// `api/app/engine/hex_coords.py`). These are about which `q,r` are neighbours,
+// not where they land on screen, so they hold for any render orientation. ---
+
+/** The six axial neighbour offsets, in a fixed order. */
+export const AXIAL_DIRECTIONS: readonly Axial[] = [
+  { q: 1, r: 0 },
+  { q: 1, r: -1 },
+  { q: 0, r: -1 },
+  { q: -1, r: 0 },
+  { q: -1, r: 1 },
+  { q: 0, r: 1 },
+];
+
+/** Stable map key for an axial coord. */
+export function hexKey(q: number, r: number): string {
+  return `${q},${r}`;
+}
+
+/** Whether two axial coords are the same hex. */
+export function axialEqual(a: Axial, b: Axial): boolean {
+  return a.q === b.q && a.r === b.r;
+}
+
+/** The six hexes adjacent to `a`. */
+export function axialNeighbors(a: Axial): Axial[] {
+  return AXIAL_DIRECTIONS.map((d) => ({ q: a.q + d.q, r: a.r + d.r }));
+}
+
+/** Whether `a` and `b` are adjacent (distance 1). */
+export function isAdjacent(a: Axial, b: Axial): boolean {
+  if (axialEqual(a, b)) return false;
+  return AXIAL_DIRECTIONS.some((d) => a.q + d.q === b.q && a.r + d.r === b.r);
+}
+
 const SQRT3 = Math.sqrt(3);
 
 /**
