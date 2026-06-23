@@ -55,7 +55,10 @@ def build(
     }
     if roads is not None:
         scenario["roads"] = roads
-    return load_scenario(scenario)
+    # Engine fixtures author directly in axial topology (each ASCII cell *is* its
+    # axial coord); skip the offset→axial layout conversion the product loader
+    # applies to authored rectangular scenarios.
+    return load_scenario(scenario, offset_layout=False)
 
 
 def at(state: GameState, q: int, r: int) -> int | None:

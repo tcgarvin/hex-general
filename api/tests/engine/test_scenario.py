@@ -69,11 +69,13 @@ def test_happy_path_builds_turn_zero_state() -> None:
     banks = {p.id: p.bank for p in state.players}
     assert banks == {"blue": 0, "red": 3}
 
-    # Settlements auto-created for every town/city hex, owners applied.
+    # Settlements auto-created for every town/city hex, owners applied. Authored
+    # offset cells convert to axial (flat-top odd-q): city (0,0)→(0,0), town
+    # (2,0)→(2,-1).
     by_coord = {s.coord: s.controlled_by for s in state.settlements}
     assert by_coord == {
         Axial(q=0, r=0): "blue",
-        Axial(q=2, r=0): None,
+        Axial(q=2, r=-1): None,
     }
 
     # Units get sequential ids in list order, hp defaults to max.

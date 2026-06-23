@@ -14,10 +14,15 @@ wrong; the loader never returns a partially-valid state.
 
 Coordinate convention
 ---------------------
-Grid row ``r`` (0..height-1) and column ``q`` (0..width-1) map directly onto the
-axial coordinate ``Axial(q=q, r=r)``. This is a parallelogram in axial space,
-matching the ``width``/``height`` + flat-hex-list shape of `GameMap`. In the
-``terrain``/``roads`` grids, ``rows[r][q]`` is the character for hex ``(q, r)``.
+A scenario is authored as a rectangular **offset** grid: ``rows[row][col]`` is the
+character for grid cell ``(col, row)`` (``col`` 0..width-1, ``row`` 0..height-1),
+and ``settlements``/``units`` give their ``q``/``r`` in the same offset space. At
+load we convert each authored cell to canonical **axial** via
+`offset_to_axial` (flat-top odd-q), so the rectangle becomes a rectangular
+*region* of the hex plane — the board renders it as a flat-top rectangle and the
+engine keeps clean axial math. (Pass ``offset_layout=False`` to take the authored
+coords as raw axial unchanged; engine test fixtures use this to build synthetic
+topology directly. See `offset_to_axial`.)
 """
 
 from __future__ import annotations
@@ -27,7 +32,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.engine.hex_coords import Axial, neighbors
+from app.engine.hex_coords import Axial, neighbors, offset_to_axial
 from app.engine.models import (
     GameConfig,
     GameMap,
@@ -154,6 +159,13 @@ class Scenario(BaseModel):
         return value
 
 
+def _authored_axial(col: int, row: int, *, offset_layout: bool) -> Axial:
+    """Map an authored offset cell to canonical axial (or raw axial if disabled)."""
+    if offset_layout:
+        return offset_to_axial(col, row)
+    return Axial(q=col, r=row)
+
+
 def _validate_grid(grid: list[str], width: int, height: int, name: str) -> None:
     """Check a character grid has exactly ``height`` rows of ``width`` chars each."""
     if len(grid) != height:
@@ -167,7 +179,7 @@ def _validate_grid(grid: list[str], width: int, height: int, name: str) -> None:
             )
 
 
-def _build_hexes(scenario: Scenario) -> list[Hex]:
+def _build_hexes(scenario: Scenario, *, offset_layout: bool) -> list[Hex]:
     """Decode the terrain and road grids into `Hex` objects, validating chars."""
     _validate_grid(scenario.terrain, scenario.width, scenario.height, "terrain")
 
@@ -195,7 +207,11 @@ def _build_hexes(scenario: Scenario) -> list[Hex]:
                     )
                 road = road_char == ROAD_CHAR
             hexes.append(
-                Hex(coord=Axial(q=q, r=r), terrain=TERRAIN_CHARS[char], road=road)
+                Hex(
+                    coord=_authored_axial(q, r, offset_layout=offset_layout),
+                    terrain=TERRAIN_CHARS[char],
+                    road=road,
+                )
             )
     return hexes
 
@@ -235,6 +251,8 @@ def _build_settlements(
     scenario: Scenario,
     terrain_by_coord: dict[Axial, Terrain],
     player_ids: set[PlayerId],
+    *,
+    offset_layout: bool,
 ) -> list[Settlement]:
     """Create a `Settlement` for every town/city hex, applying authored owners.
 
@@ -243,7 +261,7 @@ def _build_settlements(
     """
     owners: dict[Axial, PlayerId | None] = {}
     for entry in scenario.settlements:
-        coord = Axial(q=entry.q, r=entry.r)
+        coord = _authored_axial(entry.q, entry.r, offset_layout=offset_layout)
         terrain = terrain_by_coord.get(coord)
         if terrain is None:
             raise ScenarioError(f"settlement at (q={entry.q}, r={entry.r}) is off-map")
@@ -275,13 +293,15 @@ def _build_units(
     scenario: Scenario,
     terrain_by_coord: dict[Axial, Terrain],
     player_ids: set[PlayerId],
+    *,
+    offset_layout: bool,
 ) -> list[Unit]:
     """Build units with sequential ids, validating placement and ownership."""
     units: list[Unit] = []
     occupied: set[Axial] = set()
     for index, entry in enumerate(scenario.units):
         unit_id = index + 1
-        coord = Axial(q=entry.q, r=entry.r)
+        coord = _authored_axial(entry.q, entry.r, offset_layout=offset_layout)
         terrain = terrain_by_coord.get(coord)
         if terrain is None:
             raise ScenarioError(
@@ -310,15 +330,20 @@ def _build_units(
     return units
 
 
-def load_scenario(data: dict[str, object]) -> GameState:
+def load_scenario(data: dict[str, object], *, offset_layout: bool = True) -> GameState:
     """Validate a parsed scenario mapping and build the turn-0 `GameState`.
+
+    Authored coordinates are offset (flat-top odd-q) and converted to canonical
+    axial at load (see the module's *Coordinate convention*). Pass
+    ``offset_layout=False`` to keep authored coords as raw axial — engine test
+    fixtures use this to build synthetic topology directly.
 
     Raises `ScenarioError` (with context) on any structural or semantic problem;
     Pydantic `ValidationError` surfaces malformed field types/shapes.
     """
     scenario = Scenario.model_validate(data)
 
-    hexes = _build_hexes(scenario)
+    hexes = _build_hexes(scenario, offset_layout=offset_layout)
     _validate_river_bridges(hexes)
 
     terrain_by_coord = {h.coord: h.terrain for h in hexes}
@@ -326,8 +351,12 @@ def load_scenario(data: dict[str, object]) -> GameState:
     if len(player_ids) != len(scenario.players):
         raise ScenarioError("duplicate player ids in roster")
 
-    settlements = _build_settlements(scenario, terrain_by_coord, player_ids)
-    units = _build_units(scenario, terrain_by_coord, player_ids)
+    settlements = _build_settlements(
+        scenario, terrain_by_coord, player_ids, offset_layout=offset_layout
+    )
+    units = _build_units(
+        scenario, terrain_by_coord, player_ids, offset_layout=offset_layout
+    )
     players = [Player(id=p.id, bank=p.bank) for p in scenario.players]
 
     return GameState(

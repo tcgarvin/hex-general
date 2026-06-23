@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useParams } from "react-router";
 
 import { useAuth } from "@/auth/useAuth";
+import { Board } from "@/board/Board";
 import { Button, ErrorBanner } from "@/components/ui";
 import { GameProvider } from "@/game/GameProvider";
 import { useGame } from "@/game/useGame";
@@ -31,7 +32,7 @@ function Dashboard() {
   const { signOut } = useAuth();
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
+    <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-6 p-6">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold">Game {view.game_id.slice(0, 8)}</h1>
@@ -46,12 +47,19 @@ function Dashboard() {
       </header>
 
       <StatusBanner view={view} onLocked={refresh} />
+
+      {view.status !== "lobby" && (
+        <div className="h-[60vh] min-h-80">
+          <Board state={view.state} yourSlot={view.your_slot} />
+        </div>
+      )}
+
       <Slots view={view} />
       {view.invite_token !== null && <ShareInvite view={view} />}
 
       <p className="mt-auto text-xs text-zinc-600">
-        Board, planning, and replay arrive in Phases 8–10. The view above refreshes
-        live as the other player acts.
+        Read-only board (Phase 8). Planning and replay arrive in Phases 9–10; the
+        view refreshes live as the other player acts.
       </p>
     </div>
   );

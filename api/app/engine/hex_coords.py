@@ -5,8 +5,11 @@ math that is awkward in axial space (distance, and later line-of-sight). Both
 coordinate types are frozen Pydantic models so they are hashable — usable as
 ``dict``/``set`` keys at runtime — while still serializing cleanly to JSON.
 
-Orientation is pointy-top; the six neighbour directions are fixed and ordered,
-which matters because deterministic execution depends on stable ordering.
+The axial topology is **orientation-agnostic** — the six neighbour directions are
+a fixed, ordered set (stable ordering matters: deterministic execution depends on
+it), and *rendering* chooses how they sit on screen. The frontend draws them
+**flat-top** (`hex.ts`), and authored grids enter via `offset_to_axial` (flat-top
+odd-q); none of that changes the math here.
 """
 
 from __future__ import annotations
@@ -41,9 +44,10 @@ class Cube(BaseModel):
     z: int
 
 
-# Pointy-top neighbour offsets in axial space, in a fixed clockwise-ish order.
+# The six neighbour offsets in axial space, in a fixed clockwise-ish order.
 # Index this list to refer to a specific direction; the order is load-bearing
-# for deterministic tie-breaking later in the engine.
+# for deterministic tie-breaking later in the engine. Which screen direction each
+# offset points is a render-time choice (the board draws them flat-top).
 AXIAL_DIRECTIONS: tuple[Axial, ...] = (
     Axial(q=1, r=0),
     Axial(q=1, r=-1),
@@ -52,6 +56,24 @@ AXIAL_DIRECTIONS: tuple[Axial, ...] = (
     Axial(q=-1, r=1),
     Axial(q=0, r=1),
 )
+
+
+def offset_to_axial(col: int, row: int) -> Axial:
+    """Convert authored offset ``(col, row)`` grid coords to canonical axial.
+
+    Scenarios are authored as a rectangular character grid; internally we store
+    **axial** so the engine's distance/LOS/ZOC/movement math stays clean. This is
+    the *only* boundary that does the conversion (the renderer does the matching
+    flat-top axial→pixel layout), so a rectangular authored grid becomes a
+    rectangular *region* of the hex plane rather than a parallelogram.
+
+    Flat-top, **odd-q** offset (redblob's ``qoffset``, ODD): odd columns are
+    pushed half a hex down. Authored grid-neighbours map onto the six
+    `AXIAL_DIRECTIONS`, so adjacency authored in the grid is preserved exactly.
+    """
+    q = col
+    r = row - (col - (col & 1)) // 2
+    return Axial(q=q, r=r)
 
 
 def to_cube(a: Axial) -> Cube:
