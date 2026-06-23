@@ -10,7 +10,7 @@ import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
-import { reachableHexes } from "@/planning/reach";
+import { reachableContinuations } from "@/planning/reach";
 import type { PlanningController } from "@/planning/usePlanning";
 
 import {
@@ -41,11 +41,14 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 const DRAG_THRESHOLD_PX = 4;
 
-// Planning overlay colours (range halo + staged path).
-const RANGE_FILL = 0xffe066;
-const RANGE_ALPHA = 0.16;
+// Planning overlay colours (range outline + staged/preview paths).
+const RANGE_OUTLINE = 0xffe066;
 const PATH_COLOR = 0xffe066;
-const PATH_DIM_COLOR = 0x8a8a8a;
+const PATH_STAGED_COLOR = 0xc9a227;
+const PREVIEW_COLOR = 0xfff4c2;
+
+// Stable empty path so unkeyed lookups don't churn memo identities.
+const EMPTY_PATH: readonly Axial[] = [];
 
 const hpStyle = new TextStyle({
   fontFamily: "monospace",
@@ -92,16 +95,34 @@ export function Board({ state, planning }: BoardProps) {
   }, [settlements]);
 
   // --- planning overlays (only when a controller is supplied) ---
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
+
   const selectedUnitId = planning?.selectedUnitId ?? null;
   const selectedUnit = useMemo(() => {
     if (selectedUnitId === null) return null;
     return units.find((u) => u.id === selectedUnitId) ?? null;
   }, [selectedUnitId, units]);
 
-  const reachable = useMemo(
-    () => (selectedUnit === null ? null : reachableHexes(selectedUnit, hexByKey)),
-    [selectedUnit, hexByKey],
+  // The selected unit's committed path (the prefix new routing continues from).
+  const selectedPath =
+    selectedUnitId === null
+      ? EMPTY_PATH
+      : (planning?.paths[selectedUnitId] ?? EMPTY_PATH);
+
+  // Every hex the selected unit can still route to, mapped to the full route.
+  const continuations = useMemo(
+    () =>
+      selectedUnit === null
+        ? null
+        : reachableContinuations(selectedUnit, selectedPath, hexByKey),
+    [selectedUnit, selectedPath, hexByKey],
   );
+
+  // The route a click at the hovered hex would commit (origin → hover). Resolved
+  // against the current selection's routes, so a stale hover simply yields no
+  // preview rather than a wrong one.
+  const previewPath =
+    hoverKey !== null ? (continuations?.get(hoverKey) ?? null) : null;
 
   // Track the wrapper's pixel size so Pixi's canvas matches it.
   useEffect(() => {
@@ -159,16 +180,29 @@ export function Board({ state, planning }: BoardProps) {
     };
   }, [view]);
 
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    const drag = dragRef.current;
-    if (drag === null) return;
-    const dx = e.clientX - drag.startX;
-    const dy = e.clientY - drag.startY;
-    if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) {
-      drag.moved = true;
-    }
-    setView((v) => (v === null ? v : { ...v, x: drag.vx + dx, y: drag.vy + dy }));
-  }, []);
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      const drag = dragRef.current;
+      if (drag !== null) {
+        const dx = e.clientX - drag.startX;
+        const dy = e.clientY - drag.startY;
+        if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) {
+          drag.moved = true;
+        }
+        setView((v) => (v === null ? v : { ...v, x: drag.vx + dx, y: drag.vy + dy }));
+        return;
+      }
+      // Not dragging: when a unit is selected, track the hovered hex so the board
+      // can preview the route a click would commit.
+      if (planning === undefined || selectedUnitId === null || view === null) return;
+      const world = screenToWorld(e.clientX, e.clientY, view);
+      const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
+      const key = hexKey(ax.q, ax.r);
+      const next = hexByKey.has(key) ? key : null;
+      setHoverKey((prev) => (prev === next ? prev : next));
+    },
+    [planning, selectedUnitId, view, screenToWorld, hexByKey],
+  );
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     const drag = dragRef.current;
@@ -182,11 +216,18 @@ export function Board({ state, planning }: BoardProps) {
     if (planning !== undefined) {
       // Planning mode: clicks select units and build paths (off-map is ignored).
       if (onMap) planning.onHexClick(ax);
+      // The committed path may have moved; recompute the preview on the next move.
+      setHoverKey(null);
     } else {
       // Inspect mode: clicks surface hex info.
       setSelected(onMap ? ax : null);
     }
   }, [view, screenToWorld, hexByKey, planning]);
+
+  const onPointerLeave = useCallback(() => {
+    dragRef.current = null;
+    setHoverKey(null);
+  }, []);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     setView((v) => {
@@ -258,22 +299,23 @@ export function Board({ state, planning }: BoardProps) {
     [selected],
   );
 
-  // Planning layer: range halo for the selected unit, the staged paths (the
-  // selected unit's emphasized), and a ring on the selected unit.
+  // Planning layer: the selected unit's movement-range outline, every staged
+  // path (selected emphasized, others still clearly drawn so pending orders stay
+  // visible), the hovered route preview, and a ring on the selected unit.
   const drawPlanning = useCallback(
     (g: Graphics) => {
       g.clear();
       if (planning === undefined) return;
 
-      // movement range halo for the selected unit
-      if (reachable !== null) {
-        for (const key of reachable) {
+      // movement range: outline each reachable hex (no fill)
+      if (continuations !== null) {
+        for (const key of continuations.keys()) {
           const hex = hexByKey.get(key);
           if (hex === undefined) continue;
           const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
-          g.poly(hexCornerPoints(x, y, HEX_SIZE));
-          g.fill({ color: RANGE_FILL, alpha: RANGE_ALPHA });
+          g.poly(hexCornerPoints(x, y, HEX_SIZE - 1.5));
         }
+        g.stroke({ width: 1.5, color: RANGE_OUTLINE, alpha: 0.6 });
       }
 
       // staged paths: a polyline from each unit through its planned hexes
@@ -283,7 +325,7 @@ export function Board({ state, planning }: BoardProps) {
         const unit = unitById.get(Number(idStr));
         if (unit === undefined) continue;
         const active = Number(idStr) === planning.selectedUnitId;
-        const color = active ? PATH_COLOR : PATH_DIM_COLOR;
+        const color = active ? PATH_COLOR : PATH_STAGED_COLOR;
 
         const start = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
         g.moveTo(start.x, start.y);
@@ -291,7 +333,7 @@ export function Board({ state, planning }: BoardProps) {
           const p = axialToPixel(step.q, step.r, HEX_SIZE);
           g.lineTo(p.x, p.y);
         }
-        g.stroke({ width: active ? 3 : 2, color, alpha: active ? 1 : 0.7 });
+        g.stroke({ width: active ? 3 : 2.5, color, alpha: active ? 1 : 0.9 });
 
         // a node at each waypoint; the destination larger
         path.forEach((step, i) => {
@@ -301,6 +343,30 @@ export function Board({ state, planning }: BoardProps) {
         });
       }
 
+      // hovered route preview: the segment a click would append, from the
+      // selected unit's current path end through the previewed hexes
+      if (selectedUnit !== null && previewPath !== null) {
+        const segment = previewPath.slice(selectedPath.length);
+        if (segment.length > 0) {
+          const from =
+            selectedPath.length > 0
+              ? selectedPath[selectedPath.length - 1]
+              : selectedUnit.coord;
+          const start = axialToPixel(from.q, from.r, HEX_SIZE);
+          g.moveTo(start.x, start.y);
+          for (const step of segment) {
+            const p = axialToPixel(step.q, step.r, HEX_SIZE);
+            g.lineTo(p.x, p.y);
+          }
+          g.stroke({ width: 2, color: PREVIEW_COLOR, alpha: 0.85 });
+
+          const dest = segment[segment.length - 1];
+          const dp = axialToPixel(dest.q, dest.r, HEX_SIZE);
+          g.circle(dp.x, dp.y, 4);
+          g.fill({ color: PREVIEW_COLOR, alpha: 0.85 });
+        }
+      }
+
       // ring on the selected unit
       if (selectedUnit !== null) {
         const { x, y } = axialToPixel(selectedUnit.coord.q, selectedUnit.coord.r, HEX_SIZE);
@@ -308,7 +374,7 @@ export function Board({ state, planning }: BoardProps) {
         g.stroke({ width: 2.5, color: 0xffffff });
       }
     },
-    [planning, reachable, hexByKey, units, selectedUnit],
+    [planning, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
   );
 
   return (
@@ -317,7 +383,7 @@ export function Board({ state, planning }: BoardProps) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerLeave={onPointerUp}
+      onPointerLeave={onPointerLeave}
       onWheel={onWheel}
       className="relative h-full w-full cursor-grab touch-none overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 active:cursor-grabbing"
     >

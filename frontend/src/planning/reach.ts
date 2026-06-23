@@ -59,22 +59,41 @@ export function canExtendPath(
 }
 
 /**
- * Every hex this unit can finish a turn on, as `"q,r"` keys. A hex is reachable
- * iff some exact path under {@link canExtendPath} ends there; enumerated by DFS
- * (step budgets are tiny, ≤5, and paths never revisit, so this stays cheap).
+ * Every hex this unit can still reach by *continuing* `basePath`, mapped to the
+ * full exact path (origin → hex) that gets there. The shortest continuation to
+ * each hex wins (BFS), so hovering a hex previews a sensible route and clicking
+ * it commits that route; clicking intermediate hexes shapes a multi-waypoint
+ * exact path. Hexes already in `basePath` (and the origin) are never revisited.
+ *
+ * With an empty `basePath` this is the unit's full movement range, each hex
+ * carrying the route from the unit to it.
  */
-export function reachableHexes(unit: Unit, hexes: HexIndex): Set<string> {
-  const reached = new Set<string>();
+export function reachableContinuations(
+  unit: Unit,
+  basePath: readonly Axial[],
+  hexes: HexIndex,
+): Map<string, Axial[]> {
+  const routes = new Map<string, Axial[]>();
 
-  const explore = (path: Axial[]): void => {
-    const from = path.length > 0 ? path[path.length - 1] : unit.coord;
-    for (const next of axialNeighbors(from)) {
+  // Seed the visited set with everything already committed so BFS only explores
+  // genuinely new hexes (canExtendPath also forbids revisits — this just prunes).
+  const visited = new Set<string>([hexKey(unit.coord.q, unit.coord.r)]);
+  for (const step of basePath) visited.add(hexKey(step.q, step.r));
+
+  const queue: Axial[][] = [[...basePath]];
+  while (queue.length > 0) {
+    const path = queue.shift()!;
+    const head = path.length > 0 ? path[path.length - 1] : unit.coord;
+    for (const next of axialNeighbors(head)) {
+      const key = hexKey(next.q, next.r);
+      if (visited.has(key)) continue;
       if (!canExtendPath(unit, path, next, hexes)) continue;
-      reached.add(hexKey(next.q, next.r));
-      explore([...path, next]);
+      visited.add(key);
+      const route = [...path, next];
+      routes.set(key, route);
+      queue.push(route);
     }
-  };
+  }
 
-  explore([]);
-  return reached;
+  return routes;
 }

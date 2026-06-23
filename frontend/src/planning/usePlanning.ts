@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { axialEqual, hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
-import { canExtendPath } from "./reach";
+import { reachableContinuations } from "./reach";
 
 type GameState = components["schemas"]["GameState"];
 type Hex = components["schemas"]["Hex"];
@@ -100,19 +100,23 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
       }
       const path = paths[selectedUnitId] ?? [];
 
-      // Click the path's last step to undo it.
+      // Click the unit's own hex: clear its path, or deselect if already empty.
+      if (axialEqual(unit.coord, coord)) {
+        if (path.length > 0) setPath(selectedUnitId, []);
+        else setSelectedUnitId(null);
+        return;
+      }
+      // Click the current destination to undo the last step.
       if (path.length > 0 && axialEqual(path[path.length - 1], coord)) {
         setPath(selectedUnitId, path.slice(0, -1));
         return;
       }
-      // Click the unit's own hex to deselect it.
-      if (axialEqual(unit.coord, coord)) {
-        setSelectedUnitId(null);
-        return;
-      }
-      // Extend the path if this is a legal next step.
-      if (canExtendPath(unit, path, coord, hexes)) {
-        setPath(selectedUnitId, [...path, coord]);
+      // Click any reachable hex to route to it (commits the previewed path).
+      const route = reachableContinuations(unit, path, hexes).get(
+        hexKey(coord.q, coord.r),
+      );
+      if (route !== undefined) {
+        setPath(selectedUnitId, route);
         return;
       }
       // Otherwise: switch to another of your units, or cancel the selection.
