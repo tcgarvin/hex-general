@@ -25,10 +25,14 @@ echo "WEB: $WEB"
 echo
 
 echo "[api] liveness & version"
-curl -fsS "$API/health" 2>/dev/null | grep -q '"status":"ok"' \
+# Capture then match with a herestring (not a pipe): a piped `grep -q` exits on
+# its first match and SIGPIPEs the producer, which under `pipefail` turns a
+# healthy response into a false failure on large inputs. See the bundle check below.
+health=$(curl -fsS "$API/health" 2>/dev/null)
+grep -q '"status":"ok"' <<<"$health" \
   && pass "/health ok" || bad "/health did not return ok"
 ver=$(curl -fsS "$API/version" 2>/dev/null)
-echo "$ver" | grep -q '"version"' \
+grep -q '"version"' <<<"$ver" \
   && pass "/version: $ver" || bad "/version missing version"
 
 echo "[api] /stats (Cloud Run -> Supabase)"
@@ -63,7 +67,10 @@ found_abs=0; got_bundle=0
 for a in $assets; do
   body=$(curl -fsS "$WEB$a" 2>/dev/null) || continue
   got_bundle=1
-  echo "$body" | grep -qF "$API_HOST" && found_abs=1
+  # Herestring, not a pipe: `grep -qF` exits on first match and SIGPIPEs the
+  # `echo` producer; under `pipefail` that makes the whole pipeline non-zero on
+  # large bundles, so `&& found_abs=1` never runs and a healthy host looks missing.
+  grep -qF "$API_HOST" <<<"$body" && found_abs=1
 done
 if [ "$found_abs" = "1" ]; then
   pass "bundle references the absolute API host ($API_HOST)"
