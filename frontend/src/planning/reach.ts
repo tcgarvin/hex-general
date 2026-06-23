@@ -10,10 +10,17 @@
 // and resolve at execution — out of scope here); this only constrains what a
 // player can draw so the plan reflects where a unit can actually reach this turn.
 
-import { axialEqual, axialNeighbors, hexKey, isAdjacent, type Axial } from "@/board/hex";
+import {
+  axialDistance,
+  axialEqual,
+  axialNeighbors,
+  hexKey,
+  isAdjacent,
+  type Axial,
+} from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
-import { isPassable, UNIT_MOVE } from "./rules";
+import { ARTILLERY_RANGE, isPassable, UNIT_MOVE } from "./rules";
 
 type Hex = components["schemas"]["Hex"];
 type Unit = components["schemas"]["Unit"];
@@ -96,4 +103,20 @@ export function reachableContinuations(
   }
 
   return routes;
+}
+
+/**
+ * Every on-map hex an artillery `unit` may barrage — those within `ARTILLERY_RANGE`
+ * of it (the unit's own hex is in range but is a degenerate target). Mirrors the
+ * server's range check (`_validate_barrage`); the engine stays the authority on
+ * visibility/effect, this only constrains what a player can aim at.
+ */
+export function barrageTargets(unit: Unit, hexes: HexIndex): Set<string> {
+  const targets = new Set<string>();
+  for (const hex of hexes.values()) {
+    if (axialDistance(unit.coord, hex.coord) <= ARTILLERY_RANGE) {
+      targets.add(hexKey(hex.coord.q, hex.coord.r));
+    }
+  }
+  return targets;
 }

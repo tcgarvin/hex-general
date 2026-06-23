@@ -16,6 +16,12 @@ export const UNIT_MOVE: Record<UnitType, number> = {
   artillery: 1,
 };
 
+/**
+ * Artillery barrage range in hexes (`UNIT_STATS[artillery].attack_range`). Only
+ * artillery may barrage (SPEC §7.2); a target hex must be within this distance.
+ */
+export const ARTILLERY_RANGE = 3;
+
 /** Terrain a unit can never enter (`TERRAIN_STATS[...].passable is False`). */
 const IMPASSABLE_TERRAIN: ReadonlySet<Terrain> = new Set<Terrain>(["river"]);
 

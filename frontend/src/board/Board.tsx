@@ -46,6 +46,9 @@ const RANGE_OUTLINE = 0xffe066;
 const PATH_COLOR = 0xffe066;
 const PATH_STAGED_COLOR = 0xc9a227;
 const PREVIEW_COLOR = 0xfff4c2;
+// Barrage overlay (target range + staged shot), in a distinct red/orange.
+const BARRAGE_RANGE = 0xff7043;
+const BARRAGE_COLOR = 0xff5252;
 
 // Stable empty path so unkeyed lookups don't churn memo identities.
 const EMPTY_PATH: readonly Axial[] = [];
@@ -55,6 +58,15 @@ const hpStyle = new TextStyle({
   fontSize: 11,
   fontWeight: "bold",
   fill: 0xffffff,
+  stroke: { color: 0x000000, width: 3 },
+});
+
+// Badge over a unit with a staged rest/hold order (move/barrage draw geometry).
+const orderBadgeStyle = new TextStyle({
+  fontFamily: "monospace",
+  fontSize: 9,
+  fontWeight: "bold",
+  fill: 0xffe066,
   stroke: { color: 0x000000, width: 3 },
 });
 
@@ -98,24 +110,27 @@ export function Board({ state, planning }: BoardProps) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
 
   const selectedUnitId = planning?.selectedUnitId ?? null;
+  const mode = planning?.mode ?? "move";
   const selectedUnit = useMemo(() => {
     if (selectedUnitId === null) return null;
     return units.find((u) => u.id === selectedUnitId) ?? null;
   }, [selectedUnitId, units]);
 
-  // The selected unit's committed path (the prefix new routing continues from).
-  const selectedPath =
-    selectedUnitId === null
-      ? EMPTY_PATH
-      : (planning?.paths[selectedUnitId] ?? EMPTY_PATH);
+  // The selected unit's committed move path (the prefix new routing continues from).
+  const selectedPath = useMemo<readonly Axial[]>(() => {
+    if (selectedUnitId === null) return EMPTY_PATH;
+    const order = planning?.stagedByUnit[selectedUnitId];
+    return order !== undefined && order.kind === "move" ? order.path : EMPTY_PATH;
+  }, [selectedUnitId, planning?.stagedByUnit]);
 
   // Every hex the selected unit can still route to, mapped to the full route.
+  // Only in move mode — while aiming a barrage, the move range is hidden.
   const continuations = useMemo(
     () =>
-      selectedUnit === null
+      selectedUnit === null || mode !== "move"
         ? null
         : reachableContinuations(selectedUnit, selectedPath, hexByKey),
-    [selectedUnit, selectedPath, hexByKey],
+    [selectedUnit, mode, selectedPath, hexByKey],
   );
 
   // The route a click at the hovered hex would commit (origin → hover). Resolved
@@ -192,16 +207,18 @@ export function Board({ state, planning }: BoardProps) {
         setView((v) => (v === null ? v : { ...v, x: drag.vx + dx, y: drag.vy + dy }));
         return;
       }
-      // Not dragging: when a unit is selected, track the hovered hex so the board
-      // can preview the route a click would commit.
-      if (planning === undefined || selectedUnitId === null || view === null) return;
+      // Not dragging: in move mode with a unit selected, track the hovered hex so
+      // the board can preview the route a click would commit (no preview while
+      // aiming a barrage).
+      if (planning === undefined || selectedUnitId === null || mode !== "move" || view === null)
+        return;
       const world = screenToWorld(e.clientX, e.clientY, view);
       const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
       const key = hexKey(ax.q, ax.r);
       const next = hexByKey.has(key) ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, selectedUnitId, view, screenToWorld, hexByKey],
+    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey],
   );
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
@@ -318,29 +335,56 @@ export function Board({ state, planning }: BoardProps) {
         g.stroke({ width: 1.5, color: RANGE_OUTLINE, alpha: 0.6 });
       }
 
-      // staged paths: a polyline from each unit through its planned hexes
+      // barrage range: outline every hex the selected artillery may target
+      if (planning.barrageTargetKeys.size > 0) {
+        for (const key of planning.barrageTargetKeys) {
+          const hex = hexByKey.get(key);
+          if (hex === undefined) continue;
+          const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
+          g.poly(hexCornerPoints(x, y, HEX_SIZE - 1.5));
+        }
+        g.stroke({ width: 1.5, color: BARRAGE_RANGE, alpha: 0.6 });
+      }
+
+      // staged orders: draw each unit's plan so pending orders read at a glance
       const unitById = new Map(units.map((u) => [u.id, u] as const));
-      for (const [idStr, path] of Object.entries(planning.paths)) {
-        if (path.length === 0) continue;
+      for (const [idStr, order] of Object.entries(planning.stagedByUnit)) {
         const unit = unitById.get(Number(idStr));
         if (unit === undefined) continue;
         const active = Number(idStr) === planning.selectedUnitId;
-        const color = active ? PATH_COLOR : PATH_STAGED_COLOR;
+        const origin = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
 
-        const start = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
-        g.moveTo(start.x, start.y);
-        for (const step of path) {
-          const p = axialToPixel(step.q, step.r, HEX_SIZE);
-          g.lineTo(p.x, p.y);
+        if (order.kind === "move") {
+          if (order.path.length === 0) continue;
+          const color = active ? PATH_COLOR : PATH_STAGED_COLOR;
+          g.moveTo(origin.x, origin.y);
+          for (const step of order.path) {
+            const p = axialToPixel(step.q, step.r, HEX_SIZE);
+            g.lineTo(p.x, p.y);
+          }
+          g.stroke({ width: active ? 3 : 2.5, color, alpha: active ? 1 : 0.9 });
+
+          // a node at each waypoint; the destination larger
+          order.path.forEach((step, i) => {
+            const p = axialToPixel(step.q, step.r, HEX_SIZE);
+            g.circle(p.x, p.y, i === order.path.length - 1 ? 4 : 2.5);
+            g.fill({ color });
+          });
+        } else if (order.kind === "barrage") {
+          // a line from the gun to its target + a reticle on the target hex
+          const t = axialToPixel(order.target.q, order.target.r, HEX_SIZE);
+          g.moveTo(origin.x, origin.y);
+          g.lineTo(t.x, t.y);
+          g.stroke({ width: 2, color: BARRAGE_COLOR, alpha: active ? 1 : 0.85 });
+          g.circle(t.x, t.y, 6);
+          g.stroke({ width: 2, color: BARRAGE_COLOR });
+          g.moveTo(t.x - 9, t.y);
+          g.lineTo(t.x + 9, t.y);
+          g.moveTo(t.x, t.y - 9);
+          g.lineTo(t.x, t.y + 9);
+          g.stroke({ width: 1.5, color: BARRAGE_COLOR });
         }
-        g.stroke({ width: active ? 3 : 2.5, color, alpha: active ? 1 : 0.9 });
-
-        // a node at each waypoint; the destination larger
-        path.forEach((step, i) => {
-          const p = axialToPixel(step.q, step.r, HEX_SIZE);
-          g.circle(p.x, p.y, i === path.length - 1 ? 4 : 2.5);
-          g.fill({ color });
-        });
+        // rest/hold carry no board geometry — they render as a text badge below.
       }
 
       // hovered route preview: the segment a click would append, from the
@@ -401,6 +445,13 @@ export function Board({ state, planning }: BoardProps) {
             {units.map((u) => (
               <UnitMarker key={u.id} unit={u} />
             ))}
+            {planning !== undefined &&
+              units.map((u) => {
+                const order = planning.stagedByUnit[u.id];
+                if (order === undefined || (order.kind !== "rest" && order.kind !== "hold"))
+                  return null;
+                return <OrderBadge key={`badge-${u.id}`} unit={u} label={order.kind} />;
+              })}
           </pixiContainer>
         </Application>
       )}
@@ -445,6 +496,20 @@ function UnitMarker({ unit }: { unit: Unit }) {
         y={1}
       />
     </pixiContainer>
+  );
+}
+
+/** A small text badge above a unit with a staged rest/hold order. */
+function OrderBadge({ unit, label }: { unit: Unit; label: "rest" | "hold" }) {
+  const { x, y } = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
+  return (
+    <pixiText
+      text={label}
+      style={orderBadgeStyle}
+      anchor={0.5}
+      x={x}
+      y={y - HEX_SIZE * 0.95}
+    />
   );
 }
 

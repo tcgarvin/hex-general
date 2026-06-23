@@ -85,10 +85,10 @@ function Dashboard() {
       {view.invite_token !== null && <ShareInvite view={view} />}
 
       <p className="mt-auto text-xs text-zinc-600">
-        Movement planning (Phase 9, Slice 1): select a unit, click within its
-        range to lay an exact path, then lock. Barrage/Rest/Hold, recruitment, and
-        replay arrive in later slices; the view refreshes live as the other player
-        acts.
+        Planning (Phase 9, Slice 2): select a unit, then plan a move (click within
+        its range) or assign Barrage (artillery) / Rest / Hold, and lock.
+        Recruitment and replay arrive in later slices; the view refreshes live as
+        the other player acts.
       </p>
     </div>
   );
@@ -129,11 +129,21 @@ function StatusBanner({
   return <Panel>Orders locked. Waiting on the other player…</Panel>;
 }
 
-/** Format a staged move for the review list, e.g. "armor → (12, 4) · 3 hexes". */
-function describeMove({ unit, path }: Planning["staged"][number]): string {
-  const dest = path[path.length - 1];
-  const hexes = path.length === 1 ? "1 hex" : `${path.length} hexes`;
-  return `${unit.type} → (${dest.q}, ${dest.r}) · ${hexes}`;
+/** Format a staged order for the review list across all order kinds. */
+function describeOrder({ unit, order }: Planning["staged"][number]): string {
+  switch (order.kind) {
+    case "move": {
+      const dest = order.path[order.path.length - 1];
+      const hexes = order.path.length === 1 ? "1 hex" : `${order.path.length} hexes`;
+      return `${unit.type} → (${dest.q}, ${dest.r}) · ${hexes}`;
+    }
+    case "barrage":
+      return `${unit.type} ⤬ barrage (${order.target.q}, ${order.target.r})`;
+    case "rest":
+      return `${unit.type} · rest`;
+    case "hold":
+      return `${unit.type} · hold`;
+  }
 }
 
 /** Your-move planning panel: staged orders + lock (Phase 9, Slice 1). */
@@ -150,6 +160,7 @@ function PlanningPanel({
   const [error, setError] = useState<string | null>(null);
 
   const count = planning.staged.length;
+  const selected = planning.selectedUnit;
 
   async function lockTurn() {
     setSubmitting(true);
@@ -172,7 +183,7 @@ function PlanningPanel({
         <div className="flex items-center justify-between">
           <span>
             {count === 0
-              ? "It's your move. Select a unit, then click within its range to plan a move."
+              ? "It's your move. Select a unit, then plan a move or assign an order."
               : `It's your move. ${count} unit${count === 1 ? "" : "s"} ordered.`}
           </span>
           {count > 0 && (
@@ -185,17 +196,19 @@ function PlanningPanel({
           )}
         </div>
 
+        {selected !== null && <OrderActions planning={planning} unit={selected} />}
+
         {count > 0 && (
           <ul className="flex flex-col gap-1 text-sm">
-            {planning.staged.map((move) => (
+            {planning.staged.map((entry) => (
               <li
-                key={move.unit.id}
+                key={entry.unit.id}
                 className="flex items-center justify-between rounded-md bg-indigo-950/50 px-3 py-1.5"
               >
-                <span className="capitalize">{describeMove(move)}</span>
+                <span className="capitalize">{describeOrder(entry)}</span>
                 <button
-                  onClick={() => planning.clearOrder(move.unit.id)}
-                  aria-label={`Remove order for ${move.unit.type}`}
+                  onClick={() => planning.clearOrder(entry.unit.id)}
+                  aria-label={`Remove order for ${entry.unit.type}`}
                   className="text-indigo-300 hover:text-white"
                 >
                   ✕
@@ -215,6 +228,98 @@ function PlanningPanel({
         {error !== null && <ErrorBanner message={error} />}
       </div>
     </Panel>
+  );
+}
+
+/** Per-unit order palette for the selected unit (Phase 9, Slice 2). */
+function OrderActions({
+  planning,
+  unit,
+}: {
+  planning: Planning;
+  unit: NonNullable<Planning["selectedUnit"]>;
+}) {
+  const staged = planning.stagedByUnit[unit.id];
+  const isArtillery = unit.type === "artillery";
+  const aiming = planning.mode === "barrage";
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-indigo-800 bg-indigo-950/30 px-3 py-2">
+      <div className="flex items-center justify-between text-xs text-indigo-200">
+        <span className="capitalize">
+          {unit.type} at ({unit.coord.q}, {unit.coord.r}) · {unit.hp} hp
+        </span>
+        {staged !== undefined && (
+          <button
+            onClick={() => planning.clearOrder(unit.id)}
+            className="text-indigo-300 hover:text-white"
+          >
+            Clear order
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {isArtillery && (
+          <>
+            <OrderButton
+              label="Move"
+              active={!aiming && staged?.kind === "move"}
+              onClick={() => planning.enterMove(unit.id)}
+            />
+            <OrderButton
+              label={aiming ? "Aiming…" : "Barrage"}
+              active={aiming || staged?.kind === "barrage"}
+              onClick={() => planning.enterBarrage(unit.id)}
+            />
+          </>
+        )}
+        <OrderButton
+          label="Rest"
+          active={staged?.kind === "rest"}
+          onClick={() => planning.setBareOrder(unit.id, "rest")}
+        />
+        <OrderButton
+          label="Hold"
+          active={staged?.kind === "hold"}
+          onClick={() => planning.setBareOrder(unit.id, "hold")}
+        />
+      </div>
+      {aiming ? (
+        <p className="text-xs text-orange-300">
+          Click a highlighted hex to barrage it (range 3), or pick another order.
+        </p>
+      ) : (
+        !isArtillery && (
+          <p className="text-xs text-indigo-300/70">
+            Click within the range outline to plan a move, or assign rest/hold.
+          </p>
+        )
+      )}
+    </div>
+  );
+}
+
+/** A single toggle button in the order palette. */
+function OrderButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
+        active
+          ? "border-indigo-400 bg-indigo-600 text-white"
+          : "border-indigo-800 text-indigo-200 hover:bg-indigo-900/40"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

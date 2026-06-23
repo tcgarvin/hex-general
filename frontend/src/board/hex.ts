@@ -48,6 +48,13 @@ export function isAdjacent(a: Axial, b: Axial): boolean {
   return AXIAL_DIRECTIONS.some((d) => a.q + d.q === b.q && a.r + d.r === b.r);
 }
 
+/** Hex distance between two axial coords (mirrors the engine's `distance`). */
+export function axialDistance(a: Axial, b: Axial): number {
+  const dq = a.q - b.q;
+  const dr = a.r - b.r;
+  return (Math.abs(dq) + Math.abs(dq + dr) + Math.abs(dr)) / 2;
+}
+
 const SQRT3 = Math.sqrt(3);
 
 /**
