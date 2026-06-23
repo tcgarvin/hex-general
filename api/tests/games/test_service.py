@@ -217,3 +217,64 @@ def test_full_game_drives_to_turn_limit_victory() -> None:
     # Once finished, no further orders are accepted.
     with pytest.raises(GameNotActive):
         service.submit_orders(blue, [], [])
+
+
+def test_resign_finishes_game_and_awards_opponent() -> None:
+    service = _service()
+    blue_creds = service.create_game("twin_rivers", BLUE_USER)
+    red_creds = service.join_game(blue_creds.game_id, RED_USER, blue_creds.invite_token)
+    blue = _player(service, blue_creds.game_id, BLUE_USER)
+    red = _player(service, red_creds.game_id, RED_USER)
+
+    view = service.resign(red)
+    assert view.status == "finished"
+    assert view.victory.reason == "resignation"
+    assert view.victory.winner == "blue"
+    # The opponent, polling, sees the same decided outcome.
+    assert service.get_view(blue).victory.winner == "blue"
+
+
+def test_resign_in_lobby_rejected() -> None:
+    service = _service()
+    blue = service.create_game("twin_rivers", BLUE_USER)
+    with pytest.raises(GameNotActive):
+        service.resign(_player(service, blue.game_id, BLUE_USER))
+
+
+def test_resign_after_finish_rejected() -> None:
+    service = _service()
+    blue_creds = service.create_game("twin_rivers", BLUE_USER)
+    red_creds = service.join_game(blue_creds.game_id, RED_USER, blue_creds.invite_token)
+    red = _player(service, red_creds.game_id, RED_USER)
+    service.resign(red)
+    # Game is already finished; a second resignation has nothing to forfeit.
+    blue = _player(service, blue_creds.game_id, BLUE_USER)
+    with pytest.raises(GameNotActive):
+        service.resign(blue)
+
+
+def test_history_reports_outcomes_per_user() -> None:
+    service = _service()
+    blue_creds = service.create_game("twin_rivers", BLUE_USER)
+    red_creds = service.join_game(blue_creds.game_id, RED_USER, blue_creds.invite_token)
+    red = _player(service, red_creds.game_id, RED_USER)
+    service.resign(red)
+
+    blue_history = service.get_history(BLUE_USER)
+    assert len(blue_history) == 1
+    assert blue_history[0].outcome == "win"
+    assert blue_history[0].your_slot == "blue"
+    assert blue_history[0].scenario == "twin_rivers"
+
+    red_history = service.get_history(RED_USER)
+    assert red_history[0].outcome == "loss"
+    assert red_history[0].your_slot == "red"
+
+
+def test_history_marks_unfinished_games_in_progress() -> None:
+    service = _service()
+    blue = service.create_game("twin_rivers", BLUE_USER)  # lobby, no opponent yet
+    history = service.get_history(BLUE_USER)
+    assert history[0].outcome == "in_progress"
+    assert history[0].status == "lobby"
+    assert blue.game_id == history[0].game_id

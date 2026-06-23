@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 
 import { Button, Centered, ErrorBanner, Loading } from "@/components/ui";
 import { api } from "@/lib/api/client";
@@ -125,6 +125,10 @@ function StartScreen() {
       </div>
 
       {error !== null && <ErrorBanner message={error} />}
+
+      <Link to="/account" className="text-sm text-indigo-400 hover:underline">
+        Account & game history
+      </Link>
     </Centered>
   );
 }

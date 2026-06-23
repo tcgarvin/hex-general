@@ -12,6 +12,7 @@ export type DevProfile = components["schemas"]["DevProfile"];
 export type SubmitResult = components["schemas"]["SubmitResult"];
 export type TurnReplay = components["schemas"]["TurnReplay"];
 export type VictoryStatus = components["schemas"]["VictoryStatus"];
+export type GameHistoryEntry = components["schemas"]["GameHistoryEntry"];
 
 // PlayerId is a plain string server-side (engine models.py); the v0.1 scenarios
 // use these two slots.

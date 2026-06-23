@@ -228,6 +228,43 @@ def test_unknown_scenario_rejected(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_resign_ends_game_and_returns_view(client: TestClient) -> None:
+    game_id = _new_active_game(client)
+    response = client.post(f"/games/{game_id}/resign", headers=_as(RED_USER))
+    assert response.status_code == 200
+    view = response.json()
+    assert view["status"] == "finished"
+    assert view["victory"]["reason"] == "resignation"
+    assert view["victory"]["winner"] == "blue"
+
+
+def test_resign_in_lobby_conflict(client: TestClient) -> None:
+    create = client.post("/games", json={}, headers=_as(BLUE_USER)).json()
+    response = client.post(f"/games/{create['game_id']}/resign", headers=_as(BLUE_USER))
+    assert response.status_code == 409
+
+
+def test_resign_requires_membership(client: TestClient) -> None:
+    game_id = _new_active_game(client)
+    response = client.post(f"/games/{game_id}/resign", headers=_as("user-stranger"))
+    assert response.status_code == 403
+
+
+def test_history_lists_user_games_with_outcome(client: TestClient) -> None:
+    game_id = _new_active_game(client)
+    client.post(f"/games/{game_id}/resign", headers=_as(RED_USER))
+
+    history = client.get("/games/history", headers=_as(BLUE_USER)).json()
+    assert len(history) == 1
+    assert history[0]["game_id"] == game_id
+    assert history[0]["your_slot"] == "blue"
+    assert history[0]["outcome"] == "win"
+
+
+def test_history_empty_for_user_without_games(client: TestClient) -> None:
+    assert client.get("/games/history", headers=_as("user-nobody")).json() == []
+
+
 def test_illegal_order_rejected_with_422(client: TestClient) -> None:
     game_id = _new_active_game(client)
     response = client.post(

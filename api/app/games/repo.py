@@ -52,6 +52,24 @@ class PlayerRecord(BaseModel):
     user_id: str
 
 
+class UserGameRecord(BaseModel):
+    """A game a user holds a slot in, for their history (account screen).
+
+    Carries the slot the user holds plus enough of the game to derive an outcome
+    (``state`` for the victory check, ``turn`` from it). ``invite_token`` is
+    deliberately excluded — history must not leak another game's open-slot secret.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    game_id: str
+    scenario: str
+    status: str
+    state: GameState
+    created_at: str
+    slot: str
+
+
 class OrdersRecord(BaseModel):
     """A turn_orders row: one player's locked plan for one turn (raw JSON)."""
 
@@ -91,6 +109,8 @@ class GameRepo(Protocol):
     def get_player(self, game_id: str, user_id: str) -> PlayerRecord | None: ...
 
     def get_active_player_for_user(self, user_id: str) -> PlayerRecord | None: ...
+
+    def list_user_games(self, user_id: str) -> list[UserGameRecord]: ...
 
     def record_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
@@ -249,6 +269,29 @@ class SupabaseGameRepo:
             return None
         row = _one_row(response, "get_active_player_for_user")
         return _player_record(row)
+
+    def list_user_games(self, user_id: str) -> list[UserGameRecord]:
+        """Return every game the user holds a slot in, for their history screen."""
+        response = (
+            self._client.table("players")
+            .select("slot, games!inner(id, scenario, status, state, created_at)")
+            .eq("user_id", user_id)
+            .execute()
+        )
+        records: list[UserGameRecord] = []
+        for row in _rows(response):
+            game = cast(dict[str, Any], row["games"])
+            records.append(
+                UserGameRecord(
+                    game_id=game["id"],
+                    scenario=game["scenario"],
+                    status=game["status"],
+                    state=GameState.model_validate(game["state"]),
+                    created_at=game["created_at"],
+                    slot=row["slot"],
+                )
+            )
+        return records
 
     def record_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]

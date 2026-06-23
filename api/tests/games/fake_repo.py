@@ -13,7 +13,14 @@ from typing import Any
 
 from app.engine.models import GameState
 from app.engine.victory import VictoryStatus
-from app.games.repo import GameRecord, OrdersRecord, PlayerRecord, RepoError, TurnRecord
+from app.games.repo import (
+    GameRecord,
+    OrdersRecord,
+    PlayerRecord,
+    RepoError,
+    TurnRecord,
+    UserGameRecord,
+)
 
 
 class FakeGameRepo:
@@ -21,6 +28,7 @@ class FakeGameRepo:
 
     def __init__(self) -> None:
         self._games: dict[str, GameRecord] = {}
+        self._created_at: dict[str, str] = {}
         self._players: dict[str, PlayerRecord] = {}
         self._orders: dict[tuple[str, int, str], OrdersRecord] = {}
         self._turns: dict[tuple[str, int], TurnRecord] = {}
@@ -36,6 +44,8 @@ class FakeGameRepo:
             invite_token=invite_token,
         )
         self._games[game.id] = game
+        # Monotonic per-creation timestamp so history ordering is deterministic.
+        self._created_at[game.id] = f"2026-01-01T00:00:{len(self._created_at):02d}Z"
         return game
 
     def get_game(self, game_id: str) -> GameRecord | None:
@@ -77,6 +87,24 @@ class FakeGameRepo:
             if self._games[player.game_id].status != "finished":
                 return player
         return None
+
+    def list_user_games(self, user_id: str) -> list[UserGameRecord]:
+        records: list[UserGameRecord] = []
+        for player in self._players.values():
+            if player.user_id != user_id:
+                continue
+            game = self._games[player.game_id]
+            records.append(
+                UserGameRecord(
+                    game_id=game.id,
+                    scenario=game.scenario,
+                    status=game.status,
+                    state=game.state,
+                    created_at=self._created_at[game.id],
+                    slot=player.slot,
+                )
+            )
+        return records
 
     def record_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]

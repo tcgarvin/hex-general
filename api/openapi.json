@@ -143,6 +143,50 @@
         "title": "GameConfig",
         "type": "object"
       },
+      "GameHistoryEntry": {
+        "description": "One row of a user's game history (account screen).\n\n``outcome`` is from the caller's perspective: ``win``/``loss``/``draw`` once the\ngame is decided, else ``in_progress`` (a lobby or active game). ``turn`` is the\ncurrent/final turn number; ``created_at`` is the game's ISO creation timestamp.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "scenario": {
+            "title": "Scenario",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          },
+          "your_slot": {
+            "title": "Your Slot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "game_id",
+          "scenario",
+          "status",
+          "your_slot",
+          "turn",
+          "outcome",
+          "created_at"
+        ],
+        "title": "GameHistoryEntry",
+        "type": "object"
+      },
       "GameMap": {
         "description": "Static board geometry: dimensions and the terrain of every hex.\n\nHolds only content that does not change during play. Dynamic facts\n(settlement control, unit positions) live on `GameState`, not here.",
         "properties": {
@@ -187,6 +231,13 @@
               "$ref": "#/components/schemas/Player"
             },
             "title": "Players",
+            "type": "array"
+          },
+          "resigned": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resigned",
             "type": "array"
           },
           "settlements": {
@@ -753,6 +804,7 @@
         "description": "Why the game is (not) decided (SPEC \u00a715).",
         "enum": [
           "ongoing",
+          "resignation",
           "city_elimination",
           "turn_limit"
         ],
@@ -1002,6 +1054,76 @@
         ]
       }
     },
+    "/games/history": {
+      "get": {
+        "description": "The caller's game history (newest first) for the account screen.",
+        "operationId": "get_history_games_history_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GameHistoryEntry"
+                  },
+                  "title": "Response Get History Games History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get History",
+        "tags": [
+          "games"
+        ]
+      }
+    },
     "/games/{game_id}": {
       "get": {
         "description": "Return the caller's view of the game.",
@@ -1242,6 +1364,81 @@
           }
         },
         "summary": "Submit Orders",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/games/{game_id}/resign": {
+      "post": {
+        "description": "Concede the caller's slot; ends the game if they were the last rival.",
+        "operationId": "resign_games__game_id__resign_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resign",
         "tags": [
           "games"
         ]

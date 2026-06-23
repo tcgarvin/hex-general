@@ -24,6 +24,7 @@ from app.games.repo import GameRepo, PlayerRecord, SupabaseGameRepo
 from app.games.schemas import (
     CreateGameRequest,
     DispatchView,
+    GameHistoryEntry,
     GameView,
     JoinGameRequest,
     PlayerCredentials,
@@ -131,6 +132,15 @@ def get_active_game(
     return service.get_dispatch(identity.user_id)
 
 
+@router.get("/history")
+def get_history(
+    identity: AuthIdentity = Depends(current_identity),
+    service: GameService = Depends(get_service),
+) -> list[GameHistoryEntry]:
+    """The caller's game history (newest first) for the account screen."""
+    return service.get_history(identity.user_id)
+
+
 @router.post("/{game_id}/join", status_code=201)
 def join_game(
     game_id: str,
@@ -174,6 +184,18 @@ def submit_orders(
     except GameNotActive as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except AlreadySubmitted as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{game_id}/resign")
+def resign(
+    player: PlayerRecord = Depends(require_player),
+    service: GameService = Depends(get_service),
+) -> GameView:
+    """Concede the caller's slot; ends the game if they were the last rival."""
+    try:
+        return service.resign(player)
+    except GameNotActive as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 

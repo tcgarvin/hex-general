@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useParams } from "react-router";
+import { Link, Navigate, useParams } from "react-router";
 
 import { useAuth } from "@/auth/useAuth";
 import { Board } from "@/board/Board";
@@ -41,12 +41,24 @@ function Dashboard() {
             <span className="font-medium text-zinc-200">{view.your_slot}</span>
           </p>
         </div>
-        <Button variant="ghost" onClick={() => void signOut()}>
-          Sign out
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/account"
+            className="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+          >
+            Account
+          </Link>
+          <Button variant="ghost" onClick={() => void signOut()}>
+            Sign out
+          </Button>
+        </div>
       </header>
 
       <StatusBanner view={view} onLocked={refresh} />
+
+      {view.status === "active" && view.victory.reason === "ongoing" && (
+        <ResignControl view={view} onResigned={refresh} />
+      )}
 
       {view.status !== "lobby" && (
         <div className="h-[60vh] min-h-80">
@@ -128,6 +140,70 @@ function YourMove({ view, onLocked }: { view: GameView; onLocked: () => void }) 
         {error !== null && <ErrorBanner message={error} />}
       </div>
     </Panel>
+  );
+}
+
+/** Resign action with an inline two-step confirm (forfeit is irreversible). */
+function ResignControl({
+  view,
+  onResigned,
+}: {
+  view: GameView;
+  onResigned: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function resign() {
+    setSubmitting(true);
+    setError(null);
+    const { error: apiError } = await api.POST("/games/{game_id}/resign", {
+      params: { path: { game_id: view.game_id } },
+    });
+    setSubmitting(false);
+    if (apiError) {
+      setError(describeApiError(apiError));
+      return;
+    }
+    setConfirming(false);
+    onResigned();
+  }
+
+  if (!confirming) {
+    return (
+      <div className="flex items-center justify-end">
+        <button
+          onClick={() => setConfirming(true)}
+          className="rounded-md border border-red-900 px-3 py-1.5 text-sm font-medium text-red-300 transition-colors hover:bg-red-950/50"
+        >
+          Resign
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex items-center gap-2 text-sm text-red-300">
+        <span>Confirm forfeit? This ends the game.</span>
+        <button
+          onClick={() => void resign()}
+          disabled={submitting}
+          className="rounded-md bg-red-700 px-3 py-1.5 font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+        >
+          {submitting ? "Resigning…" : "Yes, resign"}
+        </button>
+        <Button
+          variant="ghost"
+          onClick={() => setConfirming(false)}
+          disabled={submitting}
+        >
+          Cancel
+        </Button>
+      </div>
+      {error !== null && <ErrorBanner message={error} />}
+    </div>
   );
 }
 

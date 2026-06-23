@@ -1,16 +1,21 @@
 """Victory check (SPEC §15) — a pure query over end-of-turn state.
 
 Unlike the execution phases, victory resolution changes nothing: it inspects a
-`GameState` after a turn and reports whether the game is decided. Two scenario-
-configurable conditions apply (SPEC §15, `VictoryConfig`):
+`GameState` after a turn and reports whether the game is decided. Three conditions
+apply — two scenario-configurable (SPEC §15, `VictoryConfig`), plus resignation:
 
+  * **Resignation** (last player standing): a slot in `state.resigned` has conceded
+    and is out of contention. When only one player remains in contention, that
+    player wins immediately, regardless of the scenario's other conditions.
   * **City elimination** (§15.1): a player who controls zero cities has lost. When
     only one player still holds a city, that player wins immediately.
   * **Turn limit** (§15.2): once the configured turn limit is reached, settlements
     are scored (town = 1, city = 3 by default) and the highest score wins.
 
-City elimination is checked first: a player can be knocked out before the turn
-limit. Ties — at the limit, or mutual elimination — are draws (no winner).
+Resignation is checked first, then city elimination: a player can be knocked out
+before the turn limit. Ties — at the limit, or mutual elimination/resignation —
+are draws (no winner). All checks ignore resigned players, who never count as a
+surviving contender or a scorer.
 
 The result is a `VictoryStatus`. ``reason`` distinguishes an ongoing game from a
 decided one; ``winner`` is the deciding player, or ``None`` when the game is still
@@ -31,6 +36,7 @@ class VictoryReason(StrEnum):
     """Why the game is (not) decided (SPEC §15)."""
 
     ONGOING = "ongoing"  # no victory condition met yet
+    RESIGNATION = "resignation"  # decided by last player standing after a concession
     CITY_ELIMINATION = "city_elimination"  # decided by §15.1
     TURN_LIMIT = "turn_limit"  # decided by §15.2 scoring
 
@@ -63,6 +69,9 @@ def victory_status(state: GameState) -> VictoryStatus:
     config = state.config.victory
     terrain_at = {h.coord: h.terrain for h in state.map.hexes}
 
+    resigned = set(state.resigned)
+    contenders = [p.id for p in state.players if p.id not in resigned]
+
     cities: dict[PlayerId, int] = {p.id: 0 for p in state.players}
     scores: dict[PlayerId, int] = {p.id: 0 for p in state.players}
     for settlement in state.settlements:
@@ -75,14 +84,25 @@ def victory_status(state: GameState) -> VictoryStatus:
         else:
             scores[owner] += config.town_points
 
+    # Resignation (last player standing): a concession can decide the game before
+    # any board condition, independent of the scenario's victory config. When the
+    # last contender remains they win; mutual resignation is a draw.
+    if resigned and len(contenders) <= 1:
+        return VictoryStatus(
+            reason=VictoryReason.RESIGNATION,
+            winner=contenders[0] if contenders else None,
+            eliminated=sorted(resigned),
+            scores=scores,
+        )
+
     eliminated = (
-        [p.id for p in state.players if cities[p.id] == 0]
+        [pid for pid in contenders if cities[pid] == 0]
         if config.city_elimination
         else []
     )
 
     if config.city_elimination and eliminated:
-        survivors = [p.id for p in state.players if cities[p.id] > 0]
+        survivors = [pid for pid in contenders if cities[pid] > 0]
         if len(survivors) <= 1:
             winner = survivors[0] if survivors else None
             return VictoryStatus(
@@ -95,7 +115,7 @@ def victory_status(state: GameState) -> VictoryStatus:
     if state.turn >= config.turn_limit:
         return VictoryStatus(
             reason=VictoryReason.TURN_LIMIT,
-            winner=_top_scorer(scores),
+            winner=_top_scorer({pid: scores[pid] for pid in contenders}),
             eliminated=eliminated,
             scores=scores,
         )

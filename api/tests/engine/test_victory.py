@@ -106,6 +106,63 @@ def test_turn_limit_tie_is_a_draw() -> None:
     assert status.scores == {"blue": 3, "red": 3}
 
 
+def test_resignation_leaves_last_player_standing_the_winner() -> None:
+    # Both still hold a city, so no board condition fires — red's concession decides
+    # it, awarding blue the win regardless of the scenario's other conditions.
+    state = build(
+        ["c.c"],
+        [],
+        settlements=[
+            {"q": 0, "r": 0, "owner": "blue"},
+            {"q": 2, "r": 0, "owner": "red"},
+        ],
+        players=["blue", "red"],
+    )
+    state.resigned = ["red"]
+    status = victory_status(state)
+
+    assert status.reason is VictoryReason.RESIGNATION
+    assert status.winner == "blue"
+    assert status.eliminated == ["red"]
+    assert status.decided
+
+
+def test_mutual_resignation_is_a_draw() -> None:
+    state = build(
+        ["c.c"],
+        [],
+        settlements=[
+            {"q": 0, "r": 0, "owner": "blue"},
+            {"q": 2, "r": 0, "owner": "red"},
+        ],
+        players=["blue", "red"],
+    )
+    state.resigned = ["blue", "red"]
+    status = victory_status(state)
+
+    assert status.reason is VictoryReason.RESIGNATION
+    assert status.winner is None
+    assert set(status.eliminated) == {"blue", "red"}
+
+
+def test_resignation_decides_even_with_city_elimination_off() -> None:
+    state = build(
+        ["c.c"],
+        [],
+        settlements=[
+            {"q": 0, "r": 0, "owner": "blue"},
+            {"q": 2, "r": 0, "owner": "red"},
+        ],
+        players=["blue", "red"],
+        victory={"turn_limit": 10, "city_elimination": False},
+    )
+    state.resigned = ["blue"]
+    status = victory_status(state)
+
+    assert status.reason is VictoryReason.RESIGNATION
+    assert status.winner == "red"
+
+
 def test_city_elimination_can_be_disabled() -> None:
     # Red has no city, but with elimination off the game runs to the turn limit.
     state = build(

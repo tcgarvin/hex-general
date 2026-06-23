@@ -137,6 +137,9 @@ class GameState(BaseModel):
     settlements: list[Settlement] = Field(default_factory=list)
     units: list[Unit] = Field(default_factory=list)
     players: list[Player] = Field(default_factory=list)
+    # Slots that have conceded (SPEC §15). Public info; a resigned player is out
+    # of contention for victory (`app.engine.victory`). Empty in a fresh state.
+    resigned: list[PlayerId] = Field(default_factory=list)
     config: GameConfig
 
     def hex_at(self, coord: Axial) -> Hex | None:

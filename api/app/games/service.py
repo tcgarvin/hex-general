@@ -30,11 +30,12 @@ from app.engine.execution import resolve_execution
 from app.engine.fog import filter_events, redact_state
 from app.engine.models import GameState, Order, Recruitment
 from app.engine.scenario import load_scenario_file
-from app.engine.victory import victory_status
+from app.engine.victory import VictoryStatus, victory_status
 from app.games.repo import GameRecord, GameRepo, PlayerRecord
 from app.games.schemas import (
     ActiveGame,
     DispatchView,
+    GameHistoryEntry,
     GameView,
     PlayerCredentials,
     SubmitResult,
@@ -146,6 +147,28 @@ class GameService:
             active_game=ActiveGame(game_id=player.game_id, slot=player.slot)
         )
 
+    def get_history(self, user_id: str) -> list[GameHistoryEntry]:
+        """Return ``user_id``'s games (newest first) with a per-player outcome.
+
+        Outcome is derived from the authoritative victory check over each game's
+        stored state, mapped to the caller's slot: win/loss/draw once decided, else
+        ``in_progress`` (a lobby or active game).
+        """
+        records = self._repo.list_user_games(user_id)
+        entries = [
+            GameHistoryEntry(
+                game_id=record.game_id,
+                scenario=record.scenario,
+                status=record.status,
+                your_slot=record.slot,
+                turn=record.state.turn,
+                outcome=_outcome_for(victory_status(record.state), record.slot),
+                created_at=record.created_at,
+            )
+            for record in records
+        ]
+        return sorted(entries, key=lambda e: e.created_at, reverse=True)
+
     def get_view(self, player: PlayerRecord) -> GameView:
         """Return ``player``'s fog-filtered view of their game (SPEC §9)."""
         game = self._require_game(player.game_id)
@@ -218,6 +241,26 @@ class GameService:
             locked=True, executed=True, turn=next_state.turn, status=status
         )
 
+    def resign(self, player: PlayerRecord) -> GameView:
+        """Concede ``player``'s slot, ending the game if they were the last rival.
+
+        Only valid while the game is active (a lobby has no game to forfeit; a
+        finished game is already decided — both raise `GameNotActive`). Resignation
+        is recorded in the canonical state, so the recomputed victory naturally
+        awards the win to the last remaining contender.
+        """
+        game = self._require_game(player.game_id)
+        if game.status != "active":
+            raise GameNotActive(f"game {game.id} is {game.status}; cannot resign")
+
+        new_state = game.state.model_copy(
+            update={"resigned": [*game.state.resigned, player.slot]}
+        )
+        victory = victory_status(new_state)
+        status = "finished" if victory.decided else "active"
+        self._repo.set_game_state(game.id, new_state, status)
+        return self.get_view(player)
+
     def get_replay(self, player: PlayerRecord, turn: int) -> TurnReplay:
         """Return ``player``'s fog-filtered replay for ``turn`` (SPEC §9, §16.2).
 
@@ -284,6 +327,15 @@ class GameService:
             raise GameAlreadyActive(
                 f"user already holds slot {existing.slot!r} in game {existing.game_id}"
             )
+
+
+def _outcome_for(victory: VictoryStatus, slot: str) -> str:
+    """Map a victory check to ``slot``'s outcome label for the history screen."""
+    if not victory.decided:
+        return "in_progress"
+    if victory.winner is None:
+        return "draw"
+    return "win" if victory.winner == slot else "loss"
 
 
 def _load_scenario_state(scenario: str) -> GameState:

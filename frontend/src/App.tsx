@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router";
 
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { DevProfileSwitcher } from "@/dev/DevProfileSwitcher";
+import { Account } from "@/routes/Account";
 import { Dispatcher } from "@/routes/Dispatcher";
 import { GameShell } from "@/routes/GameShell";
 import { Join } from "@/routes/Join";
@@ -21,6 +22,7 @@ export function App() {
         <Route path="/stats" element={<Stats />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dispatcher />} />
+          <Route path="/account" element={<Account />} />
           <Route path="/join/:id" element={<Join />} />
           <Route path="/game/:id" element={<GameShell />} />
         </Route>

@@ -67,6 +67,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/games/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History
+         * @description The caller's game history (newest first) for the account screen.
+         */
+        get: operations["get_history_games_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games/{game_id}": {
         parameters: {
             query?: never;
@@ -121,6 +141,26 @@ export interface paths {
          * @description Validate and lock the caller's orders; resolve the turn if both are in.
          */
         post: operations["submit_orders_games__game_id__orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/games/{game_id}/resign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resign
+         * @description Concede the caller's slot; ends the game if they were the last rival.
+         */
+        post: operations["resign_games__game_id__resign_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -329,6 +369,30 @@ export interface components {
             victory: components["schemas"]["VictoryConfig"];
         };
         /**
+         * GameHistoryEntry
+         * @description One row of a user's game history (account screen).
+         *
+         *     ``outcome`` is from the caller's perspective: ``win``/``loss``/``draw`` once the
+         *     game is decided, else ``in_progress`` (a lobby or active game). ``turn`` is the
+         *     current/final turn number; ``created_at`` is the game's ISO creation timestamp.
+         */
+        GameHistoryEntry: {
+            /** Created At */
+            created_at: string;
+            /** Game Id */
+            game_id: string;
+            /** Outcome */
+            outcome: string;
+            /** Scenario */
+            scenario: string;
+            /** Status */
+            status: string;
+            /** Turn */
+            turn: number;
+            /** Your Slot */
+            your_slot: string;
+        };
+        /**
          * GameMap
          * @description Static board geometry: dimensions and the terrain of every hex.
          *
@@ -358,6 +422,8 @@ export interface components {
             map: components["schemas"]["GameMap"];
             /** Players */
             players?: components["schemas"]["Player"][];
+            /** Resigned */
+            resigned?: string[];
             /** Settlements */
             settlements?: components["schemas"]["Settlement"][];
             /** Turn */
@@ -669,7 +735,7 @@ export interface components {
          * @description Why the game is (not) decided (SPEC §15).
          * @enum {string}
          */
-        VictoryReason: "ongoing" | "city_elimination" | "turn_limit";
+        VictoryReason: "ongoing" | "resignation" | "city_elimination" | "turn_limit";
         /**
          * VictoryStatus
          * @description The outcome of a victory check (SPEC §15).
@@ -799,6 +865,38 @@ export interface operations {
             };
         };
     };
+    get_history_games_history_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameHistoryEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_game_games__game_id__get: {
         parameters: {
             query?: never;
@@ -896,6 +994,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmitResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resign_games__game_id__resign_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameView"];
                 };
             };
             /** @description Validation Error */

@@ -140,3 +140,20 @@ class TurnReplay(BaseModel):
     events: list[dict[str, Any]]
     state_after: GameState
     victory: VictoryStatus
+
+
+class GameHistoryEntry(BaseModel):
+    """One row of a user's game history (account screen).
+
+    ``outcome`` is from the caller's perspective: ``win``/``loss``/``draw`` once the
+    game is decided, else ``in_progress`` (a lobby or active game). ``turn`` is the
+    current/final turn number; ``created_at`` is the game's ISO creation timestamp.
+    """
+
+    game_id: str
+    scenario: str
+    status: str
+    your_slot: PlayerId
+    turn: int
+    outcome: str
+    created_at: str
