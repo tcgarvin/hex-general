@@ -47,11 +47,11 @@ export function Dispatcher() {
   }, []);
 
   if (state.status === "loading") {
-    return <Loading label="Finding your game…" />;
+    return <Loading fill label="Finding your game…" />;
   }
   if (state.status === "error") {
     return (
-      <Centered>
+      <Centered fill>
         <ErrorBanner message={state.message} />
       </Centered>
     );
@@ -95,7 +95,7 @@ function StartScreen() {
   }
 
   return (
-    <Centered>
+    <Centered fill>
       <h1 className="text-2xl font-semibold">Start a match</h1>
 
       <div className="flex w-full max-w-sm flex-col gap-3 rounded-lg border border-zinc-800 p-5">

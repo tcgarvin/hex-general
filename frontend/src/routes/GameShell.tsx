@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router";
 
-import { useAuth } from "@/auth/useAuth";
 import { Board } from "@/board/Board";
 import { Button, ErrorBanner } from "@/components/ui";
 import { GameProvider } from "@/game/GameProvider";
@@ -43,7 +42,6 @@ function phaseOf(view: GameView): Phase {
 
 function Dashboard() {
   const { view, refresh } = useGame();
-  const { signOut } = useAuth();
 
   const planning = usePlanning(view.state, view.your_slot, view.turn);
   const isPlanning =
@@ -92,7 +90,6 @@ function Dashboard() {
         phase={phaseOf(view)}
         economy={economy}
         tally={isPlanning ? tally : null}
-        onSignOut={() => void signOut()}
       />
 
       <main className="relative flex-1 overflow-hidden">

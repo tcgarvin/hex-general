@@ -60,7 +60,7 @@ export function Join() {
     : error;
   if (message !== null) {
     return (
-      <Centered>
+      <Centered fill>
         <ErrorBanner message={message} />
         <Link to="/" className="text-sm text-indigo-400 hover:underline">
           ← Back to dispatcher
@@ -68,5 +68,5 @@ export function Join() {
       </Centered>
     );
   }
-  return <Loading label="Joining game…" />;
+  return <Loading fill label="Joining game…" />;
 }

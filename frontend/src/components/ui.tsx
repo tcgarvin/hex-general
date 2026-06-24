@@ -1,9 +1,23 @@
 /** Small shared UI primitives. Polish budget is low (playtest tool) — keep it plain. */
 
-/** Full-viewport centered container for the auth/dispatcher screens. */
-export function Centered({ children }: { children: React.ReactNode }) {
+/**
+ * Centered container for the auth/dispatcher screens. Defaults to full-viewport
+ * height; pass `fill` when it sits inside a flex column (e.g. under the shared
+ * page header) so it grows to the remaining space instead of forcing 100dvh.
+ */
+export function Centered({
+  children,
+  fill = false,
+}: {
+  children: React.ReactNode;
+  fill?: boolean;
+}) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 p-8">
+    <div
+      className={`flex flex-col items-center justify-center gap-6 p-8 ${
+        fill ? "flex-1" : "min-h-dvh"
+      }`}
+    >
       {children}
     </div>
   );
@@ -28,10 +42,16 @@ export function Button({
   return <button className={`${base} ${styles} ${className}`} {...props} />;
 }
 
-/** Centered loading state. */
-export function Loading({ label = "Loading…" }: { label?: string }) {
+/** Centered loading state. `fill` is forwarded to `Centered` (see above). */
+export function Loading({
+  label = "Loading…",
+  fill = false,
+}: {
+  label?: string;
+  fill?: boolean;
+}) {
   return (
-    <Centered>
+    <Centered fill={fill}>
       <p className="text-sm text-zinc-400">{label}</p>
     </Centered>
   );

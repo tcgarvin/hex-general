@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { useAuth } from "@/auth/useAuth";
-import { Button, Centered, ErrorBanner, Loading } from "@/components/ui";
+import { Centered, ErrorBanner, Loading } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 import type { GameHistoryEntry, MeView } from "@/lib/api/types";
@@ -19,7 +19,7 @@ type State =
  * the read-only game shell.
  */
 export function Account() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<State>({ status: "loading" });
 
   useEffect(() => {
@@ -48,11 +48,11 @@ export function Account() {
   }, []);
 
   if (state.status === "loading") {
-    return <Loading label="Loading your account…" />;
+    return <Loading fill label="Loading your account…" />;
   }
   if (state.status === "error") {
     return (
-      <Centered>
+      <Centered fill>
         <ErrorBanner message={state.message} />
         <Link to="/" className="text-sm text-indigo-400 hover:underline">
           ← Back
@@ -62,30 +62,17 @@ export function Account() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Account</h1>
-          <p className="text-sm text-zinc-400">
-            {user?.email ?? "Signed in"}
-            {state.me.is_dev && (
-              <span className="ml-2 rounded bg-indigo-950 px-1.5 py-0.5 text-xs text-indigo-300">
-                dev
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/"
-            className="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
-          >
-            ← Back
-          </Link>
-          <Button variant="ghost" onClick={() => void signOut()}>
-            Sign out
-          </Button>
-        </div>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+      <header>
+        <h1 className="text-lg font-semibold">Account</h1>
+        <p className="text-sm text-zinc-400">
+          {user?.email ?? "Signed in"}
+          {state.me.is_dev && (
+            <span className="ml-2 rounded bg-indigo-950 px-1.5 py-0.5 text-xs text-indigo-300">
+              dev
+            </span>
+          )}
+        </p>
       </header>
 
       <section className="flex flex-col gap-3">

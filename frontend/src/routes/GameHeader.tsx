@@ -3,9 +3,9 @@
 // the game screen is just this status strip + site nav. Compact, opaque, status-
 // heavy, left-to-right: brand · turn/phase · muster · orders · warnings · account.
 
-import { useState } from "react";
 import { Link } from "react-router";
 
+import { AccountMenu } from "@/components/AccountMenu";
 import type { Economy } from "@/planning/economy";
 import type { OrderTally } from "@/planning/warnings";
 
@@ -19,7 +19,6 @@ export interface GameHeaderProps {
   economy: Economy;
   /** Order tally, present only while it is the viewer's move to plan. */
   tally: OrderTally | null;
-  onSignOut: () => void;
 }
 
 export function GameHeader({
@@ -28,7 +27,6 @@ export function GameHeader({
   phase,
   economy,
   tally,
-  onSignOut,
 }: GameHeaderProps) {
   const net = economy.net >= 0 ? `+${economy.net}` : `${economy.net}`;
   const idle = tally?.idleUnitIds.length ?? 0;
@@ -74,7 +72,7 @@ export function GameHeader({
       )}
 
       <div className="ml-auto">
-        <AccountMenu onSignOut={onSignOut} />
+        <AccountMenu />
       </div>
     </header>
   );
@@ -89,48 +87,5 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
       </span>
       <span>{children}</span>
     </span>
-  );
-}
-
-/** Account dropdown: link to the account screen + sign out. */
-function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
-      >
-        Account ▾
-      </button>
-      {open && (
-        <>
-          <button
-            className="fixed inset-0 z-10 cursor-default"
-            aria-hidden
-            tabIndex={-1}
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute right-0 z-20 mt-1 flex w-40 flex-col rounded-md border border-zinc-700 bg-zinc-900 py-1 shadow-lg">
-            <Link
-              to="/account"
-              className="px-3 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800"
-              onClick={() => setOpen(false)}
-            >
-              Account
-            </Link>
-            <button
-              className="px-3 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800"
-              onClick={() => {
-                setOpen(false);
-                onSignOut();
-              }}
-            >
-              Sign out
-            </button>
-          </div>
-        </>
-      )}
-    </div>
   );
 }
