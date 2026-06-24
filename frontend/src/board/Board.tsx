@@ -23,11 +23,19 @@ import {
   type Axial,
 } from "./hex";
 import {
+  pointInRect,
+  surfaceLayout,
+  type Rect,
+  type SurfaceLayout,
+} from "./layout";
+import {
   HEX_STROKE,
   NEUTRAL_COLOR,
   playerColor,
   TERRAIN_FILL,
 } from "./palette";
+import { RosterPanel } from "./panels/RosterPanel";
+import { rosterRowAt, rosterRows } from "./panels/roster";
 
 extend({ Container, Graphics, Text });
 
@@ -84,7 +92,7 @@ export interface BoardProps {
   planning?: PlanningController;
 }
 
-export function Board({ state, planning }: BoardProps) {
+export function Board({ state, yourSlot, planning }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -93,6 +101,34 @@ export function Board({ state, planning }: BoardProps) {
   const hexes = useMemo(() => state.map.hexes ?? [], [state.map.hexes]);
   const units = useMemo(() => state.units ?? [], [state.units]);
   const settlements = useMemo(() => state.settlements ?? [], [state.settlements]);
+
+  // --- docked-panel layout (UI-SPEC §2): the roster reserves the left edge while
+  // it's the viewer's move; otherwise the map fills the whole surface. ---
+  const showRoster = planning !== undefined;
+  const layout = useMemo<SurfaceLayout | null>(() => {
+    if (size === null) return null;
+    if (!showRoster) {
+      const full: Rect = { x: 0, y: 0, width: size.width, height: size.height };
+      return { map: full, roster: { x: 0, y: 0, width: 0, height: size.height } };
+    }
+    return surfaceLayout(size.width, size.height);
+  }, [size, showRoster]);
+
+  const ownUnits = useMemo(
+    () => units.filter((u) => u.owner === yourSlot),
+    [units, yourSlot],
+  );
+  // Hexes held by an enemy unit — used to derive the roster's ATTACK label.
+  const enemyHexKeys = useMemo<ReadonlySet<string>>(() => {
+    const s = new Set<string>();
+    for (const u of units) if (u.owner !== yourSlot) s.add(hexKey(u.coord.q, u.coord.r));
+    return s;
+  }, [units, yourSlot]);
+  const rows = useMemo(
+    () => (planning === undefined ? [] : rosterRows(ownUnits, planning, enemyHexKeys)),
+    [planning, ownUnits, enemyHexKeys],
+  );
+  const [rosterHover, setRosterHover] = useState<number | null>(null);
 
   const hexByKey = useMemo(() => {
     const m = new Map<string, Hex>();
@@ -151,49 +187,90 @@ export function Board({ state, planning }: BoardProps) {
     return () => ro.disconnect();
   }, []);
 
-  // Fit the whole map into view the first time we know the viewport size.
-  // Computed during render (a guarded, converging setState — React's blessed
-  // "initialize state from props" pattern) rather than in an effect.
-  if (size !== null && size.width > 0 && size.height > 0 && view === null && hexes.length > 0) {
+  // Fit the whole map into the *map rectangle* (the surface minus docked panels)
+  // the first time we know the viewport size. Computed during render (a guarded,
+  // converging setState — React's blessed "initialize from props" pattern).
+  if (layout !== null && layout.map.width > 0 && layout.map.height > 0 && view === null && hexes.length > 0) {
+    const { map } = layout;
     const bounds = mapPixelBounds(
       hexes.map((h) => h.coord),
       HEX_SIZE,
     );
     const zoom = Math.max(
       MIN_ZOOM,
-      Math.min(MAX_ZOOM, Math.min(size.width / bounds.width, size.height / bounds.height)),
+      Math.min(MAX_ZOOM, Math.min(map.width / bounds.width, map.height / bounds.height)),
     );
     setView({
       zoom,
-      x: size.width / 2 - (bounds.minX + bounds.width / 2) * zoom,
-      y: size.height / 2 - (bounds.minY + bounds.height / 2) * zoom,
+      x: map.x + map.width / 2 - (bounds.minX + bounds.width / 2) * zoom,
+      y: map.y + map.height / 2 - (bounds.minY + bounds.height / 2) * zoom,
     });
   }
 
+  // Recenter the map rectangle on a world coordinate (roster row → jump to unit).
+  const centerOn = useCallback(
+    (coord: Axial) => {
+      setView((v) => {
+        if (v === null || layout === null) return v;
+        const p = axialToPixel(coord.q, coord.r, HEX_SIZE);
+        return {
+          ...v,
+          x: layout.map.x + layout.map.width / 2 - p.x * v.zoom,
+          y: layout.map.y + layout.map.height / 2 - p.y * v.zoom,
+        };
+      });
+    },
+    [layout],
+  );
+
   // --- input: drag-pan, wheel-zoom, click-to-select (all DOM-level) ---
   const dragRef = useRef<{ startX: number; startY: number; vx: number; vy: number; moved: boolean } | null>(null);
+  // A pointer press that began over the roster — resolved on pointer-up as a row
+  // click, never as a map pan.
+  const rosterPressRef = useRef(false);
+
+  /** Canvas-space (sx, sy) for a client point, relative to the wrapper. */
+  const localPoint = useCallback((clientX: number, clientY: number): { sx: number; sy: number } => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    return { sx: clientX - (rect?.left ?? 0), sy: clientY - (rect?.top ?? 0) };
+  }, []);
 
   const screenToWorld = useCallback(
     (clientX: number, clientY: number, v: View): { x: number; y: number } => {
-      const rect = wrapperRef.current?.getBoundingClientRect();
-      const sx = clientX - (rect?.left ?? 0);
-      const sy = clientY - (rect?.top ?? 0);
+      const { sx, sy } = localPoint(clientX, clientY);
       return { x: (sx - v.x) / v.zoom, y: (sy - v.y) / v.zoom };
     },
-    [],
+    [localPoint],
   );
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (view === null) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      vx: view.x,
-      vy: view.y,
-      moved: false,
-    };
-  }, [view]);
+  /** Whether a canvas point is over the docked roster panel. */
+  const overRoster = useCallback(
+    (sx: number, sy: number): boolean =>
+      showRoster && layout !== null && pointInRect(sx, sy, layout.roster),
+    [showRoster, layout],
+  );
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (view === null) return;
+      const { sx, sy } = localPoint(e.clientX, e.clientY);
+      if (overRoster(sx, sy)) {
+        // Press over the roster: handled on pointer-up, no pan/capture.
+        rosterPressRef.current = true;
+        return;
+      }
+      rosterPressRef.current = false;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      dragRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        vx: view.x,
+        vy: view.y,
+        moved: false,
+      };
+    },
+    [view, localPoint, overRoster],
+  );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
@@ -207,7 +284,16 @@ export function Board({ state, planning }: BoardProps) {
         setView((v) => (v === null ? v : { ...v, x: drag.vx + dx, y: drag.vy + dy }));
         return;
       }
-      // Not dragging: in move mode with a unit selected, track the hovered hex so
+      // Hovering the roster: highlight the row under the pointer (no map preview).
+      const { sx, sy } = localPoint(e.clientX, e.clientY);
+      if (overRoster(sx, sy) && layout !== null) {
+        const idx = rosterRowAt(sy - layout.roster.y, rows.length);
+        setRosterHover((prev) => (prev === idx ? prev : idx));
+        setHoverKey(null);
+        return;
+      }
+      setRosterHover((prev) => (prev === null ? prev : null));
+      // Over the map: in move mode with a unit selected, track the hovered hex so
       // the board can preview the route a click would commit (no preview while
       // aiming a barrage).
       if (planning === undefined || selectedUnitId === null || mode !== "move" || view === null)
@@ -218,48 +304,70 @@ export function Board({ state, planning }: BoardProps) {
       const next = hexByKey.has(key) ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey],
+    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, layout, rows.length],
   );
 
-  const onPointerUp = useCallback((e: React.PointerEvent) => {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    if (drag === null || view === null) return;
-    if (drag.moved) return;
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      // A press that started on the roster: select the clicked row's unit + jump.
+      if (rosterPressRef.current) {
+        rosterPressRef.current = false;
+        const { sx, sy } = localPoint(e.clientX, e.clientY);
+        if (planning !== undefined && layout !== null && overRoster(sx, sy)) {
+          const idx = rosterRowAt(sy - layout.roster.y, rows.length);
+          if (idx !== null) {
+            const row = rows[idx];
+            planning.selectUnit(row.unit.id);
+            centerOn(row.unit.coord);
+          }
+        }
+        return;
+      }
 
-    const world = screenToWorld(e.clientX, e.clientY, view);
-    const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
-    const onMap = hexByKey.has(hexKey(ax.q, ax.r));
-    if (planning !== undefined) {
-      // Planning mode: clicks select units and build paths (off-map is ignored).
-      if (onMap) planning.onHexClick(ax);
-      // The committed path may have moved; recompute the preview on the next move.
-      setHoverKey(null);
-    } else {
-      // Inspect mode: clicks surface hex info.
-      setSelected(onMap ? ax : null);
-    }
-  }, [view, screenToWorld, hexByKey, planning]);
+      const drag = dragRef.current;
+      dragRef.current = null;
+      if (drag === null || view === null) return;
+      if (drag.moved) return;
+
+      const world = screenToWorld(e.clientX, e.clientY, view);
+      const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
+      const onMap = hexByKey.has(hexKey(ax.q, ax.r));
+      if (planning !== undefined) {
+        // Planning mode: clicks select units and build paths (off-map is ignored).
+        if (onMap) planning.onHexClick(ax);
+        // The committed path may have moved; recompute the preview on the next move.
+        setHoverKey(null);
+      } else {
+        // Inspect mode: clicks surface hex info.
+        setSelected(onMap ? ax : null);
+      }
+    },
+    [view, screenToWorld, hexByKey, planning, localPoint, overRoster, layout, rows, centerOn],
+  );
 
   const onPointerLeave = useCallback(() => {
     dragRef.current = null;
+    rosterPressRef.current = false;
     setHoverKey(null);
+    setRosterHover(null);
   }, []);
 
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    setView((v) => {
-      if (v === null) return v;
-      const rect = wrapperRef.current?.getBoundingClientRect();
-      const sx = e.clientX - (rect?.left ?? 0);
-      const sy = e.clientY - (rect?.top ?? 0);
-      const factor = Math.exp(-e.deltaY * 0.0015);
-      const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v.zoom * factor));
-      // keep the point under the cursor fixed while zooming
-      const worldX = (sx - v.x) / v.zoom;
-      const worldY = (sy - v.y) / v.zoom;
-      return { zoom, x: sx - worldX * zoom, y: sy - worldY * zoom };
-    });
-  }, []);
+  const onWheel = useCallback(
+    (e: React.WheelEvent) => {
+      const { sx, sy } = localPoint(e.clientX, e.clientY);
+      if (overRoster(sx, sy)) return; // the roster does not zoom the map
+      setView((v) => {
+        if (v === null) return v;
+        const factor = Math.exp(-e.deltaY * 0.0015);
+        const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v.zoom * factor));
+        // keep the point under the cursor fixed while zooming
+        const worldX = (sx - v.x) / v.zoom;
+        const worldY = (sy - v.y) / v.zoom;
+        return { zoom, x: sx - worldX * zoom, y: sy - worldY * zoom };
+      });
+    },
+    [localPoint, overRoster],
+  );
 
   // --- draw callbacks ---
   const drawTerrain = useCallback(
@@ -429,7 +537,7 @@ export function Board({ state, planning }: BoardProps) {
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerLeave}
       onWheel={onWheel}
-      className="relative h-full w-full cursor-grab touch-none overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 active:cursor-grabbing"
+      className="relative h-full w-full cursor-grab touch-none overflow-hidden bg-zinc-950 active:cursor-grabbing"
     >
       {size !== null && view !== null && (
         <Application
@@ -453,6 +561,9 @@ export function Board({ state, planning }: BoardProps) {
                 return <OrderBadge key={`badge-${u.id}`} unit={u} label={order.kind} />;
               })}
           </pixiContainer>
+          {showRoster && layout !== null && (
+            <RosterPanel rect={layout.roster} rows={rows} hoverIndex={rosterHover} />
+          )}
         </Application>
       )}
       {planning === undefined && selected !== null && (

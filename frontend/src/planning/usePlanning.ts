@@ -49,6 +49,8 @@ export interface PlanningController {
   /** Hexes the selected artillery may barrage (empty unless aiming a barrage). */
   barrageTargetKeys: ReadonlySet<string>;
   onHexClick: (coord: Axial) => void;
+  /** Select a unit (move mode) or clear the selection — used by the roster panel. */
+  selectUnit: (unitId: number | null) => void;
 }
 
 /** A staged order paired with its unit, surfaced for the review panel. */
@@ -265,6 +267,7 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
     stagedByUnit,
     barrageTargetKeys,
     onHexClick,
+    selectUnit,
     selectedUnit,
     staged,
     orders,
