@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
 import { reachableContinuations } from "@/planning/reach";
-import type { PlanningController } from "@/planning/usePlanning";
+import type { Planning } from "@/planning/usePlanning";
 
 import {
   AXIAL_DIRECTIONS,
@@ -23,9 +23,9 @@ import {
   type Axial,
 } from "./hex";
 import {
+  fullMapLayout,
   pointInRect,
   surfaceLayout,
-  type Rect,
   type SurfaceLayout,
 } from "./layout";
 import {
@@ -34,8 +34,11 @@ import {
   playerColor,
   TERRAIN_FILL,
 } from "./palette";
+import { LockPanel } from "./panels/LockPanel";
 import { RosterPanel } from "./panels/RosterPanel";
-import { rosterRowAt, rosterRows } from "./panels/roster";
+import { orderLabelOf, rosterRowAt, rosterRows } from "./panels/roster";
+import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
+import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 
 extend({ Container, Graphics, Text });
 
@@ -84,15 +87,27 @@ interface View {
   zoom: number;
 }
 
+/** Lock-control state + action (UI-SPEC §11), supplied only while planning. */
+export interface LockState {
+  ordered: number;
+  total: number;
+  idle: number;
+  submitting: boolean;
+  error: string | null;
+  onLock: () => void;
+}
+
 export interface BoardProps {
   state: GameState;
   /** The viewer's slot; reserved for own-unit emphasis in later slices. */
   yourSlot: string;
-  /** Planning controller, supplied only when it is the viewer's move to plan. */
-  planning?: PlanningController;
+  /** Planning state, supplied only when it is the viewer's move to plan. */
+  planning?: Planning;
+  /** Lock control, supplied alongside `planning` (UI-SPEC §11). */
+  lock?: LockState;
 }
 
-export function Board({ state, yourSlot, planning }: BoardProps) {
+export function Board({ state, yourSlot, planning, lock }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -104,15 +119,14 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
 
   // --- docked-panel layout (UI-SPEC §2): the roster reserves the left edge while
   // it's the viewer's move; otherwise the map fills the whole surface. ---
-  const showRoster = planning !== undefined;
+  // Panels (roster + bottom dock) appear only while it is the viewer's move.
+  const showPanels = planning !== undefined;
   const layout = useMemo<SurfaceLayout | null>(() => {
     if (size === null) return null;
-    if (!showRoster) {
-      const full: Rect = { x: 0, y: 0, width: size.width, height: size.height };
-      return { map: full, roster: { x: 0, y: 0, width: 0, height: size.height } };
-    }
-    return surfaceLayout(size.width, size.height);
-  }, [size, showRoster]);
+    return showPanels
+      ? surfaceLayout(size.width, size.height)
+      : fullMapLayout(size.width, size.height);
+  }, [size, showPanels]);
 
   const ownUnits = useMemo(
     () => units.filter((u) => u.owner === yourSlot),
@@ -228,6 +242,9 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
   // A pointer press that began over the roster — resolved on pointer-up as a row
   // click, never as a map pan.
   const rosterPressRef = useRef(false);
+  // A pointer press that began over the bottom dock (palette / lock) — resolved on
+  // pointer-up as a button click, never as a map pan.
+  const bottomPressRef = useRef(false);
 
   /** Canvas-space (sx, sy) for a client point, relative to the wrapper. */
   const localPoint = useCallback((clientX: number, clientY: number): { sx: number; sy: number } => {
@@ -246,8 +263,42 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
   /** Whether a canvas point is over the docked roster panel. */
   const overRoster = useCallback(
     (sx: number, sy: number): boolean =>
-      showRoster && layout !== null && pointInRect(sx, sy, layout.roster),
-    [showRoster, layout],
+      showPanels && layout !== null && pointInRect(sx, sy, layout.roster),
+    [showPanels, layout],
+  );
+
+  /** Whether a canvas point is over the bottom dock (selected-unit or lock). */
+  const overBottom = useCallback(
+    (sx: number, sy: number): boolean =>
+      showPanels &&
+      layout !== null &&
+      (pointInRect(sx, sy, layout.selectedUnit) || pointInRect(sx, sy, layout.lock)),
+    [showPanels, layout],
+  );
+
+  /** Run a palette button's action against the selected unit (UI-SPEC §8). */
+  const runPaletteAction = useCallback(
+    (action: PaletteAction, unitId: number) => {
+      if (planning === undefined) return;
+      switch (action) {
+        case "move":
+          planning.enterMove(unitId);
+          break;
+        case "barrage":
+          planning.enterBarrage(unitId);
+          break;
+        case "rest":
+          planning.setBareOrder(unitId, "rest");
+          break;
+        case "hold":
+          planning.setBareOrder(unitId, "hold");
+          break;
+        case "clear":
+          planning.clearOrder(unitId);
+          break;
+      }
+    },
+    [planning],
   );
 
   const onPointerDown = useCallback(
@@ -257,9 +308,17 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
       if (overRoster(sx, sy)) {
         // Press over the roster: handled on pointer-up, no pan/capture.
         rosterPressRef.current = true;
+        bottomPressRef.current = false;
+        return;
+      }
+      if (overBottom(sx, sy)) {
+        // Press over the bottom dock: handled on pointer-up, no pan/capture.
+        bottomPressRef.current = true;
+        rosterPressRef.current = false;
         return;
       }
       rosterPressRef.current = false;
+      bottomPressRef.current = false;
       e.currentTarget.setPointerCapture(e.pointerId);
       dragRef.current = {
         startX: e.clientX,
@@ -269,7 +328,7 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
         moved: false,
       };
     },
-    [view, localPoint, overRoster],
+    [view, localPoint, overRoster, overBottom],
   );
 
   const onPointerMove = useCallback(
@@ -293,6 +352,11 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
         return;
       }
       setRosterHover((prev) => (prev === null ? prev : null));
+      // Over the bottom dock: no map preview (and no roster row highlight).
+      if (overBottom(sx, sy)) {
+        setHoverKey((prev) => (prev === null ? prev : null));
+        return;
+      }
       // Over the map: in move mode with a unit selected, track the hovered hex so
       // the board can preview the route a click would commit (no preview while
       // aiming a barrage).
@@ -304,7 +368,7 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
       const next = hexByKey.has(key) ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, layout, rows.length],
+    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, layout, rows.length],
   );
 
   const onPointerUp = useCallback(
@@ -320,6 +384,27 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
             planning.selectUnit(row.unit.id);
             centerOn(row.unit.coord);
           }
+        }
+        return;
+      }
+
+      // A press that started on the bottom dock: route to a palette / lock button.
+      if (bottomPressRef.current) {
+        bottomPressRef.current = false;
+        const { sx, sy } = localPoint(e.clientX, e.clientY);
+        if (planning === undefined || layout === null) return;
+        if (pointInRect(sx, sy, layout.selectedUnit)) {
+          const unit = planning.selectedUnit;
+          if (unit !== null) {
+            const action = paletteButtonAt(
+              sx - layout.selectedUnit.x,
+              sy - layout.selectedUnit.y,
+              unit,
+            );
+            if (action !== null) runPaletteAction(action, unit.id);
+          }
+        } else if (lock !== undefined && !lock.submitting && pointInRect(sx, sy, layout.lock)) {
+          lock.onLock();
         }
         return;
       }
@@ -342,12 +427,13 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
         setSelected(onMap ? ax : null);
       }
     },
-    [view, screenToWorld, hexByKey, planning, localPoint, overRoster, layout, rows, centerOn],
+    [view, screenToWorld, hexByKey, planning, lock, localPoint, overRoster, layout, rows, centerOn, runPaletteAction],
   );
 
   const onPointerLeave = useCallback(() => {
     dragRef.current = null;
     rosterPressRef.current = false;
+    bottomPressRef.current = false;
     setHoverKey(null);
     setRosterHover(null);
   }, []);
@@ -355,7 +441,7 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
   const onWheel = useCallback(
     (e: React.WheelEvent) => {
       const { sx, sy } = localPoint(e.clientX, e.clientY);
-      if (overRoster(sx, sy)) return; // the roster does not zoom the map
+      if (overRoster(sx, sy) || overBottom(sx, sy)) return; // panels don't zoom the map
       setView((v) => {
         if (v === null) return v;
         const factor = Math.exp(-e.deltaY * 0.0015);
@@ -366,7 +452,7 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
         return { zoom, x: sx - worldX * zoom, y: sy - worldY * zoom };
       });
     },
-    [localPoint, overRoster],
+    [localPoint, overRoster, overBottom],
   );
 
   // --- draw callbacks ---
@@ -529,6 +615,11 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
     [planning, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
   );
 
+  // The selected unit's staged order + its §5.2 display label, for the detail panel.
+  const selectedStaged =
+    selectedUnitId === null ? undefined : planning?.stagedByUnit[selectedUnitId];
+  const selectedOrderLabel = orderLabelOf(selectedStaged, enemyHexKeys);
+
   return (
     <div
       ref={wrapperRef}
@@ -561,8 +652,27 @@ export function Board({ state, yourSlot, planning }: BoardProps) {
                 return <OrderBadge key={`badge-${u.id}`} unit={u} label={order.kind} />;
               })}
           </pixiContainer>
-          {showRoster && layout !== null && (
-            <RosterPanel rect={layout.roster} rows={rows} hoverIndex={rosterHover} />
+          {showPanels && layout !== null && (
+            <>
+              <RosterPanel rect={layout.roster} rows={rows} hoverIndex={rosterHover} />
+              <SelectedUnitPanel
+                rect={layout.selectedUnit}
+                unit={planning?.selectedUnit ?? null}
+                staged={selectedStaged}
+                mode={mode}
+                orderLabel={selectedOrderLabel}
+              />
+              {lock !== undefined && (
+                <LockPanel
+                  rect={layout.lock}
+                  ordered={lock.ordered}
+                  total={lock.total}
+                  idle={lock.idle}
+                  submitting={lock.submitting}
+                  error={lock.error}
+                />
+              )}
+            </>
           )}
         </Application>
       )}

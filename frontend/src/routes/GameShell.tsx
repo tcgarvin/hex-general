@@ -10,7 +10,7 @@ import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 import { SLOTS, type GameView } from "@/lib/api/types";
 import { economyFor } from "@/planning/economy";
-import { usePlanning, type Planning } from "@/planning/usePlanning";
+import { usePlanning } from "@/planning/usePlanning";
 import { orderTally } from "@/planning/warnings";
 
 import { GameHeader, type Phase } from "./GameHeader";
@@ -64,6 +64,26 @@ function Dashboard() {
     [ownUnits, planning.stagedByUnit],
   );
 
+  // Lock submission (UI-SPEC §11). The lock control now lives in the Pixi bottom
+  // dock; this owns the async POST + its in-flight / error state and hands them to
+  // the board, which renders them into `LockPanel`.
+  const [locking, setLocking] = useState(false);
+  const [lockError, setLockError] = useState<string | null>(null);
+  async function lockOrders() {
+    setLocking(true);
+    setLockError(null);
+    const { error: apiError } = await api.POST("/games/{game_id}/orders", {
+      params: { path: { game_id: view.game_id } },
+      body: { orders: planning.orders, recruitments: [] },
+    });
+    setLocking(false);
+    if (apiError) {
+      setLockError(describeApiError(apiError));
+      return;
+    }
+    refresh();
+  }
+
   return (
     <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
       <GameHeader
@@ -85,12 +105,23 @@ function Dashboard() {
                 state={view.state}
                 yourSlot={view.your_slot}
                 planning={isPlanning ? planning : undefined}
+                lock={
+                  isPlanning
+                    ? {
+                        ordered: tally.ordered,
+                        total: tally.total,
+                        idle: tally.idleUnitIds.length,
+                        submitting: locking,
+                        error: lockError,
+                        onLock: () => void lockOrders(),
+                      }
+                    : undefined
+                }
               />
             </div>
             <PlanningDock
               view={view}
-              planning={isPlanning ? planning : null}
-              tally={tally}
+              hasPlanning={isPlanning}
               onChanged={refresh}
             />
           </>
@@ -113,33 +144,22 @@ function Lobby({ view }: { view: GameView }) {
 }
 
 /**
- * Right-docked planning chrome (migration scaffold for the Pixi panels, UI-SPEC
- * §5–§11). Adapts to the lifecycle: your-move shows the palette + lock; otherwise
- * the read-only waiting / game-over status.
+ * Right-docked status chrome. The planning controls (selected-unit detail, order
+ * palette, lock) have moved into the Pixi bottom dock (UI-SPEC §6/§8/§11); what
+ * remains here is the lifecycle status, per-slot presence, and the resign action.
  */
 function PlanningDock({
   view,
-  planning,
-  tally,
+  hasPlanning,
   onChanged,
 }: {
   view: GameView;
-  planning: Planning | null;
-  tally: ReturnType<typeof orderTally>;
+  hasPlanning: boolean;
   onChanged: () => void;
 }) {
   return (
-    <div className="absolute right-3 top-3 flex max-h-[calc(100%-1.5rem)] w-80 flex-col gap-3 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/95 p-3 text-sm shadow-xl backdrop-blur">
-      <StatusLine view={view} hasPlanning={planning !== null} />
-
-      {planning !== null && (
-        <PlanningControls
-          view={view}
-          planning={planning}
-          tally={tally}
-          onLocked={onChanged}
-        />
-      )}
+    <div className="absolute right-3 top-3 flex max-h-[calc(100%-1.5rem)] w-64 flex-col gap-3 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/95 p-3 text-sm shadow-xl backdrop-blur">
+      <StatusLine view={view} hasPlanning={hasPlanning} />
 
       <Slots view={view} />
 
@@ -173,204 +193,6 @@ function StatusLine({ view, hasPlanning }: { view: GameView; hasPlanning: boolea
     );
   }
   return null;
-}
-
-/** Format a staged order for the review list across all order kinds. */
-function describeOrder({ unit, order }: Planning["staged"][number]): string {
-  switch (order.kind) {
-    case "move": {
-      const dest = order.path[order.path.length - 1];
-      const hexes = order.path.length === 1 ? "1 hex" : `${order.path.length} hexes`;
-      return `${unit.type} → (${dest.q}, ${dest.r}) · ${hexes}`;
-    }
-    case "barrage":
-      return `${unit.type} ⤬ barrage (${order.target.q}, ${order.target.r})`;
-    case "rest":
-      return `${unit.type} · rest`;
-    case "hold":
-      return `${unit.type} · hold`;
-  }
-}
-
-/** Your-move planning: selected-unit palette, staged review, lock control. */
-function PlanningControls({
-  view,
-  planning,
-  tally,
-  onLocked,
-}: {
-  view: GameView;
-  planning: Planning;
-  tally: ReturnType<typeof orderTally>;
-  onLocked: () => void;
-}) {
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const count = planning.staged.length;
-  const selected = planning.selectedUnit;
-  const idle = tally.idleUnitIds.length;
-
-  async function lockTurn() {
-    setSubmitting(true);
-    setError(null);
-    const { error: apiError } = await api.POST("/games/{game_id}/orders", {
-      params: { path: { game_id: view.game_id } },
-      body: { orders: planning.orders, recruitments: [] },
-    });
-    setSubmitting(false);
-    if (apiError) {
-      setError(describeApiError(apiError));
-      return;
-    }
-    onLocked();
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {selected !== null ? (
-        <OrderActions planning={planning} unit={selected} />
-      ) : (
-        <p className="rounded-md border border-zinc-800 bg-zinc-800/40 px-3 py-2 text-xs text-zinc-400">
-          Select one of your units on the board to give it orders.
-        </p>
-      )}
-
-      {count > 0 && (
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Staged orders</span>
-            <button
-              onClick={planning.clearAll}
-              className="text-indigo-300 hover:text-white"
-            >
-              Clear all
-            </button>
-          </div>
-          <ul className="flex flex-col gap-1">
-            {planning.staged.map((entry) => (
-              <li
-                key={entry.unit.id}
-                className="flex items-center justify-between rounded-md bg-zinc-800/60 px-3 py-1.5"
-              >
-                <span className="capitalize">{describeOrder(entry)}</span>
-                <button
-                  onClick={() => planning.clearOrder(entry.unit.id)}
-                  aria-label={`Remove order for ${entry.unit.type}`}
-                  className="text-zinc-400 hover:text-white"
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-1 rounded-md border border-indigo-700 bg-indigo-950/40 p-2">
-        <Button onClick={() => void lockTurn()} disabled={submitting}>
-          {submitting ? "Locking…" : "Lock orders"}
-        </Button>
-        <p className="text-center font-mono text-xs text-indigo-200">
-          {tally.ordered} / {tally.total} set
-          {idle > 0 && <span className="text-amber-300"> · ⚠ {idle} idle</span>}
-        </p>
-        {error !== null && <ErrorBanner message={error} />}
-      </div>
-    </div>
-  );
-}
-
-/** Per-unit order palette for the selected unit (UI-SPEC §8). */
-function OrderActions({
-  planning,
-  unit,
-}: {
-  planning: Planning;
-  unit: NonNullable<Planning["selectedUnit"]>;
-}) {
-  const staged = planning.stagedByUnit[unit.id];
-  const isArtillery = unit.type === "artillery";
-  const aiming = planning.mode === "barrage";
-
-  return (
-    <div className="flex flex-col gap-2 rounded-md border border-indigo-800 bg-indigo-950/30 px-3 py-2">
-      <div className="flex items-center justify-between text-xs text-indigo-200">
-        <span className="capitalize">
-          {unit.type} at ({unit.coord.q}, {unit.coord.r}) · {unit.hp} hp
-        </span>
-        {staged !== undefined && (
-          <button
-            onClick={() => planning.clearOrder(unit.id)}
-            className="text-indigo-300 hover:text-white"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {isArtillery && (
-          <>
-            <OrderButton
-              label="Move"
-              active={!aiming && staged?.kind === "move"}
-              onClick={() => planning.enterMove(unit.id)}
-            />
-            <OrderButton
-              label={aiming ? "Aiming…" : "Barrage"}
-              active={aiming || staged?.kind === "barrage"}
-              onClick={() => planning.enterBarrage(unit.id)}
-            />
-          </>
-        )}
-        <OrderButton
-          label="Rest"
-          active={staged?.kind === "rest"}
-          onClick={() => planning.setBareOrder(unit.id, "rest")}
-        />
-        <OrderButton
-          label="Hold"
-          active={staged?.kind === "hold"}
-          onClick={() => planning.setBareOrder(unit.id, "hold")}
-        />
-      </div>
-      {aiming ? (
-        <p className="text-xs text-orange-300">
-          Click a highlighted hex to barrage it (range 3), or pick another order.
-        </p>
-      ) : (
-        !isArtillery && (
-          <p className="text-xs text-indigo-300/70">
-            Click within the range outline to plan a move, or assign rest/hold.
-          </p>
-        )
-      )}
-    </div>
-  );
-}
-
-/** A single toggle button in the order palette. */
-function OrderButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
-        active
-          ? "border-indigo-400 bg-indigo-600 text-white"
-          : "border-indigo-800 text-indigo-200 hover:bg-indigo-900/40"
-      }`}
-    >
-      {label}
-    </button>
-  );
 }
 
 /** Resign action with an inline two-step confirm (forfeit is irreversible). */

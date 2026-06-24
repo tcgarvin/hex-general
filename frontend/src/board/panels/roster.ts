@@ -31,7 +31,7 @@ export interface RosterRow {
 
 /** Map a staged order to its display label (UI-SPEC §5.2). `ATTACK` is a derived
  *  label for a Move whose destination is enemy-held — still a Move on the wire. */
-function orderLabelOf(
+export function orderLabelOf(
   order: StagedOrder | undefined,
   enemyHexes: ReadonlySet<string>,
 ): string {
