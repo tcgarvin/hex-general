@@ -37,22 +37,23 @@ const EMPTY_RECT: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
 /**
  * Split the canvas into the map rectangle and the docked panel rectangles for
- * the planning surface: the roster runs full-height on the left, and a bottom
- * strip (to the right of the roster) carries the selected-unit panel and the
- * lock control. The map fills whatever rectangle is left.
+ * the planning surface: the bottom strip runs edge-to-edge across the full
+ * width (selected-unit panel + lock control), and the roster docks on the left
+ * *above* it, ending where the strip begins. The map fills the rectangle left
+ * between them.
  */
 export function surfaceLayout(width: number, height: number): SurfaceLayout {
   const rosterWidth = Math.min(ROSTER_WIDTH, Math.max(0, width));
-  const bottomWidth = Math.max(0, width - rosterWidth);
   const bottomHeight = Math.min(BOTTOM_HEIGHT, Math.max(0, height));
   const bottomY = height - bottomHeight;
-  const lockWidth = Math.min(LOCK_WIDTH, bottomWidth);
+  const rosterHeight = bottomY;
+  const lockWidth = Math.min(LOCK_WIDTH, Math.max(0, width));
   return {
-    roster: { x: 0, y: 0, width: rosterWidth, height },
+    roster: { x: 0, y: 0, width: rosterWidth, height: rosterHeight },
     selectedUnit: {
-      x: rosterWidth,
+      x: 0,
       y: bottomY,
-      width: bottomWidth - lockWidth,
+      width: width - lockWidth,
       height: bottomHeight,
     },
     lock: {
@@ -64,7 +65,7 @@ export function surfaceLayout(width: number, height: number): SurfaceLayout {
     map: {
       x: rosterWidth,
       y: 0,
-      width: bottomWidth,
+      width: Math.max(0, width - rosterWidth),
       height: bottomY,
     },
   };
