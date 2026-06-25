@@ -184,8 +184,10 @@ Optional controls (secondary): `Sort: Needs orders · Type · HP · Coord` and
 
 Row states: selected = bright outline; no order = dim amber marker; valid order =
 small check; invalid = red; traffic = amber triangle; in enemy ZOC = red edge;
-damaged = obvious missing HP. **Click a row** → select the unit and center the map
-on it. **Double-click** → jump to it without changing the current order mode.
+damaged = obvious missing HP. **Click a row** → select the unit and, if it isn't
+already comfortably in frame, smoothly glide the camera until it's centred (a unit
+already well inside the view is left where it is — no jarring recenter). See §9 for
+the comfort rule. **Double-click** → jump to it without changing the current order mode.
 
 ### 5.2 Order labels
 
@@ -324,6 +326,25 @@ pending order (small check). **No CP cost badges** — there are no command poin
 Pan/zoom with integer scaling for crisp pixels (already in `Board.tsx`); per-hex
 hit-testing turns clicks into `(q, r)`. There is **no stacking** — paths may not
 end on, or route through, a hex held by another unit (SPEC §8.1).
+
+**Auto-camera.** The player should never open the game zoomed out on empty terrain
+or hunting for their force:
+
+- *On load*, the camera frames the viewer's own units: it centres their bounding
+  box in the map rectangle and zooms in as far as keeps them all comfortably in
+  frame (a padding margin on every side, capped at a sane magnification so a lone
+  or tightly-clustered force doesn't fill the screen). With no own units to frame
+  (spectator/replay) it falls back to fitting the whole map.
+- *On roster select* (§5.1), the camera only moves when the unit isn't already
+  comfortably in frame — defined as sitting within the map rectangle inset by a
+  margin on each side. A unit nearer the edge glides to centre at the current zoom
+  over a short ease; a unit already well inside the view stays put. Any manual pan
+  or zoom immediately cancels an in-flight glide.
+- *Panning is bounded*: the camera may scroll at most ~one hex radius past the
+  map's outer edge, so the player can nudge edge hexes clear of the docked panels
+  without drifting into open background. This bound applies to manual pan/zoom, to
+  reveal glides, and to the opening fit; a map smaller than its rectangle is
+  centred rather than free to slide around.
 
 ---
 

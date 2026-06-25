@@ -21,11 +21,13 @@ import {
   mapPixelBounds,
   pixelToAxial,
   type Axial,
+  type MapBounds,
 } from "./hex";
 import {
   fullMapLayout,
   pointInRect,
   surfaceLayout,
+  type Rect,
   type SurfaceLayout,
 } from "./layout";
 import {
@@ -51,6 +53,27 @@ const BACKGROUND = 0x0a0a0b;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 const DRAG_THRESHOLD_PX = 4;
+
+// --- auto-camera (frame own units on load; glide to a roster pick if off-screen) ---
+// Fraction of the map rectangle kept as breathing room around auto-fitted content,
+// so framed units don't sit flush against the panel edges.
+const FIT_PADDING = 0.12;
+// The on-load fit won't zoom in past this — keeps a lone or tightly-clustered force
+// from filling the whole view at an absurd magnification.
+const INITIAL_MAX_ZOOM = 1.5;
+// A unit counts as "comfortably in frame" when it sits within the map rectangle
+// inset by this fraction on each side; selecting one nearer the edge glides it back
+// toward centre.
+const COMFORT_MARGIN = 0.15;
+// Duration (ms) of a reveal glide.
+const CAMERA_GLIDE_MS = 350;
+// How far past the map's outer edge the camera may scroll — about one hex radius
+// of dead space, just enough to bring edge hexes off the panels without drifting
+// into a sea of background.
+const PAN_OVERSCROLL = HEX_SIZE;
+
+const easeInOutCubic = (t: number): number =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 // Planning overlay colours (range outline + staged/preview paths).
 const RANGE_OUTLINE = 0xffe066;
@@ -85,6 +108,47 @@ interface View {
   x: number;
   y: number;
   zoom: number;
+}
+
+/**
+ * A {@link View} that fits `bounds` (a world-pixel box) centred inside the `map`
+ * rectangle, zoomed in as far as `maxZoom` permits while leaving {@link FIT_PADDING}
+ * breathing room on every side.
+ */
+function fitView(bounds: MapBounds, map: Rect, maxZoom: number): View {
+  const availWidth = map.width * (1 - 2 * FIT_PADDING);
+  const availHeight = map.height * (1 - 2 * FIT_PADDING);
+  const zoom = Math.max(
+    MIN_ZOOM,
+    Math.min(maxZoom, availWidth / bounds.width, availHeight / bounds.height),
+  );
+  return {
+    zoom,
+    x: map.x + map.width / 2 - (bounds.minX + bounds.width / 2) * zoom,
+    y: map.y + map.height / 2 - (bounds.minY + bounds.height / 2) * zoom,
+  };
+}
+
+/**
+ * Clamp one axis of a {@link View} so the map can't be scrolled more than
+ * `overscroll` world units past its content. `view` is the pan offset on this
+ * axis, `mapStart`/`mapLen` the visible map rectangle on it, and
+ * `contentMin`/`contentMax` the map content's world extent. When the content
+ * (plus overscroll) is narrower than the viewport, it's centred instead.
+ */
+function clampViewAxis(
+  view: number,
+  zoom: number,
+  mapStart: number,
+  mapLen: number,
+  contentMin: number,
+  contentMax: number,
+  overscroll: number,
+): number {
+  const lo = mapStart + mapLen - (contentMax + overscroll) * zoom;
+  const hi = mapStart - (contentMin - overscroll) * zoom;
+  if (lo > hi) return (lo + hi) / 2;
+  return Math.min(hi, Math.max(lo, view));
 }
 
 /** Lock-control state + action (UI-SPEC §11), supplied only while planning. */
@@ -201,40 +265,121 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
     return () => ro.disconnect();
   }, []);
 
-  // Fit the whole map into the *map rectangle* (the surface minus docked panels)
-  // the first time we know the viewport size. Computed during render (a guarded,
-  // converging setState — React's blessed "initialize from props" pattern).
-  if (layout !== null && layout.map.width > 0 && layout.map.height > 0 && view === null && hexes.length > 0) {
-    const { map } = layout;
-    const bounds = mapPixelBounds(
-      hexes.map((h) => h.coord),
-      HEX_SIZE,
-    );
-    const zoom = Math.max(
-      MIN_ZOOM,
-      Math.min(MAX_ZOOM, Math.min(map.width / bounds.width, map.height / bounds.height)),
-    );
-    setView({
-      zoom,
-      x: map.x + map.width / 2 - (bounds.minX + bounds.width / 2) * zoom,
-      y: map.y + map.height / 2 - (bounds.minY + bounds.height / 2) * zoom,
-    });
+  // The map's world-pixel extent (outer hex corners), used to keep the camera
+  // from scrolling more than ~one hex radius past the edge.
+  const mapBounds = useMemo<MapBounds | null>(
+    () => (hexes.length > 0 ? mapPixelBounds(hexes.map((h) => h.coord), HEX_SIZE) : null),
+    [hexes],
+  );
+
+  // Constrain a view so the map can't drift into a sea of dead background: at most
+  // PAN_OVERSCROLL past each edge, centred when the map is smaller than the rect.
+  const clampView = useCallback(
+    (v: View): View => {
+      if (mapBounds === null || layout === null) return v;
+      const { map } = layout;
+      const x = clampViewAxis(
+        v.x, v.zoom, map.x, map.width,
+        mapBounds.minX, mapBounds.minX + mapBounds.width, PAN_OVERSCROLL,
+      );
+      const y = clampViewAxis(
+        v.y, v.zoom, map.y, map.height,
+        mapBounds.minY, mapBounds.minY + mapBounds.height, PAN_OVERSCROLL,
+      );
+      return v.x === x && v.y === y ? v : { ...v, x, y };
+    },
+    [mapBounds, layout],
+  );
+
+  // Keep the view in bounds whenever the map rect changes (resize, panels
+  // toggling) so a previously valid pan can't leave dead space exposed. A
+  // converging render-phase setState: `clampView` returns the same reference when
+  // already in bounds, so this no-ops once settled (React's "adjust state during
+  // render" pattern), and it never fights an in-flight glide (whose frames are
+  // already clamped).
+  if (view !== null) {
+    const clamped = clampView(view);
+    if (clamped !== view) setView(clamped);
   }
 
-  // Recenter the map rectangle on a world coordinate (roster row → jump to unit).
-  const centerOn = useCallback(
-    (coord: Axial) => {
-      setView((v) => {
-        if (v === null || layout === null) return v;
-        const p = axialToPixel(coord.q, coord.r, HEX_SIZE);
-        return {
-          ...v,
-          x: layout.map.x + layout.map.width / 2 - p.x * v.zoom,
-          y: layout.map.y + layout.map.height / 2 - p.y * v.zoom,
+  // Pick the opening camera the first time we know the viewport size: zoom in as
+  // far as is comfortable while keeping all of the viewer's own units in frame,
+  // falling back to the whole map when the viewer owns none (spectator/replay).
+  // Computed during render (a guarded, converging setState — React's blessed
+  // "initialize from props" pattern).
+  if (layout !== null && layout.map.width > 0 && layout.map.height > 0 && view === null && hexes.length > 0) {
+    const frameOwnUnits = ownUnits.length > 0;
+    const bounds = mapPixelBounds(
+      frameOwnUnits ? ownUnits.map((u) => u.coord) : hexes.map((h) => h.coord),
+      HEX_SIZE,
+    );
+    setView(clampView(fitView(bounds, layout.map, frameOwnUnits ? INITIAL_MAX_ZOOM : MAX_ZOOM)));
+  }
+
+  // --- reveal animation: glide the view toward a target over CAMERA_GLIDE_MS ---
+  const animRef = useRef<number | null>(null);
+
+  const cancelGlide = useCallback(() => {
+    if (animRef.current !== null) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
+  }, []);
+
+  // Drop any in-flight glide if this component unmounts.
+  useEffect(() => cancelGlide, [cancelGlide]);
+
+  // Smoothly interpolate from the current view to `target`. The starting view is
+  // captured live via the setState updater so a glide always begins from wherever
+  // the camera actually is (including mid-glide).
+  const glideTo = useCallback(
+    (rawTarget: View) => {
+      cancelGlide();
+      const target = clampView(rawTarget);
+      setView((from) => {
+        if (from === null) return target;
+        const start = performance.now();
+        const step = (now: number) => {
+          const t = Math.min(1, (now - start) / CAMERA_GLIDE_MS);
+          const e = easeInOutCubic(t);
+          setView({
+            x: from.x + (target.x - from.x) * e,
+            y: from.y + (target.y - from.y) * e,
+            zoom: from.zoom + (target.zoom - from.zoom) * e,
+          });
+          animRef.current = t < 1 ? requestAnimationFrame(step) : null;
         };
+        animRef.current = requestAnimationFrame(step);
+        return from;
       });
     },
-    [layout],
+    [cancelGlide, clampView],
+  );
+
+  // Roster row → bring the unit into view: do nothing if it's already comfortably
+  // framed, otherwise glide (at the current zoom) until it's centred.
+  const revealUnit = useCallback(
+    (coord: Axial) => {
+      if (view === null || layout === null) return;
+      const { map } = layout;
+      const p = axialToPixel(coord.q, coord.r, HEX_SIZE);
+      const sx = view.x + p.x * view.zoom;
+      const sy = view.y + p.y * view.zoom;
+      const marginX = map.width * COMFORT_MARGIN;
+      const marginY = map.height * COMFORT_MARGIN;
+      const comfortable =
+        sx >= map.x + marginX &&
+        sx <= map.x + map.width - marginX &&
+        sy >= map.y + marginY &&
+        sy <= map.y + map.height - marginY;
+      if (comfortable) return;
+      glideTo({
+        zoom: view.zoom,
+        x: map.x + map.width / 2 - p.x * view.zoom,
+        y: map.y + map.height / 2 - p.y * view.zoom,
+      });
+    },
+    [view, layout, glideTo],
   );
 
   // --- input: drag-pan, wheel-zoom, click-to-select (all DOM-level) ---
@@ -319,6 +464,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
       }
       rosterPressRef.current = false;
       bottomPressRef.current = false;
+      cancelGlide(); // a manual grab takes over from any in-flight reveal
       e.currentTarget.setPointerCapture(e.pointerId);
       dragRef.current = {
         startX: e.clientX,
@@ -328,7 +474,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
         moved: false,
       };
     },
-    [view, localPoint, overRoster, overBottom],
+    [view, localPoint, overRoster, overBottom, cancelGlide],
   );
 
   const onPointerMove = useCallback(
@@ -340,7 +486,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
         if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) {
           drag.moved = true;
         }
-        setView((v) => (v === null ? v : { ...v, x: drag.vx + dx, y: drag.vy + dy }));
+        setView((v) => (v === null ? v : clampView({ ...v, x: drag.vx + dx, y: drag.vy + dy })));
         return;
       }
       // Hovering the roster: highlight the row under the pointer (no map preview).
@@ -368,7 +514,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
       const next = hexByKey.has(key) ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, layout, rows.length],
+    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, layout, rows.length, clampView],
   );
 
   const onPointerUp = useCallback(
@@ -382,7 +528,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
           if (idx !== null) {
             const row = rows[idx];
             planning.selectUnit(row.unit.id);
-            centerOn(row.unit.coord);
+            revealUnit(row.unit.coord);
           }
         }
         return;
@@ -427,7 +573,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
         setSelected(onMap ? ax : null);
       }
     },
-    [view, screenToWorld, hexByKey, planning, lock, localPoint, overRoster, layout, rows, centerOn, runPaletteAction],
+    [view, screenToWorld, hexByKey, planning, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction],
   );
 
   const onPointerLeave = useCallback(() => {
@@ -442,6 +588,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
     (e: React.WheelEvent) => {
       const { sx, sy } = localPoint(e.clientX, e.clientY);
       if (overRoster(sx, sy) || overBottom(sx, sy)) return; // panels don't zoom the map
+      cancelGlide(); // a manual zoom takes over from any in-flight reveal
       setView((v) => {
         if (v === null) return v;
         const factor = Math.exp(-e.deltaY * 0.0015);
@@ -449,10 +596,10 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
         // keep the point under the cursor fixed while zooming
         const worldX = (sx - v.x) / v.zoom;
         const worldY = (sy - v.y) / v.zoom;
-        return { zoom, x: sx - worldX * zoom, y: sy - worldY * zoom };
+        return clampView({ zoom, x: sx - worldX * zoom, y: sy - worldY * zoom });
       });
     },
-    [localPoint, overRoster, overBottom],
+    [localPoint, overRoster, overBottom, cancelGlide, clampView],
   );
 
   // --- draw callbacks ---
