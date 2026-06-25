@@ -12,6 +12,7 @@ import { playerColor } from "@/board/palette";
 import type { components } from "@/lib/api/schema";
 import { UNIT_STATS } from "@/planning/rules";
 import type { OrderMode, StagedOrder } from "@/planning/usePlanning";
+import { sortWarnings, type UnitWarning } from "@/planning/warnings";
 
 import {
   BTN_H,
@@ -35,6 +36,8 @@ const BTN_FILL_ACTIVE = 0x2f3d63;
 const BTN_BORDER_ACTIVE = 0x8fb7ff;
 const BTN_TEXT = 0xe8e4dc;
 const BTN_TEXT_DISABLED = 0x565b65;
+const WARN_ERROR = 0xff6b6b;
+const WARN_INFO = 0xf5b342;
 
 // --- detail-block geometry ---
 const ICON_CX = 30;
@@ -58,6 +61,13 @@ const STYLE_ORDER = style(11, TEXT_PRIMARY);
 const STYLE_PLACEHOLDER = style(13, TEXT_SECONDARY);
 const STYLE_BTN = style(11, BTN_TEXT, "bold");
 const STYLE_BTN_DISABLED = style(11, BTN_TEXT_DISABLED, "bold");
+const STYLE_WARN_ERROR = style(11, WARN_ERROR);
+const STYLE_WARN_INFO = style(11, WARN_INFO);
+
+/** Left edge of the right-hand advisory column, kept clear of the stat columns. */
+const WARN_X = 300;
+const WARN_Y = 30;
+const WARN_LINE = 18;
 
 export interface SelectedUnitPanelProps {
   rect: Rect;
@@ -69,6 +79,8 @@ export interface SelectedUnitPanelProps {
   mode: OrderMode;
   /** The §5.2 order label (MOVE/ATTACK/BARRAGE/REST/HOLD/—), computed by Board. */
   orderLabel: string;
+  /** Advisory ZOC/traffic warnings for this unit (SPEC §16.1). */
+  warnings: readonly UnitWarning[];
 }
 
 /** Whether a palette button reads as the active mode/order (UI-SPEC §8). */
@@ -111,6 +123,7 @@ export function SelectedUnitPanel({
   staged,
   mode,
   orderLabel,
+  warnings,
 }: SelectedUnitPanelProps) {
   const drawChrome = (g: Graphics) => {
     g.clear();
@@ -165,6 +178,10 @@ export function SelectedUnitPanel({
 
   const stats = UNIT_STATS[unit.type];
   const buttons = paletteButtons(unit);
+  // The advisory column sits to the right of the stats; hide it on a panel too
+  // narrow to fit it without overlapping the palette text.
+  const showWarnings = rect.width >= WARN_X + 200;
+  const shownWarnings = showWarnings ? sortWarnings(warnings).slice(0, 3) : [];
 
   return (
     <pixiContainer x={rect.x} y={rect.y}>
@@ -216,6 +233,15 @@ export function SelectedUnitPanel({
           />
         );
       })}
+      {shownWarnings.map((w, i) => (
+        <pixiText
+          key={i}
+          text={`⚠ ${w.message}`}
+          style={w.severity === "error" ? STYLE_WARN_ERROR : STYLE_WARN_INFO}
+          x={WARN_X}
+          y={WARN_Y + i * WARN_LINE}
+        />
+      ))}
     </pixiContainer>
   );
 }

@@ -10,7 +10,7 @@ import { describeApiError } from "@/lib/api/errors";
 import { SLOTS, type GameView } from "@/lib/api/types";
 import { economyFor } from "@/planning/economy";
 import { usePlanning } from "@/planning/usePlanning";
-import { orderTally } from "@/planning/warnings";
+import { orderTally, planAdvisory } from "@/planning/warnings";
 
 import { GameHeader, type Phase } from "./GameHeader";
 
@@ -61,6 +61,14 @@ function Dashboard() {
     () => orderTally(ownUnits, planning.stagedByUnit),
     [ownUnits, planning.stagedByUnit],
   );
+  // Advisory ZOC / traffic predictions (SPEC §16.1) — only while planning.
+  const advisory = useMemo(
+    () =>
+      isPlanning
+        ? planAdvisory(view.state.units ?? [], view.your_slot, planning.stagedByUnit)
+        : null,
+    [isPlanning, view.state.units, view.your_slot, planning.stagedByUnit],
+  );
 
   // Lock submission (UI-SPEC §11). The lock control now lives in the Pixi bottom
   // dock; this owns the async POST + its in-flight / error state and hands them to
@@ -90,6 +98,7 @@ function Dashboard() {
         phase={phaseOf(view)}
         economy={economy}
         tally={isPlanning ? tally : null}
+        warnings={advisory?.count ?? 0}
       />
 
       <main className="relative flex-1 overflow-hidden">
@@ -102,6 +111,7 @@ function Dashboard() {
                 state={view.state}
                 yourSlot={view.your_slot}
                 planning={isPlanning ? planning : undefined}
+                advisory={advisory ?? undefined}
                 lock={
                   isPlanning
                     ? {

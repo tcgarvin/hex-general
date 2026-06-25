@@ -19,6 +19,8 @@ export interface GameHeaderProps {
   economy: Economy;
   /** Order tally, present only while it is the viewer's move to plan. */
   tally: OrderTally | null;
+  /** Count of units with an advisory ZOC/traffic problem (SPEC §16.1). */
+  warnings: number;
 }
 
 export function GameHeader({
@@ -27,6 +29,7 @@ export function GameHeader({
   phase,
   economy,
   tally,
+  warnings,
 }: GameHeaderProps) {
   const net = economy.net >= 0 ? `+${economy.net}` : `${economy.net}`;
   const idle = tally?.idleUnitIds.length ?? 0;
@@ -68,6 +71,12 @@ export function GameHeader({
       {idle > 0 && (
         <span className="rounded bg-amber-500/15 px-2 py-0.5 font-mono text-xs font-semibold text-amber-300">
           ⚠ {idle} IDLE
+        </span>
+      )}
+
+      {warnings > 0 && (
+        <span className="rounded bg-red-500/15 px-2 py-0.5 font-mono text-xs font-semibold text-red-300">
+          ⚠ {warnings} {warnings === 1 ? "WARNING" : "WARNINGS"}
         </span>
       )}
 

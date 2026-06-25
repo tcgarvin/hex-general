@@ -27,6 +27,7 @@ const TEXT_PRIMARY = 0xe8e4dc;
 const TEXT_SECONDARY = 0x9aa0a6;
 const MARK_IDLE = 0xf5b342;
 const MARK_ORDERED = 0x8fb7ff;
+const MARK_WARNING = 0xff6b6b;
 
 const style = (size: number, fill: number, weight: "normal" | "bold" = "normal") =>
   new TextStyle({ fontFamily: "monospace", fontSize: size, fill, fontWeight: weight });
@@ -37,8 +38,10 @@ const STYLE_COORD = style(11, TEXT_SECONDARY);
 const STYLE_LABEL = style(11, TEXT_PRIMARY);
 const STYLE_IDLE_LABEL = style(11, MARK_IDLE);
 const STYLE_HP = style(11, TEXT_SECONDARY);
+const STYLE_WARN_LABEL = style(11, MARK_WARNING, "bold");
 const STYLE_MARK_IDLE = style(12, MARK_IDLE, "bold");
 const STYLE_MARK_ORDERED = style(11, MARK_ORDERED, "bold");
+const STYLE_MARK_WARNING = style(12, MARK_WARNING, "bold");
 
 export interface RosterPanelProps {
   rect: Rect;
@@ -97,11 +100,18 @@ function RosterRowView({
   rectWidth: number;
 }) {
   const cy = y + ROW_HEIGHT / 2;
+  const markText = row.warning ? "⚠" : row.idle ? "!" : "✓";
+  const markStyle = row.warning
+    ? STYLE_MARK_WARNING
+    : row.idle
+      ? STYLE_MARK_IDLE
+      : STYLE_MARK_ORDERED;
+  const labelStyle = row.warning ? STYLE_WARN_LABEL : row.idle ? STYLE_IDLE_LABEL : STYLE_LABEL;
   return (
     <pixiContainer>
       <pixiText
-        text={row.idle ? "!" : "✓"}
-        style={row.idle ? STYLE_MARK_IDLE : STYLE_MARK_ORDERED}
+        text={markText}
+        style={markStyle}
         anchor={{ x: 0.5, y: 0.5 }}
         x={COL_MARKER}
         y={cy}
@@ -116,7 +126,7 @@ function RosterRowView({
       />
       <pixiText
         text={row.orderLabel}
-        style={row.idle ? STYLE_IDLE_LABEL : STYLE_LABEL}
+        style={labelStyle}
         anchor={{ x: 0, y: 0.5 }}
         x={COL_LABEL}
         y={cy}

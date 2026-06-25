@@ -27,6 +27,8 @@ export interface RosterRow {
   idle: boolean;
   selected: boolean;
   damaged: boolean;
+  /** The unit has an `error`-severity advisory problem (ZOC stop / traffic jam). */
+  warning: boolean;
 }
 
 /** Map a staged order to its display label (UI-SPEC §5.2). `ATTACK` is a derived
@@ -51,20 +53,25 @@ export function orderLabelOf(
   }
 }
 
-/** Sort rank (UI-SPEC §5.1 default sort): unordered first, then selected, then
- *  damaged, then the rest. (Traffic/ZOC warning ranks join once detected.) */
-function rankOf(row: { idle: boolean; selected: boolean; damaged: boolean }): number {
+/** Sort rank (UI-SPEC §5.1 default sort): unordered first, then warned (a plan
+ *  that will misfire needs attention), then selected, then damaged, then the rest. */
+function rankOf(row: { idle: boolean; warning: boolean; selected: boolean; damaged: boolean }): number {
   if (row.idle) return 0;
+  if (row.warning) return 1;
   if (row.selected) return 2;
   if (row.damaged) return 3;
   return 4;
 }
 
-/** Build the sorted roster rows for the viewer's own units. */
+const NO_WARNINGS: ReadonlySet<number> = new Set();
+
+/** Build the sorted roster rows for the viewer's own units. `warnedUnitIds`
+ *  carries the §16.1 error-severity problems (ZOC stop / traffic jam). */
 export function rosterRows(
   ownUnits: readonly Unit[],
   planning: PlanningController,
   enemyHexes: ReadonlySet<string>,
+  warnedUnitIds: ReadonlySet<number> = NO_WARNINGS,
 ): RosterRow[] {
   const rows = ownUnits.map((unit): RosterRow => {
     const order = planning.stagedByUnit[unit.id];
@@ -75,6 +82,7 @@ export function rosterRows(
       idle: order === undefined,
       selected: unit.id === planning.selectedUnitId,
       damaged: unit.hp < 10,
+      warning: warnedUnitIds.has(unit.id),
     };
   });
   // Stable sort: rank, with the input order as the implicit tiebreak (Array.sort

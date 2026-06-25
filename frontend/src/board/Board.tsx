@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { components } from "@/lib/api/schema";
 import { reachableContinuations } from "@/planning/reach";
 import type { Planning } from "@/planning/usePlanning";
+import type { PlanAdvisory, UnitWarning } from "@/planning/warnings";
 
 import {
   AXIAL_DIRECTIONS,
@@ -83,9 +84,16 @@ const PREVIEW_COLOR = 0xfff4c2;
 // Barrage overlay (target range + staged shot), in a distinct red/orange.
 const BARRAGE_RANGE = 0xff7043;
 const BARRAGE_COLOR = 0xff5252;
+// Advisory overlays (SPEC §16.1): enemy ZOC halo, friendly traffic jam, the hex
+// an illegal ZOC→ZOC move would be blocked at.
+const ZOC_COLOR = 0xff5252;
+const TRAFFIC_COLOR = 0xffa726;
+const ZOC_STOP_COLOR = 0xff5252;
 
 // Stable empty path so unkeyed lookups don't churn memo identities.
 const EMPTY_PATH: readonly Axial[] = [];
+// Stable empty warnings, so an unwarned selection doesn't churn the panel.
+const EMPTY_WARNINGS: readonly UnitWarning[] = [];
 
 const hpStyle = new TextStyle({
   fontFamily: "monospace",
@@ -167,11 +175,13 @@ export interface BoardProps {
   yourSlot: string;
   /** Planning state, supplied only when it is the viewer's move to plan. */
   planning?: Planning;
+  /** Advisory ZOC/traffic predictions, supplied alongside `planning` (SPEC §16.1). */
+  advisory?: PlanAdvisory;
   /** Lock control, supplied alongside `planning` (UI-SPEC §11). */
   lock?: LockState;
 }
 
-export function Board({ state, yourSlot, planning, lock }: BoardProps) {
+export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -203,8 +213,11 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
     return s;
   }, [units, yourSlot]);
   const rows = useMemo(
-    () => (planning === undefined ? [] : rosterRows(ownUnits, planning, enemyHexKeys)),
-    [planning, ownUnits, enemyHexKeys],
+    () =>
+      planning === undefined
+        ? []
+        : rosterRows(ownUnits, planning, enemyHexKeys, advisory?.problemUnitIds),
+    [planning, ownUnits, enemyHexKeys, advisory],
   );
   const [rosterHover, setRosterHover] = useState<number | null>(null);
 
@@ -657,6 +670,40 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
     [selected],
   );
 
+  // Advisory layer (SPEC §16.1), drawn under the planning paths: a faint halo on
+  // every hex in visible enemy ZOC, plus an amber ✕ on each friendly traffic jam.
+  const drawZoc = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      if (advisory === undefined) return;
+
+      for (const key of advisory.enemyZoc) {
+        const hex = hexByKey.get(key);
+        if (hex === undefined) continue;
+        const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
+        g.poly(hexCornerPoints(x, y, HEX_SIZE - 1));
+      }
+      g.fill({ color: ZOC_COLOR, alpha: 0.08 });
+      for (const key of advisory.enemyZoc) {
+        const hex = hexByKey.get(key);
+        if (hex === undefined) continue;
+        const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
+        g.poly(hexCornerPoints(x, y, HEX_SIZE - 1));
+      }
+      g.stroke({ width: 1, color: ZOC_COLOR, alpha: 0.28 });
+
+      for (const key of advisory.trafficHexes) {
+        const hex = hexByKey.get(key);
+        if (hex === undefined) continue;
+        const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
+        g.moveTo(x - 8, y - 8).lineTo(x + 8, y + 8);
+        g.moveTo(x + 8, y - 8).lineTo(x - 8, y + 8);
+      }
+      g.stroke({ width: 2.5, color: TRAFFIC_COLOR });
+    },
+    [advisory, hexByKey],
+  );
+
   // Planning layer: the selected unit's movement-range outline, every staged
   // path (selected emphasized, others still clearly drawn so pending orders stay
   // visible), the hovered route preview, and a ring on the selected unit.
@@ -758,8 +805,19 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
         g.poly(hexCornerPoints(x, y, HEX_SIZE));
         g.stroke({ width: 2.5, color: 0xffffff });
       }
+
+      // illegal ZOC→ZOC stops (SPEC §8.4): ring + ✕ on the hex a move can't enter.
+      if (advisory !== undefined && advisory.zocStopByUnit.size > 0) {
+        for (const dest of advisory.zocStopByUnit.values()) {
+          const { x, y } = axialToPixel(dest.q, dest.r, HEX_SIZE);
+          g.poly(hexCornerPoints(x, y, HEX_SIZE - 2));
+          g.moveTo(x - 9, y - 9).lineTo(x + 9, y + 9);
+          g.moveTo(x + 9, y - 9).lineTo(x - 9, y + 9);
+        }
+        g.stroke({ width: 2, color: ZOC_STOP_COLOR });
+      }
     },
-    [planning, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
+    [planning, advisory, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
   );
 
   // The selected unit's staged order + its §5.2 display label, for the detail panel.
@@ -787,6 +845,7 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
           <pixiContainer x={view.x} y={view.y} scale={view.zoom}>
             <pixiGraphics draw={drawTerrain} />
             <pixiGraphics draw={drawSelection} />
+            <pixiGraphics draw={drawZoc} />
             <pixiGraphics draw={drawPlanning} />
             {units.map((u) => (
               <UnitMarker key={u.id} unit={u} />
@@ -808,6 +867,9 @@ export function Board({ state, yourSlot, planning, lock }: BoardProps) {
                 staged={selectedStaged}
                 mode={mode}
                 orderLabel={selectedOrderLabel}
+                warnings={
+                  selectedUnitId === null ? EMPTY_WARNINGS : (advisory?.byUnit.get(selectedUnitId) ?? EMPTY_WARNINGS)
+                }
               />
               {lock !== undefined && (
                 <LockPanel
