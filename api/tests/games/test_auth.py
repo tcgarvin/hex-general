@@ -71,16 +71,21 @@ def test_non_dev_impersonation_is_403(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_dev_user_id_set_parses_csv() -> None:
+    # _env_file=None keeps the test hermetic — a developer's local .env may set
+    # DEV_USER_IDS, which would otherwise leak in and break the assertion.
     settings = Settings(
         supabase_url="https://x.supabase.co",
         supabase_service_role_key="k",
         dev_user_ids=" a , b ,, c ",
+        _env_file=None,
     )
     assert settings.dev_user_id_set == frozenset({"a", "b", "c"})
 
 
 def test_dev_user_id_set_empty_by_default() -> None:
     settings = Settings(
-        supabase_url="https://x.supabase.co", supabase_service_role_key="k"
+        supabase_url="https://x.supabase.co",
+        supabase_service_role_key="k",
+        _env_file=None,
     )
     assert settings.dev_user_id_set == frozenset()

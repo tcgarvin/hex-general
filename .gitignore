@@ -18,6 +18,9 @@ venv/
 # Vercel
 .vercel
 
+# Claude Code personal settings (shared config lives in .claude/settings.json)
+.claude/settings.local.json
+
 # Local Supabase stack (scripts/dev-up.sh): throwaway ES256 signing key + temp
 # state. Never commit signing keys, even local ones.
 supabase/signing_keys.json
