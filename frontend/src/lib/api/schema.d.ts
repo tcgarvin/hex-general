@@ -437,7 +437,10 @@ export interface components {
          *
          *     ``state`` is redacted to the caller's perspective: enemy units on hexes the
          *     caller cannot see are removed (the map, settlement control, and banks are
-         *     public in v0.1). ``victory`` is the authoritative global outcome.
+         *     public in v0.1). ``victory`` is the authoritative global outcome. ``visible``
+         *     is the set of hexes the caller's units currently illuminate (SPEC §9), so the
+         *     frontend can dim everything outside it as fog of war; the map itself is public,
+         *     so fog is a rendering hint, not a redaction.
          */
         GameView: {
             /** Game Id */
@@ -456,6 +459,8 @@ export interface components {
             /** Turn */
             turn: number;
             victory: components["schemas"]["VictoryStatus"];
+            /** Visible */
+            visible: components["schemas"]["Axial"][];
             /** Your Slot */
             your_slot: string;
         };

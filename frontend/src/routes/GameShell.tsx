@@ -115,6 +115,7 @@ function Dashboard() {
               <Board
                 state={view.state}
                 yourSlot={view.your_slot}
+                visible={view.visible}
                 planning={active ? planning : undefined}
                 locked={locked}
                 advisory={advisory ?? undefined}

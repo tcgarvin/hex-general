@@ -100,6 +100,10 @@ const PATH_BLOCKED_COLOR = 0xff5252;
 const PATH_BLOCKED_STAGED_COLOR = 0xb83434;
 // Advisory overlay (SPEC §16.1): friendly traffic jam marker.
 const TRAFFIC_COLOR = 0xffa726;
+// Fog of war (SPEC §9): hexes outside the viewer's vision are veiled with this
+// translucent dark wash so lit hexes read at full brightness against them.
+const FOG_COLOR = 0x05060a;
+const FOG_ALPHA = 0.55;
 
 // Stable empty path so unkeyed lookups don't churn memo identities.
 const EMPTY_PATH: readonly Axial[] = [];
@@ -195,6 +199,12 @@ export interface BoardProps {
   state: GameState;
   /** The viewer's slot; reserved for own-unit emphasis in later slices. */
   yourSlot: string;
+  /**
+   * Hexes the viewer's units currently illuminate (SPEC §9). Everything outside
+   * this set is drawn dimmed as fog of war. The map is public, so this is purely a
+   * rendering hint — when omitted (e.g. replay), nothing is dimmed.
+   */
+  visible?: readonly Axial[];
   /** Planning state, supplied throughout the viewer's active turn (incl. once locked). */
   planning?: Planning;
   /**
@@ -208,7 +218,7 @@ export interface BoardProps {
   lock?: LockState;
 }
 
-export function Board({ state, yourSlot, planning, locked = false, advisory, lock }: BoardProps) {
+export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -216,6 +226,14 @@ export function Board({ state, yourSlot, planning, locked = false, advisory, loc
 
   const hexes = useMemo(() => state.map.hexes ?? [], [state.map.hexes]);
   const units = useMemo(() => state.units ?? [], [state.units]);
+  // Fog of war: hexes the viewer can't currently see are dimmed. An undefined
+  // `visible` (e.g. replay) means "no fog" — every hex draws at full brightness.
+  const visibleKeys = useMemo<ReadonlySet<string> | null>(() => {
+    if (visible === undefined) return null;
+    const s = new Set<string>();
+    for (const c of visible) s.add(hexKey(c.q, c.r));
+    return s;
+  }, [visible]);
   const settlements = useMemo(() => state.settlements ?? [], [state.settlements]);
 
   // --- docked-panel layout (UI-SPEC §2): the roster reserves the left edge while
@@ -726,8 +744,20 @@ export function Board({ state, yourSlot, planning, locked = false, advisory, loc
           color: owner === null ? NEUTRAL_COLOR : playerColor(owner),
         });
       }
+
+      // fog of war: veil every hex outside the viewer's vision last, so the wash
+      // dims terrain, roads, and settlement rings alike (the map is public, but
+      // unseen ground should read as out-of-sight).
+      if (visibleKeys !== null) {
+        for (const h of hexes) {
+          if (visibleKeys.has(hexKey(h.coord.q, h.coord.r))) continue;
+          const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
+          g.poly(hexCornerPoints(x, y, HEX_SIZE));
+          g.fill({ color: FOG_COLOR, alpha: FOG_ALPHA });
+        }
+      }
     },
-    [hexes, hexByKey, settlementOwner],
+    [hexes, hexByKey, settlementOwner, visibleKeys],
   );
 
   const drawSelection = useCallback(

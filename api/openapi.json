@@ -269,7 +269,7 @@
         "type": "object"
       },
       "GameView": {
-        "description": "A player's fog-filtered view of a game (SPEC \u00a79).\n\n``state`` is redacted to the caller's perspective: enemy units on hexes the\ncaller cannot see are removed (the map, settlement control, and banks are\npublic in v0.1). ``victory`` is the authoritative global outcome.",
+        "description": "A player's fog-filtered view of a game (SPEC \u00a79).\n\n``state`` is redacted to the caller's perspective: enemy units on hexes the\ncaller cannot see are removed (the map, settlement control, and banks are\npublic in v0.1). ``victory`` is the authoritative global outcome. ``visible``\nis the set of hexes the caller's units currently illuminate (SPEC \u00a79), so the\nfrontend can dim everything outside it as fog of war; the map itself is public,\nso fog is a rendering hint, not a redaction.",
         "properties": {
           "game_id": {
             "title": "Game Id",
@@ -314,6 +314,13 @@
           "victory": {
             "$ref": "#/components/schemas/VictoryStatus"
           },
+          "visible": {
+            "items": {
+              "$ref": "#/components/schemas/Axial"
+            },
+            "title": "Visible",
+            "type": "array"
+          },
           "your_slot": {
             "title": "Your Slot",
             "type": "string"
@@ -327,6 +334,7 @@
           "slots_present",
           "locked",
           "state",
+          "visible",
           "victory",
           "invite_token"
         ],

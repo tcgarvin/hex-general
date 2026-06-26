@@ -29,6 +29,7 @@ from app.engine.events import Event
 from app.engine.execution import resolve_execution
 from app.engine.fog import filter_events, redact_state
 from app.engine.models import GameState, Order, Recruitment
+from app.engine.visibility import visible_hexes
 from app.engine.scenario import load_scenario_file
 from app.engine.victory import VictoryStatus, victory_status
 from app.games.repo import GameRecord, GameRepo, PlayerRecord
@@ -193,6 +194,9 @@ class GameService:
             slots_present=slots_present,
             locked=locked,
             state=redact_state(game.state, player.slot),
+            visible=sorted(
+                visible_hexes(game.state, player.slot), key=lambda c: (c.q, c.r)
+            ),
             victory=victory_status(game.state),
             invite_token=invite_token,
         )

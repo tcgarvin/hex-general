@@ -13,6 +13,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.engine.hex_coords import Axial
 from app.engine.models import GameState, Order, PlayerId, Recruitment
 from app.engine.victory import VictoryStatus
 
@@ -109,7 +110,10 @@ class GameView(BaseModel):
 
     ``state`` is redacted to the caller's perspective: enemy units on hexes the
     caller cannot see are removed (the map, settlement control, and banks are
-    public in v0.1). ``victory`` is the authoritative global outcome.
+    public in v0.1). ``victory`` is the authoritative global outcome. ``visible``
+    is the set of hexes the caller's units currently illuminate (SPEC §9), so the
+    frontend can dim everything outside it as fog of war; the map itself is public,
+    so fog is a rendering hint, not a redaction.
     """
 
     game_id: str
@@ -119,6 +123,7 @@ class GameView(BaseModel):
     slots_present: list[PlayerId]
     locked: dict[PlayerId, bool]
     state: GameState
+    visible: list[Axial]
     victory: VictoryStatus
     # The invite token for the still-open slot, or None once the game is full.
     invite_token: str | None
