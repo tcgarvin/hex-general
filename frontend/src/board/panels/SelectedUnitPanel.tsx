@@ -81,6 +81,8 @@ export interface SelectedUnitPanelProps {
   orderLabel: string;
   /** Advisory ZOC/traffic warnings for this unit (SPEC §16.1). */
   warnings: readonly UnitWarning[];
+  /** Orders are locked: the palette is shown greyed-out and inert (review only). */
+  locked: boolean;
 }
 
 /** Whether a palette button reads as the active mode/order (UI-SPEC §8). */
@@ -124,6 +126,7 @@ export function SelectedUnitPanel({
   mode,
   orderLabel,
   warnings,
+  locked,
 }: SelectedUnitPanelProps) {
   const drawChrome = (g: Graphics) => {
     g.clear();
@@ -144,12 +147,12 @@ export function SelectedUnitPanel({
       g.rect(x, 30, PIP_W, PIP_H).fill({ color: i < filled ? PIP_FILLED : PIP_EMPTY });
     }
 
-    // palette buttons
+    // palette buttons — all inert (greyed, no active highlight) once locked
     const buttons = paletteButtons(unit);
     buttons.forEach((b, i) => {
       const r = paletteButtonRect(i);
-      const active = isActive(b.action, staged, mode);
-      const disabled = b.action === "clear" && staged === undefined;
+      const active = !locked && isActive(b.action, staged, mode);
+      const disabled = locked || (b.action === "clear" && staged === undefined);
       g.rect(r.x, r.y, r.width, r.height).fill({
         color: active ? BTN_FILL_ACTIVE : BTN_FILL,
       });
@@ -221,11 +224,11 @@ export function SelectedUnitPanel({
       />
       {buttons.map((b, i) => {
         const r = paletteButtonRect(i);
-        const disabled = b.action === "clear" && staged === undefined;
+        const disabled = locked || (b.action === "clear" && staged === undefined);
         return (
           <pixiText
             key={b.action}
-            text={mode === "barrage" && b.action === "barrage" ? "Aiming…" : b.label}
+            text={!locked && mode === "barrage" && b.action === "barrage" ? "Aiming…" : b.label}
             style={disabled ? STYLE_BTN_DISABLED : STYLE_BTN}
             anchor={{ x: 0.5, y: 0.5 }}
             x={r.x + r.width / 2}

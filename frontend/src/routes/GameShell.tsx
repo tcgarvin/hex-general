@@ -44,10 +44,13 @@ function Dashboard() {
   const { view, refresh } = useGame();
 
   const planning = usePlanning(view.state, view.your_slot, view.turn);
-  const isPlanning =
-    view.status === "active" &&
-    view.victory.reason === "ongoing" &&
-    view.locked[view.your_slot] !== true;
+  // The planning surface (roster + bottom dock) is shown for the whole of your
+  // active turn — including after you lock — so the panels don't vanish out from
+  // under you. `locked` flips them to a read-only, greyed presentation; only
+  // `isPlanning` (active, ongoing, *not* locked) permits order edits.
+  const active = view.status === "active" && view.victory.reason === "ongoing";
+  const locked = view.locked[view.your_slot] === true;
+  const isPlanning = active && !locked;
 
   const economy = useMemo(
     () => economyFor(view.state, view.your_slot),
@@ -61,13 +64,15 @@ function Dashboard() {
     () => orderTally(ownUnits, planning.stagedByUnit),
     [ownUnits, planning.stagedByUnit],
   );
-  // Advisory ZOC / traffic predictions (SPEC §16.1) — only while planning.
+  // Advisory ZOC / traffic predictions (SPEC §16.1). Computed for the whole active
+  // turn so the locked, read-only panels keep showing what your committed plan
+  // risks — not just while it's still editable.
   const advisory = useMemo(
     () =>
-      isPlanning
+      active
         ? planAdvisory(view.state.units ?? [], view.your_slot, planning.stagedByUnit)
         : null,
-    [isPlanning, view.state.units, view.your_slot, planning.stagedByUnit],
+    [active, view.state.units, view.your_slot, planning.stagedByUnit],
   );
 
   // Lock submission (UI-SPEC §11). The lock control now lives in the Pixi bottom
@@ -97,7 +102,7 @@ function Dashboard() {
         turnLimit={view.state.config.victory.turn_limit}
         phase={phaseOf(view)}
         economy={economy}
-        tally={isPlanning ? tally : null}
+        tally={active ? tally : null}
         warnings={advisory?.count ?? 0}
       />
 
@@ -110,16 +115,18 @@ function Dashboard() {
               <Board
                 state={view.state}
                 yourSlot={view.your_slot}
-                planning={isPlanning ? planning : undefined}
+                planning={active ? planning : undefined}
+                locked={locked}
                 advisory={advisory ?? undefined}
                 lock={
-                  isPlanning
+                  active
                     ? {
                         ordered: tally.ordered,
                         total: tally.total,
                         idle: tally.idleUnitIds.length,
                         submitting: locking,
                         error: lockError,
+                        locked,
                         onLock: () => void lockOrders(),
                       }
                     : undefined

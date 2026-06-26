@@ -96,13 +96,18 @@ lifecycle (`GameView.status`, `locked[slot]`, `victory.reason`):
 | ------------------ | ------------------------------------------------------ | ------------------------------------------------------- |
 | **Lobby**          | `status == "lobby"`                                    | "Waiting for opponent" + invite link; map may be hidden |
 | **Your move**      | active, ongoing, `locked[you] != true`                 | Full planning panels; roster, palette, lock control live |
-| **Waiting**        | active, ongoing, `locked[you] == true`                 | Read-only board; "Locked in — waiting on opponent…"     |
+| **Waiting**        | active, ongoing, `locked[you] == true`                 | Panels stay docked but go read-only: greyed palette/recruit/lock buttons, `LOCKED — waiting on opponent…`. The roster still selects units (and the board still review-selects your own units) so you can re-read your committed plan; no order edits. |
 | **Replay**         | a new resolved turn is available to step through       | Replay panel (Phase 10): scrubber + event log over board |
 | **Game over**      | `victory.reason != "ongoing"`                          | Outcome banner; board read-only                          |
 
 This is async two-player: there is no single-player "End Turn → resolve now."
 Locking submits your orders; the server resolves only once **both** players lock.
 See [§11](#11-lock-control-not-end-turn).
+
+**Locking does not collapse the planning chrome.** The roster and bottom dock
+stay exactly where they were — locking only flips them to a read-only state
+(greyed, inert action buttons) so the layout never jumps out from under you and
+you can keep reviewing what you committed while waiting on your opponent.
 
 ---
 
@@ -395,7 +400,7 @@ States:
 | All units ordered, all valid    | `LOCK ORDERS`                          |
 | Some idle (still lockable)      | `LOCK ORDERS` + idle warning           |
 | Any invalid staged order        | `FIX ORDERS` (disabled until resolved) |
-| Already locked                  | `LOCKED — waiting on opponent…`        |
+| Already locked                  | `LOCKED` / `waiting on opponent…` — greyed and inert (the panel stays docked, not removed) |
 
 Idle units are allowed (an unordered unit simply holds position) — so idle is a
 warning, not a block. Locking with warnings opens a confirm that can cycle the

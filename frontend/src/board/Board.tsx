@@ -179,13 +179,15 @@ function clampViewAxis(
   return Math.min(hi, Math.max(lo, view));
 }
 
-/** Lock-control state + action (UI-SPEC §11), supplied only while planning. */
+/** Lock-control state + action (UI-SPEC §11), supplied throughout your turn. */
 export interface LockState {
   ordered: number;
   total: number;
   idle: number;
   submitting: boolean;
   error: string | null;
+  /** Your orders are already locked: the control reads "LOCKED" and does nothing. */
+  locked: boolean;
   onLock: () => void;
 }
 
@@ -193,15 +195,20 @@ export interface BoardProps {
   state: GameState;
   /** The viewer's slot; reserved for own-unit emphasis in later slices. */
   yourSlot: string;
-  /** Planning state, supplied only when it is the viewer's move to plan. */
+  /** Planning state, supplied throughout the viewer's active turn (incl. once locked). */
   planning?: Planning;
+  /**
+   * The viewer has locked their orders: the panels stay docked but turn read-only
+   * — order edits are suppressed and the action buttons render greyed out.
+   */
+  locked?: boolean;
   /** Advisory ZOC/traffic predictions, supplied alongside `planning` (SPEC §16.1). */
   advisory?: PlanAdvisory;
   /** Lock control, supplied alongside `planning` (UI-SPEC §11). */
   lock?: LockState;
 }
 
-export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps) {
+export function Board({ state, yourSlot, planning, locked = false, advisory, lock }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -279,13 +286,15 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
   }, [selectedUnitId, planning?.stagedByUnit]);
 
   // Every hex the selected unit can still route to, mapped to the full route.
-  // Only in move mode — while aiming a barrage, the move range is hidden.
+  // Only in move mode — while aiming a barrage, the move range is hidden. Once
+  // locked there is no routing to do, so the range outline + hover preview are
+  // suppressed (the committed path itself still draws).
   const continuations = useMemo(
     () =>
-      selectedUnit === null || mode !== "move"
+      locked || selectedUnit === null || mode !== "move"
         ? null
         : reachableContinuations(selectedUnit, selectedPath, hexByKey),
-    [selectedUnit, mode, selectedPath, hexByKey],
+    [locked, selectedUnit, mode, selectedPath, hexByKey],
   );
 
   // The route a click at the hovered hex would commit (origin → hover). Resolved
@@ -546,8 +555,8 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
       }
       // Over the map: in move mode with a unit selected, track the hovered hex so
       // the board can preview the route a click would commit (no preview while
-      // aiming a barrage).
-      if (planning === undefined || selectedUnitId === null || mode !== "move" || view === null)
+      // aiming a barrage, or once orders are locked).
+      if (planning === undefined || locked || selectedUnitId === null || mode !== "move" || view === null)
         return;
       const world = screenToWorld(e.clientX, e.clientY, view);
       const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
@@ -555,7 +564,7 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
       const next = hexByKey.has(key) ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, layout, rows.length, clampView],
+    [planning, locked, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, layout, rows.length, clampView],
   );
 
   const onPointerUp = useCallback(
@@ -580,6 +589,9 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
         bottomPressRef.current = false;
         const { sx, sy } = localPoint(e.clientX, e.clientY);
         if (planning === undefined || layout === null) return;
+        // Locked: the dock is read-only — its buttons are greyed and inert, but a
+        // press here still must not fall through to a map pan.
+        if (locked) return;
         if (pointInRect(sx, sy, layout.selectedUnit)) {
           const localX = sx - layout.selectedUnit.x;
           const localY = sy - layout.selectedUnit.y;
@@ -627,8 +639,17 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
       const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
       const onMap = hexByKey.has(hexKey(ax.q, ax.r));
       if (planning !== undefined) {
-        // Planning mode: clicks select units and build paths (off-map is ignored).
-        if (onMap) planning.onHexClick(ax);
+        if (onMap) {
+          if (locked) {
+            // Locked: clicks only review-select one of your own units (no order
+            // edits) — clicking elsewhere clears the selection.
+            const own = ownUnits.find((u) => axialEqual(u.coord, ax));
+            planning.selectUnit(own?.id ?? null);
+          } else {
+            // Planning: clicks select units and build paths (off-map is ignored).
+            planning.onHexClick(ax);
+          }
+        }
         // The committed path may have moved; recompute the preview on the next move.
         setHoverKey(null);
       } else {
@@ -636,7 +657,7 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
         setSelected(onMap ? ax : null);
       }
     },
-    [view, screenToWorld, hexByKey, planning, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction, bank, unitCap, ownUnits.length],
+    [view, screenToWorld, hexByKey, planning, locked, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction, bank, unitCap, ownUnits],
   );
 
   const onPointerLeave = useCallback(() => {
@@ -937,6 +958,7 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
                   bank={bank}
                   ownUnitCount={ownUnits.length}
                   unitCap={unitCap}
+                  locked={locked}
                 />
               ) : (
                 <SelectedUnitPanel
@@ -948,6 +970,7 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
                   warnings={
                     selectedUnitId === null ? EMPTY_WARNINGS : (advisory?.byUnit.get(selectedUnitId) ?? EMPTY_WARNINGS)
                   }
+                  locked={locked}
                 />
               )}
               {lock !== undefined && (
@@ -958,6 +981,7 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
                   idle={lock.idle}
                   submitting={lock.submitting}
                   error={lock.error}
+                  locked={lock.locked}
                 />
               )}
             </>

@@ -27,6 +27,8 @@ const style = (size: number, fill: number, weight: "normal" | "bold" = "normal")
   new TextStyle({ fontFamily: "monospace", fontSize: size, fill, fontWeight: weight });
 
 const STYLE_BTN = style(14, TEXT_PRIMARY, "bold");
+// Once locked the button reads as a disabled status, not a call to action.
+const STYLE_BTN_LOCKED = style(14, TEXT_SECONDARY, "bold");
 const STYLE_TALLY = style(12, TEXT_SECONDARY);
 const STYLE_WARN = style(12, TEXT_WARN, "bold");
 // A long API error must wrap rather than overflow the narrow panel.
@@ -51,10 +53,15 @@ export interface LockPanelProps {
   submitting: boolean;
   /** Submission error, if the last lock attempt failed. */
   error: string | null;
+  /** Orders are already locked: the control reads "LOCKED" and is inert. */
+  locked: boolean;
 }
 
 /** Docked bottom-right lock readiness block. */
-export function LockPanel({ rect, ordered, total, idle, submitting, error }: LockPanelProps) {
+export function LockPanel({ rect, ordered, total, idle, submitting, error, locked }: LockPanelProps) {
+  // Locked or in-flight both darken the button; locked additionally makes it inert.
+  const dimmed = submitting || locked;
+
   const drawChrome = (g: Graphics) => {
     g.clear();
     g.rect(0, 0, rect.width, rect.height).fill({ color: PANEL_FILL });
@@ -63,12 +70,12 @@ export function LockPanel({ rect, ordered, total, idle, submitting, error }: Loc
 
     // the lock button itself
     g.rect(PAD, PAD, rect.width - PAD * 2, BTN_H).fill({
-      color: submitting ? BTN_FILL_BUSY : BTN_FILL,
+      color: dimmed ? BTN_FILL_BUSY : BTN_FILL,
     });
     g.rect(PAD, PAD, rect.width - PAD * 2, BTN_H).stroke({
       width: 1.5,
       color: BTN_BORDER,
-      alpha: submitting ? 0.5 : 1,
+      alpha: dimmed ? 0.5 : 1,
     });
   };
 
@@ -78,36 +85,48 @@ export function LockPanel({ rect, ordered, total, idle, submitting, error }: Loc
     <pixiContainer x={rect.x} y={rect.y}>
       <pixiGraphics draw={drawChrome} />
       <pixiText
-        text={submitting ? "Locking…" : "LOCK ORDERS"}
-        style={STYLE_BTN}
+        text={locked ? "LOCKED" : submitting ? "Locking…" : "LOCK ORDERS"}
+        style={locked ? STYLE_BTN_LOCKED : STYLE_BTN}
         anchor={{ x: 0.5, y: 0.5 }}
         x={cx}
         y={PAD + BTN_H / 2}
       />
-      <pixiText
-        text={`${ordered} / ${total} set`}
-        style={STYLE_TALLY}
-        anchor={{ x: 0.5, y: 0 }}
-        x={cx}
-        y={PAD + BTN_H + 12}
-      />
-      {idle > 0 && (
+      {locked ? (
         <pixiText
-          text={`⚠ ${idle} idle`}
-          style={STYLE_WARN}
+          text="waiting on opponent…"
+          style={STYLE_TALLY}
           anchor={{ x: 0.5, y: 0 }}
           x={cx}
-          y={PAD + BTN_H + 32}
+          y={PAD + BTN_H + 12}
         />
-      )}
-      {error !== null && (
-        <pixiText
-          text={error}
-          style={STYLE_ERROR}
-          anchor={{ x: 0.5, y: 0 }}
-          x={cx}
-          y={rect.height - 30}
-        />
+      ) : (
+        <>
+          <pixiText
+            text={`${ordered} / ${total} set`}
+            style={STYLE_TALLY}
+            anchor={{ x: 0.5, y: 0 }}
+            x={cx}
+            y={PAD + BTN_H + 12}
+          />
+          {idle > 0 && (
+            <pixiText
+              text={`⚠ ${idle} idle`}
+              style={STYLE_WARN}
+              anchor={{ x: 0.5, y: 0 }}
+              x={cx}
+              y={PAD + BTN_H + 32}
+            />
+          )}
+          {error !== null && (
+            <pixiText
+              text={error}
+              style={STYLE_ERROR}
+              anchor={{ x: 0.5, y: 0 }}
+              x={cx}
+              y={rect.height - 30}
+            />
+          )}
+        </>
       )}
     </pixiContainer>
   );

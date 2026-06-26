@@ -69,6 +69,8 @@ export interface RecruitPanelProps {
   ownUnitCount: number;
   /** The unit cap (GameConfig.unit_cap). */
   unitCap: number;
+  /** Orders are locked: the type palette is shown greyed-out and inert. */
+  locked: boolean;
 }
 
 /** Draw a unit type marker (matches the board UnitMarker / selected-unit shapes). */
@@ -105,6 +107,7 @@ export function RecruitPanel({
   bank,
   ownUnitCount,
   unitCap,
+  locked,
 }: RecruitPanelProps) {
   const buttons = recruitButtons();
   const avail = recruitAvailability(city, recruitBySite, bank, ownUnitCount, unitCap);
@@ -120,10 +123,11 @@ export function RecruitPanel({
     if (avail.currentType === null) drawCityGlyph(g);
     else drawTypeIcon(g, avail.currentType, owner);
 
+    // type buttons — all inert (greyed, no active highlight) once locked
     buttons.forEach((b, i) => {
       const r = recruitButtonRect(i);
-      const active = avail.currentType === b.type;
-      const enabled = active || canRecruit(b, avail);
+      const active = !locked && avail.currentType === b.type;
+      const enabled = !locked && (avail.currentType === b.type || canRecruit(b, avail));
       g.rect(r.x, r.y, r.width, r.height).fill({
         color: active ? BTN_FILL_ACTIVE : BTN_FILL,
       });
@@ -137,8 +141,9 @@ export function RecruitPanel({
 
   const nothingAffordable =
     avail.currentType === null && !buttons.some((b) => canRecruit(b, avail));
-  const hint =
-    avail.slotsLeft < 1
+  const hint = locked
+    ? "Orders locked"
+    : avail.slotsLeft < 1
       ? "Unit cap reached"
       : nothingAffordable
         ? "Not enough muster"
@@ -178,8 +183,7 @@ export function RecruitPanel({
       )}
       {buttons.map((b, i) => {
         const r = recruitButtonRect(i);
-        const active = avail.currentType === b.type;
-        const enabled = active || canRecruit(b, avail);
+        const enabled = !locked && (avail.currentType === b.type || canRecruit(b, avail));
         return (
           <pixiText
             key={b.type}
