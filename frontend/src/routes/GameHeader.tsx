@@ -6,6 +6,8 @@
 import { Link } from "react-router";
 
 import { AccountMenu } from "@/components/AccountMenu";
+import { GameMenu } from "@/components/GameMenu";
+import type { GameView } from "@/lib/api/types";
 import type { Economy } from "@/planning/economy";
 import type { OrderTally } from "@/planning/warnings";
 
@@ -21,6 +23,10 @@ export interface GameHeaderProps {
   tally: OrderTally | null;
   /** Count of units with an advisory ZOC/traffic problem (SPEC §16.1). */
   warnings: number;
+  /** The full view, for the "Game" menu (presence, resign, outcome). */
+  view: GameView;
+  /** Refresh after an out-of-band game action (e.g. resign). */
+  onChanged: () => void;
 }
 
 export function GameHeader({
@@ -30,6 +36,8 @@ export function GameHeader({
   economy,
   tally,
   warnings,
+  view,
+  onChanged,
 }: GameHeaderProps) {
   const net = economy.net >= 0 ? `+${economy.net}` : `${economy.net}`;
   const idle = tally?.idleUnitIds.length ?? 0;
@@ -80,7 +88,8 @@ export function GameHeader({
         </span>
       )}
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        <GameMenu view={view} onChanged={onChanged} />
         <AccountMenu />
       </div>
     </header>

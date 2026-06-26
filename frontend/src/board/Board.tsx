@@ -26,7 +26,9 @@ import {
   type MapBounds,
 } from "./hex";
 import {
+  BOTTOM_HEIGHT,
   fullMapLayout,
+  LOCK_WIDTH,
   pointInRect,
   surfaceLayout,
   type Rect,
@@ -38,6 +40,7 @@ import {
   playerColor,
   TERRAIN_FILL,
 } from "./palette";
+import { GameOverPanel, type GameOutcome } from "./panels/GameOverPanel";
 import { LockPanel } from "./panels/LockPanel";
 import { RecruitPanel } from "./panels/RecruitPanel";
 import {
@@ -216,9 +219,15 @@ export interface BoardProps {
   advisory?: PlanAdvisory;
   /** Lock control, supplied alongside `planning` (UI-SPEC §11). */
   lock?: LockState;
+  /**
+   * The match is decided: render a win/lose/draw indicator where the lock control
+   * sits, instead of any planning chrome (UI-SPEC §11). Mutually exclusive with
+   * `planning`/`lock` — there are no more turns to plan.
+   */
+  gameOver?: { outcome: GameOutcome; reason: string };
 }
 
-export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock }: BoardProps) {
+export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock, gameOver }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -1015,6 +1024,18 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 />
               )}
             </>
+          )}
+          {gameOver !== undefined && size !== null && (
+            <GameOverPanel
+              rect={{
+                x: size.width - LOCK_WIDTH,
+                y: size.height - BOTTOM_HEIGHT,
+                width: LOCK_WIDTH,
+                height: BOTTOM_HEIGHT,
+              }}
+              outcome={gameOver.outcome}
+              reason={gameOver.reason}
+            />
           )}
         </Application>
       )}
