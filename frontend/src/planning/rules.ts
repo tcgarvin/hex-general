@@ -21,6 +21,8 @@ export interface UnitStats {
   vision: number;
   /** Muster drained per turn while alive (SPEC §6.2). */
   upkeep: number;
+  /** Muster spent to recruit one at a friendly city (SPEC §6.5). */
+  recruitCost: number;
 }
 
 /**
@@ -29,9 +31,19 @@ export interface UnitStats {
  * (range/path prediction, the selected-unit panel, the muster forecast).
  */
 export const UNIT_STATS: Record<UnitType, UnitStats> = {
-  infantry: { move: 2, attack: 4, defense: 5, range: 1, vision: 2, upkeep: 1 },
-  armor: { move: 4, attack: 7, defense: 4, range: 1, vision: 2, upkeep: 2 },
-  artillery: { move: 1, attack: 5, defense: 2, range: 3, vision: 2, upkeep: 2 },
+  infantry: { move: 2, attack: 4, defense: 5, range: 1, vision: 2, upkeep: 1, recruitCost: 3 },
+  armor: { move: 4, attack: 7, defense: 4, range: 1, vision: 2, upkeep: 2, recruitCost: 6 },
+  artillery: { move: 1, attack: 5, defense: 2, range: 3, vision: 2, upkeep: 2, recruitCost: 5 },
+};
+
+/** The three recruitable unit types, in palette display order (SPEC §5.1). */
+export const UNIT_TYPES: readonly UnitType[] = ["infantry", "armor", "artillery"];
+
+/** Muster cost to recruit each unit type (convenience view over {@link UNIT_STATS}). */
+export const RECRUIT_COST: Record<UnitType, number> = {
+  infantry: UNIT_STATS.infantry.recruitCost,
+  armor: UNIT_STATS.armor.recruitCost,
+  artillery: UNIT_STATS.artillery.recruitCost,
 };
 
 /** Base movement points per unit type (convenience view over {@link UNIT_STATS}). */

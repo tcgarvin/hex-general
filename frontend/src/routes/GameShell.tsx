@@ -80,7 +80,7 @@ function Dashboard() {
     setLockError(null);
     const { error: apiError } = await api.POST("/games/{game_id}/orders", {
       params: { path: { game_id: view.game_id } },
-      body: { orders: planning.orders, recruitments: [] },
+      body: { orders: planning.orders, recruitments: planning.recruitments },
     });
     setLocking(false);
     if (apiError) {

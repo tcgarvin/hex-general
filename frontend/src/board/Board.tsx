@@ -39,6 +39,13 @@ import {
   TERRAIN_FILL,
 } from "./palette";
 import { LockPanel } from "./panels/LockPanel";
+import { RecruitPanel } from "./panels/RecruitPanel";
+import {
+  canRecruit,
+  recruitAvailability,
+  recruitButtonAt,
+  recruitButtons,
+} from "./panels/recruitCity";
 import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
@@ -49,6 +56,7 @@ extend({ Container, Graphics, Text });
 type GameState = components["schemas"]["GameState"];
 type Hex = components["schemas"]["Hex"];
 type Unit = components["schemas"]["Unit"];
+type UnitType = components["schemas"]["UnitType"];
 
 const HEX_SIZE = 16;
 const BACKGROUND = 0x0a0a0b;
@@ -112,6 +120,15 @@ const orderBadgeStyle = new TextStyle({
   fontSize: 9,
   fontWeight: "bold",
   fill: 0xffe066,
+  stroke: { color: 0x000000, width: 3 },
+});
+
+// The "+" marking a staged recruit's ghost preview on its city hex.
+const recruitGhostStyle = new TextStyle({
+  fontFamily: "monospace",
+  fontSize: 14,
+  fontWeight: "bold",
+  fill: 0xffffff,
   stroke: { color: 0x000000, width: 3 },
 });
 
@@ -240,7 +257,15 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
   const [hoverKey, setHoverKey] = useState<string | null>(null);
 
   const selectedUnitId = planning?.selectedUnitId ?? null;
+  const selectedCity = planning?.selectedCity ?? null;
   const mode = planning?.mode ?? "move";
+
+  // Recruit economy inputs (the panel does the per-city budget/cap math itself).
+  const bank = useMemo(
+    () => (state.players ?? []).find((p) => p.id === yourSlot)?.bank ?? 0,
+    [state.players, yourSlot],
+  );
+  const unitCap = state.config.unit_cap;
   const selectedUnit = useMemo(() => {
     if (selectedUnitId === null) return null;
     return units.find((u) => u.id === selectedUnitId) ?? null;
@@ -556,14 +581,36 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
         const { sx, sy } = localPoint(e.clientX, e.clientY);
         if (planning === undefined || layout === null) return;
         if (pointInRect(sx, sy, layout.selectedUnit)) {
-          const unit = planning.selectedUnit;
-          if (unit !== null) {
-            const action = paletteButtonAt(
-              sx - layout.selectedUnit.x,
-              sy - layout.selectedUnit.y,
-              unit,
-            );
-            if (action !== null) runPaletteAction(action, unit.id);
+          const localX = sx - layout.selectedUnit.x;
+          const localY = sy - layout.selectedUnit.y;
+          const city = planning.selectedCity;
+          if (city !== null) {
+            // Recruit panel: a type button stages it (or toggles it off if already
+            // staged here); affordability/cap are gated against the running plan.
+            const type = recruitButtonAt(localX, localY);
+            if (type !== null) {
+              const avail = recruitAvailability(
+                city,
+                planning.recruitBySite,
+                bank,
+                ownUnits.length,
+                unitCap,
+              );
+              if (avail.currentType === type) {
+                planning.clearRecruit(city);
+              } else {
+                const button = recruitButtons().find((b) => b.type === type);
+                if (button !== undefined && canRecruit(button, avail)) {
+                  planning.stageRecruit(city, type);
+                }
+              }
+            }
+          } else {
+            const unit = planning.selectedUnit;
+            if (unit !== null) {
+              const action = paletteButtonAt(localX, localY, unit);
+              if (action !== null) runPaletteAction(action, unit.id);
+            }
           }
         } else if (lock !== undefined && !lock.submitting && pointInRect(sx, sy, layout.lock)) {
           lock.onLock();
@@ -589,7 +636,7 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
         setSelected(onMap ? ax : null);
       }
     },
-    [view, screenToWorld, hexByKey, planning, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction],
+    [view, screenToWorld, hexByKey, planning, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction, bank, unitCap, ownUnits.length],
   );
 
   const onPointerLeave = useCallback(() => {
@@ -820,6 +867,13 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
         g.poly(hexCornerPoints(x, y, HEX_SIZE));
         g.stroke({ width: 2.5, color: 0xffffff });
       }
+
+      // ring on the selected recruit city (same emphasis as a selected unit)
+      if (planning.selectedCity !== null) {
+        const { x, y } = axialToPixel(planning.selectedCity.q, planning.selectedCity.r, HEX_SIZE);
+        g.poly(hexCornerPoints(x, y, HEX_SIZE));
+        g.stroke({ width: 2.5, color: 0xffffff });
+      }
     },
     [planning, advisory, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
   );
@@ -861,20 +915,41 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
                   return null;
                 return <OrderBadge key={`badge-${u.id}`} unit={u} label={order.kind} />;
               })}
+            {planning !== undefined &&
+              Object.values(planning.recruitBySite).map((r) => (
+                <RecruitGhost
+                  key={`recruit-${r.coord.q}-${r.coord.r}`}
+                  coord={r.coord}
+                  type={r.type}
+                  owner={yourSlot}
+                />
+              ))}
           </pixiContainer>
           {showPanels && layout !== null && (
             <>
               <RosterPanel rect={layout.roster} rows={rows} hoverIndex={rosterHover} />
-              <SelectedUnitPanel
-                rect={layout.selectedUnit}
-                unit={planning?.selectedUnit ?? null}
-                staged={selectedStaged}
-                mode={mode}
-                orderLabel={selectedOrderLabel}
-                warnings={
-                  selectedUnitId === null ? EMPTY_WARNINGS : (advisory?.byUnit.get(selectedUnitId) ?? EMPTY_WARNINGS)
-                }
-              />
+              {selectedCity !== null && planning !== undefined ? (
+                <RecruitPanel
+                  rect={layout.selectedUnit}
+                  city={selectedCity}
+                  owner={yourSlot}
+                  recruitBySite={planning.recruitBySite}
+                  bank={bank}
+                  ownUnitCount={ownUnits.length}
+                  unitCap={unitCap}
+                />
+              ) : (
+                <SelectedUnitPanel
+                  rect={layout.selectedUnit}
+                  unit={planning?.selectedUnit ?? null}
+                  staged={selectedStaged}
+                  mode={mode}
+                  orderLabel={selectedOrderLabel}
+                  warnings={
+                    selectedUnitId === null ? EMPTY_WARNINGS : (advisory?.byUnit.get(selectedUnitId) ?? EMPTY_WARNINGS)
+                  }
+                />
+              )}
               {lock !== undefined && (
                 <LockPanel
                   rect={layout.lock}
@@ -929,6 +1004,42 @@ function UnitMarker({ unit }: { unit: Unit }) {
         x={0}
         y={1}
       />
+    </pixiContainer>
+  );
+}
+
+/** A translucent preview of a staged recruit, sitting on its (empty) city hex. */
+function RecruitGhost({
+  coord,
+  type,
+  owner,
+}: {
+  coord: Axial;
+  type: UnitType;
+  owner: string;
+}) {
+  const { x, y } = axialToPixel(coord.q, coord.r, HEX_SIZE);
+  const color = playerColor(owner);
+  const draw = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      const r = HEX_SIZE * 0.62;
+      if (type === "infantry") {
+        g.circle(0, 0, r);
+      } else if (type === "armor") {
+        g.roundRect(-r, -r, r * 2, r * 2, 3);
+      } else {
+        g.poly([0, -r, r, r * 0.8, -r, r * 0.8]);
+      }
+      g.fill({ color, alpha: 0.5 });
+      g.stroke({ width: 1.5, color: 0xffffff, alpha: 0.8 });
+    },
+    [type, color],
+  );
+  return (
+    <pixiContainer x={x} y={y}>
+      <pixiGraphics draw={draw} />
+      <pixiText text="+" style={recruitGhostStyle} anchor={0.5} x={0} y={1} />
     </pixiContainer>
   );
 }

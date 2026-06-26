@@ -20,6 +20,8 @@ import { barrageTargets, reachableContinuations } from "./reach";
 type GameState = components["schemas"]["GameState"];
 type Hex = components["schemas"]["Hex"];
 type Unit = components["schemas"]["Unit"];
+type UnitType = components["schemas"]["UnitType"];
+type Recruitment = components["schemas"]["Recruitment"];
 type Order =
   | components["schemas"]["MoveOrder"]
   | components["schemas"]["BarrageOrder"]
@@ -28,6 +30,12 @@ type Order =
 
 /** A bare (target-less) order a unit can be given from the panel. */
 export type BareOrderKind = "rest" | "hold";
+
+/** A staged recruit at one friendly city, before projection to a wire `Recruitment`. */
+export interface StagedRecruit {
+  coord: Axial;
+  type: UnitType;
+}
 
 /** A staged order for one unit, before projection to the wire `Order` union. */
 export type StagedOrder =
@@ -61,9 +69,23 @@ export interface StagedEntry {
 
 export interface Planning extends PlanningController {
   selectedUnit: Unit | null;
+  /** The friendly city selected for recruitment, or null (mutually exclusive with a unit). */
+  selectedCity: Axial | null;
+  /** Staged recruits, keyed by city hex key. At most one per city (SPEC §6.5). */
+  recruitBySite: Readonly<Record<string, StagedRecruit>>;
+  /** Whether `coord` is a recruitable city: a controlled, empty city hex. */
+  isRecruitCity: (coord: Axial) => boolean;
+  /** Select a friendly city for recruitment (or clear with null). */
+  selectCity: (coord: Axial | null) => void;
+  /** Stage (or replace) the recruit at a city. */
+  stageRecruit: (coord: Axial, type: UnitType) => void;
+  /** Remove the staged recruit at a city. */
+  clearRecruit: (coord: Axial) => void;
   staged: StagedEntry[];
   /** The `Order`s to submit (one per staged order). */
   orders: Order[];
+  /** The `Recruitment`s to submit (one per staged recruit). */
+  recruitments: Recruitment[];
   /** Select a unit in move mode (board clicks draw its path). */
   enterMove: (unitId: number) => void;
   /** Select a unit and aim a barrage (no-op if the unit is not artillery). */
@@ -81,17 +103,21 @@ function movePathOf(order: StagedOrder | undefined): Axial[] {
 
 export function usePlanning(state: GameState, yourSlot: string, turn: number): Planning {
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+  const [selectedCity, setSelectedCity] = useState<Axial | null>(null);
   const [mode, setMode] = useState<OrderMode>("move");
   const [stagedByUnit, setStagedByUnit] = useState<Record<number, StagedOrder>>({});
+  const [recruitBySite, setRecruitBySite] = useState<Record<string, StagedRecruit>>({});
 
-  // A new turn means a fresh planning phase — drop any selection and staged orders.
+  // A new turn means a fresh planning phase — drop any selection and staged plan.
   const lastTurn = useRef(turn);
   useEffect(() => {
     if (lastTurn.current !== turn) {
       lastTurn.current = turn;
       setSelectedUnitId(null);
+      setSelectedCity(null);
       setMode("move");
       setStagedByUnit({});
+      setRecruitBySite({});
     }
   }, [turn]);
 
@@ -115,6 +141,29 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
     [units, yourSlot],
   );
 
+  // Settlement control by hex, so a click can tell "your city" from neutral/enemy.
+  const controlAt = useMemo<ReadonlyMap<string, string | null>>(() => {
+    const m = new Map<string, string | null>();
+    for (const s of state.settlements ?? []) {
+      m.set(hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null);
+    }
+    return m;
+  }, [state.settlements]);
+
+  // A recruitable hex is a city you control with no unit currently on it. An
+  // occupied city selects its unit instead — the unit can move off and the city
+  // becomes recruitable next click. The server re-checks emptiness end-of-turn.
+  const isRecruitCity = useCallback(
+    (coord: Axial): boolean => {
+      const key = hexKey(coord.q, coord.r);
+      const hex = hexes.get(key);
+      if (hex === undefined || hex.terrain !== "city") return false;
+      if (controlAt.get(key) !== yourSlot) return false;
+      return !units.some((u) => axialEqual(u.coord, coord));
+    },
+    [hexes, controlAt, yourSlot, units],
+  );
+
   /** Set or clear a unit's staged order (undefined removes it). */
   const setOrder = useCallback((unitId: number, order: StagedOrder | undefined) => {
     setStagedByUnit((prev) => {
@@ -134,7 +183,26 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
 
   const selectUnit = useCallback((unitId: number | null) => {
     setSelectedUnitId(unitId);
+    setSelectedCity(null);
     setMode("move");
+  }, []);
+
+  const selectCity = useCallback((coord: Axial | null) => {
+    setSelectedCity(coord);
+    setSelectedUnitId(null);
+    setMode("move");
+  }, []);
+
+  const stageRecruit = useCallback((coord: Axial, type: UnitType) => {
+    setRecruitBySite((prev) => ({ ...prev, [hexKey(coord.q, coord.r)]: { coord, type } }));
+  }, []);
+
+  const clearRecruit = useCallback((coord: Axial) => {
+    setRecruitBySite((prev) => {
+      const next = { ...prev };
+      delete next[hexKey(coord.q, coord.r)];
+      return next;
+    });
   }, []);
 
   const selectedUnit =
@@ -150,7 +218,17 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
     (coord: Axial) => {
       if (selectedUnitId === null) {
         const unit = ownUnitAt(coord);
-        if (unit !== null) selectUnit(unit.id);
+        if (unit !== null) {
+          selectUnit(unit.id);
+          return;
+        }
+        // A controlled, empty city: select it to recruit (click again to deselect).
+        if (isRecruitCity(coord)) {
+          const same = selectedCity !== null && axialEqual(selectedCity, coord);
+          selectCity(same ? null : coord);
+          return;
+        }
+        if (selectedCity !== null) selectCity(null);
         return;
       }
 
@@ -193,11 +271,19 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
         setMovePath(selectedUnitId, route);
         return;
       }
-      // Otherwise: switch to another of your units, or cancel the selection.
+      // Otherwise: switch to another of your units, a recruit city, or cancel.
       const other = ownUnitAt(coord);
-      selectUnit(other?.id ?? null);
+      if (other !== null) {
+        selectUnit(other.id);
+        return;
+      }
+      if (isRecruitCity(coord)) {
+        selectCity(coord);
+        return;
+      }
+      selectUnit(null);
     },
-    [selectedUnitId, mode, unitsById, stagedByUnit, hexes, ownUnitAt, selectUnit, setOrder, setMovePath],
+    [selectedUnitId, mode, unitsById, stagedByUnit, hexes, ownUnitAt, selectUnit, setOrder, setMovePath, isRecruitCity, selectCity, selectedCity],
   );
 
   const enterMove = useCallback((unitId: number) => selectUnit(unitId), [selectUnit]);
@@ -230,7 +316,9 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
 
   const clearAll = useCallback(() => {
     setStagedByUnit({});
+    setRecruitBySite({});
     setSelectedUnitId(null);
+    setSelectedCity(null);
     setMode("move");
   }, []);
 
@@ -261,6 +349,14 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
     [staged],
   );
 
+  const recruitments = useMemo<Recruitment[]>(
+    () =>
+      Object.values(recruitBySite).map(
+        (r): Recruitment => ({ owner: yourSlot, coord: r.coord, type: r.type }),
+      ),
+    [recruitBySite, yourSlot],
+  );
+
   return {
     selectedUnitId,
     mode,
@@ -269,8 +365,15 @@ export function usePlanning(state: GameState, yourSlot: string, turn: number): P
     onHexClick,
     selectUnit,
     selectedUnit,
+    selectedCity,
+    recruitBySite,
+    isRecruitCity,
+    selectCity,
+    stageRecruit,
+    clearRecruit,
     staged,
     orders,
+    recruitments,
     enterMove,
     enterBarrage,
     setBareOrder,
