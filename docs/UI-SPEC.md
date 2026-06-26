@@ -360,9 +360,8 @@ not optional. When a unit is selected, draw above the tiles:
 | Movement pulses        | subtle per-step numbering (1..N)           |
 | Final hex              | bright outline                             |
 | Attack / contact hex   | red/orange crossed marker                  |
-| Enemy ZOC              | faint red hex-edge overlay                 |
+| ZOC-impeded path       | path churns red from the blocked hex on    |
 | Traffic risk (own)     | amber warning marker on the contested hex  |
-| ZOC-locked / invalid   | broken red path                            |
 | Barrage target & range | distinct red/orange ring + target marker   |
 
 Reachability respects road bonus, impassability, stacking, and ZOC stop-on-entry

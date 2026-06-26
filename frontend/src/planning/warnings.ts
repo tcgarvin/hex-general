@@ -176,8 +176,6 @@ export function trafficJams(
 }
 
 export interface PlanAdvisory {
-  /** Enemy ZOC hexes, for the board halo (SPEC §16.1 "see the current enemy ZOC"). */
-  enemyZoc: ReadonlySet<string>;
   /** Hexes where friendly units jam in the same pulse, for board markers. */
   trafficHexes: ReadonlySet<string>;
   /** Per unit, the hex its move is blocked at by an illegal ZOC step (board ✕). */
@@ -245,7 +243,6 @@ export function planAdvisory(
   }
 
   return {
-    enemyZoc,
     trafficHexes: traffic.hexes,
     zocStopByUnit,
     byUnit,

@@ -16,6 +16,7 @@ import type { PlanAdvisory, UnitWarning } from "@/planning/warnings";
 
 import {
   AXIAL_DIRECTIONS,
+  axialEqual,
   axialToPixel,
   hexCornerPoints,
   hexKey,
@@ -84,11 +85,13 @@ const PREVIEW_COLOR = 0xfff4c2;
 // Barrage overlay (target range + staged shot), in a distinct red/orange.
 const BARRAGE_RANGE = 0xff7043;
 const BARRAGE_COLOR = 0xff5252;
-// Advisory overlays (SPEC §16.1): enemy ZOC halo, friendly traffic jam, the hex
-// an illegal ZOC→ZOC move would be blocked at.
-const ZOC_COLOR = 0xff5252;
+// A planned path "churns red" from the hex where enemy contact is expected to
+// impede progress (an illegal ZOC→ZOC step, SPEC §8.4): the unit halts before
+// that hex, so it and the unreachable remainder draw red instead of yellow.
+const PATH_BLOCKED_COLOR = 0xff5252;
+const PATH_BLOCKED_STAGED_COLOR = 0xb83434;
+// Advisory overlay (SPEC §16.1): friendly traffic jam marker.
 const TRAFFIC_COLOR = 0xffa726;
-const ZOC_STOP_COLOR = 0xff5252;
 
 // Stable empty path so unkeyed lookups don't churn memo identities.
 const EMPTY_PATH: readonly Axial[] = [];
@@ -670,27 +673,13 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
     [selected],
   );
 
-  // Advisory layer (SPEC §16.1), drawn under the planning paths: a faint halo on
-  // every hex in visible enemy ZOC, plus an amber ✕ on each friendly traffic jam.
-  const drawZoc = useCallback(
+  // Advisory layer (SPEC §16.1), drawn under the planning paths: an amber ✕ on
+  // each friendly traffic jam. (Enemy ZOC is no longer a hex halo — it surfaces
+  // as the planned path churning red; see the staged-order draw below.)
+  const drawTraffic = useCallback(
     (g: Graphics) => {
       g.clear();
       if (advisory === undefined) return;
-
-      for (const key of advisory.enemyZoc) {
-        const hex = hexByKey.get(key);
-        if (hex === undefined) continue;
-        const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
-        g.poly(hexCornerPoints(x, y, HEX_SIZE - 1));
-      }
-      g.fill({ color: ZOC_COLOR, alpha: 0.08 });
-      for (const key of advisory.enemyZoc) {
-        const hex = hexByKey.get(key);
-        if (hex === undefined) continue;
-        const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
-        g.poly(hexCornerPoints(x, y, HEX_SIZE - 1));
-      }
-      g.stroke({ width: 1, color: ZOC_COLOR, alpha: 0.28 });
 
       for (const key of advisory.trafficHexes) {
         const hex = hexByKey.get(key);
@@ -745,18 +734,44 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
         if (order.kind === "move") {
           if (order.path.length === 0) continue;
           const color = active ? PATH_COLOR : PATH_STAGED_COLOR;
+          const blockedColor = active ? PATH_BLOCKED_COLOR : PATH_BLOCKED_STAGED_COLOR;
+          const width = active ? 3 : 2.5;
+          const alpha = active ? 1 : 0.9;
+
+          // Where enemy contact is expected to impede progress (SPEC §8.4): the unit
+          // halts *before* this hex, so it and the rest of the path churn red. Absent
+          // a block, `stopIndex` is the path length and the whole path stays yellow.
+          const stop = advisory?.zocStopByUnit.get(Number(idStr));
+          const stopIndex =
+            stop === undefined
+              ? order.path.length
+              : order.path.findIndex((p) => axialEqual(p, stop));
+
+          // Reachable run: origin → the last hex the unit can actually occupy.
+          const points = [unit.coord, ...order.path];
           g.moveTo(origin.x, origin.y);
-          for (const step of order.path) {
-            const p = axialToPixel(step.q, step.r, HEX_SIZE);
+          for (let i = 1; i <= stopIndex; i++) {
+            const p = axialToPixel(points[i].q, points[i].r, HEX_SIZE);
             g.lineTo(p.x, p.y);
           }
-          g.stroke({ width: active ? 3 : 2.5, color, alpha: active ? 1 : 0.9 });
+          g.stroke({ width, color, alpha });
 
-          // a node at each waypoint; the destination larger
+          // Blocked run: from that last reachable hex through the unreachable tail.
+          if (stopIndex < order.path.length) {
+            const from = axialToPixel(points[stopIndex].q, points[stopIndex].r, HEX_SIZE);
+            g.moveTo(from.x, from.y);
+            for (let i = stopIndex + 1; i < points.length; i++) {
+              const p = axialToPixel(points[i].q, points[i].r, HEX_SIZE);
+              g.lineTo(p.x, p.y);
+            }
+            g.stroke({ width, color: blockedColor, alpha });
+          }
+
+          // a node at each waypoint (destination larger); red from the stop onward
           order.path.forEach((step, i) => {
             const p = axialToPixel(step.q, step.r, HEX_SIZE);
             g.circle(p.x, p.y, i === order.path.length - 1 ? 4 : 2.5);
-            g.fill({ color });
+            g.fill({ color: i >= stopIndex ? blockedColor : color });
           });
         } else if (order.kind === "barrage") {
           // a line from the gun to its target + a reticle on the target hex
@@ -805,17 +820,6 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
         g.poly(hexCornerPoints(x, y, HEX_SIZE));
         g.stroke({ width: 2.5, color: 0xffffff });
       }
-
-      // illegal ZOC→ZOC stops (SPEC §8.4): ring + ✕ on the hex a move can't enter.
-      if (advisory !== undefined && advisory.zocStopByUnit.size > 0) {
-        for (const dest of advisory.zocStopByUnit.values()) {
-          const { x, y } = axialToPixel(dest.q, dest.r, HEX_SIZE);
-          g.poly(hexCornerPoints(x, y, HEX_SIZE - 2));
-          g.moveTo(x - 9, y - 9).lineTo(x + 9, y + 9);
-          g.moveTo(x + 9, y - 9).lineTo(x - 9, y + 9);
-        }
-        g.stroke({ width: 2, color: ZOC_STOP_COLOR });
-      }
     },
     [planning, advisory, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
   );
@@ -845,7 +849,7 @@ export function Board({ state, yourSlot, planning, advisory, lock }: BoardProps)
           <pixiContainer x={view.x} y={view.y} scale={view.zoom}>
             <pixiGraphics draw={drawTerrain} />
             <pixiGraphics draw={drawSelection} />
-            <pixiGraphics draw={drawZoc} />
+            <pixiGraphics draw={drawTraffic} />
             <pixiGraphics draw={drawPlanning} />
             {units.map((u) => (
               <UnitMarker key={u.id} unit={u} />
