@@ -8,6 +8,7 @@
 // Board as `state`.
 
 import type { components } from "@/lib/api/schema";
+import { UNIT_STATS } from "@/planning/rules";
 
 import type { AnyEvent, Beat } from "./beats";
 
@@ -144,12 +145,14 @@ function applyOneEvent(
         owner: string;
         coord: { q: number; r: number };
       };
+      const type = unit_type as Unit["type"];
       const newUnit: Unit = {
         id: unit_id,
-        type: unit_type as Unit["type"],
+        type,
         owner,
         coord,
-        hp: 10,
+        // The unit_recruited event carries no HP; a unit enters play at full HP.
+        hp: UNIT_STATS[type].maxHp,
       };
       return { units: [...units, newUnit], settlements, players };
     }
