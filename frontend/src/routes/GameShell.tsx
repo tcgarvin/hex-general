@@ -46,6 +46,15 @@ function Dashboard() {
 
   // Auto-navigate to the replay route when the poll detects a turn advance.
   // prevTurnRef starts null so the first-load case never triggers navigation.
+  //
+  // Safe against dropping a mid-planning player's staged orders: a turn only
+  // advances after the engine resolves, which the server does only once *every*
+  // player has locked (api: GameService.submit_orders). So when this fires the
+  // local player is already locked — their orders are committed server-side and
+  // the planning surface is read-only — and there are no unlocked staged orders
+  // to lose. This relies on "turn advances ⇒ you locked"; a future async turn
+  // timer that auto-resolves un-locked players (SPEC §17, out of scope for v0.1)
+  // would break that and must guard this navigation on the locked state.
   const prevTurnRef = useRef<number | null>(null);
   useEffect(() => {
     if (prevTurnRef.current !== null && view.turn > prevTurnRef.current) {
