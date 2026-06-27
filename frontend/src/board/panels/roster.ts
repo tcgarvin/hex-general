@@ -12,7 +12,7 @@ type Unit = components["schemas"]["Unit"];
 export const TAB_HEIGHT = 28;
 export const ROW_HEIGHT = 20;
 
-const TYPE_LABEL: Record<Unit["type"], string> = {
+export const TYPE_LABEL: Record<Unit["type"], string> = {
   infantry: "INF",
   armor: "ARM",
   artillery: "ART",
@@ -95,4 +95,17 @@ export function rosterRowAt(localY: number, rowCount: number): number | null {
   if (localY < TAB_HEIGHT) return null;
   const i = Math.floor((localY - TAB_HEIGHT) / ROW_HEIGHT);
   return i >= 0 && i < rowCount ? i : null;
+}
+
+/** Read-only roster rows for replay mode — own units with no order labels. */
+export function replayRosterRows(ownUnits: readonly Unit[]): RosterRow[] {
+  return ownUnits.map((unit): RosterRow => ({
+    unit,
+    typeLabel: TYPE_LABEL[unit.type],
+    orderLabel: "—",
+    idle: false,
+    selected: false,
+    damaged: unit.hp < 10,
+    warning: false,
+  }));
 }

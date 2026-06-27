@@ -81,6 +81,28 @@ export function fullMapLayout(width: number, height: number): SurfaceLayout {
   };
 }
 
+/**
+ * Replay layout: roster docked left (read-only unit list), replay control strip
+ * running full-width across the bottom. The `selectedUnit` rect holds the entire
+ * control strip; `lock` is unused (empty).
+ */
+export function replayLayout(width: number, height: number): SurfaceLayout {
+  const rosterWidth = Math.min(ROSTER_WIDTH, Math.max(0, width));
+  const bottomHeight = Math.min(BOTTOM_HEIGHT, Math.max(0, height));
+  const bottomY = height - bottomHeight;
+  return {
+    roster: { x: 0, y: 0, width: rosterWidth, height: bottomY },
+    selectedUnit: { x: 0, y: bottomY, width, height: bottomHeight },
+    lock: EMPTY_RECT,
+    map: {
+      x: rosterWidth,
+      y: 0,
+      width: Math.max(0, width - rosterWidth),
+      height: bottomY,
+    },
+  };
+}
+
 /** Whether a canvas-space point falls inside `rect`. */
 export function pointInRect(x: number, y: number, rect: Rect): boolean {
   return (

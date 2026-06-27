@@ -30,6 +30,7 @@ import {
   fullMapLayout,
   LOCK_WIDTH,
   pointInRect,
+  replayLayout,
   surfaceLayout,
   type Rect,
   type SurfaceLayout,
@@ -49,8 +50,13 @@ import {
   recruitButtonAt,
   recruitButtons,
 } from "./panels/recruitCity";
+import {
+  ReplayControlPanel,
+  type ReplayControlsProps,
+} from "./panels/ReplayControlPanel";
+import { replayButtonAt } from "./panels/replayControls";
 import { RosterPanel } from "./panels/RosterPanel";
-import { orderLabelOf, rosterRowAt, rosterRows } from "./panels/roster";
+import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 
@@ -225,9 +231,18 @@ export interface BoardProps {
    * `planning`/`lock` — there are no more turns to plan.
    */
   gameOver?: { outcome: GameOutcome; reason: string };
+  /**
+   * Replay controls: when supplied, switches the board into replay mode — the
+   * roster shows post-turn units (read-only), and the full-width bottom dock
+   * renders the beat playback controls instead of the order palette/lock.
+   * Mutually exclusive with `planning`/`lock`/`gameOver`.
+   */
+  replayControls?: ReplayControlsProps;
 }
 
-export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock, gameOver }: BoardProps) {
+export type { ReplayControlsProps };
+
+export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock, gameOver, replayControls }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -245,16 +260,16 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   }, [visible]);
   const settlements = useMemo(() => state.settlements ?? [], [state.settlements]);
 
-  // --- docked-panel layout (UI-SPEC §2): the roster reserves the left edge while
-  // it's the viewer's move; otherwise the map fills the whole surface. ---
-  // Panels (roster + bottom dock) appear only while it is the viewer's move.
-  const showPanels = planning !== undefined;
+  // --- docked-panel layout (UI-SPEC §2) ---
+  // Planning and replay both show the roster + bottom dock; outside those modes
+  // the map fills the whole surface.
+  const showPanels = planning !== undefined || replayControls !== undefined;
   const layout = useMemo<SurfaceLayout | null>(() => {
     if (size === null) return null;
-    return showPanels
-      ? surfaceLayout(size.width, size.height)
-      : fullMapLayout(size.width, size.height);
-  }, [size, showPanels]);
+    if (replayControls !== undefined) return replayLayout(size.width, size.height);
+    if (planning !== undefined) return surfaceLayout(size.width, size.height);
+    return fullMapLayout(size.width, size.height);
+  }, [size, planning, replayControls]);
 
   const ownUnits = useMemo(
     () => units.filter((u) => u.owner === yourSlot),
@@ -266,13 +281,15 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     for (const u of units) if (u.owner !== yourSlot) s.add(hexKey(u.coord.q, u.coord.r));
     return s;
   }, [units, yourSlot]);
-  const rows = useMemo(
-    () =>
-      planning === undefined
-        ? []
-        : rosterRows(ownUnits, planning, enemyHexKeys, advisory?.problemUnitIds),
-    [planning, ownUnits, enemyHexKeys, advisory],
-  );
+  const rows = useMemo(() => {
+    if (planning !== undefined) {
+      return rosterRows(ownUnits, planning, enemyHexKeys, advisory?.problemUnitIds);
+    }
+    if (replayControls !== undefined) {
+      return replayRosterRows(ownUnits);
+    }
+    return [];
+  }, [planning, replayControls, ownUnits, enemyHexKeys, advisory]);
   const [rosterHover, setRosterHover] = useState<number | null>(null);
 
   const hexByKey = useMemo(() => {
@@ -611,11 +628,34 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         return;
       }
 
-      // A press that started on the bottom dock: route to a palette / lock button.
+      // A press that started on the bottom dock: route to a palette / lock /
+      // replay-control button.
       if (bottomPressRef.current) {
         bottomPressRef.current = false;
         const { sx, sy } = localPoint(e.clientX, e.clientY);
-        if (planning === undefined || layout === null) return;
+        if (layout === null) return;
+
+        // Replay mode: route to the replay control strip.
+        if (replayControls !== undefined && pointInRect(sx, sy, layout.selectedUnit)) {
+          const localX = sx - layout.selectedUnit.x;
+          const localY = sy - layout.selectedUnit.y;
+          const atEnd = replayControls.currentBeat >= replayControls.beats.length - 1;
+          const action = replayButtonAt(localX, localY, layout.selectedUnit.width, atEnd);
+          if (action !== null) {
+            switch (action) {
+              case "rewind": replayControls.onRewind(); break;
+              case "back": replayControls.onBack(); break;
+              case "play_pause": replayControls.onPlayPause(); break;
+              case "forward": replayControls.onForward(); break;
+              case "skip": replayControls.onSkip(); break;
+              case "speed": replayControls.onToggleSpeed(); break;
+              case "start_planning": replayControls.onStartPlanning(); break;
+            }
+          }
+          return;
+        }
+
+        if (planning === undefined) return;
         // Locked: the dock is read-only — its buttons are greyed and inert, but a
         // press here still must not fall through to a map pan.
         if (locked) return;
@@ -684,7 +724,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         setSelected(onMap ? ax : null);
       }
     },
-    [view, screenToWorld, hexByKey, planning, locked, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction, bank, unitCap, ownUnits],
+    [view, screenToWorld, hexByKey, planning, locked, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction, bank, unitCap, ownUnits, replayControls],
   );
 
   const onPointerLeave = useCallback(() => {
@@ -988,7 +1028,9 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           {showPanels && layout !== null && (
             <>
               <RosterPanel rect={layout.roster} rows={rows} hoverIndex={rosterHover} />
-              {selectedCity !== null && planning !== undefined ? (
+              {replayControls !== undefined ? (
+                <ReplayControlPanel rect={layout.selectedUnit} {...replayControls} />
+              ) : selectedCity !== null && planning !== undefined ? (
                 <RecruitPanel
                   rect={layout.selectedUnit}
                   city={selectedCity}

@@ -1,11 +1,16 @@
 import { useMemo } from "react";
-import { Link, Navigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
 
-import { Centered, ErrorBanner, Loading } from "@/components/ui";
+import { Board } from "@/board/Board";
+import type { ReplayControlsProps } from "@/board/panels/ReplayControlPanel";
+import { ErrorBanner, Loading } from "@/components/ui";
 import { GameProvider } from "@/game/GameProvider";
 import { useGame } from "@/game/useGame";
 import { economyFor } from "@/planning/economy";
+import { useBeats } from "@/replay/useBeats";
+import { usePlayback } from "@/replay/usePlayback";
 import { useReplay } from "@/replay/useReplay";
+import type { GameState, GameView } from "@/lib/api/types";
 
 import { GameHeader } from "./GameHeader";
 
@@ -84,32 +89,85 @@ function ReplayView({ gameId, turn }: { gameId: string; turn: number }) {
   }
 
   return (
+    <ReplayBoard
+      gameId={gameId}
+      turn={turn}
+      postTurnState={data.replay.state_after}
+      events={data.replay.events}
+      view={view}
+      onRefresh={refresh}
+    />
+  );
+}
+
+interface ReplayBoardProps {
+  gameId: string;
+  turn: number;
+  postTurnState: GameState;
+  events: { [key: string]: unknown }[];
+  view: GameView;
+  onRefresh: () => void;
+}
+
+function ReplayBoard({
+  gameId,
+  turn,
+  postTurnState,
+  events,
+  view,
+  onRefresh,
+}: ReplayBoardProps) {
+  const navigate = useNavigate();
+
+  const { beats, currentBeat, advance, rewind, jumpTo } = useBeats(events);
+  const { playing, speed, play, pause, toggleSpeed } = usePlayback({
+    advance,
+    currentBeat,
+    beatCount: beats.length,
+  });
+
+  const gameOver = view.victory.reason !== "ongoing";
+
+  const replayControls: ReplayControlsProps = {
+    beats,
+    currentBeat,
+    playing,
+    speed,
+    onRewind: () => jumpTo(-1),
+    onBack: rewind,
+    onPlayPause: playing ? pause : play,
+    onForward: advance,
+    onSkip: () => jumpTo(beats.length - 1),
+    onToggleSpeed: toggleSpeed,
+    onStartPlanning: () => void navigate(`/game/${gameId}`),
+    gameOver,
+  };
+
+  const economy = useMemo(
+    () => economyFor(postTurnState, view.your_slot),
+    [postTurnState, view.your_slot],
+  );
+
+  return (
     <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
       <GameHeader
         turn={turn}
-        turnLimit={view.state.config.victory.turn_limit}
+        turnLimit={postTurnState.config.victory.turn_limit}
         phase="Replay"
         economy={economy}
         tally={null}
         warnings={0}
         view={view}
-        onChanged={refresh}
+        onChanged={onRefresh}
       />
-      <main className="flex flex-1 flex-col items-center justify-center gap-4">
-        <Centered>
-          <p className="text-zinc-400">
-            Turn {turn} replay — {data.replay.events.length} events
-          </p>
-          <p className="text-xs text-zinc-600">
-            Beat engine and board animation coming in Slice 2–3.
-          </p>
-          <Link
-            to={`/game/${gameId}`}
-            className="mt-4 text-sm text-indigo-400 hover:underline"
-          >
-            ← Back to game
-          </Link>
-        </Centered>
+      <main className="relative flex-1 overflow-hidden">
+        <div className="absolute inset-0">
+          <Board
+            state={postTurnState}
+            yourSlot={view.your_slot}
+            replayControls={replayControls}
+          />
+        </div>
       </main>
     </div>
   );
