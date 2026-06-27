@@ -32,4 +32,5 @@ Do not hand-edit `schema.d.ts`. Import model types from `@/lib/api/types`.
 
 ## Commands
 
-`npm run dev` (port 5173) · `npm run build` (`tsc -b && vite build`) · `npm run lint`.
+`npm run dev` (port 5173) · `npm run build` (`tsc -b && vite build`) · `npm run lint` ·
+`npm run test` (Vitest, pure-logic unit tests under `src/**/*.test.ts`).

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "test": "vitest run",
     "lint": "eslint .",
     "gen:api:schema": "cd ../api && SUPABASE_URL=x SUPABASE_SERVICE_ROLE_KEY=x uv run python -m app.export_openapi",
     "gen:api:types": "openapi-typescript ../api/openapi.json -o src/lib/api/schema.d.ts",
@@ -35,6 +36,7 @@
     "tailwindcss": "^4.3.1",
     "typescript": "^5",
     "typescript-eslint": "^8.61.1",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "^3.2.6"
   }
 }
