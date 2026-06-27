@@ -435,21 +435,124 @@ detail + path visuals) is life support — build those first.
 
 ## 13. Replay panel (Phase 10)
 
-After a turn resolves, the board enters replay over the post-turn state. Step
-through the event log from `GET /games/{id}/turns/{turn}` (the engine emits a
-discriminated `Event` log — moves, blocks, traffic jams, ZOC stops, combat,
-captures, repairs, economy). Provide a scrubber / step controls and an event list
-with the SPEC §16.3 plain-language combat explanations, e.g.:
+After a turn resolves the board enters **Replay** mode, auto-playing the event log
+from `GET /games/{id}/turns/{turn}`. The roster panel stays docked and visible
+(showing post-turn unit state — HP, position — read-only). The order palette / lock
+control is replaced by the replay control strip and event log. The header reads
+`TURN N · REPLAY`.
+
+### 13.1 Beat structure
+
+The engine resolves a turn in six ordered phases; the replay maps those phases to
+**beats** — the atomic step unit. Each beat plays all its animations simultaneously,
+then pauses briefly before the next. Stepping forward/backward moves one beat at a
+time. The board starts in the **pre-turn state** (snapshot at the start of that
+resolved turn); each beat advances the board forward toward the final state.
+Step-back re-renders from the stored snapshot at the previous beat boundary — it
+does not animate backward.
+
+| Beat | Engine phase | What plays |
+|------|-------------|------------|
+| **Barrage** | Phase 1 | Artillery units flash/fire; target hexes show impact; hit units tick HP down; destroyed units fade out |
+| **Pulse 1 … N** | Phase 2 (one beat per pulse) | All moving units slide simultaneously; traffic-jammed units pulse in place; ZOC-locked units show an indicator and stay; after slides settle, each combat resolves — attacker/defender flash, floating damage numbers, destroyed units fade |
+| **Capture** | Phase 3 | Settlement control colors flip with a brief claim animation |
+| **Repair** | Phase 4 | Resting units show a small +HP pulse |
+| **Economy** | Phase 5 | Header muster value ticks to the new total |
+| **Recruitment** | Phase 6 | New units materialize at their cities |
+
+Beats with no activity are skipped silently (a turn with no artillery produces no
+Barrage beat; a turn with no captures produces no Capture beat, etc.).
+
+### 13.2 Playback controls
+
+Auto-play starts immediately when the replay loads (after a brief settle delay so
+the page is stable). Speed default is **1×**; a **2×** toggle doubles animation and
+pause durations. All controls are in the bottom panel control strip (left side):
+
+```text
+|◄   ◄   ▶/⏸   ►|     1× / 2×     PULSE 1 of 3     [Skip ►|]
+```
+
+- `|◄` — jump to start (pre-turn state)
+- `◄` — step back one beat
+- `▶ / ⏸` — play / pause
+- `►|` — step forward one beat
+- `[Skip ►|]` — jump to final state and mark replay done
+
+### 13.3 Event log
+
+The event log occupies the right portion of the bottom panel (the left portion
+holds the controls above). It is a scrollable list of all events the viewer can
+witness, grouped by beat with headers. Past beats are readable but dimmed; the
+current beat is highlighted; future beats are greyed.
+
+```text
+▸ BARRAGE
+  Blue Artillery barrages (15,20). Red Infantry dealt 3 damage.
+▶ PULSE 1  ← current
+  Blue Armor enters (12,14). Combat: Red Infantry in Plains.
+    Blue Armor dealt 3 damage · Red Infantry dealt 1 damage.
+    Red Infantry destroyed. Blue Armor continued moving.
+  [6 units moved]  ← collapsed
+░ PULSE 2  ← future, greyed
+░ CAPTURE
+░ ECONOMY
+```
+
+`UnitMoved` entries are **collapsed** by default under a summary line ("N units
+moved") — they are rarely interesting individually and would flood the log. All
+other events — combat, barrage hits, blocks, traffic jams, ZOC locks, captures,
+repairs, economy, recruitment — are expanded with plain-language text per SPEC
+§16.3. Examples:
 
 ```text
 Blue Armor attacked Red Infantry in Woods.
 Red Infantry received +2 terrain defense.
-Blue Armor dealt 2 damage · Red Infantry dealt 1 damage.
+Blue Armor dealt 3 damage · Red Infantry dealt 1 damage.
 Red Infantry was destroyed. Blue Armor entered the hex and continued moving.
 ```
 
-Replay obeys fog: you only see events you could witness (own units, or things on
-hexes you can see).
+```text
+Blue Infantry began the pulse in enemy ZOC.
+Its planned move would enter another enemy-controlled hex.
+That movement is illegal. Blue Infantry held position.
+```
+
+**Clicking any log entry** pauses auto-play, jumps to that beat, and pans the
+camera to the relevant hex. This is the primary way to inspect off-screen events.
+The log is always the full fog-filtered event set — it does not narrow based on the
+current viewport.
+
+### 13.4 Camera during replay
+
+On replay load the camera frames the **bounding box of your own units** (wider
+margin than the planning auto-camera, anticipating that units will spread out during
+movement). With no own units it fits the whole map. The camera does **not**
+auto-chase events during playback — jarring auto-pans would undermine the overview
+quality. The user may pan and zoom freely at any time; clicking a log entry pans to
+the relevant hex.
+
+### 13.5 Fog
+
+Replay obeys fog: only events involving your own units, or events on hexes within
+your post-turn visible set, appear in the log or animate on the map. Enemy units
+that moved entirely in the fog are absent. (Replay visibility is computed from the
+post-turn state — ROADMAP §6 documented scope.)
+
+### 13.6 Replay entry and exit
+
+**Entry:** when the poll detects a newly resolved turn (turn number has advanced and
+a `turns` row exists), `GameShell` auto-navigates to `/game/{id}/replay/{turn}` and
+auto-play begins. The player is never left staring at a stale planning screen.
+
+**Exit:** after the final beat completes, a **"Start Planning"** button appears in
+the bottom-right (where the lock control normally lives). If the turn that just
+resolved ended the game, the button reads **"See Results"** and leads to the
+game-over state instead of the planning screen.
+
+**Re-watching:** the **Game** menu (already in the header) gains a **"Watch last
+replay"** item that navigates to the replay route for the most recently resolved
+turn. A full turn-history browser is out of scope for v0.1.
 
 ---
 
