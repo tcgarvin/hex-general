@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /** Beat pause durations (ms) at each speed. */
 const BEAT_DURATION: Record<1 | 2, number> = { 1: 1200, 2: 600 };
@@ -60,13 +60,16 @@ export function usePlayback({
     [],
   );
 
-  // Auto-play on mount with a brief settle delay.
+  // Auto-play once, after a brief settle delay, the first time replay data is
+  // available (beatCount > 0). The ref guard makes this fire exactly once even
+  // if beatCount changes again — no dependency on it staying stable per replay.
+  const didAutoPlay = useRef(false);
   useEffect(() => {
-    if (beatCount === 0) return;
+    if (beatCount === 0 || didAutoPlay.current) return;
+    didAutoPlay.current = true;
     const t = setTimeout(() => setPlaying(true), START_DELAY_MS);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally mount-only — fires once when replay data is available
+  }, [beatCount]);
 
   return { playing, speed, play, pause, toggleSpeed };
 }

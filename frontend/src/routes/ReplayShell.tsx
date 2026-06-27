@@ -239,6 +239,12 @@ function ReplayBoard({
   const rafRef = useRef<number | null>(null);
   // The value of currentBeat as seen by the previous render.
   const prevBeatRef = useRef(-1);
+  // Latest playback speed, read inside the step-forward effect without making
+  // speed a dependency — a speed change mid-animation shouldn't restart it.
+  const speedRef = useRef(speed);
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
 
   const cancelAnim = useCallback(() => {
     if (rafRef.current !== null) {
@@ -292,7 +298,7 @@ function ReplayBoard({
       return;
     }
 
-    const duration = ANIM_DURATION_MS[speed];
+    const duration = ANIM_DURATION_MS[speedRef.current];
     const start = performance.now();
 
     const step = (now: number) => {
@@ -309,8 +315,10 @@ function ReplayBoard({
     };
     setAnimState({ data, progress: 0 });
     rafRef.current = requestAnimationFrame(step);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentBeat]);
+    // `beats`/`preTurnState` are stable per replay, so in practice only a
+    // `currentBeat` change drives this; listing them keeps the effect correct
+    // if that ever stops holding. `speed` is read via `speedRef`, by design.
+  }, [currentBeat, beats, preTurnState, cancelAnim]);
 
   // Board state: pre-beat state while animating, settled post-beat state otherwise.
   const boardState = useMemo((): GameState => {
