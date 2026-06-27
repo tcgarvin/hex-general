@@ -19,6 +19,7 @@ import {
   axialEqual,
   axialToPixel,
   hexCornerPoints,
+  HEX_SIZE,
   hexKey,
   mapPixelBounds,
   pixelToAxial,
@@ -67,7 +68,6 @@ type Hex = components["schemas"]["Hex"];
 type Unit = components["schemas"]["Unit"];
 type UnitType = components["schemas"]["UnitType"];
 
-const HEX_SIZE = 16;
 const BACKGROUND = 0x0a0a0b;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
@@ -192,6 +192,22 @@ function clampViewAxis(
   return Math.min(hi, Math.max(lo, view));
 }
 
+/**
+ * Per-beat animation overlays for replay (Phase 10 Slice 3). Supplied while a
+ * beat is animating; `undefined` when the board is in a settled state.
+ *
+ * The board always renders `state` (the pre-beat snapshot during animation, the
+ * post-beat snapshot after). Overlays are drawn on top:
+ *   - `slideOverrides`: pixel positions for units currently mid-slide
+ *   - `fadingOut`: alpha 1→0 for units destroyed this beat (still in `state.units`)
+ *   - `fadingIn`: alpha 0→1 for units recruited this beat (not in `state.units`)
+ */
+export interface ReplayAnimOverrides {
+  slideOverrides: ReadonlyMap<number, { x: number; y: number }>;
+  fadingOut: ReadonlyMap<number, number>;
+  fadingIn: ReadonlyMap<number, { unit: Unit; alpha: number }>;
+}
+
 /** Lock-control state + action (UI-SPEC §11), supplied throughout your turn. */
 export interface LockState {
   ordered: number;
@@ -238,11 +254,13 @@ export interface BoardProps {
    * Mutually exclusive with `planning`/`lock`/`gameOver`.
    */
   replayControls?: ReplayControlsProps;
+  /** Per-beat animation overlays (Phase 10 Slice 3). See {@link ReplayAnimOverrides}. */
+  replayAnim?: ReplayAnimOverrides;
 }
 
 export type { ReplayControlsProps };
 
-export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock, gameOver, replayControls }: BoardProps) {
+export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock, gameOver, replayControls, replayAnim }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -1006,8 +1024,18 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             <pixiGraphics draw={drawTraffic} />
             <pixiGraphics draw={drawPlanning} />
             {units.map((u) => (
-              <UnitMarker key={u.id} unit={u} />
+              <UnitMarker
+                key={u.id}
+                unit={u}
+                posOverride={replayAnim?.slideOverrides.get(u.id)}
+                alpha={replayAnim?.fadingOut.get(u.id) ?? 1}
+              />
             ))}
+            {/* Recruited units fading in — not yet in `state.units`. */}
+            {replayAnim?.fadingIn &&
+              Array.from(replayAnim.fadingIn.values()).map(({ unit, alpha }) => (
+                <UnitMarker key={`recruit-${unit.id}`} unit={unit} alpha={alpha} />
+              ))}
             {planning !== undefined &&
               units.map((u) => {
                 const order = planning.stagedByUnit[u.id];
@@ -1089,8 +1117,17 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
 }
 
 /** A single unit: owner-tinted marker (shape encodes type) + hp text. */
-function UnitMarker({ unit }: { unit: Unit }) {
-  const { x, y } = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
+function UnitMarker({
+  unit,
+  posOverride,
+  alpha = 1,
+}: {
+  unit: Unit;
+  posOverride?: { x: number; y: number };
+  alpha?: number;
+}) {
+  const computed = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
+  const { x, y } = posOverride ?? computed;
   const color = playerColor(unit.owner);
 
   const draw = useCallback(
@@ -1112,7 +1149,7 @@ function UnitMarker({ unit }: { unit: Unit }) {
   );
 
   return (
-    <pixiContainer x={x} y={y}>
+    <pixiContainer x={x} y={y} alpha={alpha}>
       <pixiGraphics draw={draw} />
       <pixiText
         text={String(unit.hp)}

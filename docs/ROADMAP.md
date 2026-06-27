@@ -324,11 +324,98 @@ units, fog.
 
 ## Phase 10 — Frontend: replay
 
-**Goal:** §16.2–16.3.
+**Goal:** §16.2–16.3, UI-SPEC §13. Auto-playing, beat-structured replay of the
+resolved event log, with fog filtering and a scrollable plain-language event log.
+See UI-SPEC §13 for the full design; slices below map the work.
 
-- Step-through of the event log from `GET /games/{id}/turns/{turn}`: moves, blocks,
-  traffic jams, combat with the §16.3 explanation text, destructions, captures,
-  economy delta.
+### Slice 1 — API + data plumbing
+
+- ✅ Already done in Phase 5: `GET /games/{id}/turns/{turn}` returns the
+  fog-filtered event log and post-turn state. No new backend work needed.
+- Frontend: a `useReplay(gameId, turn)` hook that fetches the turn data and
+  exposes the ordered `Event[]` list and the pre-turn + post-turn `GameState`
+  snapshots.
+- Auto-navigate from `GameShell` to `/game/{id}/replay/{turn}` when the poll
+  detects a newly resolved turn (turn number advanced + turns row present).
+- "Watch last replay" item in the Game menu.
+
+### Slice 2 — Beat engine + playback controls
+
+- A `useBeats(events)` hook that groups the raw `Event[]` into ordered beats
+  (UI-SPEC §13.1): Barrage, Pulse 1…N, Capture, Repair, Economy, Recruitment.
+  Empty beats are skipped. Exposes `beats`, `currentBeat`, `advance`, `rewind`,
+  `jumpTo`.
+- Playback controller: auto-play at 1× / 2× with configurable beat durations.
+  Manages the play/pause/speed state. The beat engine is pure (no Pixi) and unit-testable.
+- Bottom panel control strip: `|◄ ◄ ▶/⏸ ►|`, speed toggle, beat label, Skip button
+  (UI-SPEC §13.2). Replaces the order palette / lock control during replay.
+- Header phase label shows `REPLAY`; muster/orders fields are hidden.
+- No map animation yet — the board snaps to the post-turn state for now (Slice 3
+  adds the animations).
+
+**Demonstrable:** navigate to the replay route, step through beats with controls,
+see the board snap to each beat's end state.
+
+### Slice 3 — Map animation per beat ✅ done
+
+- ✅ `applyBeats(preTurnState, beats, upToIndex)` pure function
+  (`frontend/src/replay/applyBeats.ts`): applies every event from beats 0..N to
+  the pre-turn snapshot to produce the board state at any beat boundary — handles
+  all eight event kinds (`unit_moved`, `barrage_resolved`, `combat_resolved`,
+  `settlement_captured`, `unit_repaired`, `economy_resolved`, `unit_recruited`,
+  plus no-ops for `move_blocked`/`traffic_jam`).
+- ✅ Per-beat board state: `ReplayShell` computes `boardState = applyBeats(…,
+  displayBeat)` and passes it to `Board`; step-back re-renders from the stored
+  snapshot (no reverse animation); rewind/jump snap immediately.
+- ✅ Animation on step-forward: a rAF loop runs for `ANIM_DURATION_MS` (500ms at
+  1×, 250ms at 2×) with ease-in-out-cubic. During animation the board shows the
+  pre-beat state; overlays are applied on top via `Board.replayAnim`:
+  - **Pulse beats:** unit slides (smooth translation from `origin` to `dest`);
+    destroyed-unit fade-out (alpha 1→0; barrage-destroyed and combat-destroyed
+    alike).
+  - **Recruitment beat:** new unit materializes (fade-in, alpha 0→1).
+  - **Capture beat:** settlement color flips instantly when `displayBeat` advances
+    (the state change produces the flip; no additional highlight yet).
+  - **Barrage, repair, economy beats:** snap (animated effects deferred to a later
+    pass — artillery arc, HP tick, muster tick).
+- ✅ `Board` gained `ReplayAnimOverrides` prop (`slideOverrides`, `fadingOut`,
+  `fadingIn`); `UnitMarker` accepts `posOverride` and `alpha`.
+- ✅ Camera on load fits own units in the pre-turn state (already implemented in
+  Board; behaviour unchanged by this slice — the auto-fit triggers once on mount
+  when `view === null`).
+- ✅ Roster panel stays docked, read-only, showing post-turn unit state throughout
+  (unchanged from Slice 2 — `replayRosterRows` uses the `state.units` passed to
+  Board, which is `boardState` now, not always `postTurnState`; the UI-SPEC calls
+  for a static post-turn snapshot here — see note below).
+
+**Demonstrable:** a resolved turn animates smoothly beat by beat (units slide on
+pulse beats, destroyed units fade, recruits materialise); step-back snaps to an
+earlier board state.
+
+> **Roster note:** The UI-SPEC says the roster should show the *post-turn* unit
+> state (static snapshot) throughout the replay. Currently it reflects the
+> `boardState` for each beat, which changes. This is a deliberate v0.1 simplification
+> (seeing the moving state is arguably useful); a dedicated `postTurnState` roster
+> prop can be threaded through in a later pass if needed.
+
+### Slice 4 — Event log panel
+
+- Scrollable event log in the right portion of the bottom panel (UI-SPEC §13.3).
+- Beat headers; `UnitMoved` events collapsed under "N units moved"; all other events
+  expanded with §16.3 plain-language text.
+- Past beats dimmed; current beat highlighted; future beats greyed.
+- Clicking a log entry: pause, jump to that beat, pan camera to the relevant hex.
+- Fog-filtered: only events the viewer can witness appear.
+
+### Slice 5 — Replay exit + Game menu integration
+
+- After the final beat, "Start Planning" button appears (bottom-right); if the game
+  ended, "See Results" leads to the game-over state (UI-SPEC §13.6).
+- "Watch last replay" in the Game menu navigates to the replay route for the most
+  recently resolved turn.
+- End-to-end smoke test: two dev profiles play a turn from lock → poll detects
+  resolution → replay auto-launches → steps through → "Start Planning" → planning
+  screen for the next turn.
 
 **Milestone — first full playable match in two browsers.**
 
