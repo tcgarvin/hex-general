@@ -60,14 +60,27 @@ def unit_visible_hexes(state: GameState, unit: Unit) -> set[Axial]:
     return visible
 
 
-def visible_hexes(state: GameState, player_id: PlayerId) -> set[Axial]:
-    """Return the union of all hexes ``player_id``'s units can see (SPEC §9).
+_SETTLEMENT_VISION = 1
 
-    A player with no surviving units sees nothing (an empty set), which is the
-    correct fog result — they get no information about the board.
+
+def visible_hexes(state: GameState, player_id: PlayerId) -> set[Axial]:
+    """Return the union of all hexes ``player_id``'s units and controlled settlements can see.
+
+    Units contribute their full vision radius (SPEC §9). Controlled settlements
+    (towns and cities) additionally contribute a fixed radius of 1 hex, giving
+    each player persistent local awareness around their territory even when
+    no unit is present.
+
+    A player with no units and no controlled settlements sees nothing.
     """
     visible: set[Axial] = set()
     for unit in state.units:
         if unit.owner == player_id:
             visible |= unit_visible_hexes(state, unit)
+    for settlement in state.settlements:
+        if settlement.controlled_by == player_id:
+            for hex_ in state.map.hexes:
+                coord = hex_.coord
+                if distance(settlement.coord, coord) <= _SETTLEMENT_VISION:
+                    visible.add(coord)
     return visible

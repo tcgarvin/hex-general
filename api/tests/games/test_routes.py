@@ -110,15 +110,22 @@ def _new_active_game(client: TestClient) -> str:
 
 
 def test_view_hides_enemy_units_in_the_fog(client: TestClient) -> None:
-    # twin_rivers starts the two sides far apart, so neither player's view should
-    # ever contain one of the other's units (roadmap P6 demonstrable).
+    # twin_rivers places facing units 3 hexes apart; with vision=3 they can see
+    # each other. The flanking infantry on each side is too far away, so at least
+    # one enemy unit remains hidden — proving fog redaction is active.
     game_id = _new_active_game(client)
 
     blue_view = client.get(f"/games/{game_id}", headers=_as(BLUE_USER)).json()
-    assert {u["owner"] for u in blue_view["state"]["units"]} == {"blue"}
+    blue_visible_enemy = sum(
+        1 for u in blue_view["state"]["units"] if u["owner"] == "red"
+    )
+    assert blue_visible_enemy < 4  # red's flanking infantry is hidden
 
     red_view = client.get(f"/games/{game_id}", headers=_as(RED_USER)).json()
-    assert {u["owner"] for u in red_view["state"]["units"]} == {"red"}
+    red_visible_enemy = sum(
+        1 for u in red_view["state"]["units"] if u["owner"] == "blue"
+    )
+    assert red_visible_enemy < 4  # blue's flanking infantry is hidden
 
 
 def test_replay_hides_enemy_units_and_keeps_economy_private(client: TestClient) -> None:
@@ -127,7 +134,11 @@ def test_replay_hides_enemy_units_and_keeps_economy_private(client: TestClient) 
     client.post(f"/games/{game_id}/orders", json={}, headers=_as(RED_USER))
 
     replay = client.get(f"/games/{game_id}/turns/0", headers=_as(BLUE_USER)).json()
-    assert {u["owner"] for u in replay["state_after"]["units"]} == {"blue"}
+    # Facing units (3 hexes apart) are visible; the flanking red infantry is hidden.
+    blue_visible_enemy = sum(
+        1 for u in replay["state_after"]["units"] if u["owner"] == "red"
+    )
+    assert blue_visible_enemy < 4
     economy_players = {
         e["player"] for e in replay["events"] if e["kind"] == "economy_resolved"
     }
