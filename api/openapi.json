@@ -39,6 +39,55 @@
         "title": "Axial",
         "type": "object"
       },
+      "BarrageHit": {
+        "additionalProperties": false,
+        "description": "The unit struck by a barrage and its outcome (SPEC \u00a77.2, \u00a713.1).\n\nA barrage targets a hex; this records the unit that happened to occupy it.\nThe occupant is a stationary defender, so terrain/Hold modifiers apply\n(SPEC \u00a712.10); artillery fires at range, so there is no retaliation.",
+        "properties": {
+          "damage": {
+            "title": "Damage",
+            "type": "integer"
+          },
+          "destroyed": {
+            "title": "Destroyed",
+            "type": "boolean"
+          },
+          "hold_bonus": {
+            "title": "Hold Bonus",
+            "type": "integer"
+          },
+          "hp_after": {
+            "title": "Hp After",
+            "type": "integer"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "terrain_bonus": {
+            "title": "Terrain Bonus",
+            "type": "integer"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "unit_id",
+          "unit_type",
+          "owner",
+          "terrain_bonus",
+          "hold_bonus",
+          "damage",
+          "hp_after",
+          "destroyed"
+        ],
+        "title": "BarrageHit",
+        "type": "object"
+      },
       "BarrageOrder": {
         "description": "Artillery fires at a visible target hex within range (SPEC \u00a77.2).",
         "properties": {
@@ -62,6 +111,157 @@
         ],
         "title": "BarrageOrder",
         "type": "object"
+      },
+      "BarrageResolved": {
+        "additionalProperties": false,
+        "description": "An artillery Barrage order resolved against ``target`` (SPEC \u00a77.2, \u00a711.3).\n\n``hit`` is the struck unit, or ``None`` when the target hex was empty (a\nsingle, well-defined meaning: barrage targets a hex, which may hold nobody).",
+        "properties": {
+          "artillery_id": {
+            "title": "Artillery Id",
+            "type": "integer"
+          },
+          "hit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BarrageHit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "const": "barrage_resolved",
+            "default": "barrage_resolved",
+            "title": "Kind",
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/components/schemas/Axial"
+          }
+        },
+        "required": [
+          "artillery_id",
+          "target"
+        ],
+        "title": "BarrageResolved",
+        "type": "object"
+      },
+      "CombatParticipant": {
+        "additionalProperties": false,
+        "description": "One unit's contribution to and outcome in a combat event (SPEC \u00a716.3).\n\nDamage is reported as totals: ``damage_dealt`` is summed across every\nopposing unit this one struck, ``damage_taken`` across every opponent that\nstruck it. For a 1v1 these are the single exchanged values in the \u00a716.3\nexample; in a dogpile each attacker's ``damage_dealt`` is its hit on the\ndefender, and the defender's ``damage_dealt`` is the sum of its full\nretaliation against every attacker (SPEC \u00a712.4).",
+        "properties": {
+          "damage_dealt": {
+            "title": "Damage Dealt",
+            "type": "integer"
+          },
+          "damage_taken": {
+            "title": "Damage Taken",
+            "type": "integer"
+          },
+          "destroyed": {
+            "title": "Destroyed",
+            "type": "boolean"
+          },
+          "hold_bonus": {
+            "title": "Hold Bonus",
+            "type": "integer"
+          },
+          "hp_after": {
+            "title": "Hp After",
+            "type": "integer"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/CombatRole"
+          },
+          "terrain_bonus": {
+            "title": "Terrain Bonus",
+            "type": "integer"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "unit_id",
+          "unit_type",
+          "owner",
+          "role",
+          "terrain_bonus",
+          "hold_bonus",
+          "damage_dealt",
+          "damage_taken",
+          "hp_after",
+          "destroyed"
+        ],
+        "title": "CombatParticipant",
+        "type": "object"
+      },
+      "CombatResolved": {
+        "additionalProperties": false,
+        "description": "A single combat over one contested ``coord`` in ``pulse`` (SPEC \u00a712).\n\nHolds everything needed to render the \u00a716.3 explanation: every participant\nwith its role, modifiers, damage, and fate, plus the occupation outcome.\n``entrant_id`` is the surviving lead entrant that occupied the hex, or\n``None`` if nobody entered (opposing survivors remained, or all entrants\ndied \u2014 SPEC \u00a712.5). ``entrant_continued`` records whether that entrant had\nmovement pulses left and kept moving (SPEC \u00a711.2/\u00a712.5).",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "entrant_continued": {
+            "default": false,
+            "title": "Entrant Continued",
+            "type": "boolean"
+          },
+          "entrant_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrant Id"
+          },
+          "kind": {
+            "const": "combat_resolved",
+            "default": "combat_resolved",
+            "title": "Kind",
+            "type": "string"
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/CombatParticipant"
+            },
+            "title": "Participants",
+            "type": "array"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pulse",
+          "coord",
+          "participants"
+        ],
+        "title": "CombatResolved",
+        "type": "object"
+      },
+      "CombatRole": {
+        "description": "A unit's role in a combat event (SPEC \u00a712).\n\n``DEFENDER`` is the stationary occupant of the contested hex \u2014 the only\nparticipant that receives terrain/Hold modifiers (SPEC \u00a712.10). ``ATTACKER``\ncovers every unit moving into the hex (an into-enemy attack, an empty-hex\ncontest, or an edge swap); attackers never get terrain/Hold bonuses.",
+        "enum": [
+          "attacker",
+          "defender"
+        ],
+        "title": "CombatRole",
+        "type": "string"
       },
       "CreateGameRequest": {
         "additionalProperties": false,
@@ -118,6 +318,57 @@
           "active_game"
         ],
         "title": "DispatchView",
+        "type": "object"
+      },
+      "EconomyResolved": {
+        "additionalProperties": false,
+        "description": "One player's muster accounting for the turn (SPEC \u00a76.2\u20136.4, \u00a711.3 Phase 5).\n\n``net`` is ``income - upkeep`` (may be negative; the shortfall is paid from the\nbank, which floors at 0). ``lost_to_cap`` is muster discarded because the bank\nwould exceed its cap (SPEC \u00a76.4). ``bank_after`` is the resulting bank.",
+        "properties": {
+          "bank_after": {
+            "title": "Bank After",
+            "type": "integer"
+          },
+          "bank_before": {
+            "title": "Bank Before",
+            "type": "integer"
+          },
+          "income": {
+            "title": "Income",
+            "type": "integer"
+          },
+          "kind": {
+            "const": "economy_resolved",
+            "default": "economy_resolved",
+            "title": "Kind",
+            "type": "string"
+          },
+          "lost_to_cap": {
+            "title": "Lost To Cap",
+            "type": "integer"
+          },
+          "net": {
+            "title": "Net",
+            "type": "integer"
+          },
+          "player": {
+            "title": "Player",
+            "type": "string"
+          },
+          "upkeep": {
+            "title": "Upkeep",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "player",
+          "income",
+          "upkeep",
+          "net",
+          "bank_before",
+          "bank_after",
+          "lost_to_cap"
+        ],
+        "title": "EconomyResolved",
         "type": "object"
       },
       "GameConfig": {
@@ -430,6 +681,56 @@
         "title": "MeView",
         "type": "object"
       },
+      "MoveBlocked": {
+        "additionalProperties": false,
+        "description": "A unit's attempted step into ``target`` failed; it stops for the turn.",
+        "properties": {
+          "kind": {
+            "const": "move_blocked",
+            "default": "move_blocked",
+            "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/MoveBlockedReason"
+          },
+          "target": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pulse",
+          "unit_id",
+          "origin",
+          "target",
+          "reason"
+        ],
+        "title": "MoveBlocked",
+        "type": "object"
+      },
+      "MoveBlockedReason": {
+        "description": "Why a unit's attempted step failed and ended its movement (SPEC \u00a711.3).",
+        "enum": [
+          "off_map",
+          "impassable",
+          "occupied",
+          "zoc_locked",
+          "attack_forbidden"
+        ],
+        "title": "MoveBlockedReason",
+        "type": "string"
+      },
       "MoveOrder": {
         "description": "Follow an exact planned path of adjacent hexes (SPEC \u00a77.1).\n\n``path`` is the sequence of hexes to enter, in order, one per movement\npulse. Combat occurs if enemy contact happens; the unit does not reroute if\nblocked.",
         "properties": {
@@ -576,6 +877,52 @@
         "title": "Settlement",
         "type": "object"
       },
+      "SettlementCaptured": {
+        "additionalProperties": false,
+        "description": "An infantry/armor unit captured a town or city (SPEC \u00a714.1, \u00a711.3 Phase 3).\n\nEmitted only when control actually changes \u2014 a unit sitting on a settlement\nit already controls produces no event. ``previous_owner`` is ``None`` when the\nsettlement was neutral before capture (a single, well-defined meaning).",
+        "properties": {
+          "captured_by": {
+            "title": "Captured By",
+            "type": "string"
+          },
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "settlement_captured",
+            "default": "settlement_captured",
+            "title": "Kind",
+            "type": "string"
+          },
+          "previous_owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Owner"
+          },
+          "settlement": {
+            "$ref": "#/components/schemas/Terrain"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "coord",
+          "settlement",
+          "captured_by",
+          "previous_owner",
+          "unit_id"
+        ],
+        "title": "SettlementCaptured",
+        "type": "object"
+      },
       "SubmitOrdersRequest": {
         "additionalProperties": false,
         "description": "Body for ``POST /games/{id}/orders``: a player's full plan for the turn.\n\nBoth lists default to empty: a player may legitimately submit no orders (every\nunit holds) and no recruits. FastAPI parses ``orders`` into the discriminated\n`Order` union, so unknown order shapes are rejected as 422 at the wire.",
@@ -663,13 +1010,87 @@
         "title": "Terrain",
         "type": "string"
       },
+      "TrafficJam": {
+        "additionalProperties": false,
+        "description": "Friendly units collided on ``coord`` in the same pulse (SPEC \u00a78.2).\n\nNone of them entered; all of them stop for the turn. ``unit_ids`` is sorted\nfor deterministic replay.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "traffic_jam",
+            "default": "traffic_jam",
+            "title": "Kind",
+            "type": "string"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          },
+          "unit_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Unit Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pulse",
+          "coord",
+          "unit_ids"
+        ],
+        "title": "TrafficJam",
+        "type": "object"
+      },
       "TurnReplay": {
         "description": "A resolved turn's replay: the event log, resulting state, victory snapshot.",
         "properties": {
           "events": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "discriminator": {
+                "mapping": {
+                  "barrage_resolved": "#/components/schemas/BarrageResolved",
+                  "combat_resolved": "#/components/schemas/CombatResolved",
+                  "economy_resolved": "#/components/schemas/EconomyResolved",
+                  "move_blocked": "#/components/schemas/MoveBlocked",
+                  "settlement_captured": "#/components/schemas/SettlementCaptured",
+                  "traffic_jam": "#/components/schemas/TrafficJam",
+                  "unit_moved": "#/components/schemas/UnitMoved",
+                  "unit_recruited": "#/components/schemas/UnitRecruited",
+                  "unit_repaired": "#/components/schemas/UnitRepaired"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UnitMoved"
+                },
+                {
+                  "$ref": "#/components/schemas/MoveBlocked"
+                },
+                {
+                  "$ref": "#/components/schemas/TrafficJam"
+                },
+                {
+                  "$ref": "#/components/schemas/CombatResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/BarrageResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/SettlementCaptured"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitRepaired"
+                },
+                {
+                  "$ref": "#/components/schemas/EconomyResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitRecruited"
+                }
+              ]
             },
             "title": "Events",
             "type": "array"
@@ -726,6 +1147,120 @@
           "hp"
         ],
         "title": "Unit",
+        "type": "object"
+      },
+      "UnitMoved": {
+        "additionalProperties": false,
+        "description": "A unit successfully stepped from ``origin`` to ``dest`` in ``pulse``.",
+        "properties": {
+          "dest": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "unit_moved",
+            "default": "unit_moved",
+            "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pulse",
+          "unit_id",
+          "origin",
+          "dest"
+        ],
+        "title": "UnitMoved",
+        "type": "object"
+      },
+      "UnitRecruited": {
+        "additionalProperties": false,
+        "description": "A player recruited a new unit at a friendly city (SPEC \u00a76.5, \u00a711.3 Phase 6).\n\n``unit_id`` is the id assigned to the new unit; ``bank_after`` is the player's\nbank once ``cost`` was deducted.",
+        "properties": {
+          "bank_after": {
+            "title": "Bank After",
+            "type": "integer"
+          },
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "cost": {
+            "title": "Cost",
+            "type": "integer"
+          },
+          "kind": {
+            "const": "unit_recruited",
+            "default": "unit_recruited",
+            "title": "Kind",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "unit_id",
+          "unit_type",
+          "owner",
+          "coord",
+          "cost",
+          "bank_after"
+        ],
+        "title": "UnitRecruited",
+        "type": "object"
+      },
+      "UnitRepaired": {
+        "additionalProperties": false,
+        "description": "A resting, undamaged unit recovered HP (SPEC \u00a77.3, \u00a711.3 Phase 4).\n\nEmitted only when HP actually increases. ``in_settlement`` records whether the\nunit rested on a town/city (the +2-up-to-10 tier) versus anywhere else (the\n+1-up-to-7 tier).",
+        "properties": {
+          "hp_after": {
+            "title": "Hp After",
+            "type": "integer"
+          },
+          "hp_before": {
+            "title": "Hp Before",
+            "type": "integer"
+          },
+          "in_settlement": {
+            "title": "In Settlement",
+            "type": "boolean"
+          },
+          "kind": {
+            "const": "unit_repaired",
+            "default": "unit_repaired",
+            "title": "Kind",
+            "type": "string"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "hp_before",
+          "hp_after",
+          "in_settlement"
+        ],
+        "title": "UnitRepaired",
         "type": "object"
       },
       "UnitType": {

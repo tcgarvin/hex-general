@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import { applyBeatEvents, applyBeats } from "./applyBeats";
-import type { AnyEvent, Beat } from "./beats";
-import { coord, gameState, player, settlement, unit } from "./testFixtures";
+import type { Beat } from "./beats";
+import {
+  coord,
+  events,
+  type EventFixture,
+  gameState,
+  player,
+  settlement,
+  unit,
+} from "./testFixtures";
 
 // Build a Beat from a phase + raw events; only `events` matters to applyBeats.
-function beat(events: AnyEvent[]): Beat {
-  return { phase: "pulse", label: "PULSE 1", events };
+function beat(fixtures: EventFixture[]): Beat {
+  return { phase: "pulse", label: "PULSE 1", events: events(fixtures) };
 }
 
 describe("applyBeats", () => {
@@ -46,7 +54,7 @@ describe("applyBeats", () => {
 describe("applyBeatEvents — movement", () => {
   it("moves a unit to its destination", () => {
     const state = gameState({ units: [unit(1, "p1", coord(0, 0))] });
-    const next = applyBeatEvents(state, [{ kind: "unit_moved", unit_id: 1, dest: { q: 2, r: 1 } }]);
+    const next = applyBeatEvents(state, events([{ kind: "unit_moved", unit_id: 1, dest: { q: 2, r: 1 } }]));
     expect(next.units?.[0].coord).toEqual(coord(2, 1));
   });
 
@@ -55,10 +63,10 @@ describe("applyBeatEvents — movement", () => {
     const a = coord(0, 0);
     const b = coord(1, 0);
     const state = gameState({ units: [unit(1, "p1", a), unit(2, "p2", b)] });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       { kind: "unit_moved", unit_id: 1, dest: b },
       { kind: "unit_moved", unit_id: 2, dest: a },
-    ]);
+    ]));
     const u1 = next.units?.find((u) => u.id === 1);
     const u2 = next.units?.find((u) => u.id === 2);
     expect(u1?.coord).toEqual(b);
@@ -67,10 +75,10 @@ describe("applyBeatEvents — movement", () => {
 
   it("leaves positions unchanged for move_blocked / traffic_jam", () => {
     const state = gameState({ units: [unit(1, "p1", coord(0, 0))] });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       { kind: "move_blocked", unit_id: 1 },
       { kind: "traffic_jam", unit_id: 1 },
-    ]);
+    ]));
     // No change → reducer returns the same state reference.
     expect(next).toBe(state);
   });
@@ -79,23 +87,23 @@ describe("applyBeatEvents — movement", () => {
 describe("applyBeatEvents — barrage", () => {
   it("applies damage from a non-destroying hit", () => {
     const state = gameState({ units: [unit(1, "p2", coord(0, 0), { hp: 10 })] });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       { kind: "barrage_resolved", hit: { unit_id: 1, hp_after: 4, destroyed: false } },
-    ]);
+    ]));
     expect(next.units?.[0].hp).toBe(4);
   });
 
   it("removes a unit destroyed by barrage", () => {
     const state = gameState({ units: [unit(1, "p2", coord(0, 0))] });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       { kind: "barrage_resolved", hit: { unit_id: 1, hp_after: 0, destroyed: true } },
-    ]);
+    ]));
     expect(next.units).toHaveLength(0);
   });
 
   it("is a no-op when the barrage missed (hit === null)", () => {
     const state = gameState({ units: [unit(1, "p2", coord(0, 0))] });
-    const next = applyBeatEvents(state, [{ kind: "barrage_resolved", hit: null }]);
+    const next = applyBeatEvents(state, events([{ kind: "barrage_resolved", hit: null }]));
     expect(next).toBe(state);
   });
 });
@@ -111,7 +119,7 @@ describe("applyBeatEvents — combat", () => {
         unit(3, "p2", coord(1, 0), { hp: 10 }), // a damaged survivor elsewhere
       ],
     });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       {
         kind: "combat_resolved",
         coord: contested,
@@ -122,7 +130,7 @@ describe("applyBeatEvents — combat", () => {
         ],
         entrant_id: 1,
       },
-    ]);
+    ]));
     expect(next.units?.find((u) => u.id === 2)).toBeUndefined();
     expect(next.units?.find((u) => u.id === 1)?.hp).toBe(6);
     expect(next.units?.find((u) => u.id === 1)?.coord).toEqual(contested);
@@ -135,7 +143,7 @@ describe("applyBeatEvents — combat", () => {
     const state = gameState({
       units: [unit(1, "p1", start, { hp: 10 }), unit(2, "p2", contested, { hp: 10 })],
     });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       {
         kind: "combat_resolved",
         coord: contested,
@@ -145,7 +153,7 @@ describe("applyBeatEvents — combat", () => {
         ],
         entrant_id: null,
       },
-    ]);
+    ]));
     // Attacker destroyed; defender stays put on the contested hex.
     expect(next.units?.find((u) => u.id === 1)).toBeUndefined();
     expect(next.units?.find((u) => u.id === 2)?.coord).toEqual(contested);
@@ -156,23 +164,23 @@ describe("applyBeatEvents — capture / repair / economy", () => {
   it("reassigns settlement control on capture", () => {
     const c = coord(2, 2);
     const state = gameState({ settlements: [settlement(c, "p2")] });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       { kind: "settlement_captured", coord: c, captured_by: "p1" },
-    ]);
+    ]));
     expect(next.settlements?.[0].controlled_by).toBe("p1");
   });
 
   it("restores HP on repair", () => {
     const state = gameState({ units: [unit(1, "p1", coord(0, 0), { hp: 4 })] });
-    const next = applyBeatEvents(state, [{ kind: "unit_repaired", unit_id: 1, hp_after: 10 }]);
+    const next = applyBeatEvents(state, events([{ kind: "unit_repaired", unit_id: 1, hp_after: 10 }]));
     expect(next.units?.[0].hp).toBe(10);
   });
 
   it("updates a player's bank on economy resolution", () => {
     const state = gameState({ players: [player("p1", 2), player("p2", 7)] });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       { kind: "economy_resolved", player: "p1", bank_after: 9 },
-    ]);
+    ]));
     expect(next.players?.find((p) => p.id === "p1")?.bank).toBe(9);
     expect(next.players?.find((p) => p.id === "p2")?.bank).toBe(7);
   });
@@ -181,9 +189,9 @@ describe("applyBeatEvents — capture / repair / economy", () => {
 describe("applyBeatEvents — recruitment", () => {
   it("adds a new unit at full HP derived from UNIT_STATS", () => {
     const state = gameState({ units: [] });
-    const next = applyBeatEvents(state, [
+    const next = applyBeatEvents(state, events([
       { kind: "unit_recruited", unit_id: 42, unit_type: "armor", owner: "p1", coord: { q: 3, r: 0 } },
-    ]);
+    ]));
     expect(next.units).toHaveLength(1);
     const recruit = next.units?.[0];
     expect(recruit?.id).toBe(42);
@@ -200,21 +208,21 @@ describe("applyBeatEvents — recruitment", () => {
       {
         phase: "pulse",
         label: "PULSE 1",
-        events: [
+        events: events([
           {
             kind: "combat_resolved",
             coord: { q: 0, r: 0 },
             participants: [{ unit_id: 1, hp_after: 0, destroyed: true }],
             entrant_id: null,
           },
-        ],
+        ]),
       },
       {
         phase: "recruitment",
         label: "RECRUITMENT",
-        events: [
+        events: events([
           { kind: "unit_recruited", unit_id: 2, unit_type: "infantry", owner: "p1", coord: { q: 1, r: 1 } },
-        ],
+        ]),
       },
     ];
     const afterCombat = applyBeats(pre, beats, 0);

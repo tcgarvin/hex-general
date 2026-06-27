@@ -9,10 +9,9 @@ engine.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.engine.events import Event
 from app.engine.hex_coords import Axial
 from app.engine.models import GameState, Order, PlayerId, Recruitment
 from app.engine.victory import VictoryStatus
@@ -142,7 +141,7 @@ class TurnReplay(BaseModel):
     """A resolved turn's replay: the event log, resulting state, victory snapshot."""
 
     turn: int
-    events: list[dict[str, Any]]
+    events: list[Event]
     state_after: GameState
     victory: VictoryStatus
 

@@ -2,6 +2,8 @@
 // into ordered beats so the replay controller can step through them one at a
 // time. Beats map to the six engine phases; empty beats are omitted.
 
+import type { ReplayEvent } from "@/lib/api/types";
+
 export type BeatPhase =
   | "barrage"
   | "pulse"
@@ -10,33 +12,34 @@ export type BeatPhase =
   | "economy"
   | "recruitment";
 
-export interface AnyEvent {
-  kind: string;
-  [key: string]: unknown;
-}
-
 export interface Beat {
   phase: BeatPhase;
   /** 1-indexed pulse number; set only when phase === "pulse". */
   pulse?: number;
   /** Short display label: "BARRAGE", "PULSE 1", "CAPTURE", etc. */
   label: string;
-  events: AnyEvent[];
+  events: ReplayEvent[];
 }
 
-const PULSE_KINDS = new Set([
+// Events that occur during a movement pulse, all carrying a `pulse` field.
+const PULSE_KINDS = [
   "unit_moved",
   "move_blocked",
   "traffic_jam",
   "combat_resolved",
-]);
+] as const;
+
+type PulseEvent = Extract<ReplayEvent, { kind: (typeof PULSE_KINDS)[number] }>;
+
+function isPulseEvent(e: ReplayEvent): e is PulseEvent {
+  return (PULSE_KINDS as readonly string[]).includes(e.kind);
+}
 
 /**
  * Group the raw engine event log into ordered beats (UI-SPEC §13.1). Empty
  * beats are omitted — a turn with no barrage produces no Barrage beat, etc.
  */
-export function groupBeats(rawEvents: { [key: string]: unknown }[]): Beat[] {
-  const events = rawEvents as AnyEvent[];
+export function groupBeats(events: ReplayEvent[]): Beat[] {
   const beats: Beat[] = [];
 
   // Phase 1: Barrage
@@ -46,10 +49,10 @@ export function groupBeats(rawEvents: { [key: string]: unknown }[]): Beat[] {
   }
 
   // Phase 2: Movement pulses — group by pulse number, emit in ascending order.
-  const pulseMap = new Map<number, AnyEvent[]>();
+  const pulseMap = new Map<number, ReplayEvent[]>();
   for (const e of events) {
-    if (!PULSE_KINDS.has(e.kind)) continue;
-    const pulse = (e as unknown as { pulse: number }).pulse;
+    if (!isPulseEvent(e)) continue;
+    const pulse = e.pulse;
     let bucket = pulseMap.get(pulse);
     if (bucket === undefined) {
       bucket = [];

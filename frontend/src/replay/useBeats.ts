@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
+import type { ReplayEvent } from "@/lib/api/types";
+
 import { groupBeats, type Beat } from "./beats";
 
 export interface BeatsState {
@@ -11,9 +13,7 @@ export interface BeatsState {
   jumpTo: (index: number) => void;
 }
 
-export function useBeats(
-  rawEvents: { [key: string]: unknown }[],
-): BeatsState {
+export function useBeats(rawEvents: ReplayEvent[]): BeatsState {
   const beats = useMemo(() => groupBeats(rawEvents), [rawEvents]);
   const [currentBeat, setCurrentBeat] = useState(-1);
 

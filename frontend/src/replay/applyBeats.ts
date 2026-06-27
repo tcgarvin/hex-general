@@ -8,9 +8,10 @@
 // Board as `state`.
 
 import type { components } from "@/lib/api/schema";
+import type { ReplayEvent } from "@/lib/api/types";
 import { UNIT_STATS } from "@/planning/rules";
 
-import type { AnyEvent, Beat } from "./beats";
+import type { Beat } from "./beats";
 
 type GameState = components["schemas"]["GameState"];
 type Unit = components["schemas"]["Unit"];
@@ -37,7 +38,7 @@ export function applyBeats(
 }
 
 /** Apply all events from one beat to `state`, returning the updated state. */
-export function applyBeatEvents(state: GameState, events: AnyEvent[]): GameState {
+export function applyBeatEvents(state: GameState, events: ReplayEvent[]): GameState {
   let units = (state.units ?? []) as Unit[];
   let settlements = (state.settlements ?? []) as Settlement[];
   let players = (state.players ?? []) as Player[];
@@ -55,7 +56,7 @@ export function applyBeatEvents(state: GameState, events: AnyEvent[]): GameState
 }
 
 function applyOneEvent(
-  e: AnyEvent,
+  e: ReplayEvent,
   units: Unit[],
   settlements: Settlement[],
   players: Player[],
@@ -64,15 +65,14 @@ function applyOneEvent(
 
   switch (e.kind) {
     case "unit_moved": {
-      const { unit_id, dest } = e as unknown as { unit_id: number; dest: { q: number; r: number } };
+      const { unit_id, dest } = e;
       return { units: units.map((u) => (u.id === unit_id ? { ...u, coord: dest } : u)), settlements, players };
     }
 
     case "barrage_resolved": {
-      const { hit } = e as unknown as {
-        hit: { unit_id: number; hp_after: number; destroyed: boolean } | null;
-      };
-      if (hit === null) return unchanged;
+      const { hit } = e;
+      // `hit` is null/absent when the barrage hit an empty hex (SPEC §7.2).
+      if (hit == null) return unchanged;
       if (hit.destroyed) {
         return { units: units.filter((u) => u.id !== hit.unit_id), settlements, players };
       }
@@ -84,11 +84,7 @@ function applyOneEvent(
     }
 
     case "combat_resolved": {
-      const { coord, participants, entrant_id } = e as unknown as {
-        coord: { q: number; r: number };
-        participants: Array<{ unit_id: number; hp_after: number; destroyed: boolean }>;
-        entrant_id: number | null;
-      };
+      const { coord, participants, entrant_id } = e;
       let newUnits = units;
       for (const p of participants) {
         if (p.destroyed) {
@@ -97,18 +93,16 @@ function applyOneEvent(
           newUnits = newUnits.map((u) => (u.id === p.unit_id ? { ...u, hp: p.hp_after } : u));
         }
       }
-      // The surviving entrant now occupies the contested hex.
-      if (entrant_id !== null) {
+      // The surviving entrant now occupies the contested hex (null/absent when
+      // nobody entered — opposing survivors remained or all entrants died).
+      if (entrant_id != null) {
         newUnits = newUnits.map((u) => (u.id === entrant_id ? { ...u, coord } : u));
       }
       return { units: newUnits, settlements, players };
     }
 
     case "settlement_captured": {
-      const { coord, captured_by } = e as unknown as {
-        coord: { q: number; r: number };
-        captured_by: string;
-      };
+      const { coord, captured_by } = e;
       return {
         units,
         settlements: settlements.map((s) =>
@@ -121,7 +115,7 @@ function applyOneEvent(
     }
 
     case "unit_repaired": {
-      const { unit_id, hp_after } = e as unknown as { unit_id: number; hp_after: number };
+      const { unit_id, hp_after } = e;
       return {
         units: units.map((u) => (u.id === unit_id ? { ...u, hp: hp_after } : u)),
         settlements,
@@ -130,7 +124,7 @@ function applyOneEvent(
     }
 
     case "economy_resolved": {
-      const { player, bank_after } = e as unknown as { player: string; bank_after: number };
+      const { player, bank_after } = e;
       return {
         units,
         settlements,
@@ -139,13 +133,7 @@ function applyOneEvent(
     }
 
     case "unit_recruited": {
-      const { unit_id, unit_type, owner, coord } = e as unknown as {
-        unit_id: number;
-        unit_type: string;
-        owner: string;
-        coord: { q: number; r: number };
-      };
-      const type = unit_type as Unit["type"];
+      const { unit_id, unit_type: type, owner, coord } = e;
       const newUnit: Unit = {
         id: unit_id,
         type,

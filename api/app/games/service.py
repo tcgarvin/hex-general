@@ -280,7 +280,7 @@ class GameService:
         witnessed = filter_events(events, record.state_after, viewer)
         return TurnReplay(
             turn=record.turn,
-            events=[event.model_dump(mode="json") for event in witnessed],
+            events=witnessed,
             state_after=redact_state(record.state_after, viewer),
             victory=record.victory,
         )

@@ -3,6 +3,7 @@
 // `beats.test.ts` / `applyBeats.test.ts` suites import.
 
 import type { components } from "@/lib/api/schema";
+import type { ReplayEvent } from "@/lib/api/types";
 
 type GameState = components["schemas"]["GameState"];
 type Unit = components["schemas"]["Unit"];
@@ -10,6 +11,19 @@ type Settlement = components["schemas"]["Settlement"];
 type Player = components["schemas"]["Player"];
 type UnitType = components["schemas"]["UnitType"];
 type Axial = components["schemas"]["Axial"];
+
+// A terse event fixture: a real event's `kind` plus only the fields the reducer
+// under test reads (the engine emits more, but the beat reducers ignore them).
+export type EventFixture = { kind: string; [key: string]: unknown };
+
+/**
+ * Cast terse {@link EventFixture}s to the strict {@link ReplayEvent} union for the
+ * reducers. This is the one place the tests cross from loose fixtures into the
+ * typed log; production code never casts (it consumes the typed union directly).
+ */
+export function events(fixtures: EventFixture[]): ReplayEvent[] {
+  return fixtures as unknown as ReplayEvent[];
+}
 
 export function coord(q: number, r: number): Axial {
   return { q, r };

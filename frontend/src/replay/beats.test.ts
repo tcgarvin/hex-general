@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { beatDisplayLabel, groupBeats, type AnyEvent } from "./beats";
+import { beatDisplayLabel, groupBeats } from "./beats";
+import { events, type EventFixture } from "./testFixtures";
 
-// Helper: groupBeats takes the raw `{[key: string]: unknown}[]` event log shape.
-function group(events: AnyEvent[]) {
-  return groupBeats(events as { [key: string]: unknown }[]);
+// groupBeats consumes the typed event log; the tests build terse fixtures and
+// `events()` casts them across that boundary.
+function group(fixtures: EventFixture[]) {
+  return groupBeats(events(fixtures));
 }
 
 describe("groupBeats", () => {

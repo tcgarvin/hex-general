@@ -8,10 +8,9 @@ import { ErrorBanner, Loading } from "@/components/ui";
 import { GameProvider } from "@/game/GameProvider";
 import { useGame } from "@/game/useGame";
 import type { components } from "@/lib/api/schema";
-import type { GameState, GameView } from "@/lib/api/types";
+import type { GameState, GameView, ReplayEvent } from "@/lib/api/types";
 import { economyFor } from "@/planning/economy";
 import { applyBeats } from "@/replay/applyBeats";
-import type { AnyEvent } from "@/replay/beats";
 import { useBeats } from "@/replay/useBeats";
 import { usePlayback } from "@/replay/usePlayback";
 import { useReplay } from "@/replay/useReplay";
@@ -125,7 +124,7 @@ interface AnimData {
 }
 
 function extractAnimData(
-  events: AnyEvent[],
+  events: ReplayEvent[],
   preBeatUnitsById: ReadonlyMap<number, Unit>,
   postBeatUnitsById: ReadonlyMap<number, Unit>,
 ): AnimData {
@@ -135,11 +134,7 @@ function extractAnimData(
 
   for (const e of events) {
     if (e.kind === "unit_moved") {
-      const { unit_id, origin, dest } = e as unknown as {
-        unit_id: number;
-        origin: { q: number; r: number };
-        dest: { q: number; r: number };
-      };
+      const { unit_id, origin, dest } = e;
       // Only record the first move per unit (each unit steps once per pulse).
       if (!slides.has(unit_id)) {
         const fromPx = axialToPixel(origin.q, origin.r, HEX_SIZE);
@@ -149,19 +144,17 @@ function extractAnimData(
         }
       }
     } else if (e.kind === "barrage_resolved") {
-      const { hit } = e as unknown as { hit: { unit_id: number; destroyed: boolean } | null };
-      if (hit !== null && hit.destroyed) {
+      const { hit } = e;
+      if (hit != null && hit.destroyed) {
         fadingOutIds.add(hit.unit_id);
       }
     } else if (e.kind === "combat_resolved") {
-      const { participants } = e as unknown as {
-        participants: Array<{ unit_id: number; destroyed: boolean }>;
-      };
+      const { participants } = e;
       for (const p of participants) {
         if (p.destroyed) fadingOutIds.add(p.unit_id);
       }
     } else if (e.kind === "unit_recruited") {
-      const { unit_id } = e as unknown as { unit_id: number };
+      const { unit_id } = e;
       const unit = postBeatUnitsById.get(unit_id);
       if (unit !== undefined) fadingInUnits.set(unit_id, unit);
     }
@@ -209,7 +202,7 @@ interface ReplayBoardProps {
   /** State at the start of this turn; null for turn 1 (no previous turn data). */
   preTurnState: GameState | null;
   postTurnState: GameState;
-  events: { [key: string]: unknown }[];
+  events: ReplayEvent[];
   view: GameView;
   onRefresh: () => void;
 }
@@ -291,7 +284,7 @@ function ReplayBoard({
     const preBeatById = new Map((preBeatState.units ?? []).map((u) => [u.id, u]));
     const postBeatById = new Map((postBeatState.units ?? []).map((u) => [u.id, u]));
 
-    const data = extractAnimData(beat.events as AnyEvent[], preBeatById, postBeatById);
+    const data = extractAnimData(beat.events, preBeatById, postBeatById);
 
     // Skip animation when there's nothing to animate.
     if (data.slides.size === 0 && data.fadingOutIds.size === 0 && data.fadingInUnits.size === 0) {

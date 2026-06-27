@@ -301,6 +301,31 @@ export interface components {
             r: number;
         };
         /**
+         * BarrageHit
+         * @description The unit struck by a barrage and its outcome (SPEC §7.2, §13.1).
+         *
+         *     A barrage targets a hex; this records the unit that happened to occupy it.
+         *     The occupant is a stationary defender, so terrain/Hold modifiers apply
+         *     (SPEC §12.10); artillery fires at range, so there is no retaliation.
+         */
+        BarrageHit: {
+            /** Damage */
+            damage: number;
+            /** Destroyed */
+            destroyed: boolean;
+            /** Hold Bonus */
+            hold_bonus: number;
+            /** Hp After */
+            hp_after: number;
+            /** Owner */
+            owner: string;
+            /** Terrain Bonus */
+            terrain_bonus: number;
+            /** Unit Id */
+            unit_id: number;
+            unit_type: components["schemas"]["UnitType"];
+        };
+        /**
          * BarrageOrder
          * @description Artillery fires at a visible target hex within range (SPEC §7.2).
          */
@@ -314,6 +339,96 @@ export interface components {
             /** Unit Id */
             unit_id: number;
         };
+        /**
+         * BarrageResolved
+         * @description An artillery Barrage order resolved against ``target`` (SPEC §7.2, §11.3).
+         *
+         *     ``hit`` is the struck unit, or ``None`` when the target hex was empty (a
+         *     single, well-defined meaning: barrage targets a hex, which may hold nobody).
+         */
+        BarrageResolved: {
+            /** Artillery Id */
+            artillery_id: number;
+            hit?: components["schemas"]["BarrageHit"] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "barrage_resolved";
+            target: components["schemas"]["Axial"];
+        };
+        /**
+         * CombatParticipant
+         * @description One unit's contribution to and outcome in a combat event (SPEC §16.3).
+         *
+         *     Damage is reported as totals: ``damage_dealt`` is summed across every
+         *     opposing unit this one struck, ``damage_taken`` across every opponent that
+         *     struck it. For a 1v1 these are the single exchanged values in the §16.3
+         *     example; in a dogpile each attacker's ``damage_dealt`` is its hit on the
+         *     defender, and the defender's ``damage_dealt`` is the sum of its full
+         *     retaliation against every attacker (SPEC §12.4).
+         */
+        CombatParticipant: {
+            /** Damage Dealt */
+            damage_dealt: number;
+            /** Damage Taken */
+            damage_taken: number;
+            /** Destroyed */
+            destroyed: boolean;
+            /** Hold Bonus */
+            hold_bonus: number;
+            /** Hp After */
+            hp_after: number;
+            /** Owner */
+            owner: string;
+            role: components["schemas"]["CombatRole"];
+            /** Terrain Bonus */
+            terrain_bonus: number;
+            /** Unit Id */
+            unit_id: number;
+            unit_type: components["schemas"]["UnitType"];
+        };
+        /**
+         * CombatResolved
+         * @description A single combat over one contested ``coord`` in ``pulse`` (SPEC §12).
+         *
+         *     Holds everything needed to render the §16.3 explanation: every participant
+         *     with its role, modifiers, damage, and fate, plus the occupation outcome.
+         *     ``entrant_id`` is the surviving lead entrant that occupied the hex, or
+         *     ``None`` if nobody entered (opposing survivors remained, or all entrants
+         *     died — SPEC §12.5). ``entrant_continued`` records whether that entrant had
+         *     movement pulses left and kept moving (SPEC §11.2/§12.5).
+         */
+        CombatResolved: {
+            coord: components["schemas"]["Axial"];
+            /**
+             * Entrant Continued
+             * @default false
+             */
+            entrant_continued: boolean;
+            /** Entrant Id */
+            entrant_id?: number | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "combat_resolved";
+            /** Participants */
+            participants: components["schemas"]["CombatParticipant"][];
+            /** Pulse */
+            pulse: number;
+        };
+        /**
+         * CombatRole
+         * @description A unit's role in a combat event (SPEC §12).
+         *
+         *     ``DEFENDER`` is the stationary occupant of the contested hex — the only
+         *     participant that receives terrain/Hold modifiers (SPEC §12.10). ``ATTACKER``
+         *     covers every unit moving into the hex (an into-enemy attack, an empty-hex
+         *     contest, or an edge swap); attackers never get terrain/Hold bonuses.
+         * @enum {string}
+         */
+        CombatRole: "attacker" | "defender";
         /**
          * CreateGameRequest
          * @description Body for ``POST /games``: which authored scenario to instantiate.
@@ -350,6 +465,35 @@ export interface components {
          */
         DispatchView: {
             active_game: components["schemas"]["ActiveGame"] | null;
+        };
+        /**
+         * EconomyResolved
+         * @description One player's muster accounting for the turn (SPEC §6.2–6.4, §11.3 Phase 5).
+         *
+         *     ``net`` is ``income - upkeep`` (may be negative; the shortfall is paid from the
+         *     bank, which floors at 0). ``lost_to_cap`` is muster discarded because the bank
+         *     would exceed its cap (SPEC §6.4). ``bank_after`` is the resulting bank.
+         */
+        EconomyResolved: {
+            /** Bank After */
+            bank_after: number;
+            /** Bank Before */
+            bank_before: number;
+            /** Income */
+            income: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "economy_resolved";
+            /** Lost To Cap */
+            lost_to_cap: number;
+            /** Net */
+            net: number;
+            /** Player */
+            player: string;
+            /** Upkeep */
+            upkeep: number;
         };
         /**
          * GameConfig
@@ -521,6 +665,30 @@ export interface components {
             user_id: string;
         };
         /**
+         * MoveBlocked
+         * @description A unit's attempted step into ``target`` failed; it stops for the turn.
+         */
+        MoveBlocked: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "move_blocked";
+            origin: components["schemas"]["Axial"];
+            /** Pulse */
+            pulse: number;
+            reason: components["schemas"]["MoveBlockedReason"];
+            target: components["schemas"]["Axial"];
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
+         * MoveBlockedReason
+         * @description Why a unit's attempted step failed and ended its movement (SPEC §11.3).
+         * @enum {string}
+         */
+        MoveBlockedReason: "off_map" | "impassable" | "occupied" | "zoc_locked" | "attack_forbidden";
+        /**
          * MoveOrder
          * @description Follow an exact planned path of adjacent hexes (SPEC §7.1).
          *
@@ -619,6 +787,29 @@ export interface components {
             coord: components["schemas"]["Axial"];
         };
         /**
+         * SettlementCaptured
+         * @description An infantry/armor unit captured a town or city (SPEC §14.1, §11.3 Phase 3).
+         *
+         *     Emitted only when control actually changes — a unit sitting on a settlement
+         *     it already controls produces no event. ``previous_owner`` is ``None`` when the
+         *     settlement was neutral before capture (a single, well-defined meaning).
+         */
+        SettlementCaptured: {
+            /** Captured By */
+            captured_by: string;
+            coord: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "settlement_captured";
+            /** Previous Owner */
+            previous_owner: string | null;
+            settlement: components["schemas"]["Terrain"];
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
          * SubmitOrdersRequest
          * @description Body for ``POST /games/{id}/orders``: a player's full plan for the turn.
          *
@@ -659,14 +850,31 @@ export interface components {
          */
         Terrain: "plains" | "woods" | "hills" | "river" | "bridge" | "town" | "city";
         /**
+         * TrafficJam
+         * @description Friendly units collided on ``coord`` in the same pulse (SPEC §8.2).
+         *
+         *     None of them entered; all of them stop for the turn. ``unit_ids`` is sorted
+         *     for deterministic replay.
+         */
+        TrafficJam: {
+            coord: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "traffic_jam";
+            /** Pulse */
+            pulse: number;
+            /** Unit Ids */
+            unit_ids: number[];
+        };
+        /**
          * TurnReplay
          * @description A resolved turn's replay: the event log, resulting state, victory snapshot.
          */
         TurnReplay: {
             /** Events */
-            events: {
-                [key: string]: unknown;
-            }[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"])[];
             state_after: components["schemas"]["GameState"];
             /** Turn */
             turn: number;
@@ -689,6 +897,70 @@ export interface components {
             /** Owner */
             owner: string;
             type: components["schemas"]["UnitType"];
+        };
+        /**
+         * UnitMoved
+         * @description A unit successfully stepped from ``origin`` to ``dest`` in ``pulse``.
+         */
+        UnitMoved: {
+            dest: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "unit_moved";
+            origin: components["schemas"]["Axial"];
+            /** Pulse */
+            pulse: number;
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
+         * UnitRecruited
+         * @description A player recruited a new unit at a friendly city (SPEC §6.5, §11.3 Phase 6).
+         *
+         *     ``unit_id`` is the id assigned to the new unit; ``bank_after`` is the player's
+         *     bank once ``cost`` was deducted.
+         */
+        UnitRecruited: {
+            /** Bank After */
+            bank_after: number;
+            coord: components["schemas"]["Axial"];
+            /** Cost */
+            cost: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "unit_recruited";
+            /** Owner */
+            owner: string;
+            /** Unit Id */
+            unit_id: number;
+            unit_type: components["schemas"]["UnitType"];
+        };
+        /**
+         * UnitRepaired
+         * @description A resting, undamaged unit recovered HP (SPEC §7.3, §11.3 Phase 4).
+         *
+         *     Emitted only when HP actually increases. ``in_settlement`` records whether the
+         *     unit rested on a town/city (the +2-up-to-10 tier) versus anywhere else (the
+         *     +1-up-to-7 tier).
+         */
+        UnitRepaired: {
+            /** Hp After */
+            hp_after: number;
+            /** Hp Before */
+            hp_before: number;
+            /** In Settlement */
+            in_settlement: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "unit_repaired";
+            /** Unit Id */
+            unit_id: number;
         };
         /**
          * UnitType

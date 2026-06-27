@@ -12,6 +12,10 @@ export type DevProfile = components["schemas"]["DevProfile"];
 export type SubmitResult = components["schemas"]["SubmitResult"];
 export type GameState = components["schemas"]["GameState"];
 export type TurnReplay = components["schemas"]["TurnReplay"];
+// One entry of a replay's event log: the engine's `Event` discriminated union
+// (api/app/engine/events.py), tagged on `kind`. Narrow on `kind` to access the
+// per-event fields.
+export type ReplayEvent = TurnReplay["events"][number];
 export type VictoryStatus = components["schemas"]["VictoryStatus"];
 export type GameHistoryEntry = components["schemas"]["GameHistoryEntry"];
 
