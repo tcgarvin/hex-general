@@ -19,10 +19,20 @@ export function useReplay(gameId: string, turn: number) {
     let cancelled = false;
 
     async function fetch() {
-      const { data: replay, error: replayError } = await api.GET(
-        "/games/{game_id}/turns/{turn}",
-        { params: { path: { game_id: gameId, turn } } },
-      );
+      const replayRequest = api.GET("/games/{game_id}/turns/{turn}", {
+        params: { path: { game_id: gameId, turn } },
+      });
+      // State at the start of the turn is the previous turn's state_after; turn 1
+      // has no predecessor. Fetch both concurrently to avoid a serial round-trip.
+      const prevRequest =
+        turn > 1
+          ? api.GET("/games/{game_id}/turns/{turn}", {
+              params: { path: { game_id: gameId, turn: turn - 1 } },
+            })
+          : null;
+
+      const { data: replay, error: replayError } = await replayRequest;
+      const prevResult = prevRequest ? await prevRequest : null;
       if (cancelled) return;
       if (replayError) {
         setError(describeApiError(replayError));
@@ -30,20 +40,11 @@ export function useReplay(gameId: string, turn: number) {
         return;
       }
 
-      let stateBefore: GameState | null = null;
-      if (turn > 1) {
-        const { data: prev } = await api.GET("/games/{game_id}/turns/{turn}", {
-          params: { path: { game_id: gameId, turn: turn - 1 } },
-        });
-        if (!cancelled && prev) {
-          stateBefore = prev.state_after;
-        }
-      }
+      const stateBefore: GameState | null =
+        prevResult?.data?.state_after ?? null;
 
-      if (!cancelled) {
-        setData({ replay, stateBefore });
-        setLoading(false);
-      }
+      setData({ replay, stateBefore });
+      setLoading(false);
     }
 
     void fetch();

@@ -18,8 +18,7 @@ state + animation overlays).
   Verify this can't yank a player out mid-planning and discard staged-but-unlocked
   orders.
 
-- [ ] **Minor cleanups.** `useReplay` fetches turn N then N-1 sequentially — could
-  be `Promise.all`. Two `react-hooks/exhaustive-deps` suppressions (`usePlayback`
-  mount-only effect; `ReplayShell` `[currentBeat]`-only effect that also reads
-  `speed`/`beats`/`preTurnState`) work only because those deps are stable per
-  replay — revisit if that assumption ever changes.
+- [ ] **Minor cleanups.** Two `react-hooks/exhaustive-deps` suppressions
+  (`usePlayback` mount-only effect; `ReplayShell` `[currentBeat]`-only effect that
+  also reads `speed`/`beats`/`preTurnState`) work only because those deps are
+  stable per replay — revisit if that assumption ever changes.
