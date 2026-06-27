@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Navigate, useParams } from "react-router";
+import { useMemo, useEffect, useRef, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router";
 
 import { Board } from "@/board/Board";
 import { Button } from "@/components/ui";
@@ -42,6 +42,17 @@ function phaseOf(view: GameView): Phase {
 
 function Dashboard() {
   const { view, refresh } = useGame();
+  const navigate = useNavigate();
+
+  // Auto-navigate to the replay route when the poll detects a turn advance.
+  // prevTurnRef starts null so the first-load case never triggers navigation.
+  const prevTurnRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (prevTurnRef.current !== null && view.turn > prevTurnRef.current) {
+      void navigate(`/game/${view.game_id}/replay/${prevTurnRef.current}`);
+    }
+    prevTurnRef.current = view.turn;
+  }, [view.turn, view.game_id, navigate]);
 
   const planning = usePlanning(view.state, view.your_slot, view.turn);
   // The planning surface (roster + bottom dock) is shown for the whole of your

@@ -7,6 +7,7 @@ import { Dispatcher } from "@/routes/Dispatcher";
 import { GameShell } from "@/routes/GameShell";
 import { Join } from "@/routes/Join";
 import { Login } from "@/routes/Login";
+import { ReplayShell } from "@/routes/ReplayShell";
 import { Stats } from "@/routes/Stats";
 
 /**
@@ -27,6 +28,7 @@ export function App() {
           <Route path="/join/:id" element={<Join />} />
         </Route>
         <Route path="/game/:id" element={<GameShell />} />
+        <Route path="/game/:id/replay/:turn" element={<ReplayShell />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

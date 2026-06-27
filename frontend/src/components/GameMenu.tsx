@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
@@ -27,6 +28,7 @@ export function GameMenu({
 
   const over = view.victory.reason !== "ongoing";
   const canResign = view.status === "active" && !over;
+  const lastResolvedTurn = view.turn - 1;
 
   return (
     <div className="relative">
@@ -49,6 +51,16 @@ export function GameMenu({
             {over && <Outcome view={view} />}
 
             <Slots view={view} />
+
+            {lastResolvedTurn >= 1 && (
+              <Link
+                to={`/game/${view.game_id}/replay/${lastResolvedTurn}`}
+                onClick={() => setOpen(false)}
+                className="self-start text-xs font-medium text-indigo-400 hover:text-indigo-300"
+              >
+                Watch last replay (turn {lastResolvedTurn})
+              </Link>
+            )}
 
             {canResign && <ResignControl view={view} onResigned={onChanged} />}
           </div>
