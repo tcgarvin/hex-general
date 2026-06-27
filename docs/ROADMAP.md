@@ -398,14 +398,22 @@ earlier board state.
 > (seeing the moving state is arguably useful); a dedicated `postTurnState` roster
 > prop can be threaded through in a later pass if needed.
 
-### Slice 4 — Event log panel
+### Slice 4 — Event log panel ✅ done (camera-pan-on-click deferred)
 
-- Scrollable event log in the right portion of the bottom panel (UI-SPEC §13.3).
-- Beat headers; `UnitMoved` events collapsed under "N units moved"; all other events
-  expanded with §16.3 plain-language text.
-- Past beats dimmed; current beat highlighted; future beats greyed.
-- Clicking a log entry: pause, jump to that beat, pan camera to the relevant hex.
-- Fog-filtered: only events the viewer can witness appear.
+- ✅ Scrollable event log in the right portion of the bottom panel (UI-SPEC §13.3).
+  The bottom dock now splits into the control strip (left, `REPLAY_CONTROLS_WIDTH`)
+  and the log (`replayLayout` → `replayLog` rect). Wheel scrolls the log;
+  off-screen rows are culled so nothing overflows the panel.
+- ✅ Beat headers (`▶`/`▸`/`░` glyph by state); `UnitMoved` events collapsed under
+  "N units moved"; all other events expanded with §16.3 plain-language text
+  (`replay/eventText.ts`, pure + unit-tested). Log model in `replay/replayLog.ts`.
+- ✅ Past beats dimmed; current beat highlighted; future beats greyed. The log
+  auto-scrolls to keep the current beat in view during playback.
+- ✅ Clicking a log entry pauses auto-play and jumps to that beat.
+  **Deferred:** panning the camera to the relevant hex on click (a follow-up;
+  jump-to-beat lands the beat state, just without the camera move).
+- ✅ Fog-filtered: the log renders whatever events the API returns, which are
+  already fog-filtered server-side (no extra client work needed).
 
 ### Slice 5 — Replay exit + Game menu integration
 

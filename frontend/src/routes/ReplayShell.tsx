@@ -11,6 +11,7 @@ import type { components } from "@/lib/api/schema";
 import type { GameState, GameView, ReplayEvent } from "@/lib/api/types";
 import { economyFor } from "@/planning/economy";
 import { applyBeats } from "@/replay/applyBeats";
+import { buildReplayLog, nameLookup, type UnitRef } from "@/replay/replayLog";
 import { useBeats } from "@/replay/useBeats";
 import { usePlayback } from "@/replay/usePlayback";
 import { useReplay } from "@/replay/useReplay";
@@ -351,6 +352,23 @@ function ReplayBoard({
     [postTurnState, view.your_slot],
   );
 
+  // Event-log model (UI-SPEC §13.3): name units by id from the union of the pre-
+  // and post-turn states (post wins, so it covers units recruited this turn).
+  const logBeats = useMemo(() => {
+    const unitsById = new Map<number, UnitRef>();
+    for (const u of preTurnState?.units ?? []) unitsById.set(u.id, { owner: u.owner, type: u.type });
+    for (const u of postTurnState.units ?? []) unitsById.set(u.id, { owner: u.owner, type: u.type });
+    return buildReplayLog(beats, nameLookup(unitsById));
+  }, [beats, preTurnState, postTurnState]);
+
+  const onJumpToBeat = useCallback(
+    (beatIndex: number) => {
+      pause();
+      jumpTo(beatIndex);
+    },
+    [pause, jumpTo],
+  );
+
   return (
     <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
       <GameHeader
@@ -370,6 +388,7 @@ function ReplayBoard({
             yourSlot={view.your_slot}
             replayControls={replayControls}
             replayAnim={replayAnim}
+            replayLog={{ logBeats, onJumpToBeat }}
           />
         </div>
       </main>

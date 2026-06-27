@@ -13,6 +13,7 @@ import type { components } from "@/lib/api/schema";
 import { reachableContinuations } from "@/planning/reach";
 import type { Planning } from "@/planning/usePlanning";
 import type { PlanAdvisory, UnitWarning } from "@/planning/warnings";
+import type { LogBeat } from "@/replay/replayLog";
 
 import {
   AXIAL_DIRECTIONS,
@@ -56,6 +57,8 @@ import {
   type ReplayControlsProps,
 } from "./panels/ReplayControlPanel";
 import { replayButtonAt } from "./panels/replayControls";
+import { ReplayLogPanel } from "./panels/ReplayLogPanel";
+import { beatIndexAtY, maxScroll, measureReplayLog } from "./panels/replayLogLayout";
 import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
@@ -256,11 +259,20 @@ export interface BoardProps {
   replayControls?: ReplayControlsProps;
   /** Per-beat animation overlays (Phase 10 Slice 3). See {@link ReplayAnimOverrides}. */
   replayAnim?: ReplayAnimOverrides;
+  /**
+   * Replay event log (UI-SPEC §13.3): the beat-grouped, scrollable log in the
+   * right portion of the bottom dock. Supplied alongside `replayControls`. Board
+   * owns the scroll offset; `onJumpToBeat` pauses + seeks when a row is clicked.
+   */
+  replayLog?: {
+    logBeats: LogBeat[];
+    onJumpToBeat: (beatIndex: number) => void;
+  };
 }
 
 export type { ReplayControlsProps };
 
-export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock, gameOver, replayControls, replayAnim }: BoardProps) {
+export function Board({ state, yourSlot, visible, planning, locked = false, advisory, lock, gameOver, replayControls, replayAnim, replayLog }: BoardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [view, setView] = useState<View | null>(null);
@@ -288,6 +300,42 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     if (planning !== undefined) return surfaceLayout(size.width, size.height);
     return fullMapLayout(size.width, size.height);
   }, [size, planning, replayControls]);
+
+  // --- replay event-log scroll (UI-SPEC §13.3) ---
+  const logMeasure = useMemo(
+    () => (replayLog !== undefined ? measureReplayLog(replayLog.logBeats) : null),
+    [replayLog],
+  );
+  const [logScroll, setLogScroll] = useState(0);
+  const currentBeat = replayControls?.currentBeat ?? -1;
+  // Keep the scroll in sync without an effect: reset to the top for a new log, and
+  // auto-scroll to keep the current beat in view as playback advances. This is the
+  // React "adjust state from previous renders" pattern — a guarded setState during
+  // render, which avoids the cascading re-renders of doing it in an effect.
+  const [logSync, setLogSync] = useState<{ beats: LogBeat[] | null; beat: number }>({
+    beats: null,
+    beat: -1,
+  });
+  if (replayLog !== undefined && logMeasure !== null && layout !== null) {
+    const logsChanged = logSync.beats !== replayLog.logBeats;
+    const beatChanged = logSync.beat !== currentBeat;
+    if (logsChanged || beatChanged) {
+      setLogSync({ beats: replayLog.logBeats, beat: currentBeat });
+      const viewportH = layout.replayLog.height;
+      const limit = maxScroll(logMeasure.contentHeight, viewportH);
+      const block = logMeasure.beats.find((b) => b.beatIndex === currentBeat);
+      if (logsChanged || block === undefined) {
+        setLogScroll(0);
+      } else {
+        setLogScroll((s) => {
+          if (block.top < s) return Math.min(block.top, limit);
+          const bottom = block.top + block.height;
+          if (bottom > s + viewportH) return Math.min(bottom - viewportH, limit);
+          return Math.min(s, limit);
+        });
+      }
+    }
+  }
 
   const ownUnits = useMemo(
     () => units.filter((u) => u.owner === yourSlot),
@@ -524,12 +572,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [showPanels, layout],
   );
 
-  /** Whether a canvas point is over the bottom dock (selected-unit or lock). */
+  /** Whether a canvas point is over the bottom dock (controls/lock or replay log). */
   const overBottom = useCallback(
     (sx: number, sy: number): boolean =>
       showPanels &&
       layout !== null &&
-      (pointInRect(sx, sy, layout.selectedUnit) || pointInRect(sx, sy, layout.lock)),
+      (pointInRect(sx, sy, layout.selectedUnit) ||
+        pointInRect(sx, sy, layout.lock) ||
+        pointInRect(sx, sy, layout.replayLog)),
     [showPanels, layout],
   );
 
@@ -673,6 +723,17 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           return;
         }
 
+        // Replay mode: a click in the event log pauses + jumps to that beat.
+        if (
+          replayLog !== undefined &&
+          logMeasure !== null &&
+          pointInRect(sx, sy, layout.replayLog)
+        ) {
+          const beatIndex = beatIndexAtY(logMeasure, sy - layout.replayLog.y, logScroll);
+          if (beatIndex !== null) replayLog.onJumpToBeat(beatIndex);
+          return;
+        }
+
         if (planning === undefined) return;
         // Locked: the dock is read-only — its buttons are greyed and inert, but a
         // press here still must not fall through to a map pan.
@@ -742,7 +803,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         setSelected(onMap ? ax : null);
       }
     },
-    [view, screenToWorld, hexByKey, planning, locked, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction, bank, unitCap, ownUnits, replayControls],
+    [view, screenToWorld, hexByKey, planning, locked, lock, localPoint, overRoster, layout, rows, revealUnit, runPaletteAction, bank, unitCap, ownUnits, replayControls, replayLog, logMeasure, logScroll],
   );
 
   const onPointerLeave = useCallback(() => {
@@ -756,6 +817,17 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   const onWheel = useCallback(
     (e: React.WheelEvent) => {
       const { sx, sy } = localPoint(e.clientX, e.clientY);
+      // Wheel over the replay log scrolls it (rather than zooming the map).
+      if (
+        replayLog !== undefined &&
+        logMeasure !== null &&
+        layout !== null &&
+        pointInRect(sx, sy, layout.replayLog)
+      ) {
+        const limit = maxScroll(logMeasure.contentHeight, layout.replayLog.height);
+        setLogScroll((s) => Math.max(0, Math.min(limit, s + e.deltaY)));
+        return;
+      }
       if (overRoster(sx, sy) || overBottom(sx, sy)) return; // panels don't zoom the map
       cancelGlide(); // a manual zoom takes over from any in-flight reveal
       setView((v) => {
@@ -768,7 +840,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         return clampView({ zoom, x: sx - worldX * zoom, y: sy - worldY * zoom });
       });
     },
-    [localPoint, overRoster, overBottom, cancelGlide, clampView],
+    [localPoint, overRoster, overBottom, cancelGlide, clampView, replayLog, logMeasure, layout],
   );
 
   // --- draw callbacks ---
@@ -1091,6 +1163,15 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   submitting={lock.submitting}
                   error={lock.error}
                   locked={lock.locked}
+                />
+              )}
+              {replayLog !== undefined && logMeasure !== null && (
+                <ReplayLogPanel
+                  rect={layout.replayLog}
+                  logBeats={replayLog.logBeats}
+                  measure={logMeasure}
+                  currentBeat={currentBeat}
+                  scroll={logScroll}
                 />
               )}
             </>

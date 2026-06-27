@@ -19,6 +19,9 @@ export const BTN_PLAY_X = BTN_BACK_X + BTN_W + BTN_GAP;
 export const BTN_FWD_X = BTN_PLAY_X + BTN_W + BTN_GAP;
 export const SPEED_X = BTN_FWD_X + BTN_W + BTN_GAP * 3;
 
+/** Left edge of the (left-aligned) beat label, just right of the speed toggle. */
+export const BEAT_LABEL_X = SPEED_X + SPEED_W + 20;
+
 export type ReplayAction =
   | "rewind"
   | "back"

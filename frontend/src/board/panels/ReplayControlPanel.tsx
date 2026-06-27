@@ -9,6 +9,7 @@ import { beatDisplayLabel, type Beat } from "@/replay/beats";
 
 import type { Rect } from "../layout";
 import {
+  BEAT_LABEL_X,
   BTN_BACK_X,
   BTN_FWD_X,
   BTN_H,
@@ -159,12 +160,12 @@ export function ReplayControlPanel({
         y={btnCy}
       />
 
-      {/* beat label — centered in the available space */}
+      {/* beat label — left-aligned just right of the speed toggle */}
       <pixiText
         text={label}
         style={S_BEAT}
-        anchor={{ x: 0.5, y: 0.5 }}
-        x={rect.width / 2}
+        anchor={{ x: 0, y: 0.5 }}
+        x={BEAT_LABEL_X}
         y={btnCy}
       />
 

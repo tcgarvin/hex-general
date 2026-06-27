@@ -21,15 +21,22 @@ export const BOTTOM_HEIGHT = 140;
 /** Width of the lock control at the right of the bottom strip (UI-SPEC §11). */
 export const LOCK_WIDTH = 176;
 
+/** Width of the replay control strip at the left of the bottom dock (UI-SPEC §13.2);
+ *  the event log fills the rest of the strip to its right (UI-SPEC §13.3). */
+export const REPLAY_CONTROLS_WIDTH = 560;
+
 export interface SurfaceLayout {
   /** Rectangle the map pans/zooms within (everything not covered by a panel). */
   map: Rect;
   /** Left-docked roster panel (UI-SPEC §5). */
   roster: Rect;
-  /** Bottom-left: selected-unit detail + order palette (UI-SPEC §6, §8). */
+  /** Bottom-left: selected-unit detail + order palette (UI-SPEC §6, §8). In
+   *  replay this holds the replay control strip instead (UI-SPEC §13.2). */
   selectedUnit: Rect;
-  /** Bottom-right: lock control (UI-SPEC §11). */
+  /** Bottom-right: lock control (UI-SPEC §11). Empty outside planning. */
   lock: Rect;
+  /** Bottom-right event-log panel during replay (UI-SPEC §13.3). Empty otherwise. */
+  replayLog: Rect;
 }
 
 /** An empty rectangle, used when a panel is hidden (e.g. outside planning). */
@@ -62,6 +69,7 @@ export function surfaceLayout(width: number, height: number): SurfaceLayout {
       width: lockWidth,
       height: bottomHeight,
     },
+    replayLog: EMPTY_RECT,
     map: {
       x: rosterWidth,
       y: 0,
@@ -78,22 +86,31 @@ export function fullMapLayout(width: number, height: number): SurfaceLayout {
     roster: EMPTY_RECT,
     selectedUnit: EMPTY_RECT,
     lock: EMPTY_RECT,
+    replayLog: EMPTY_RECT,
   };
 }
 
 /**
- * Replay layout: roster docked left (read-only unit list), replay control strip
- * running full-width across the bottom. The `selectedUnit` rect holds the entire
- * control strip; `lock` is unused (empty).
+ * Replay layout: roster docked left (read-only unit list); the bottom dock splits
+ * into the replay control strip on the left (`selectedUnit`) and the scrollable
+ * event log on the right (`replayLog`). `lock` is unused (empty). The control
+ * strip is clamped so the log always gets a positive width on narrow canvases.
  */
 export function replayLayout(width: number, height: number): SurfaceLayout {
   const rosterWidth = Math.min(ROSTER_WIDTH, Math.max(0, width));
   const bottomHeight = Math.min(BOTTOM_HEIGHT, Math.max(0, height));
   const bottomY = height - bottomHeight;
+  const controlsWidth = Math.min(REPLAY_CONTROLS_WIDTH, Math.max(0, width));
   return {
     roster: { x: 0, y: 0, width: rosterWidth, height: bottomY },
-    selectedUnit: { x: 0, y: bottomY, width, height: bottomHeight },
+    selectedUnit: { x: 0, y: bottomY, width: controlsWidth, height: bottomHeight },
     lock: EMPTY_RECT,
+    replayLog: {
+      x: controlsWidth,
+      y: bottomY,
+      width: Math.max(0, width - controlsWidth),
+      height: bottomHeight,
+    },
     map: {
       x: rosterWidth,
       y: 0,
