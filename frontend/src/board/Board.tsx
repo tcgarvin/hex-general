@@ -6,7 +6,7 @@
 // Phase 8 Slice 2 swaps Graphics for the AI-generated sprite set.
 
 import { Application, extend } from "@pixi/react";
-import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { Container, Graphics, Sprite, Text, TextStyle, type Texture } from "pixi.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
@@ -63,11 +63,13 @@ import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
+import { loadTerrainTextures } from "./tiles";
 
-extend({ Container, Graphics, Text });
+extend({ Container, Graphics, Sprite, Text });
 
 type GameState = components["schemas"]["GameState"];
 type Hex = components["schemas"]["Hex"];
+type Terrain = components["schemas"]["Terrain"];
 type Unit = components["schemas"]["Unit"];
 type UnitType = components["schemas"]["UnitType"];
 
@@ -372,6 +374,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
 
   // --- planning overlays (only when a controller is supplied) ---
   const [hoverKey, setHoverKey] = useState<string | null>(null);
+  // AI-generated terrain tile textures; null until loaded (flat colours until then).
+  const [terrainTex, setTerrainTex] = useState<Record<Terrain, Texture> | null>(null);
 
   const selectedUnitId = planning?.selectedUnitId ?? null;
   const selectedCity = planning?.selectedCity ?? null;
@@ -412,6 +416,24 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   // preview rather than a wrong one.
   const previewPath =
     hoverKey !== null ? (continuations?.get(hoverKey) ?? null) : null;
+
+  // Load the terrain tile textures once; the board renders flat colours until they
+  // arrive. A load failure leaves `terrainTex` null (flat-colour fallback) and is
+  // surfaced to the console rather than blanking the map.
+  useEffect(() => {
+    let active = true;
+    loadTerrainTextures().then(
+      (tex) => {
+        if (active) setTerrainTex(tex);
+      },
+      (err) => {
+        console.error("Failed to load terrain tile textures", err);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Track the wrapper's pixel size so Pixi's canvas matches it.
   useEffect(() => {
@@ -844,18 +866,33 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   );
 
   // --- draw callbacks ---
-  const drawTerrain = useCallback(
+  // Base terrain fill: flat colours that show until the sprite textures load, and
+  // remain the fallback if loading fails. The sprite layer (when present) draws on
+  // top of this; the overlay (grid/roads/rings/fog) draws on top of the sprites.
+  const drawTerrainBase = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      for (const h of hexes) {
+        const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
+        g.poly(hexCornerPoints(x, y, HEX_SIZE));
+        g.fill({ color: TERRAIN_FILL[h.terrain] });
+      }
+    },
+    [hexes],
+  );
+
+  // Terrain overlay drawn above the tile sprites: the hex grid outline, the road
+  // network, settlement ownership rings, and the fog-of-war veil.
+  const drawTerrainOverlay = useCallback(
     (g: Graphics) => {
       g.clear();
 
-      // tiles
+      // hex grid outline
       for (const h of hexes) {
         const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
-        const pts = hexCornerPoints(x, y, HEX_SIZE);
-        g.poly(pts);
-        g.fill({ color: TERRAIN_FILL[h.terrain] });
-        g.stroke({ width: 1, color: HEX_STROKE });
+        g.poly(hexCornerPoints(x, y, HEX_SIZE));
       }
+      g.stroke({ width: 1, color: HEX_STROKE });
 
       // road network: link road/bridge hexes centre-to-edge toward road neighbours
       for (const h of hexes) {
@@ -1091,7 +1128,23 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           autoDensity
         >
           <pixiContainer x={view.x} y={view.y} scale={view.zoom}>
-            <pixiGraphics draw={drawTerrain} />
+            <pixiGraphics draw={drawTerrainBase} />
+            {terrainTex !== null &&
+              hexes.map((h) => {
+                const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
+                return (
+                  <pixiSprite
+                    key={hexKey(h.coord.q, h.coord.r)}
+                    texture={terrainTex[h.terrain]}
+                    x={x}
+                    y={y}
+                    anchor={0.5}
+                    width={HEX_SIZE * 2}
+                    height={HEX_SIZE * 2}
+                  />
+                );
+              })}
+            <pixiGraphics draw={drawTerrainOverlay} />
             <pixiGraphics draw={drawSelection} />
             <pixiGraphics draw={drawTraffic} />
             <pixiGraphics draw={drawPlanning} />
