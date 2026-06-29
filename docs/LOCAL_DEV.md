@@ -45,7 +45,28 @@ stack, seeds the dev accounts, and writes the env files:
 - `frontend/.env.local` — points the Vite app at the local stack (your previous
   `.env.local`, if any, is backed up to `.env.local.bak`).
 
-Then start the two servers in separate terminals:
+Then start the two app servers. The convenient way is one command:
+
+```bash
+./scripts/dev.sh up        # FastAPI :8080 + Vite :5173, detached, waits for health
+```
+
+`dev.sh` runs both servers in the background with their output going to log
+**files** under `.dev/` (gitignored) rather than tying up two terminals. Manage
+them with:
+
+```bash
+./scripts/dev.sh status            # health of each server (+ recent errors)
+./scripts/dev.sh logs api 80       # tail a server's log
+./scripts/dev.sh down              # stop both
+```
+
+When working with Claude in this repo, ask it to **spawn the `dev-doctor`
+subagent** (`.claude/agents/dev-doctor.md`, runs on Haiku) to health-check the
+servers — it reads the logs in its own context and reports a one-screen verdict,
+so the main thread doesn't fill up with server output.
+
+Prefer separate terminals? The equivalent manual commands are:
 
 ```bash
 cd api && uv run uvicorn app.main:app --reload --port 8080

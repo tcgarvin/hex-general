@@ -28,6 +28,14 @@ API (`cd api`): `uv sync`, then `uv run uvicorn app.main:app --reload --port 808
 Before committing api changes, run all four — CI fails otherwise:
 `uv run pytest` · `uv run black --check .` · `uv run ruff check .` · `uv run mypy .`
 
+Local dev loop: `./scripts/dev-up.sh` (Supabase + env, once), then
+`./scripts/dev.sh up` to run both app servers **detached, logging to files under
+`.dev/`** — don't launch the dev servers as foreground/`run_in_background` Bash
+calls (their streaming output floods this context). To health-check them, **spawn
+the `dev-doctor` subagent** (`.claude/agents/dev-doctor.md`, Haiku); it reads the
+logs in its own context and returns a compact verdict, restarts a cleanly-dead
+server, and escalates real faults rather than fixing them. See `docs/LOCAL_DEV.md`.
+
 ## API code standards: trust internal invariants, validate only at boundaries
 
 The `api/` engine is a pure, deterministic core. Write it to **trust its own invariants** and crash loudly when they're violated. Do **not** pepper internal code with null checks, `isinstance` guards, or `hasattr` to defend against states that "can't happen." If such a state does happen, that's a bug to fix at its source — a bare `KeyError`/`AttributeError` with a stack trace is a *better* outcome than silently coping and resolving a turn into a wrong game state. Prefer this even to a fault: when unsure whether a guard is needed, leave it out and let it crash.

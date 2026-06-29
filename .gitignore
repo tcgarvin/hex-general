@@ -26,3 +26,6 @@ venv/
 supabase/signing_keys.json
 supabase/.branches/
 supabase/.temp/
+
+# Local dev-server state (scripts/dev.sh): per-server PID + log files.
+.dev/
