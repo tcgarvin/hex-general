@@ -309,6 +309,44 @@ a laptop via `supabase start`.
 **Demonstrable:** your real board in the browser — terrain, settlements, your
 units, fog.
 
+### Tileset maturation
+
+Base map rendering shipped with one AI-generated flat-top hex tile per terrain
+(`frontend/src/board/tiles/`, generated via PixelLab `create_tiles_pro` hex mode
+at 32px; see `CLAUDE.md` memory note). These slices grow that from "one tile per
+terrain" toward a varied, directional tileset.
+
+**Orientation decision (applies to rivers/bridges/road-tiles):** no 60° rotation
+— rotating 32px pixel art by 60° resamples and looks mushy. Generate the distinct
+oriented tiles instead, but use a cheap **horizontal (left↔right) mirror** at
+render time to roughly halve the art needed per shape.
+
+- **Slice T1 — Variant infrastructure.** Loader returns `Record<Terrain,
+  Texture[]>`; tiles live in `tiles/{terrain}/{nn}.png`, discovered by
+  `import.meta.glob` (drop-in: no code edit to add a variant). A hex picks its
+  variant deterministically from its axial coord (`variantIndex(q, r, count)`),
+  so the choice is stable across re-renders/replays and purely cosmetic.
+- **Slice T2 — Variant art for common terrains.** Generate 3–4 interchangeable
+  variants each for plains/woods/hills (the high-frequency hexes where tiling
+  repetition reads worst) and regenerate the noisy `city` tile. Pure asset work
+  on top of T1.
+- **Slice T3 — Rivers as edge-connected grassland features.** River = grassland
+  base + river feature (kept on grass only, to cap combinations). Derive each
+  river hex's edge mask from its river/bridge neighbours (`AXIAL_DIRECTIONS` →
+  the 6 flat-top edges) and classify into a small shape set: end (1), straight
+  (2 opposite), gentle curve, sharp curve, confluence (3+); a couple of curve
+  radii give "a few different curves". Generate distinct oriented tiles + L↔R
+  mirror per the orientation decision. No scenario-format change — connectivity
+  is derived from existing `~` placement.
+- **Slice T4 — Bridges as oriented river crossings.** Bridge orientation = the
+  river axis it crosses (derivable from its two river edges); reuse T3's
+  edge-mask machinery and the mirror approach.
+- **Slice T5 — Road rendering experiment (scoped as throwaway-friendly).**
+  Compare, on the same map: today's **vector overlay** (centre-to-edge brown
+  lines, `Board.tsx`) vs **baked road tiles** autotiled by road-edge mask (reuses
+  T3 machinery). Decide on visual cohesion vs art/credit cost vs flexibility;
+  discard the loser.
+
 ## Phase 9 — Frontend: planning UI
 
 **Goal:** §16.1.
