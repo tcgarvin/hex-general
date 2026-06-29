@@ -47,6 +47,7 @@ The `api/` engine is a pure, deterministic core. Write it to **trust its own inv
 - **Secrets are split by purpose:**
   - Deploy-time → GitHub (`production` environment): `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`. Non-secret CI config → GitHub variables: `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`.
   - Runtime → GCP Secret Manager: `supabase-service-role-key`, mounted into Cloud Run.
+  - Local dev tooling → gitignored `.claude/settings.local.json` `env` block: `PIXELLAB_API_KEY`. The tracked `.mcp.json` references it as `${PIXELLAB_API_KEY}` — **never hardcode the token in `.mcp.json`** (it's tracked, so a raw token risks an accidental commit).
 - **Supabase key usage:** frontend uses the **publishable** key (`VITE_SUPABASE_ANON_KEY`) and is constrained by RLS. The API uses the **service-role** key server-side (bypasses RLS) — it must never reach the browser.
 - **New tables need a `service_role` GRANT.** `service_role` bypasses RLS but still needs table-level privileges, which a migration-created table does **not** get by default — the API will 500 with `permission denied for table …`. Add `grant select, insert, update, delete on table public.<t> to service_role;` in the migration.
 - **`VITE_` defaults: use `||`, not `??`.** Vite inlines an unset `VITE_` var as `""`, and `??` only falls back on null/undefined — so `??` leaves an empty string and the value silently breaks. Use `||` for env-var defaults in frontend code. (Browser config is `VITE_`-prefixed and read via `import.meta.env`.)

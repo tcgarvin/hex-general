@@ -3,6 +3,13 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=amhkpsrvjlthmmemwssc"
+    },
+    "pixellab": {
+      "type": "http",
+      "url": "https://api.pixellab.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${PIXELLAB_API_KEY}"
+      }
     }
   }
 }

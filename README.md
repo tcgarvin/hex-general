@@ -26,7 +26,9 @@ frontend/               Next.js app (deployed to Vercel)
 api/                    FastAPI service (deployed to Cloud Run; uv-managed)
 infra/setup-gcp.sh      One-time GCP provisioning (WIF, deployer/runtime SAs, Artifact Registry, Secret Manager)
 .github/workflows/      CI/CD: frontend.yml, api.yml, supabase.yml
-.mcp.json               Supabase MCP server config
+.mcp.json               MCP server config (Supabase + PixelLab). Secrets are NOT
+                        stored here — the PixelLab token is injected via the
+                        ${PIXELLAB_API_KEY} env var (see Local development)
 ```
 
 ## Local development
@@ -52,6 +54,22 @@ uv sync
 uv run uvicorn app.main:app --reload --port 8080   # http://localhost:8080/health
 ```
 Checks: `uv run pytest`, `uv run black --check .`, `uv run ruff check .`, `uv run mypy .`
+
+### MCP servers (Supabase + PixelLab)
+
+`.mcp.json` is tracked and **must stay secret-free**. The PixelLab server reads its
+token from the `${PIXELLAB_API_KEY}` env var instead of hardcoding it. Set the key in
+your gitignored `.claude/settings.local.json` (Claude Code expands it into `.mcp.json`):
+
+```jsonc
+// .claude/settings.local.json  (gitignored)
+{
+  "env": { "PIXELLAB_API_KEY": "<your-pixellab-token>" }
+}
+```
+
+Or export `PIXELLAB_API_KEY` in your shell profile. Never paste the raw token into
+`.mcp.json` — it's tracked and would risk committing the secret.
 
 ## Deployment (CI/CD)
 

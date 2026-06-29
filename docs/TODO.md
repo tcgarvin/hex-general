@@ -6,3 +6,5 @@ work.
 
 **When an item is finished, delete it from this file — don't check it off.** This
 list tracks only outstanding work; completed work lives in git history.
+
+_No outstanding items._
