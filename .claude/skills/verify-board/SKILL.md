@@ -55,6 +55,27 @@ lands somewhere other than a game, the local stack likely needs
   PNGs are valid and discovered, not that they look right. (At 64px some tiles
   inline as base64 and some emit as `dist/assets/*.png` — a normal mix; don't infer
   anything from grepping the bundle.)
+- **Judge at board scale, not just zoomed-in.** The board auto-fits the map, so the
+  default view renders hexes small (~50px). A tile that looks great in a montage can
+  collapse into muddy "rocky" speckle when shrunk, and a terrain much darker than its
+  neighbours reads as a *different material*. Eyeball the full-board view (not only a
+  zoom), and sanity-check brightness parity across terrains.
+
+### Tile-change gotchas (learned the hard way)
+
+- **"What terrain is that hex?" → solid-colour probe.** To map which hexes are which
+  terrain/variant, temporarily overwrite the variant PNGs with solid colours
+  (`PIL Image.new('RGBA',(64,64),(255,0,255,255))` → magenta, etc.), reload, and read
+  the board. Instantly disambiguates; restore the real tiles after. (Variants are
+  chosen per-hex by a coord hash, so each `{nn}.png` lights up a deterministic subset.)
+- **Rule out caching before chasing ghosts.** A full `navigate` reload re-fetches
+  tiles; the Vite dev server serves current disk bytes. Confirm with md5:
+  `curl -s localhost:5173/src/board/tiles/<terrain>/<nn>.png | md5sum` vs
+  `md5sum frontend/src/board/tiles/<terrain>/<nn>.png`. If they match, the browser is
+  showing the real file — the look you don't like is the *art*, not a stale cache.
+- **Mean luminance is a fast objective check.** A quick PIL opaque-pixel mean of
+  `0.299R+0.587G+0.114B` per tile catches "too dark" / "washed out" before you even
+  open the browser, and lets you compare terrains numerically.
 
 ## Quick reference
 

@@ -330,12 +330,28 @@ thing, rendered a little differently," never as different map content. When
 generating/picking variants, reject any candidate that adds a recognizable feature
 and keep only subtle reshufflings of the base texture.
 
-**Plains art direction (open, low-contrast):** plains are the highest-frequency,
-lowest-information hex — they should read as calm open ground and *recede*, not
-compete for the eye. Keep them subtle and low-contrast (soft, close-valued
-greens; minimal busy detail) while still pleasant to look at. The earlier plains
-set was too busy/high-contrast; regenerate toward quieter texture. (Applies when
-re-running T2-style variant art for plains.)
+**Plains art direction — calm via smoothness, NOT paleness:** plains are the
+highest-frequency, lowest-information hex; they should read as calm open ground
+and *recede*, not compete for the eye. Achieve that through **smoothness / low
+internal detail** (no busy clutter, no features) while keeping the green
+**saturated and mid-toned** — a confident, warm, slightly-yellow daylight grass
+like the concept art. Two failure modes, both seen and rejected: (1) *too busy* —
+high-frequency texture/high contrast that distracts; (2) *washed out* — draining
+saturation and pushing lightness to "recede," which yields a pale pastel/grey-green
+that looks faded and lifeless. "Low contrast" means **low internal detail**, never
+**low saturation**. Target a saturated mid-green (mean luminance ~110–120), not a
+pale one (~130+).
+
+**Judge tiles at board scale + check luminance parity (every terrain):** a montage
+at full tile size lies. The board auto-fits the map, so hexes render small (~50px),
+and a **dark/dense** tile collapses into a muddy "rocky" speckle that reads as a
+*different material* — this is exactly how a too-dark woods batch (mean luminance
+~88 against plains ~130) showed up as grey "rock" on the board. So: (a) compute
+each variant's **mean luminance** (opaque pixels) and keep terrains in a sensible
+relative band — woods only *modestly* darker than plains, not ~35% darker; (b)
+always ratify on the **actual rendered board** (`verify-board`), not the montage
+alone. Brightness relationships between terrains matter as much as each tile in
+isolation.
 
 - **Slice T0 — 64px resolution upgrade.** Tiles authored at 32px looked
   low-detail; moved to 64px (~4× the art data, 2× zoom-in headroom before

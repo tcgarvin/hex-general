@@ -42,12 +42,22 @@ montage path the parent can open, plus a first-pass recommendation it will ratif
 4. **Montage.** Run
    `python3 scripts/tile-montage.py <dir> --out <dir>/montage.png` from the repo
    root. **Read** the montage so you can see the tiles.
-5. **Recommend (first pass, not final).** From the montage, suggest which index →
-   which slot, honouring any selection criteria in the prompt. Default criteria:
-   prefer clean, cohesive variants; avoid noisy/busy tiles, near-empty tiles, and
+5. **Compute mean luminance** (opaque-pixel mean of `0.299R+0.587G+0.114B`) for
+   every variation with a short PIL snippet, and include it in your report. Tiles
+   are judged at **board scale** (the board auto-fits, so hexes render small ~50px):
+   a tile that looks fine in the montage can collapse into muddy "rocky" speckle
+   when shrunk, and brightness *relative to other terrains* matters — so the number
+   matters, not just the look. If the prompt gives a target luminance band, prefer
+   variants inside it.
+6. **Recommend (first pass, not final).** From the montage + luminance, suggest
+   which index → which slot, honouring any selection criteria in the prompt.
+   Default criteria: prefer clean, cohesive variants in a tight luminance band;
+   avoid noisy/busy tiles, near-empty tiles, **washed-out/desaturated** tiles (pale
+   pastel greens read as faded — calm should come from smoothness, not paleness),
+   **too-dark/dense** tiles (they read as "rock" at board scale), and
    **rubble/burnt artifacts** (a known bad-city failure mode). Flag anything that
    isn't actually the requested terrain (e.g. a "city" tile that's mostly lake).
-6. **Report** and stop. **Do not** copy tiles into `frontend/src/board/tiles/`,
+7. **Report** and stop. **Do not** copy tiles into `frontend/src/board/tiles/`,
    edit code, or commit — the main agent ratifies the pick and places the files.
 
 ## Hard rules
@@ -65,8 +75,9 @@ montage path the parent can open, plus a first-pass recommendation it will ratif
 tile-smith — <COMPLETED | FAILED>
   tile_id: <uuid>   (<n> variations, <size>px <type>)
   montage: <abs path to montage.png>
+  luminance: <idx→lum for each variation; flag in/out of any target band>
   recommend:
-    <slot e.g. city/00> ← #<idx>   <one-line why>
+    <slot e.g. city/00> ← #<idx> (lum=<n>)   <one-line why>
     ...
   notes: <rejected indices + reason; any non-matching/garbage variations>
 ```

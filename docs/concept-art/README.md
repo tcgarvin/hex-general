@@ -20,9 +20,12 @@ overall board mood — not "what should this *be*, exactly."
 
 ## What it tells us for the tileset (see `docs/ROADMAP.md` Phase 8)
 
-- **Plains** read as calm, low-contrast open ground — soft, close-valued greens
-  that recede and don't fight the units for attention. This is the direction for
-  the plains refresh.
+- **Plains** read as calm, open ground that recedes and doesn't fight the units
+  for attention — but note *how* they're calm: the grass is a **saturated, warm
+  mid-green** (healthy daylight grass), made restful by **smoothness and lack of
+  busy detail**, not by being pale. "Calm" here is low *internal detail*, not low
+  *saturation*. (A pale/desaturated "washed-out" plains was tried and rejected —
+  it looks faded, and it makes every other terrain look muddy by comparison.)
 - **Forests** are dense, dark canopy masses with no internal features (no
   clearings) — consistent with our "variants are mild texture variety, not
   distinct features" discipline.
