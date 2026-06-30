@@ -6,7 +6,7 @@
 // Phase 8 Slice 2 swaps Graphics for the AI-generated sprite set.
 
 import { Application, extend } from "@pixi/react";
-import { Container, Graphics, Sprite, Text, TextStyle, type Texture } from "pixi.js";
+import { Container, Graphics, Sprite, Text, TextStyle } from "pixi.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
@@ -63,7 +63,8 @@ import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
-import { loadTerrainTextures, variantIndex } from "./tiles";
+import { connectedEdges, orientedRiverTile } from "./riverTiles";
+import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
 
 extend({ Container, Graphics, Sprite, Text });
 
@@ -373,6 +374,13 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     return m;
   }, [hexes]);
 
+  // Terrain probe for river/bridge edge-mask derivation; undefined means "off the
+  // map / no hex here", a real answer (see `connectedEdges` in `riverTiles.ts`).
+  const terrainAt = useCallback(
+    (q: number, r: number): Terrain | undefined => hexByKey.get(hexKey(q, r))?.terrain,
+    [hexByKey],
+  );
+
   const settlementOwner = useMemo(() => {
     const m = new Map<string, string | null>();
     for (const s of settlements) m.set(hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null);
@@ -383,7 +391,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   // AI-generated terrain tile textures; null until loaded (flat colours until then).
   // Each terrain holds one or more interchangeable variants (see `tiles.ts`).
-  const [terrainTex, setTerrainTex] = useState<Record<Terrain, Texture[]> | null>(null);
+  const [terrainTex, setTerrainTex] = useState<LoadedTiles | null>(null);
 
   const selectedUnitId = planning?.selectedUnitId ?? null;
   const selectedCity = planning?.selectedCity ?? null;
@@ -1140,7 +1148,26 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             {terrainTex !== null &&
               hexes.map((h) => {
                 const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
-                const variants = terrainTex[h.terrain];
+                // River/bridge tiles are chosen by edge mask (so the water/deck
+                // connects across shared edges) and may be L↔R mirrored; the
+                // native 64px tile is exactly HEX_SIZE*2, so |scale| = 1. Shapes
+                // not yet handled fall back to the generic "00" tile.
+                if (h.terrain === "river" || h.terrain === "bridge") {
+                  const oriented = orientedRiverTile(connectedEdges(h.coord, terrainAt));
+                  const name = oriented ? `${h.terrain}/${oriented.name}` : `${h.terrain}/00`;
+                  const tex = terrainTex.byName[name] ?? terrainTex.byName[`${h.terrain}/00`];
+                  return (
+                    <pixiSprite
+                      key={hexKey(h.coord.q, h.coord.r)}
+                      texture={tex}
+                      x={x}
+                      y={y}
+                      anchor={0.5}
+                      scale={{ x: oriented?.mirror ? -1 : 1, y: 1 }}
+                    />
+                  );
+                }
+                const variants = terrainTex.byTerrain[h.terrain];
                 const tex = variants[variantIndex(h.coord.q, h.coord.r, variants.length)];
                 return (
                   <pixiSprite

@@ -408,9 +408,26 @@ isolation.
   radii give "a few different curves". Generate distinct oriented tiles + L↔R
   mirror per the orientation decision. No scenario-format change — connectivity
   is derived from existing `~` placement.
+  - **T3a (straight) ✅ shipped.** Mask-driven render in
+    `frontend/src/board/riverTiles.ts` (`connectedEdges` + `classifyRiver`):
+    straight = 2 opposite edges → `straight_v` (vertical, self-mirror) or
+    `straight_d` (one generated "\" diagonal + render-time L↔R mirror for "/").
+    Any unhandled mask (ends, turns, forks) falls back to the generic
+    `tiles/{river,bridge}/00.png`, so a horizontal `~` line still renders (it's
+    all 60° *turns*, T3b). **Matching is exact by a deterministic edge-snap, not
+    by generation:** PixelLab generates the river interior, then
+    `scripts/river-edge-snap.py` forces each connected edge's crossing to a
+    canonical position/width/colour at the edge centre (its `verify`/`match`
+    subcommands assert seams align). `twin_rivers` gained a short straight
+    vertical tributary + a straight bridge to exercise it.
+  - **T3b (turns/forks) — remaining.** 60° turn (2 edges 120° apart), 60°/120°
+    fork (3 edges), river end (1). Add classifier cases + generated/snapped tiles;
+    grow `twin_rivers` (its current horizontal river is all 60° turns).
 - **Slice T4 — Bridges as oriented river crossings.** Bridge orientation = the
   river axis it crosses (derivable from its two river edges); reuse T3's
-  edge-mask machinery and the mirror approach.
+  edge-mask machinery and the mirror approach. **Straight bridges ✅ shipped with
+  T3a** (`bridge/straight_v`, `bridge/straight_d`); they reuse the river edge
+  mask + edge-snap. Turn/fork bridges follow T3b if needed.
 - **Slice T5 — Road rendering experiment (scoped as throwaway-friendly).**
   Compare, on the same map: today's **vector overlay** (centre-to-edge brown
   lines, `Board.tsx`) vs **baked road tiles** autotiled by road-edge mask (reuses

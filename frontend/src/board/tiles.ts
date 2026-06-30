@@ -31,47 +31,51 @@ function parseTileKey(key: string): { terrain: string; variant: string } {
   return { terrain: parts[2], variant: parts[3] };
 }
 
-/**
- * Build `terrain -> [url, …]` from the glob, with each terrain's variants sorted
- * by filename so the index↔file mapping is stable across machines. Crashes (via
- * the empty-array access in {@link loadTerrainTextures}) if a terrain has no
- * tiles, which is the boundary we want to fail loud at.
- */
-function collectVariantUrls(): Record<string, string[]> {
-  const byTerrain: Record<string, { variant: string; url: string }[]> = {};
-  for (const [key, url] of Object.entries(TILE_MODULES)) {
-    const { terrain, variant } = parseTileKey(key);
-    (byTerrain[terrain] ??= []).push({ variant, url });
-  }
-  const result: Record<string, string[]> = {};
-  for (const [terrain, entries] of Object.entries(byTerrain)) {
-    entries.sort((a, b) => a.variant.localeCompare(b.variant));
-    result[terrain] = entries.map((e) => e.url);
-  }
-  return result;
+/** The drop "<variant>.png" → "<variant>" basename used as the by-name key. */
+function basename(variant: string): string {
+  return variant.replace(/\.png$/, "");
+}
+
+export interface LoadedTiles {
+  /**
+   * `terrain → [texture, …]` sorted by filename, indexed by `variantIndex`. Used
+   * by the cosmetic-variant terrains (plains/woods/hills/town/city). River/bridge
+   * tiles also appear here but are selected by name instead (see {@link byName}).
+   */
+  readonly byTerrain: Record<Terrain, Texture[]>;
+  /**
+   * `"<terrain>/<basename>" → texture` (e.g. `"river/straight_v"`). River/bridge
+   * hexes look up their oriented tile by name from the edge mask; see
+   * `riverTiles.ts`.
+   */
+  readonly byName: Record<string, Texture>;
 }
 
 /**
- * Load every terrain's variant textures, forcing nearest-neighbour scaling so the
- * pixel art stays crisp when the board zooms in. Resolves to a complete
- * terrain→textures map; a load failure rejects (the board keeps the flat-colour
- * fallback).
+ * Load every tile PNG, forcing nearest-neighbour scaling so the pixel art stays
+ * crisp when the board zooms in. Returns both a terrain→variants map (for the
+ * coord-hash variant terrains) and a name-keyed map (for mask-driven river/bridge
+ * selection). A load failure rejects (the board keeps the flat-colour fallback).
  */
-export async function loadTerrainTextures(): Promise<Record<Terrain, Texture[]>> {
-  const variantUrls = collectVariantUrls();
-  const entries = await Promise.all(
-    (Object.entries(variantUrls) as [Terrain, string[]][]).map(async ([terrain, urls]) => {
-      const textures = await Promise.all(
-        urls.map(async (url) => {
-          const texture: Texture = await Assets.load(url);
-          texture.source.scaleMode = "nearest";
-          return texture;
-        }),
-      );
-      return [terrain, textures] as const;
+export async function loadTerrainTextures(): Promise<LoadedTiles> {
+  // Sort by glob key so each terrain's variants land in a stable filename order,
+  // keeping the `variantIndex` index↔file mapping identical across machines.
+  const entries = Object.entries(TILE_MODULES).sort(([a], [b]) => a.localeCompare(b));
+  const byName: Record<string, Texture> = {};
+  await Promise.all(
+    entries.map(async ([key, url]) => {
+      const { terrain, variant } = parseTileKey(key);
+      const texture: Texture = await Assets.load(url);
+      texture.source.scaleMode = "nearest";
+      byName[`${terrain}/${basename(variant)}`] = texture;
     }),
   );
-  return Object.fromEntries(entries) as Record<Terrain, Texture[]>;
+  const byTerrain: Record<string, Texture[]> = {};
+  for (const [key] of entries) {
+    const { terrain, variant } = parseTileKey(key);
+    (byTerrain[terrain] ??= []).push(byName[`${terrain}/${basename(variant)}`]);
+  }
+  return { byTerrain: byTerrain as Record<Terrain, Texture[]>, byName };
 }
 
 /**
