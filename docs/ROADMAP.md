@@ -313,13 +313,48 @@ units, fog.
 
 Base map rendering shipped with one AI-generated flat-top hex tile per terrain
 (`frontend/src/board/tiles/`, generated via PixelLab `create_tiles_pro` hex mode
-at 32px; see `CLAUDE.md` memory note). These slices grow that from "one tile per
-terrain" toward a varied, directional tileset.
+at 64px — see Slice T0 and the `CLAUDE.md` memory note; originally 32px). These
+slices grow that from "one tile per terrain" toward a varied, directional tileset.
 
 **Orientation decision (applies to rivers/bridges/road-tiles):** no 60° rotation
-— rotating 32px pixel art by 60° resamples and looks mushy. Generate the distinct
+— rotating 64px pixel art by 60° resamples and looks mushy. Generate the distinct
 oriented tiles instead, but use a cheap **horizontal (left↔right) mirror** at
 render time to roughly halve the art needed per shape.
+
+- **Slice T0 — 64px resolution upgrade.** Tiles authored at 32px looked
+  low-detail; moved to 64px (~4× the art data, 2× zoom-in headroom before
+  pixelation). Goal was crispness only, *not* larger on-screen tiles — the board
+  auto-fits the map, so apparent size is held constant.
+  - **T0a (geometry, code only) ✅** — `HEX_SIZE` 16→32 (`hex.ts`) so the 64px
+    texture blits 1:1; the sprite is already `HEX_SIZE*2`. In `Board.tsx`, halved
+    the absolute zoom clamps (`MIN/MAX/INITIAL_MAX_ZOOM`) to keep fit/zoom
+    behaviour identical, and doubled the world-space cosmetics that don't key off
+    `HEX_SIZE` (font sizes, stroke widths, ring/path insets, marker radii).
+  - **T0b (art regen) — pending.** Regenerate every terrain at 64px so the tiles
+    blit at native resolution instead of upscaling the old 32px art 2×. Pure
+    asset work — `import.meta.glob` discovers the PNGs, so **no code edit**;
+    independent of T3–T5 (their edge-mask orientation logic is px-agnostic) and
+    doable one terrain at a time, each independently shippable.
+
+    **Recipe (PixelLab MCP):** `create_tiles_pro`, `tile_type:"hex"` (flat-top),
+    `tile_view:"top-down"` (flat, no extruded depth), **`tile_size: 64`**. The
+    tool returns ~16 numbered variations per call; poll `get_tiles_pro` (~2 min)
+    and pick the best per terrain. See the `hex-general-terrain-tiles` memory note
+    for the full recipe and gotchas.
+
+    **Targets — regenerate to match today's variant layout**
+    (`tiles/{terrain}/{nn}.png`, sorted by filename, indexed by
+    `variantIndex(q,r,count)`):
+    `plains` ×3, `woods` ×3, `hills` ×3, `city` ×3, `river` ×1, `bridge` ×1,
+    `town` ×1. (Variant counts can grow later as a T2-style drop-in; T0b just
+    re-renders the current set at 64px.) When picking the `city` variants,
+    preserve the earlier rubble fix (city `00` was regenerated once to remove a
+    noisy rubble artifact — don't reintroduce it).
+
+    **Caveats:** at 64px the busier tiles cross Vite's 4 KB `assetsInlineLimit`,
+    so expect a mix — some inlined as base64, some emitted as `dist/assets/*.png`.
+    Verify a build by confirming the tiles **render** (browser/board), not by
+    counting `data:image/png;base64` in the bundle. No scenario/format change.
 
 - **Slice T1 — Variant infrastructure.** Loader returns `Record<Terrain,
   Texture[]>`; tiles live in `tiles/{terrain}/{nn}.png`, discovered by

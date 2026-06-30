@@ -74,8 +74,12 @@ type Unit = components["schemas"]["Unit"];
 type UnitType = components["schemas"]["UnitType"];
 
 const BACKGROUND = 0x0a0a0b;
-const MIN_ZOOM = 0.25;
-const MAX_ZOOM = 4;
+// Zoom clamps are halved relative to the old 32px geometry: with HEX_SIZE
+// doubled (16→32) the same on-screen size needs half the zoom factor, so halving
+// these keeps fit/zoom-in/zoom-out behaviour identical while still permitting
+// zoom to the tiles' native 64px resolution.
+const MIN_ZOOM = 0.125;
+const MAX_ZOOM = 2;
 const DRAG_THRESHOLD_PX = 4;
 
 // --- auto-camera (frame own units on load; glide to a roster pick if off-screen) ---
@@ -84,7 +88,7 @@ const DRAG_THRESHOLD_PX = 4;
 const FIT_PADDING = 0.12;
 // The on-load fit won't zoom in past this — keeps a lone or tightly-clustered force
 // from filling the whole view at an absurd magnification.
-const INITIAL_MAX_ZOOM = 1.5;
+const INITIAL_MAX_ZOOM = 0.75;
 // A unit counts as "comfortably in frame" when it sits within the map rectangle
 // inset by this fraction on each side; selecting one nearer the edge glides it back
 // toward centre.
@@ -124,30 +128,33 @@ const EMPTY_PATH: readonly Axial[] = [];
 // Stable empty warnings, so an unwarned selection doesn't churn the panel.
 const EMPTY_WARNINGS: readonly UnitWarning[] = [];
 
+// Font sizes and stroke widths below are in world pixels and don't key off
+// HEX_SIZE, so they're doubled alongside the 16→32 HEX_SIZE bump to keep their
+// apparent size constant at the now-halved zoom.
 const hpStyle = new TextStyle({
   fontFamily: "monospace",
-  fontSize: 11,
+  fontSize: 22,
   fontWeight: "bold",
   fill: 0xffffff,
-  stroke: { color: 0x000000, width: 3 },
+  stroke: { color: 0x000000, width: 6 },
 });
 
 // Badge over a unit with a staged rest/hold order (move/barrage draw geometry).
 const orderBadgeStyle = new TextStyle({
   fontFamily: "monospace",
-  fontSize: 9,
+  fontSize: 18,
   fontWeight: "bold",
   fill: 0xffe066,
-  stroke: { color: 0x000000, width: 3 },
+  stroke: { color: 0x000000, width: 6 },
 });
 
 // The "+" marking a staged recruit's ghost preview on its city hex.
 const recruitGhostStyle = new TextStyle({
   fontFamily: "monospace",
-  fontSize: 14,
+  fontSize: 28,
   fontWeight: "bold",
   fill: 0xffffff,
-  stroke: { color: 0x000000, width: 3 },
+  stroke: { color: 0x000000, width: 6 },
 });
 
 interface View {
@@ -893,7 +900,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
         g.poly(hexCornerPoints(x, y, HEX_SIZE));
       }
-      g.stroke({ width: 1, color: HEX_STROKE });
+      g.stroke({ width: 2, color: HEX_STROKE });
 
       // road network: link road/bridge hexes centre-to-edge toward road neighbours
       for (const h of hexes) {
@@ -908,16 +915,16 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           g.lineTo((c.x + nc.x) / 2, (c.y + nc.y) / 2);
         }
       }
-      g.stroke({ width: 3, color: 0x6b4f2a });
+      g.stroke({ width: 6, color: 0x6b4f2a });
 
       // settlement ownership rings
       for (const [key, owner] of settlementOwner) {
         const hex = hexByKey.get(key);
         if (hex === undefined) continue;
         const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
-        g.poly(hexCornerPoints(x, y, HEX_SIZE - 1.5));
+        g.poly(hexCornerPoints(x, y, HEX_SIZE - 3));
         g.stroke({
-          width: 3,
+          width: 6,
           color: owner === null ? NEUTRAL_COLOR : playerColor(owner),
         });
       }
@@ -943,7 +950,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       if (selected === null) return;
       const { x, y } = axialToPixel(selected.q, selected.r, HEX_SIZE);
       g.poly(hexCornerPoints(x, y, HEX_SIZE));
-      g.stroke({ width: 2.5, color: 0xffffff });
+      g.stroke({ width: 5, color: 0xffffff });
     },
     [selected],
   );
@@ -960,10 +967,10 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         const hex = hexByKey.get(key);
         if (hex === undefined) continue;
         const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
-        g.moveTo(x - 8, y - 8).lineTo(x + 8, y + 8);
-        g.moveTo(x + 8, y - 8).lineTo(x - 8, y + 8);
+        g.moveTo(x - 16, y - 16).lineTo(x + 16, y + 16);
+        g.moveTo(x + 16, y - 16).lineTo(x - 16, y + 16);
       }
-      g.stroke({ width: 2.5, color: TRAFFIC_COLOR });
+      g.stroke({ width: 5, color: TRAFFIC_COLOR });
     },
     [advisory, hexByKey],
   );
@@ -982,9 +989,9 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           const hex = hexByKey.get(key);
           if (hex === undefined) continue;
           const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
-          g.poly(hexCornerPoints(x, y, HEX_SIZE - 1.5));
+          g.poly(hexCornerPoints(x, y, HEX_SIZE - 3));
         }
-        g.stroke({ width: 1.5, color: RANGE_OUTLINE, alpha: 0.6 });
+        g.stroke({ width: 3, color: RANGE_OUTLINE, alpha: 0.6 });
       }
 
       // barrage range: outline every hex the selected artillery may target
@@ -993,9 +1000,9 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           const hex = hexByKey.get(key);
           if (hex === undefined) continue;
           const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
-          g.poly(hexCornerPoints(x, y, HEX_SIZE - 1.5));
+          g.poly(hexCornerPoints(x, y, HEX_SIZE - 3));
         }
-        g.stroke({ width: 1.5, color: BARRAGE_RANGE, alpha: 0.6 });
+        g.stroke({ width: 3, color: BARRAGE_RANGE, alpha: 0.6 });
       }
 
       // staged orders: draw each unit's plan so pending orders read at a glance
@@ -1010,7 +1017,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           if (order.path.length === 0) continue;
           const color = active ? PATH_COLOR : PATH_STAGED_COLOR;
           const blockedColor = active ? PATH_BLOCKED_COLOR : PATH_BLOCKED_STAGED_COLOR;
-          const width = active ? 3 : 2.5;
+          const width = active ? 6 : 5;
           const alpha = active ? 1 : 0.9;
 
           // Where enemy contact is expected to impede progress (SPEC §8.4): the unit
@@ -1045,7 +1052,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           // a node at each waypoint (destination larger); red from the stop onward
           order.path.forEach((step, i) => {
             const p = axialToPixel(step.q, step.r, HEX_SIZE);
-            g.circle(p.x, p.y, i === order.path.length - 1 ? 4 : 2.5);
+            g.circle(p.x, p.y, i === order.path.length - 1 ? 8 : 5);
             g.fill({ color: i >= stopIndex ? blockedColor : color });
           });
         } else if (order.kind === "barrage") {
@@ -1053,14 +1060,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           const t = axialToPixel(order.target.q, order.target.r, HEX_SIZE);
           g.moveTo(origin.x, origin.y);
           g.lineTo(t.x, t.y);
-          g.stroke({ width: 2, color: BARRAGE_COLOR, alpha: active ? 1 : 0.85 });
-          g.circle(t.x, t.y, 6);
-          g.stroke({ width: 2, color: BARRAGE_COLOR });
-          g.moveTo(t.x - 9, t.y);
-          g.lineTo(t.x + 9, t.y);
-          g.moveTo(t.x, t.y - 9);
-          g.lineTo(t.x, t.y + 9);
-          g.stroke({ width: 1.5, color: BARRAGE_COLOR });
+          g.stroke({ width: 4, color: BARRAGE_COLOR, alpha: active ? 1 : 0.85 });
+          g.circle(t.x, t.y, 12);
+          g.stroke({ width: 4, color: BARRAGE_COLOR });
+          g.moveTo(t.x - 18, t.y);
+          g.lineTo(t.x + 18, t.y);
+          g.moveTo(t.x, t.y - 18);
+          g.lineTo(t.x, t.y + 18);
+          g.stroke({ width: 3, color: BARRAGE_COLOR });
         }
         // rest/hold carry no board geometry — they render as a text badge below.
       }
@@ -1080,11 +1087,11 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             const p = axialToPixel(step.q, step.r, HEX_SIZE);
             g.lineTo(p.x, p.y);
           }
-          g.stroke({ width: 2, color: PREVIEW_COLOR, alpha: 0.85 });
+          g.stroke({ width: 4, color: PREVIEW_COLOR, alpha: 0.85 });
 
           const dest = segment[segment.length - 1];
           const dp = axialToPixel(dest.q, dest.r, HEX_SIZE);
-          g.circle(dp.x, dp.y, 4);
+          g.circle(dp.x, dp.y, 8);
           g.fill({ color: PREVIEW_COLOR, alpha: 0.85 });
         }
       }
@@ -1093,14 +1100,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       if (selectedUnit !== null) {
         const { x, y } = axialToPixel(selectedUnit.coord.q, selectedUnit.coord.r, HEX_SIZE);
         g.poly(hexCornerPoints(x, y, HEX_SIZE));
-        g.stroke({ width: 2.5, color: 0xffffff });
+        g.stroke({ width: 5, color: 0xffffff });
       }
 
       // ring on the selected recruit city (same emphasis as a selected unit)
       if (planning.selectedCity !== null) {
         const { x, y } = axialToPixel(planning.selectedCity.q, planning.selectedCity.r, HEX_SIZE);
         g.poly(hexCornerPoints(x, y, HEX_SIZE));
-        g.stroke({ width: 2.5, color: 0xffffff });
+        g.stroke({ width: 5, color: 0xffffff });
       }
     },
     [planning, advisory, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
@@ -1274,13 +1281,13 @@ function UnitMarker({
       if (unit.type === "infantry") {
         g.circle(0, 0, r);
       } else if (unit.type === "armor") {
-        g.roundRect(-r, -r, r * 2, r * 2, 3);
+        g.roundRect(-r, -r, r * 2, r * 2, 6);
       } else {
         // artillery: upward triangle
         g.poly([0, -r, r, r * 0.8, -r, r * 0.8]);
       }
       g.fill({ color });
-      g.stroke({ width: 1.5, color: 0x000000 });
+      g.stroke({ width: 3, color: 0x000000 });
     },
     [unit.type, color],
   );
@@ -1293,7 +1300,7 @@ function UnitMarker({
         style={hpStyle}
         anchor={0.5}
         x={0}
-        y={1}
+        y={2}
       />
     </pixiContainer>
   );
@@ -1318,19 +1325,19 @@ function RecruitGhost({
       if (type === "infantry") {
         g.circle(0, 0, r);
       } else if (type === "armor") {
-        g.roundRect(-r, -r, r * 2, r * 2, 3);
+        g.roundRect(-r, -r, r * 2, r * 2, 6);
       } else {
         g.poly([0, -r, r, r * 0.8, -r, r * 0.8]);
       }
       g.fill({ color, alpha: 0.5 });
-      g.stroke({ width: 1.5, color: 0xffffff, alpha: 0.8 });
+      g.stroke({ width: 3, color: 0xffffff, alpha: 0.8 });
     },
     [type, color],
   );
   return (
     <pixiContainer x={x} y={y}>
       <pixiGraphics draw={draw} />
-      <pixiText text="+" style={recruitGhostStyle} anchor={0.5} x={0} y={1} />
+      <pixiText text="+" style={recruitGhostStyle} anchor={0.5} x={0} y={2} />
     </pixiContainer>
   );
 }

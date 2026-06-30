@@ -1,6 +1,6 @@
 // AI-generated terrain tile textures (Phase 8 Slice 2+). Flat-top hex sprites
-// generated with PixelLab's native `hex` tile mode at 32×32 — which is exactly our
-// render geometry (radius `HEX_SIZE` = 16 → 32px point-to-point), so they blit 1:1
+// generated with PixelLab's native `hex` tile mode at 64×64 — which is exactly our
+// render geometry (radius `HEX_SIZE` = 32 → 64px point-to-point), so they blit 1:1
 // with no resampling. These replace the solid `TERRAIN_FILL` colours in
 // `palette.ts`, which now serve only as the pre-load fallback.
 //

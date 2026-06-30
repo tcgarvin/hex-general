@@ -56,7 +56,7 @@ export function axialDistance(a: Axial, b: Axial): number {
 }
 
 /** Hex size (centre-to-corner radius, pixels) — shared across board and replay. */
-export const HEX_SIZE = 16;
+export const HEX_SIZE = 32;
 
 const SQRT3 = Math.sqrt(3);
 
