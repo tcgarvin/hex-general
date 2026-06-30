@@ -36,6 +36,13 @@ the `dev-doctor` subagent** (`.claude/agents/dev-doctor.md`, Haiku); it reads th
 logs in its own context and returns a compact verdict, restarts a cleanly-dead
 server, and escalates real faults rather than fixing them. See `docs/LOCAL_DEV.md`.
 
+Board tileset work (PixelLab hex tiles in `frontend/src/board/tiles/`): `python3
+scripts/tile-montage.py <dir|globs> --out <path>` renders a labelled montage for
+visual variant review. Spawn the **`tile-smith` subagent** to run a PixelLab
+generate→poll→download→montage loop off the main thread, and use the
+**`verify-board`** skill to render the local board in Chrome after an art/render
+change. See the `hex-general-terrain-tiles` memory note + ROADMAP Phase 8.
+
 ## API code standards: trust internal invariants, validate only at boundaries
 
 The `api/` engine is a pure, deterministic core. Write it to **trust its own invariants** and crash loudly when they're violated. Do **not** pepper internal code with null checks, `isinstance` guards, or `hasattr` to defend against states that "can't happen." If such a state does happen, that's a bug to fix at its source — a bare `KeyError`/`AttributeError` with a stack trace is a *better* outcome than silently coping and resolving a turn into a wrong game state. Prefer this even to a fault: when unsure whether a guard is needed, leave it out and let it crash.
