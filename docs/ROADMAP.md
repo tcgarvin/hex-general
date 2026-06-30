@@ -330,11 +330,14 @@ render time to roughly halve the art needed per shape.
     the absolute zoom clamps (`MIN/MAX/INITIAL_MAX_ZOOM`) to keep fit/zoom
     behaviour identical, and doubled the world-space cosmetics that don't key off
     `HEX_SIZE` (font sizes, stroke widths, ring/path insets, marker radii).
-  - **T0b (art regen) — pending.** Regenerate every terrain at 64px so the tiles
+  - **T0b (art regen) ✅** — regenerated every terrain at 64px so the tiles
     blit at native resolution instead of upscaling the old 32px art 2×. Pure
     asset work — `import.meta.glob` discovers the PNGs, so **no code edit**;
     independent of T3–T5 (their edge-mask orientation logic is px-agnostic) and
-    doable one terrain at a time, each independently shippable.
+    doable one terrain at a time, each independently shippable. All 15 tiles
+    (plains/woods/hills ×3, city ×3, river/bridge/town ×1) replaced with 64px art
+    from PixelLab `create_tiles_pro` hex/top-down batches; verified rendering on
+    the local board (crisp, cohesive, no upscale blur).
 
     **Recipe (PixelLab MCP):** `create_tiles_pro`, `tile_type:"hex"` (flat-top),
     `tile_view:"top-down"` (flat, no extruded depth), **`tile_size: 64`**. The
