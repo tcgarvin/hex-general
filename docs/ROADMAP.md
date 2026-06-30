@@ -321,6 +321,22 @@ slices grow that from "one tile per terrain" toward a varied, directional tilese
 oriented tiles instead, but use a cheap **horizontal (left↔right) mirror** at
 render time to roughly halve the art needed per shape.
 
+**Variation discipline (applies to every multi-variant terrain):** variants of a
+terrain exist to break up visible tiling repetition with *mild* differences —
+same terrain, slightly different grass/rock/canopy noise. They are **not** for
+introducing distinct features: no forest-with-a-clearing, no plains-with-a-pond,
+no hills-with-a-ruin. A player should read all variants of a terrain as "the same
+thing, rendered a little differently," never as different map content. When
+generating/picking variants, reject any candidate that adds a recognizable feature
+and keep only subtle reshufflings of the base texture.
+
+**Plains art direction (open, low-contrast):** plains are the highest-frequency,
+lowest-information hex — they should read as calm open ground and *recede*, not
+compete for the eye. Keep them subtle and low-contrast (soft, close-valued
+greens; minimal busy detail) while still pleasant to look at. The earlier plains
+set was too busy/high-contrast; regenerate toward quieter texture. (Applies when
+re-running T2-style variant art for plains.)
+
 - **Slice T0 — 64px resolution upgrade.** Tiles authored at 32px looked
   low-detail; moved to 64px (~4× the art data, 2× zoom-in headroom before
   pixelation). Goal was crispness only, *not* larger on-screen tiles — the board
