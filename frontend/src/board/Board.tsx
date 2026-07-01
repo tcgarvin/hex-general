@@ -463,6 +463,20 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     return () => ro.disconnect();
   }, []);
 
+  // Keep wheel/pinch gestures from leaking to the browser (page scroll, and
+  // ctrl+wheel page zoom on trackpads). React attaches its `onWheel` listener as
+  // passive, so `e.preventDefault()` inside the synthetic handler is ignored — we
+  // must swallow the default on a native, non-passive listener. The map/log zoom
+  // and scroll logic still lives in `onWheel`; this effect only cancels the
+  // browser default for wheel events anywhere over the board surface.
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (el === null) return;
+    const swallow = (e: WheelEvent) => e.preventDefault();
+    el.addEventListener("wheel", swallow, { passive: false });
+    return () => el.removeEventListener("wheel", swallow);
+  }, []);
+
   // The map's world-pixel extent (outer hex corners), used to keep the camera
   // from scrolling more than ~one hex radius past the edge.
   const mapBounds = useMemo<MapBounds | null>(
