@@ -28,13 +28,16 @@ API (`cd api`): `uv sync`, then `uv run uvicorn app.main:app --reload --port 808
 Before committing api changes, run all four — CI fails otherwise:
 `uv run pytest` · `uv run black --check .` · `uv run ruff check .` · `uv run mypy .`
 
-Local dev loop: `./scripts/dev-up.sh` (Supabase + env, once), then
-`./scripts/dev.sh up` to run both app servers **detached, logging to files under
-`.dev/`** — don't launch the dev servers as foreground/`run_in_background` Bash
-calls (their streaming output floods this context). To health-check them, **spawn
-the `dev-doctor` subagent** (`.claude/agents/dev-doctor.md`, Haiku); it reads the
-logs in its own context and returns a compact verdict, restarts a cleanly-dead
-server, and escalates real faults rather than fixing them. See `docs/LOCAL_DEV.md`.
+Local dev loop: `./scripts/dev.sh up` owns the whole per-worktree lifecycle —
+it renders + starts an isolated Supabase stack, seeds accounts, writes env, and
+runs both app servers **detached, logging to files under `.dev/`**. Each worktree
+gets its own instance (auto-allocated ports, stride 100) so several can run at
+once; `HEX_SUPABASE_FULL=1` un-leans the stack. Don't launch the dev servers as
+foreground/`run_in_background` Bash calls (their streaming output floods this
+context). To health-check them, **spawn the `dev-doctor` subagent**
+(`.claude/agents/dev-doctor.md`, Haiku); it reads the logs in its own context and
+returns a compact verdict, restarts a cleanly-dead server, and escalates real
+faults rather than fixing them. See `docs/LOCAL_DEV.md`.
 
 Board tileset work (PixelLab hex tiles in `frontend/src/board/tiles/`): `python3
 scripts/tile-montage.py <dir|globs> --out <path>` renders a labelled montage for
@@ -47,9 +50,11 @@ change. See the `hex-general-terrain-tiles` memory note + ROADMAP Phase 8.
   or commit *any* change to tiles under `frontend/src/board/tiles/` (new variants,
   regens, recolours, or programmatic edits like the river bank-rough pass),
   **render a before/after montage, host it, and give the user a clickable link, then
-  wait for their direction.** Host with `python3 -m http.server 8011 --bind
-  127.0.0.1` from the montage dir → `http://127.0.0.1:8011/<file>.png` (the inline
-  image alone is not the deliverable — give the link). This applies whether the
+  wait for their direction.** Host with `./scripts/dev.sh montage up` (serves
+  `.dev/montages/` on the worktree's montage port `8011+100N`); `tile-montage.py`
+  defaults `--out` there, so the montage is reachable at
+  `http://127.0.0.1:<montage-port>/<file>.png` (the inline image alone is not the
+  deliverable — give the link). This applies whether the
   tiles came from PixelLab or a deterministic script; the main agent prepares the
   candidate, the **user** picks. (Board-scale `verify-board` is for *after* a pick
   is ratified, not a substitute for the pre-apply montage sign-off.)

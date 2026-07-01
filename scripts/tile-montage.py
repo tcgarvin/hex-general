@@ -17,7 +17,8 @@ Usage:
     # an explicit list / glob of a downloaded batch (labels become the stem)
     python scripts/tile-montage.py /tmp/batch/tile_*.png --out /tmp/batch.png
 
-Options: --out (required), --scale (default 4), --cols (default 8).
+Options: --out (default .dev/montages/montage.png — the docroot served by
+`scripts/dev.sh montage up`), --scale (default 4), --cols (default 8).
 Prints the output path and grid dimensions; exits non-zero on no inputs.
 """
 
@@ -81,10 +82,20 @@ def build(files: list[str], out: str, scale: int, cols: int) -> tuple[int, int]:
     return img.size
 
 
+def default_out() -> str:
+    """The montage docroot served by `scripts/dev.sh montage up` (.dev/montages/)."""
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(repo, ".dev", "montages", "montage.png")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Labelled montage of pixel-art tiles.")
     ap.add_argument("inputs", nargs="+", help="PNG files, globs, or directories")
-    ap.add_argument("--out", required=True, help="output PNG path")
+    ap.add_argument(
+        "--out",
+        default=default_out(),
+        help="output PNG path (default .dev/montages/montage.png)",
+    )
     ap.add_argument(
         "--scale", type=int, default=4, help="nearest-neighbour upscale (default 4)"
     )
@@ -96,6 +107,7 @@ def main() -> int:
         print(f"no PNG files matched: {args.inputs}", file=sys.stderr)
         return 1
 
+    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     w, h = build(files, args.out, args.scale, args.cols)
     print(f"{args.out}  ({w}x{h}, {len(files)} tiles, {args.cols} cols)")
     for i, f in enumerate(files):

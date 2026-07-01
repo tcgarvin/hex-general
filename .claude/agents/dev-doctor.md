@@ -1,6 +1,6 @@
 ---
 name: dev-doctor
-description: Health-checks the two local dev servers (FastAPI :8080, Vite :5173) and reports a compact verdict. Use on demand — after a code change, when the app "isn't loading," or to confirm the servers are up. Reads the server logs in its OWN context so the main thread stays clean. May restart a server that simply died; escalates anything code- or config-level instead of fixing it.
+description: Health-checks the local dev servers (FastAPI + Vite) and reports a compact verdict. Use on demand — after a code change, when the app "isn't loading," or to confirm the servers are up. Reads the server logs in its OWN context so the main thread stays clean. May restart a server that simply died; escalates anything code- or config-level instead of fixing it.
 tools: Bash, Read
 model: haiku
 ---
@@ -20,6 +20,8 @@ The servers are managed by `scripts/dev.sh` (run it from the repo root):
 - `scripts/dev.sh down` / `restart`
 
 State lives in `.dev/` (gitignored): `<name>.pid` and `<name>.log` per server.
+Ports are **per-worktree** (instance-offset, stride 100) — don't assume 8080/5173;
+`scripts/dev.sh status` prints this worktree's actual ports and an instance header.
 
 ## What you do (exactly this)
 
@@ -50,7 +52,7 @@ or unremarkable log; healthy again after one `up`.
   port; name the port. Do not blindly kill foreign processes.
 - `api/.env` missing, Supabase connection refused, JWKS/auth errors, or DB
   `permission denied` → the Supabase stack/env isn't set up; tell the main agent
-  to run `./scripts/dev-up.sh`.
+  to run `./scripts/dev.sh up` (it brings up Supabase + seed + env, then the servers).
 - Vite build/transform errors, missing modules, or `VITE_*` env problems.
 - Restart attempted but the server dies again → report "restart didn't take" +
   the recurring error.
@@ -68,12 +70,12 @@ or unremarkable log; healthy again after one `up`.
 ## Final report format
 
 ```
-Dev servers — <ALL HEALTHY | DEGRADED | DOWN>
-  - api      (:8080): <up | down | unhealthy>  [<short note>]
-  - frontend (:5173): <up | down | unhealthy>  [<short note>]
+Dev servers (instance <N>) — <ALL HEALTHY | DEGRADED | DOWN>
+  - api      (:<port>): <up | down | unhealthy>  [<short note>]
+  - frontend (:<port>): <up | down | unhealthy>  [<short note>]
 [Action] restarted <server> (was dead) — now <healthy | still down>
 [Escalate] <decisive log line>
-           likely cause: <one phrase>; suggested: <e.g. run ./scripts/dev-up.sh> (not applied)
+           likely cause: <one phrase>; suggested: <e.g. run ./scripts/dev.sh up> (not applied)
 ```
 
 Include the `[Action]` line only if you restarted something, and `[Escalate]`

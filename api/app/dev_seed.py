@@ -6,7 +6,7 @@ that the dev-profile switcher impersonates. Like `app.accounts`, it is an I/O
 boundary that uses the service-role admin API — server-side only, never the
 browser.
 
-Invoked by ``scripts/dev-up.sh`` (or directly: ``uv run python -m app.dev_seed``).
+Invoked by ``scripts/dev.sh up`` (or directly: ``uv run python -m app.dev_seed``).
 It is **idempotent**: accounts that already exist are reused, not recreated. On
 success it prints a ready-to-paste ``DEV_USER_IDS=<id1>,<id2>`` line, which the
 API needs to treat these accounts as devs (the allowlist can only be filled once

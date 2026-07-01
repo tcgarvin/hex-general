@@ -33,9 +33,32 @@ infra/setup-gcp.sh      One-time GCP provisioning (WIF, deployer/runtime SAs, Ar
 
 ## Local development
 
-To run the full stack on a laptop and play a match offline (local Supabase +
-seeded dev accounts), see **[`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md)** — `./scripts/dev-up.sh`
-brings up Postgres + Auth, seeds dev accounts, and wires the env files.
+Run the full stack on a laptop — Postgres + Auth + API + frontend — and play a
+match offline. **One command owns the whole lifecycle:**
+
+```bash
+./scripts/dev.sh up      # isolated Supabase stack + API + frontend, waits for health
+./scripts/dev.sh status  # health of every piece
+./scripts/dev.sh down    # tear it all down
+```
+
+`up` renders a local Supabase config, starts the stack (lean by default — Auth +
+Postgres), seeds the `@hex.local` dev accounts, writes the env files, and starts
+both app servers detached. Full guide (auth model, playtest loop, Studio via
+`HEX_SUPABASE_FULL=1`): **[`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md)**.
+
+### Multiple worktrees at once
+
+`dev.sh` is **per-worktree**: each git worktree gets a fully isolated stack — its
+own Supabase `project_id` (separate Docker containers + data volumes) and its own
+ports, derived from an auto-allocated instance number `N` with a stride of 100:
+frontend `5173+100N`, API `8080+100N`, Supabase `54321+100N` (and the rest). So
+several branches can run side by side without collisions. No setup — `dev.sh up`
+grabs the first free slot and remembers it (`.dev/instance`); pin one explicitly
+with `HEX_INSTANCE=N`. The committed `supabase/config.toml` is the instance-0
+base; `dev.sh` renders an offset copy under `.dev/` and runs it via
+`supabase --workdir`, so CI and the deploy workflow are unaffected. Details:
+[`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md#multiple-worktrees-at-once).
 
 Running a tier on its own against existing config:
 

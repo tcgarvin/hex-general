@@ -5,7 +5,19 @@
 # Everything below the project_id is **local-stack only** (`supabase start`).
 # The deploy workflow runs `supabase db push` (migrations) — it never runs
 # `supabase config push` — so these sections never reach the deployed project.
-# See docs/LOCAL_DEV.md for the laptop playtest loop.
+# It DOES parse this whole file, so keep every value literal & valid (no env()).
+#
+# ── Per-worktree local dev ──────────────────────────────────────────────────
+# This file is the committed BASE (instance 0). `scripts/dev.sh` renders an
+# instance-offset copy to `.dev/supabase/config.toml` (ports + project_id shifted
+# by 100×HEX_INSTANCE) and runs the stack from there via `--workdir .dev`, so
+# multiple worktrees can run isolated stacks at once. CI and a bare
+# `supabase start` use THIS file verbatim. See docs/LOCAL_DEV.md.
+#
+# Every host-bound port is declared explicitly below so the renderer has a single
+# source of truth to offset. The stack is LEAN by default (studio / realtime /
+# inbucket / analytics disabled — the app only needs Auth + Postgres locally);
+# `HEX_SUPABASE_FULL=1 ./scripts/dev.sh up` re-enables them for a worktree.
 project_id = "amhkpsrvjlthmmemwssc"
 
 [api]
@@ -18,24 +30,59 @@ max_rows = 1000
 
 [db]
 port = 54322
+# Shadow DB (migration diffing) — binds a host port, so it's offset too.
+shadow_port = 54320
 # Postgres major version. Matches the deployed project.
 major_version = 17
 
+[db.pooler]
+# Supavisor connection pooler — not needed for local dev; declared only so its
+# port is offset if a worktree turns it on.
+enabled = false
+port = 54329
+
+[realtime]
+# Lean: off by default. The app uses Supabase only for Auth + Postgres (its
+# "presence" is polled via the API, not Realtime channels). HEX_SUPABASE_FULL=1
+# re-enables.
+enabled = false
+
 [studio]
-enabled = true
+# Lean: off by default (local DB browser is a convenience, not required for a
+# playtest). HEX_SUPABASE_FULL=1 re-enables it.
+enabled = false
 port = 54323
+
+[inbucket]
+# Lean: off by default. No SMTP locally; seeded users are pre-confirmed, so no
+# mail-capture inbox is needed.
+enabled = false
+port = 54324
+
+[analytics]
+# Lean: off by default. Logflare + its vector log-shipper are the biggest slice
+# of a full stack (~700 MiB) and dev doesn't need log analytics.
+enabled = false
+port = 54327
+
+[edge_runtime]
+# No edge functions in this project, but the runtime's inspector binds a host
+# port, so declare it here to be offset per instance.
+inspector_port = 8083
 
 [auth]
 enabled = true
 # The frontend (Vite dev server) origin — used as the redirect allow-list.
+# dev.sh rewrites this to the instance's Vite port at render time.
 site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://localhost:5173"]
 jwt_expiry = 3600
 # Asymmetric ES256 JWT signing — keeps the API's identity boundary
 # (api/app/games/auth.py: ES256 via JWKS) byte-identical to the deployed
-# project, so no local-only auth code path is needed. dev-up.sh generates this
-# file (`supabase gen signing-key --algorithm ES256`) before `supabase start`;
-# it is gitignored (a throwaway local key — never commit signing keys).
+# project, so no local-only auth code path is needed. dev.sh generates this
+# file (`supabase gen signing-key --algorithm ES256`) into the rendered workdir
+# before `supabase start`; it is gitignored (a throwaway local key — never
+# commit signing keys). The path is relative to this config file.
 signing_keys_path = "./signing_keys.json"
 # Dev profiles sign in with email + password against local Auth (no Google
 # OAuth locally — that is configured only on deployed envs). The seed

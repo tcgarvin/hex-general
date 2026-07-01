@@ -256,8 +256,9 @@ join / game-shell routes with a polling-driven live `GameView`, and the dev prof
 switcher. Slice 3 ships the `supabase start` local stack + seed for offline
 laptop playtesting: `supabase/config.toml` configures local ES256 JWT signing
 keys (so the API's JWKS auth boundary is unchanged), `api/app/dev_seed.py` seeds
-the `@hex.local` dev accounts, and `scripts/dev-up.sh` / `dev-down.sh` bring the
-stack up/down and wire the env files. See [`LOCAL_DEV.md`](./LOCAL_DEV.md).
+the `@hex.local` dev accounts, and `scripts/dev.sh up`/`down` bring the stack
+up/down and wire the env files (per-worktree isolated). See
+[`LOCAL_DEV.md`](./LOCAL_DEV.md).
 
 - **Vite + React + TS + Tailwind v4 SPA** with client-side routing (login /
   dispatcher / join / game shell); `frontend.yml` builds a static bundle, deployed

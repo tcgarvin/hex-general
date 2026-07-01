@@ -13,24 +13,25 @@ stack; this one drives the **local** dev app for a visual check).
 
 ## 1. Make sure the dev servers are up
 
-Board is Vite `:5173`, talking to the API `:8080`.
+Ports are **per-worktree** (instance-offset, stride 100) — Vite `5173+100N`, API
+`8080+100N`. Don't assume 5173/8080; ask `dev.sh` for this worktree's state:
 
 ```bash
-curl -s -o /dev/null -w "vite:%{http_code} " http://localhost:5173 ; \
-curl -s -o /dev/null -w "api:%{http_code}\n"  http://localhost:8080/health
+./scripts/dev.sh status     # prints the instance header + each server's port + health
 ```
 
-- Both `200` → go to step 2.
-- Not up → `./scripts/dev.sh up` (detached; don't run the servers in the
-  foreground). If it doesn't come healthy, **spawn the `dev-doctor` subagent** to
-  diagnose rather than tailing logs here. If the API/DB looks unseeded, the user
-  may need `./scripts/dev-up.sh` (Supabase stack + seed). See `docs/LOCAL_DEV.md`.
+- Both `api` and `frontend` `up ... healthy` → note the Vite port from the header
+  and go to step 2 (use `http://localhost:<vite-port>`).
+- Not up → `./scripts/dev.sh up` (detached; brings up Supabase + seed + env + both
+  servers). If it doesn't come healthy, **spawn the `dev-doctor` subagent** to
+  diagnose rather than tailing logs here. See `docs/LOCAL_DEV.md`.
 
 ## 2. Open and sign in (local dev account)
 
 Load the Chrome MCP tools first (one `ToolSearch`, batched — see the
 claude-in-chrome instructions), then `tabs_context_mcp`, a new tab, and navigate
-to `http://localhost:5173`. You'll land on `/login` ("Local dev sign-in").
+to `http://localhost:<vite-port>` (from step 1; `5173` for instance 0). You'll
+land on `/login` ("Local dev sign-in").
 
 - Email is prefilled `dev1@hex.local`. The **password is a documented local test
   fixture**, not a real credential: `DEV_PASSWORD` in `api/app/dev_seed.py`
@@ -42,7 +43,7 @@ to `http://localhost:5173`. You'll land on `/login` ("Local dev sign-in").
 
 If there's no active game for `dev1`, the seed normally creates one; if the app
 lands somewhere other than a game, the local stack likely needs
-`./scripts/dev-up.sh` to (re)seed.
+`./scripts/dev.sh up` to (re)seed.
 
 ## 3. Capture the board
 
@@ -70,7 +71,7 @@ lands somewhere other than a game, the local stack likely needs
   chosen per-hex by a coord hash, so each `{nn}.png` lights up a deterministic subset.)
 - **Rule out caching before chasing ghosts.** A full `navigate` reload re-fetches
   tiles; the Vite dev server serves current disk bytes. Confirm with md5:
-  `curl -s localhost:5173/src/board/tiles/<terrain>/<nn>.png | md5sum` vs
+  `curl -s localhost:<vite-port>/src/board/tiles/<terrain>/<nn>.png | md5sum` vs
   `md5sum frontend/src/board/tiles/<terrain>/<nn>.png`. If they match, the browser is
   showing the real file — the look you don't like is the *art*, not a stale cache.
 - **Mean luminance is a fast objective check.** A quick PIL opaque-pixel mean of
@@ -81,8 +82,8 @@ lands somewhere other than a game, the local stack likely needs
 
 | Thing | Value |
 |---|---|
-| Board URL | `http://localhost:5173` → redirects to `/login`, then `/game/<uuid>` |
+| Board URL | `http://localhost:<vite-port>` → redirects to `/login`, then `/game/<uuid>` |
 | Dev login | `dev1@hex.local` / `DEV_PASSWORD` in `api/app/dev_seed.py` |
-| Servers | Vite `:5173`, API `:8080`; managed by `scripts/dev.sh` |
+| Servers | Vite `5173+100N`, API `8080+100N` (per-worktree); `scripts/dev.sh status` shows them |
 | Tiles | `frontend/src/board/tiles/{terrain}/{nn}.png` (64px, flat-top hex) |
 | Montage a tile set | `python3 scripts/tile-montage.py <dir|globs> --out <path>` |

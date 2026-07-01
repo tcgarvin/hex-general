@@ -137,5 +137,5 @@ stack or configuring Google OAuth.
 - **Local dev:** Phase 7 now explicitly owns the `supabase start` laptop loop, not
   just the deployed path. **Shipped** (Slice 3): local ES256 signing keys keep the
   API's JWKS auth boundary unchanged, `app.dev_seed` seeds the `@hex.local`
-  accounts, and `scripts/dev-up.sh` wires it together. See
+  accounts, and `scripts/dev.sh up` wires it together (per-worktree isolated). See
   [`LOCAL_DEV.md`](./LOCAL_DEV.md).
