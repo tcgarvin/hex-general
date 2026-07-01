@@ -43,6 +43,17 @@ generate→poll→download→montage loop off the main thread, and use the
 **`verify-board`** skill to render the local board in Chrome after an art/render
 change. See the `hex-general-terrain-tiles` memory note + ROADMAP Phase 8.
 
+- **Hex art is the user's call — never auto-ratify.** Before you apply, overwrite,
+  or commit *any* change to tiles under `frontend/src/board/tiles/` (new variants,
+  regens, recolours, or programmatic edits like the river bank-rough pass),
+  **render a before/after montage, host it, and give the user a clickable link, then
+  wait for their direction.** Host with `python3 -m http.server 8011 --bind
+  127.0.0.1` from the montage dir → `http://127.0.0.1:8011/<file>.png` (the inline
+  image alone is not the deliverable — give the link). This applies whether the
+  tiles came from PixelLab or a deterministic script; the main agent prepares the
+  candidate, the **user** picks. (Board-scale `verify-board` is for *after* a pick
+  is ratified, not a substitute for the pre-apply montage sign-off.)
+
 ## API code standards: trust internal invariants, validate only at boundaries
 
 The `api/` engine is a pure, deterministic core. Write it to **trust its own invariants** and crash loudly when they're violated. Do **not** pepper internal code with null checks, `isinstance` guards, or `hasattr` to defend against states that "can't happen." If such a state does happen, that's a bug to fix at its source — a bare `KeyError`/`AttributeError` with a stack trace is a *better* outcome than silently coping and resolving a turn into a wrong game state. Prefer this even to a fault: when unsure whether a guard is needed, leave it out and let it crash.
