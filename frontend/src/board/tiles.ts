@@ -1,8 +1,10 @@
-// AI-generated terrain tile textures (Phase 8 Slice 2+). Flat-top hex sprites
-// generated with PixelLab's native `hex` tile mode at 64×64 — which is exactly our
-// render geometry (radius `HEX_SIZE` = 32 → 64px point-to-point), so they blit 1:1
-// with no resampling. These replace the solid `TERRAIN_FILL` colours in
-// `palette.ts`, which now serve only as the pre-load fallback.
+// AI-generated terrain tile textures (Phase 8 Slice 2+). Flat-top hex sprites in
+// two generations, mid-transition: legacy PixelLab pixel-art tiles at 64×64
+// (radius `HEX_SIZE` = 32 → 64px point-to-point, blit 1:1), and the painterly
+// tile-foundry swatch cuts at 128×128 (2× native, drawn at the same world size —
+// crisp at MAX_ZOOM; see scripts/tile-foundry/). These replace the solid
+// `TERRAIN_FILL` colours in `palette.ts`, which now serve only as the pre-load
+// fallback.
 //
 // Each terrain may have several interchangeable variants to break up the visible
 // repetition of a tiled grid. They live in `tiles/{terrain}/{nn}.png` and are
@@ -52,10 +54,13 @@ export interface LoadedTiles {
 }
 
 /**
- * Load every tile PNG, forcing nearest-neighbour scaling so the pixel art stays
- * crisp when the board zooms in. Returns both a terrain→variants map (for the
- * coord-hash variant terrains) and a name-keyed map (for mask-driven river/bridge
- * selection). A load failure rejects (the board keeps the flat-colour fallback).
+ * Load every tile PNG. Scale mode follows the asset generation: legacy 64px
+ * PixelLab pixel-art tiles keep nearest-neighbour so their pixels stay crisp,
+ * while the 128px painterly tiles (tile-foundry swatch cuts, mid-transition)
+ * use linear filtering — nearest would alias/shimmer them at board zoom levels.
+ * Returns both a terrain→variants map (for the coord-hash variant terrains) and
+ * a name-keyed map (for mask-driven river/bridge selection). A load failure
+ * rejects (the board keeps the flat-colour fallback).
  */
 export async function loadTerrainTextures(): Promise<LoadedTiles> {
   // Sort by glob key so each terrain's variants land in a stable filename order,
@@ -66,7 +71,7 @@ export async function loadTerrainTextures(): Promise<LoadedTiles> {
     entries.map(async ([key, url]) => {
       const { terrain, variant } = parseTileKey(key);
       const texture: Texture = await Assets.load(url);
-      texture.source.scaleMode = "nearest";
+      texture.source.scaleMode = texture.source.pixelWidth > 64 ? "linear" : "nearest";
       byName[`${terrain}/${basename(variant)}`] = texture;
     }),
   );

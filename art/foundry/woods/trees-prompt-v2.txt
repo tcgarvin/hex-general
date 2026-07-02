@@ -1,0 +1,13 @@
+A sprite sheet of individual trees for a strategy wargame map, painterly retro 16-bit style matching the forest trees in the reference image — same palette, same rendering.
+
+Layout: a clean 6x6 grid of 36 separate trees on a PURE WHITE background, each grid cell containing exactly ONE complete tree.
+
+View: high top-down with a SLIGHT perspective tilt, exactly like the reference — mostly canopy seen from above, but at the bottom edge of each crown a hint of trunk and shaded underside just barely peeks out.
+
+LEFT THREE COLUMNS (18 trees): deciduous trees — rounded, lumpy, billowing crowns in mid-green to yellow-green, sunlit from the upper-left, dark shadowed underside toward the lower-right, a tiny trunk base just visible below the crown.
+
+RIGHT THREE COLUMNS (18 trees): evergreen conifers — narrower pointed spruce/fir crowns in deeper, darker green, a visible tip near the centre, slightly jagged radial branch silhouette, sunlit from the upper-left, a tiny trunk shadow just visible at the bottom.
+
+All trees roughly the same scale, each crown filling about half its cell, with slight shape and hue variation between trees of the same type.
+
+Critical: pure flat white background everywhere between trees; NO cast shadows on the ground, no grass, no ground texture, no outlines, no grid lines, no text.

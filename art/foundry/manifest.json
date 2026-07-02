@@ -1,0 +1,66 @@
+{
+  "description": "Provenance + regeneration parameters for the painterly tileset (see README.md)",
+  "generated": "2026-07-01",
+  "model": "gemini-3-pro-image-preview (Nano Banana Pro) via Vertex AI, project hex-general, location global",
+  "tile_spec": {
+    "canvas_px": 128,
+    "hex": "flat-top, point-to-point width 128 (2x render HEX_SIZE=32; drawn at 64 world px, crisp at MAX_ZOOM=2)",
+    "mask": "hexgeom.hex_mask(128,128) core >128, dilated 1px (bleed) so abutting tiles overlap real content instead of AA fading",
+    "scale_mode": "linear in tiles.ts (pixelWidth > 64)"
+  },
+  "plains": {
+    "class": "texture (swatch-cut)",
+    "swatch": "plains/plains-swatch-01.png",
+    "prompt": "plains/plains-prompt.txt",
+    "style_ref": "refs/ref_1_x384_y256.png",
+    "image_size": "2K",
+    "cut": "scripts/tile-foundry/cut.py <swatch> --stride 320 --bleed 1",
+    "picks": {
+      "00": "cand_x0000_y0000",
+      "01": "cand_x0320_y0960",
+      "02": "cand_x0640_y0640",
+      "03": "cand_x1920_y1600"
+    },
+    "gates": "all 49 candidates passed luminance band 100-125 (measured 109-120); picks from a 23-candidate mutually seam-compatible clique (pre-v2 seam metric); truncation 0 fails",
+    "ratified": "2026-07-01 via plains/review/plains-painterly-v1.png"
+  },
+  "woods": {
+    "class": "object field (composited sprites; never swatch-cut - user: no cut-off canopies, trees end before the hex edge)",
+    "sprite_sheet": "woods/tree-sprites-02.png",
+    "sprite_prompt": "woods/trees-prompt-v2.txt",
+    "style_ref": "refs/forest_a.png (concept1.png crop (400,280)-(656,536))",
+    "segmentation": {
+      "foreground": "min-channel distance from white > 25",
+      "alpha_ramp": "(dist-25)*255/60 clipped 0..255",
+      "connected_components": "8-neighbour, min area 400 px (prompt asked 6x6 grid but got 7 columns; components make the layout irrelevant)",
+      "conifer_if": "bbox h/w > 1.15"
+    },
+    "sprite_processing": {
+      "target_mean_luminance": {"deciduous": 85.0, "conifer": 66.0},
+      "highlight_softclip": "above 135: 135 + (v-135)*0.45",
+      "desaturation": 0.9
+    },
+    "compose": {
+      "base": "plains/picks/{v}.png (the bleed-cut ratified plains)",
+      "seeds": [8800, 8801, 8802, 8803],
+      "target_trees": 110,
+      "max_attempts": 60000,
+      "achieved_trees": [76, 79, 80, 76],
+      "conifer_quota": 0.35,
+      "tree_height_px": [13, 22],
+      "min_dist": "sqrt(dx^2 + (0.52*dy)^2) >= 0.23*(w1+w2)",
+      "edge_inset": "centre of crown must satisfy in_hex with shrink 2 + 0.72*max(w,h)/2 (no tree crosses the true hex edge)",
+      "draw_order": "sorted by y_base ascending (lower trees composite over higher)",
+      "floor_discs": "per tree, r=0.72*w at crown centre, rgba(30,44,26,185), gaussian blur 2, clipped to dilated mask",
+      "final_clip": "dilated (1px bleed) hex mask",
+      "placements": "woods/placements.json (exact per-tree x, y_base, size, sprite index)"
+    },
+    "ratified": "2026-07-01 via woods/review/woods-final-*.png ('sprites and layout are great' + packed density per 'can't really see much of the ground')"
+  },
+  "concept_anchors": {
+    "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
+    "grass_mean_luminance": 105.3,
+    "forest_mean_luminance": 71.8,
+    "forest_iqr": [56.3, 88.7]
+  }
+}

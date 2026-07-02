@@ -1,0 +1,5 @@
+Top-down terrain texture for a strategy wargame map, painterly retro 16-bit style matching the reference image's rendering technique and palette exactly.
+
+Subject: one continuous field of open grassland — calm, smooth, warm saturated mid-green summer grass. Very low internal detail: soft gentle tonal variation only, plus one or two subtle tufts of slightly taller grass, widely scattered. The calm comes from smoothness and lack of busy detail, NOT from paleness — keep the green saturated and mid-toned like healthy daylight grass in the reference.
+
+Strictly uniform edge to edge, like a seamless texture: no hexagon grid lines, no borders, no vignette, no darkening at the edges, no roads, no trees, no water, no rocks, no buildings, no units, no UI, no text. Straight overhead view, flat even daylight, no long cast shadows. Fill the entire square with only grass.

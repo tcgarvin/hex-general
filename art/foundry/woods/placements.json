@@ -1,0 +1,2522 @@
+[
+ {
+  "variant": 0,
+  "seed": 8800,
+  "trees": 76,
+  "conifers": 27,
+  "placements": [
+   {
+    "x": 98.402,
+    "y_base": 87.227,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 96.442,
+    "y_base": 99.943,
+    "height": 20,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 23
+   },
+   {
+    "x": 98.852,
+    "y_base": 43.592,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 40.968,
+    "y_base": 79.613,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 30.437,
+    "y_base": 91.605,
+    "height": 21,
+    "width": 21,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 64.92,
+    "y_base": 119.287,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 23.992,
+    "y_base": 75.307,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 12
+   },
+   {
+    "x": 46.275,
+    "y_base": 54.767,
+    "height": 21,
+    "width": 21,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 112.18,
+    "y_base": 71.813,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 38.676,
+    "y_base": 45.704,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 86.588,
+    "y_base": 108.848,
+    "height": 21,
+    "width": 21,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 50.108,
+    "y_base": 96.14,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 14.352,
+    "y_base": 74.926,
+    "height": 22,
+    "width": 16,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 70.173,
+    "y_base": 30.151,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 9
+   },
+   {
+    "x": 22.898,
+    "y_base": 53.022,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 47.097,
+    "y_base": 28.615,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 8
+   },
+   {
+    "x": 66.625,
+    "y_base": 83.565,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 9
+   },
+   {
+    "x": 93.437,
+    "y_base": 57.607,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 58.852,
+    "y_base": 95.351,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 2
+   },
+   {
+    "x": 106.528,
+    "y_base": 62.028,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 40.053,
+    "y_base": 118.948,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 58.126,
+    "y_base": 58.19,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 23
+   },
+   {
+    "x": 90.677,
+    "y_base": 34.458,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 65.471,
+    "y_base": 55.376,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 10
+   },
+   {
+    "x": 101.872,
+    "y_base": 71.307,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 84.061,
+    "y_base": 24.435,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 53.94,
+    "y_base": 43.324,
+    "height": 20,
+    "width": 14,
+    "type": "conifer",
+    "sprite_index": 12
+   },
+   {
+    "x": 53.913,
+    "y_base": 74.777,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 83.081,
+    "y_base": 65.968,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 73.463,
+    "y_base": 94.285,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 12
+   },
+   {
+    "x": 73.82,
+    "y_base": 60.411,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 77.763,
+    "y_base": 39.732,
+    "height": 21,
+    "width": 21,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 32.415,
+    "y_base": 65.424,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 4
+   },
+   {
+    "x": 22.47,
+    "y_base": 93.593,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 74.235,
+    "y_base": 117.653,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 77.727,
+    "y_base": 78.564,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 7
+   },
+   {
+    "x": 57.682,
+    "y_base": 29.544,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 86.203,
+    "y_base": 51.778,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 31.48,
+    "y_base": 113.292,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 6
+   },
+   {
+    "x": 39.368,
+    "y_base": 99.124,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 54.872,
+    "y_base": 115.888,
+    "height": 21,
+    "width": 21,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 68.128,
+    "y_base": 44.95,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 23
+   },
+   {
+    "x": 119.075,
+    "y_base": 69.538,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 10
+   },
+   {
+    "x": 64.872,
+    "y_base": 100.94,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 11
+   },
+   {
+    "x": 84.469,
+    "y_base": 89.196,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 37.315,
+    "y_base": 33.058,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 30.841,
+    "y_base": 76.86,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 15
+   },
+   {
+    "x": 91.841,
+    "y_base": 76.2,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 76.733,
+    "y_base": 104.171,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 71.149,
+    "y_base": 105.305,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 4
+   },
+   {
+    "x": 105.644,
+    "y_base": 90.957,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 91.405,
+    "y_base": 90.026,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 46.655,
+    "y_base": 71.879,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 10
+   },
+   {
+    "x": 14.741,
+    "y_base": 59.346,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 28.326,
+    "y_base": 38.126,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 102.233,
+    "y_base": 56.684,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 10
+   },
+   {
+    "x": 77.127,
+    "y_base": 24.25,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 113.189,
+    "y_base": 57.365,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 62.94,
+    "y_base": 69.009,
+    "height": 19,
+    "width": 14,
+    "type": "conifer",
+    "sprite_index": 12
+   },
+   {
+    "x": 95.135,
+    "y_base": 112.643,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 17.612,
+    "y_base": 86.158,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 37.537,
+    "y_base": 71.248,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 7
+   },
+   {
+    "x": 32.121,
+    "y_base": 53.497,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 47.262,
+    "y_base": 114.098,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 8
+   },
+   {
+    "x": 60.318,
+    "y_base": 45.254,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 64.383,
+    "y_base": 22.922,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 33.489,
+    "y_base": 41.737,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 6
+   },
+   {
+    "x": 38.099,
+    "y_base": 58.527,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 107.57,
+    "y_base": 49.309,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 46.114,
+    "y_base": 39.858,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 10
+   },
+   {
+    "x": 71.527,
+    "y_base": 72.998,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 113.061,
+    "y_base": 84.568,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 44.127,
+    "y_base": 89.198,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 40.619,
+    "y_base": 22.027,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 7.561,
+    "y_base": 70.936,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 80.997,
+    "y_base": 118.099,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 7
+   }
+  ]
+ },
+ {
+  "variant": 1,
+  "seed": 8801,
+  "trees": 79,
+  "conifers": 28,
+  "placements": [
+   {
+    "x": 38.036,
+    "y_base": 84.103,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 7
+   },
+   {
+    "x": 56.901,
+    "y_base": 58.387,
+    "height": 20,
+    "width": 14,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 48.256,
+    "y_base": 62.915,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 78.317,
+    "y_base": 72.28,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 65.674,
+    "y_base": 51.563,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 10
+   },
+   {
+    "x": 29.096,
+    "y_base": 82.141,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 89.656,
+    "y_base": 95.246,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 4
+   },
+   {
+    "x": 92.558,
+    "y_base": 27.935,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 16.103,
+    "y_base": 71.54,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 94.724,
+    "y_base": 79.998,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 7
+   },
+   {
+    "x": 100.415,
+    "y_base": 69.39,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 9
+   },
+   {
+    "x": 67.793,
+    "y_base": 26.818,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 10
+   },
+   {
+    "x": 112.564,
+    "y_base": 74.361,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 54.309,
+    "y_base": 40.726,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 48.403,
+    "y_base": 101.253,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 39.239,
+    "y_base": 48.798,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 18
+   },
+   {
+    "x": 26.396,
+    "y_base": 98.191,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 72.215,
+    "y_base": 90.875,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 87.056,
+    "y_base": 49.616,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 32.285,
+    "y_base": 108.46,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 12
+   },
+   {
+    "x": 79.25,
+    "y_base": 29.895,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 101.553,
+    "y_base": 49.907,
+    "height": 22,
+    "width": 16,
+    "type": "conifer",
+    "sprite_index": 20
+   },
+   {
+    "x": 70.994,
+    "y_base": 78.103,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 58.516,
+    "y_base": 90.273,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 8
+   },
+   {
+    "x": 109.194,
+    "y_base": 52.169,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 60.665,
+    "y_base": 108.821,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 49.632,
+    "y_base": 76.422,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 21
+   },
+   {
+    "x": 80.879,
+    "y_base": 92.183,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 94.742,
+    "y_base": 102.844,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 88.797,
+    "y_base": 74.101,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 6
+   },
+   {
+    "x": 81.813,
+    "y_base": 54.564,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 106.509,
+    "y_base": 90.903,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 102.737,
+    "y_base": 100.438,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 19
+   },
+   {
+    "x": 27.319,
+    "y_base": 58.199,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 71.862,
+    "y_base": 121.117,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 92.884,
+    "y_base": 45.915,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 21
+   },
+   {
+    "x": 63.534,
+    "y_base": 96.409,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 31.071,
+    "y_base": 33.96,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 37.209,
+    "y_base": 101.039,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 8
+   },
+   {
+    "x": 46.648,
+    "y_base": 27.081,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 51.745,
+    "y_base": 118.444,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 41.619,
+    "y_base": 113.722,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 41.01,
+    "y_base": 34.598,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 85.656,
+    "y_base": 109.311,
+    "height": 20,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 9
+   },
+   {
+    "x": 116.685,
+    "y_base": 64.913,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 56.887,
+    "y_base": 79.032,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 93.276,
+    "y_base": 60.862,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 3
+   },
+   {
+    "x": 21.101,
+    "y_base": 46.987,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 66.294,
+    "y_base": 66.889,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 72.85,
+    "y_base": 40.7,
+    "height": 20,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 17.685,
+    "y_base": 86.841,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 9
+   },
+   {
+    "x": 74.905,
+    "y_base": 59.673,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 35.703,
+    "y_base": 66.531,
+    "height": 22,
+    "width": 16,
+    "type": "conifer",
+    "sprite_index": 3
+   },
+   {
+    "x": 8.879,
+    "y_base": 74.068,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 58.848,
+    "y_base": 28.904,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 106.044,
+    "y_base": 79.995,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 68.797,
+    "y_base": 104.111,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 99.381,
+    "y_base": 36.703,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 40.989,
+    "y_base": 93.764,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 94.737,
+    "y_base": 116.141,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 45.98,
+    "y_base": 47.368,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 53.554,
+    "y_base": 70.201,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 43.393,
+    "y_base": 78.343,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 88.124,
+    "y_base": 63.504,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 19
+   },
+   {
+    "x": 106.904,
+    "y_base": 63.654,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 10
+   },
+   {
+    "x": 76.626,
+    "y_base": 108.412,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 79.415,
+    "y_base": 43.138,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 10
+   },
+   {
+    "x": 35.663,
+    "y_base": 21.868,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 52.703,
+    "y_base": 21.361,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 33.491,
+    "y_base": 93.379,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 23
+   },
+   {
+    "x": 64.661,
+    "y_base": 82.061,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 35.042,
+    "y_base": 119.408,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 64.093,
+    "y_base": 37.717,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 21
+   },
+   {
+    "x": 15.566,
+    "y_base": 57.592,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 86.419,
+    "y_base": 37.556,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 98.243,
+    "y_base": 94.044,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 47.971,
+    "y_base": 87.019,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 80.751,
+    "y_base": 120.096,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 23.519,
+    "y_base": 70.941,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 23
+   }
+  ]
+ },
+ {
+  "variant": 2,
+  "seed": 8802,
+  "trees": 80,
+  "conifers": 28,
+  "placements": [
+   {
+    "x": 18.526,
+    "y_base": 83.512,
+    "height": 22,
+    "width": 16,
+    "type": "conifer",
+    "sprite_index": 9
+   },
+   {
+    "x": 61.377,
+    "y_base": 36.014,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 1
+   },
+   {
+    "x": 66.771,
+    "y_base": 83.252,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 59.556,
+    "y_base": 64.593,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 52.485,
+    "y_base": 99.419,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 93.433,
+    "y_base": 78.98,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 75.396,
+    "y_base": 42.767,
+    "height": 19,
+    "width": 14,
+    "type": "conifer",
+    "sprite_index": 4
+   },
+   {
+    "x": 95.786,
+    "y_base": 105.791,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 42.845,
+    "y_base": 94.45,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 76.854,
+    "y_base": 75.787,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 6
+   },
+   {
+    "x": 78.397,
+    "y_base": 60.837,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 12
+   },
+   {
+    "x": 76.022,
+    "y_base": 25.75,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 88.048,
+    "y_base": 50.918,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 20
+   },
+   {
+    "x": 48.851,
+    "y_base": 35.844,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 76.479,
+    "y_base": 114.734,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 89.32,
+    "y_base": 29.594,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 54.768,
+    "y_base": 51.336,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 113.746,
+    "y_base": 66.756,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 37.607,
+    "y_base": 37.066,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 69.141,
+    "y_base": 66.239,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 93.761,
+    "y_base": 93.078,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 81.167,
+    "y_base": 41.824,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 20
+   },
+   {
+    "x": 17.174,
+    "y_base": 63.684,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 33.432,
+    "y_base": 48.857,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 20
+   },
+   {
+    "x": 35.721,
+    "y_base": 103.317,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 29.026,
+    "y_base": 74.019,
+    "height": 21,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 62.705,
+    "y_base": 53.679,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 15
+   },
+   {
+    "x": 61.809,
+    "y_base": 111.016,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 99.111,
+    "y_base": 37.281,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 41.358,
+    "y_base": 57.951,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 6
+   },
+   {
+    "x": 80.338,
+    "y_base": 97.559,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 28.357,
+    "y_base": 95.269,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 10
+   },
+   {
+    "x": 84.823,
+    "y_base": 81.842,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 20
+   },
+   {
+    "x": 39.979,
+    "y_base": 23.311,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 43.505,
+    "y_base": 74.197,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 107.503,
+    "y_base": 89.661,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 65.211,
+    "y_base": 26.68,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 92.8,
+    "y_base": 119.668,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 106.97,
+    "y_base": 55.979,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 13
+   },
+   {
+    "x": 96.333,
+    "y_base": 58.679,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 46.432,
+    "y_base": 114.829,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 49.617,
+    "y_base": 60.704,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 2
+   },
+   {
+    "x": 55.724,
+    "y_base": 118.967,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 102.791,
+    "y_base": 76.16,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 23
+   },
+   {
+    "x": 70.967,
+    "y_base": 52.351,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 87.513,
+    "y_base": 111.862,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 69.915,
+    "y_base": 100.178,
+    "height": 19,
+    "width": 14,
+    "type": "conifer",
+    "sprite_index": 7
+   },
+   {
+    "x": 53.767,
+    "y_base": 76.422,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 57.077,
+    "y_base": 25.511,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 40.208,
+    "y_base": 84.051,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 2
+   },
+   {
+    "x": 25.516,
+    "y_base": 44.854,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 9.792,
+    "y_base": 75.143,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 33.233,
+    "y_base": 114.574,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 23
+   },
+   {
+    "x": 103.208,
+    "y_base": 99.324,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 0
+   },
+   {
+    "x": 57.471,
+    "y_base": 90.546,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 100.06,
+    "y_base": 87.466,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 14
+   },
+   {
+    "x": 86.54,
+    "y_base": 64.437,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 33.515,
+    "y_base": 26.006,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 34.84,
+    "y_base": 59.161,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 31.635,
+    "y_base": 37.497,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 108.668,
+    "y_base": 77.093,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 9
+   },
+   {
+    "x": 74.814,
+    "y_base": 88.327,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 34.343,
+    "y_base": 88.02,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 26.76,
+    "y_base": 57.265,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 21
+   },
+   {
+    "x": 66.637,
+    "y_base": 42.011,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 68.156,
+    "y_base": 119.459,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 114.392,
+    "y_base": 81.599,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 2
+   },
+   {
+    "x": 51.088,
+    "y_base": 21.772,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 40.131,
+    "y_base": 47.146,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 85.926,
+    "y_base": 93.38,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 3
+   },
+   {
+    "x": 39.14,
+    "y_base": 113.591,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 49.702,
+    "y_base": 88.082,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 94.007,
+    "y_base": 44.183,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 16
+   },
+   {
+    "x": 37.506,
+    "y_base": 68.629,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 84.301,
+    "y_base": 22.692,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 85.608,
+    "y_base": 40.012,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 18
+   },
+   {
+    "x": 56.153,
+    "y_base": 38.962,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 22.244,
+    "y_base": 95.223,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 30.001,
+    "y_base": 105.006,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 46.211,
+    "y_base": 50.178,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 7
+   }
+  ]
+ },
+ {
+  "variant": 3,
+  "seed": 8803,
+  "trees": 76,
+  "conifers": 27,
+  "placements": [
+   {
+    "x": 104.046,
+    "y_base": 64.193,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 14
+   },
+   {
+    "x": 33.9,
+    "y_base": 38.67,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 16
+   },
+   {
+    "x": 26.644,
+    "y_base": 72.717,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 115.679,
+    "y_base": 71.646,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 103.689,
+    "y_base": 79.963,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 3
+   },
+   {
+    "x": 50.635,
+    "y_base": 80.14,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 68.842,
+    "y_base": 78.251,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 31.564,
+    "y_base": 100.59,
+    "height": 21,
+    "width": 21,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 24.99,
+    "y_base": 87.273,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 4
+   },
+   {
+    "x": 93.894,
+    "y_base": 40.286,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 7
+   },
+   {
+    "x": 71.434,
+    "y_base": 53.79,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 59.173,
+    "y_base": 24.431,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 87.289,
+    "y_base": 35.883,
+    "height": 21,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 23
+   },
+   {
+    "x": 85.735,
+    "y_base": 115.187,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 12
+   },
+   {
+    "x": 84.784,
+    "y_base": 73.132,
+    "height": 20,
+    "width": 20,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 33.783,
+    "y_base": 52.03,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 11
+   },
+   {
+    "x": 72.919,
+    "y_base": 107.096,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 17
+   },
+   {
+    "x": 75.654,
+    "y_base": 37.917,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 37.806,
+    "y_base": 70.351,
+    "height": 20,
+    "width": 15,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 62.741,
+    "y_base": 83.211,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 41.672,
+    "y_base": 93.364,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 24.332,
+    "y_base": 49.95,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 16
+   },
+   {
+    "x": 100.209,
+    "y_base": 38.499,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 50.246,
+    "y_base": 102.447,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 10
+   },
+   {
+    "x": 42.198,
+    "y_base": 32.872,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 10
+   },
+   {
+    "x": 57.471,
+    "y_base": 41.169,
+    "height": 21,
+    "width": 21,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 36.638,
+    "y_base": 118.224,
+    "height": 18,
+    "width": 13,
+    "type": "conifer",
+    "sprite_index": 13
+   },
+   {
+    "x": 60.399,
+    "y_base": 59.876,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 9
+   },
+   {
+    "x": 44.821,
+    "y_base": 62.294,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 69.963,
+    "y_base": 67.694,
+    "height": 19,
+    "width": 14,
+    "type": "conifer",
+    "sprite_index": 13
+   },
+   {
+    "x": 16.341,
+    "y_base": 79.459,
+    "height": 17,
+    "width": 17,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 94.572,
+    "y_base": 59.302,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 79.147,
+    "y_base": 93.581,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 60.415,
+    "y_base": 109.109,
+    "height": 22,
+    "width": 22,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 97.654,
+    "y_base": 90.017,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 14
+   },
+   {
+    "x": 92.151,
+    "y_base": 109.095,
+    "height": 19,
+    "width": 14,
+    "type": "conifer",
+    "sprite_index": 16
+   },
+   {
+    "x": 45.406,
+    "y_base": 46.38,
+    "height": 19,
+    "width": 19,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 50.977,
+    "y_base": 115.122,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 14.956,
+    "y_base": 60.586,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 1
+   },
+   {
+    "x": 81.843,
+    "y_base": 27.505,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 5
+   },
+   {
+    "x": 78.341,
+    "y_base": 119.28,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 43.768,
+    "y_base": 74.844,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 3
+   },
+   {
+    "x": 66.229,
+    "y_base": 40.975,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 110.558,
+    "y_base": 60.71,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 20
+   },
+   {
+    "x": 89.021,
+    "y_base": 86.558,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 67.09,
+    "y_base": 28.91,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 12
+   },
+   {
+    "x": 96.92,
+    "y_base": 75.656,
+    "height": 15,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 7
+   },
+   {
+    "x": 85.342,
+    "y_base": 53.254,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 29.798,
+    "y_base": 61.206,
+    "height": 15,
+    "width": 15,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 98.449,
+    "y_base": 107.54,
+    "height": 17,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 22
+   },
+   {
+    "x": 103.964,
+    "y_base": 98.668,
+    "height": 18,
+    "width": 18,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 32.355,
+    "y_base": 81.299,
+    "height": 16,
+    "width": 16,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 53.174,
+    "y_base": 58.537,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 19
+   },
+   {
+    "x": 49.079,
+    "y_base": 25.624,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 56.672,
+    "y_base": 92.479,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 2
+   },
+   {
+    "x": 19.223,
+    "y_base": 54.431,
+    "height": 16,
+    "width": 11,
+    "type": "conifer",
+    "sprite_index": 12
+   },
+   {
+    "x": 84.79,
+    "y_base": 103.115,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 74.007,
+    "y_base": 85.847,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 74.403,
+    "y_base": 22.688,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 5
+   },
+   {
+    "x": 77.693,
+    "y_base": 63.243,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 8
+   },
+   {
+    "x": 44.589,
+    "y_base": 108.467,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 13
+   },
+   {
+    "x": 91.661,
+    "y_base": 27.245,
+    "height": 16,
+    "width": 12,
+    "type": "conifer",
+    "sprite_index": 9
+   },
+   {
+    "x": 102.45,
+    "y_base": 52.622,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 1
+   },
+   {
+    "x": 65.546,
+    "y_base": 96.244,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 108.671,
+    "y_base": 49.982,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 6
+   },
+   {
+    "x": 112.029,
+    "y_base": 84.141,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 7
+   },
+   {
+    "x": 67.088,
+    "y_base": 121.1,
+    "height": 22,
+    "width": 16,
+    "type": "conifer",
+    "sprite_index": 14
+   },
+   {
+    "x": 57.347,
+    "y_base": 72.311,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 16
+   },
+   {
+    "x": 36.634,
+    "y_base": 24.251,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 22.169,
+    "y_base": 63.212,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 0
+   },
+   {
+    "x": 9.586,
+    "y_base": 72.167,
+    "height": 14,
+    "width": 14,
+    "type": "deciduous",
+    "sprite_index": 11
+   },
+   {
+    "x": 26.843,
+    "y_base": 37.509,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 10
+   },
+   {
+    "x": 75.324,
+    "y_base": 75.428,
+    "height": 13,
+    "width": 9,
+    "type": "conifer",
+    "sprite_index": 15
+   },
+   {
+    "x": 39.286,
+    "y_base": 55.294,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 12
+   },
+   {
+    "x": 92.763,
+    "y_base": 96.969,
+    "height": 13,
+    "width": 13,
+    "type": "deciduous",
+    "sprite_index": 15
+   },
+   {
+    "x": 43.005,
+    "y_base": 119.91,
+    "height": 14,
+    "width": 10,
+    "type": "conifer",
+    "sprite_index": 20
+   }
+  ]
+ }
+]
