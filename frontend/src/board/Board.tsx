@@ -1163,13 +1163,19 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
               hexes.map((h) => {
                 const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
                 // River/bridge tiles are chosen by edge mask (so the water/deck
-                // connects across shared edges) and may be L↔R mirrored; the
-                // native 64px tile is exactly HEX_SIZE*2, so |scale| = 1. Shapes
-                // not yet handled fall back to the generic "00" tile.
+                // connects across shared edges) and may be L↔R mirrored; an
+                // oriented shape with several variants picks one by coord hash
+                // like the cosmetic terrains. Tiles span two generations (64px
+                // legacy, 128px painterly), so scale by the texture's own size
+                // to land at HEX_SIZE*2 world px. Shapes not yet handled fall
+                // back to the generic "00" tile.
                 if (h.terrain === "river" || h.terrain === "bridge") {
                   const oriented = orientedRiverTile(connectedEdges(h.coord, terrainAt));
                   const name = oriented ? `${h.terrain}/${oriented.name}` : `${h.terrain}/00`;
-                  const tex = terrainTex.byName[name] ?? terrainTex.byName[`${h.terrain}/00`];
+                  const variants =
+                    terrainTex.byOriented[name] ?? terrainTex.byOriented[`${h.terrain}/00`];
+                  const tex = variants[variantIndex(h.coord.q, h.coord.r, variants.length)];
+                  const s = (HEX_SIZE * 2) / tex.width;
                   return (
                     <pixiSprite
                       key={hexKey(h.coord.q, h.coord.r)}
@@ -1177,7 +1183,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                       x={x}
                       y={y}
                       anchor={0.5}
-                      scale={{ x: oriented?.mirror ? -1 : 1, y: 1 }}
+                      scale={{ x: oriented?.mirror ? -s : s, y: s }}
                     />
                   );
                 }

@@ -122,6 +122,42 @@
     "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section town --out-dir <dir> [--verify frontend/src/board/tiles/town]",
     "ratified": "2026-07-01 ('Town a sounds fine', feature_px 80 vs the town_a90 size alternative; city-tile reference row in town/review/town-a-candidates.png), applied tiles also archived at town/picks/"
   },
+  "river": {
+    "class": "oriented texture (swatch-cut straight_v slice; straight_d, turns, forks and bridge still legacy PixelLab — later slices per ART_PIPELINE decision 4)",
+    "swatch": "river/river-swatch-10-n384.png",
+    "prompt": "river/river-prompt-v7.txt (v4-v6 history: v4 good register but sandbars + curved edge entries; v7 bans sandbars outright and demands the course track the band's straights exactly)",
+    "style_refs": ["refs/ref_1_x384_y256.png (grass register, same as plains)", "refs/ref_river_concept.png (creek register: narrow grey-teal water, concept-art crop)"],
+    "layout_guide": {
+      "file": "river/guide-node384-flat.png",
+      "win_px": 384,
+      "band_px": 40,
+      "seed": 23,
+      "note": "node-straightened meander (river.py guide): straight vertical plateaus at every tile-period node, one sin^2 out-and-back lobe between - bends finish before the flat edges, so tiled columns never jerk at seams (user requirement 2026-07-02). Constant band width: a mid-lobe bulge in earlier guides invited per-bend sandbars."
+    },
+    "image_size": "2K",
+    "generation_variance": "NBP band-following is ~50/50 with no seed control; 3 of 6 rolls painted 150-250px braided rivers instead. Re-roll on failure; this swatch was roll 2 of the v7 prompt.",
+    "cut": {
+      "win_px": 384,
+      "note": "3:1 multi-scale cut (384px window LANCZOS-downscaled to the 128px tile) is the width control: the model overshoots the band ~1.5x, so cutting at 3x brings the water to 13-15 tile px. Side effect: river grass grain is finer than the 1:1-cut plains.",
+      "windows": [
+        {"tile": "straight_v_00.png", "x0": 832, "y0": 976},
+        {"tile": "straight_v_01.png", "x0": 833, "y0": 306},
+        {"tile": "straight_v_02.png", "x0": 833, "y0": 1640}
+      ]
+    },
+    "gates": "river.py cut, tile px: crossing centre off <=3, top/bottom centre mismatch <=2, width mismatch <=4, width band 12-36, drift <=26, water half-span <=31, edge-straight dev <=2.5 over 18px spans; picks measured ct/cb <=0.9, water 13-15px, es <=1.8",
+    "recolor": {
+      "plains_picks": "plains/picks",
+      "sat_ramp": [0.30, 0.42],
+      "hue_ramp_lo": [30.0, 40.0],
+      "hue_ramp_hi": [165.0, 175.0],
+      "core_w": 0.9,
+      "note": "hills-style grass-weighted HSV match toward the plains grass-core medians (recomputed from plains/picks, not hardcoded), with the sat ramp raised from hills' 0.12 so the desaturated water (sat ~0.21, hue ~90 - inside the hills weight!) keeps its ratified colour. Dropped worst angled seam 3.36->2.15 and dc step 15.8->6.9-9.4.",
+      "measured": "grass h 70.6-72.8 s 0.58-0.60 v 0.51-0.53 -> plains target h 76.8 s 0.56 v 0.50"
+    },
+    "regenerate": "python3 scripts/tile-foundry/river.py build --manifest art/foundry/manifest.json --section river --out-dir <dir> [--verify frontend/src/board/tiles/river]",
+    "ratified": "2026-07-02 via river/review/creek-v7-recolor-compare.png + creek-v7-recolor-mixcol-*.png ('Nice, looks good'); applied tiles also archived at river/picks/"
+  },
   "concept_anchors": {
     "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
     "grass_mean_luminance": 105.3,

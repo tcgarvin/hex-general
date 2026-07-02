@@ -1,0 +1,16 @@
+Top-down terrain texture for a strategy wargame map, painterly retro 16-bit style. The first reference image shows the grass register: match its rendering technique, palette, and texture scale exactly. The second reference image shows the river register: match its water colour, current texture, bank style, and above all its NARROW creek-like scale exactly. The third reference image is a LAYOUT DIAGRAM, not a style reference: it fixes the creek's exact course and width.
+
+Subject: one continuous field of open grassland with a single narrow winding CREEK running vertically through the middle of the image, entering at the top edge and exiting at the bottom edge.
+
+Creek layout — follow the layout diagram exactly:
+- The grey band in the layout diagram marks the WATER. Paint the water exactly along the band's winding course and exactly as wide as the band. Do NOT straighten the course, and do NOT make the water any wider than the band.
+- This is a small creek, not a broad river: the water is only about 2 percent of the image width (about 40 pixels of this 2048-pixel image). The great majority of the image is grass.
+- The course winds in gentle irregular meanders, exactly as the band does — like a natural creek wandering through a meadow. Keep every bend of the band; the water may hug the band loosely and raggedly, but its centerline follows the band.
+- IMPORTANT: where the band runs perfectly straight and vertical, paint the creek perfectly straight and vertical too. Each bend begins and ends exactly where the band's bend does, finishing completely before the next straight stretch — do not add extra wiggles inside the straight stretches.
+- The width breathes naturally along the course — subtle pinches and bulges as the band shows — but never wider than about 55 pixels anywhere. No forks, no tributaries, no islands, no lakes, no ponds, no pools, no oxbows detached from the course.
+- Water: calm, muted, desaturated grey-green like the river reference, with subtle darker current streaks. No bright blue, no white rapids.
+- Banks: the grass grows right up to the water's edge almost everywhere. The bank is just a thin, broken, ragged line of exposed earthy tan soil, one to three pixels of this image wide — thin lines only. NO sandbars, NO sand patches, NO dry tan bars on the insides of bends, NO sandy beaches, NO deltas, NO mudflats, NO wide dirt margins flanking the water. Green grass meets the water on BOTH banks along the entire course; the only earth visible is that thin broken line.
+
+The grass: calm, smooth, warm saturated mid-green summer grass. Very low internal detail: soft gentle tonal variation only, plus one or two subtle tufts of slightly taller grass, widely scattered. The calm comes from smoothness and lack of busy detail, NOT from paleness.
+
+Strictly uniform edge to edge apart from the creek, like a seamless texture: no hexagon grid lines, no borders, no vignette, no darkening at the edges, no roads, no bridges, no trees, no rocks, no buildings, no boats, no units, no UI, no text. Straight overhead view, flat even daylight, no long cast shadows. Fill the entire square with only grass and the one narrow winding creek.

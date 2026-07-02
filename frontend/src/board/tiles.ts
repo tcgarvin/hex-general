@@ -38,19 +38,30 @@ function basename(variant: string): string {
   return variant.replace(/\.png$/, "");
 }
 
+/**
+ * The oriented-tile lookup key: a trailing `_<nn>` variant suffix is stripped, so
+ * `straight_v_00.png` … `straight_v_02.png` all group under `"straight_v"`. A
+ * suffix-less file (`straight_v.png`, `00.png`) is its own single-variant group.
+ */
+export function orientedKey(name: string): string {
+  return name.replace(/_\d+$/, "");
+}
+
 export interface LoadedTiles {
   /**
    * `terrain → [texture, …]` sorted by filename, indexed by `variantIndex`. Used
    * by the cosmetic-variant terrains (plains/woods/hills/town/city). River/bridge
-   * tiles also appear here but are selected by name instead (see {@link byName}).
+   * tiles also appear here but are selected by name instead (see {@link byOriented}).
    */
   readonly byTerrain: Record<Terrain, Texture[]>;
   /**
-   * `"<terrain>/<basename>" → texture` (e.g. `"river/straight_v"`). River/bridge
-   * hexes look up their oriented tile by name from the edge mask; see
-   * `riverTiles.ts`.
+   * `"<terrain>/<oriented-name>" → [texture, …]` (e.g. `"river/straight_v"`),
+   * variants sorted by filename and indexed by `variantIndex` like the cosmetic
+   * terrains. River/bridge hexes look up their oriented tile by name from the
+   * edge mask (see `riverTiles.ts`); each oriented shape may ship one file
+   * (`straight_v.png`) or several (`straight_v_00.png`, …).
    */
-  readonly byName: Record<string, Texture>;
+  readonly byOriented: Record<string, Texture[]>;
 }
 
 /**
@@ -76,11 +87,14 @@ export async function loadTerrainTextures(): Promise<LoadedTiles> {
     }),
   );
   const byTerrain: Record<string, Texture[]> = {};
+  const byOriented: Record<string, Texture[]> = {};
   for (const [key] of entries) {
     const { terrain, variant } = parseTileKey(key);
-    (byTerrain[terrain] ??= []).push(byName[`${terrain}/${basename(variant)}`]);
+    const texture = byName[`${terrain}/${basename(variant)}`];
+    (byTerrain[terrain] ??= []).push(texture);
+    (byOriented[`${terrain}/${orientedKey(basename(variant))}`] ??= []).push(texture);
   }
-  return { byTerrain: byTerrain as Record<Terrain, Texture[]>, byName };
+  return { byTerrain: byTerrain as Record<Terrain, Texture[]>, byOriented };
 }
 
 /**

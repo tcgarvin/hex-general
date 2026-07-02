@@ -585,6 +585,43 @@ def test_vignette_matches_ratified_tiles(tmp_dir: Path) -> None:
         )
 
 
+def test_river_matches_ratified_tiles(tmp_dir: Path) -> None:
+    """Reproduce the applied river straight_v tiles byte-for-byte via
+    `river.py build --verify`.
+
+    Same acceptance-test shape as the woods/hills checks above: depends on the
+    committed swatch + guide under `art/foundry/river/` and the applied tiles
+    under `frontend/src/board/tiles/river/`, so it skips gracefully when those
+    are absent. `build` also re-derives the layout guide from its recorded
+    parameters and fails if the committed guide drifted.
+    """
+    repo_root = SCRIPT_DIR.parent.parent
+    manifest_path = repo_root / "art" / "foundry" / "manifest.json"
+    ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / "river"
+    if not manifest_path.is_file() or not ref_dir.is_dir():
+        print(f"[SKIP] river.py: ratified-tile check (missing {manifest_path} or {ref_dir})")
+        return
+
+    out_dir = tmp_dir / "river_ratified"
+    result = run_cli(
+        "river.py",
+        "build",
+        "--manifest",
+        str(manifest_path),
+        "--section",
+        "river",
+        "--out-dir",
+        str(out_dir),
+        "--verify",
+        str(ref_dir),
+    )
+    check(
+        "river.py: reproduces frontend/src/board/tiles/river/straight_v_*.png byte-for-byte (--verify)",
+        result.returncode == 0,
+        result.stdout + result.stderr,
+    )
+
+
 def make_synthetic_tree_sheet(path: Path) -> None:
     """A small white-background sheet with a round blob (deciduous, h/w ~1.0) and a
     tall blob (conifer, h/w > 1.15), each well over compose.py's 400px min blob area.
@@ -676,6 +713,7 @@ def test_cli_help() -> None:
         "flatten.py",
         "compose.py",
         "vignette.py",
+        "river.py",
     ]:
         result = run_cli(script, "--help")
         check(f"{script} --help parses", result.returncode == 0, result.stderr)
@@ -700,6 +738,7 @@ def main() -> int:
         test_compose_matches_ratified_woods_tiles(tmp_dir)
         test_compose_determinism(tmp_dir)
         test_vignette_matches_ratified_tiles(tmp_dir)
+        test_river_matches_ratified_tiles(tmp_dir)
     test_cli_help()
 
     passed = sum(1 for _, ok in RESULTS if ok)
