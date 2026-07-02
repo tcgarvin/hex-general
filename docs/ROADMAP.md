@@ -428,9 +428,16 @@ isolation.
     canonical position/width/colour at the edge centre (its `verify`/`match`
     subcommands assert seams align). `twin_rivers` gained a short straight
     vertical tributary + a straight bridge to exercise it.
-  - **T3b (turns/forks) — remaining.** 60° turn (2 edges 120° apart), 60°/120°
-    fork (3 edges), river end (1). Add classifier cases + generated/snapped tiles;
-    grow `twin_rivers` (its current horizontal river is all 60° turns).
+  - **T3b-turns (gentle turns + diagonal straight) ✅ shipped.** Painterly
+    tile-foundry cuts (see `art/foundry/manifest.json` river `sources`): NBP
+    zigzag/diag guide swatches cut at 864px (6.75:1) for width parity with
+    `straight_v`. Four generated turn tiles (`turn_n_se`, `turn_s_nw`,
+    `turn_se_sw`, `turn_ne_nw`) + L↔R mirror cover all six 120°-apart edge
+    pairs; `straight_d` ×3 replaced the legacy PixelLab tile. `twin_rivers`'
+    horizontal river (all gentle turns) now renders continuously.
+  - **T3b-rest (forks/ends/sharp turns) — remaining.** 60° sharp turn (2
+    adjacent edges), 60°/120° fork (3 edges), river end (1). Add classifier
+    cases + tiles; these still fall back to the generic `00`.
 - **Slice T4 — Bridges as oriented river crossings.** Bridge orientation = the
   river axis it crosses (derivable from its two river edges); reuse T3's
   edge-mask machinery and the mirror approach. **Straight bridges ✅ shipped with

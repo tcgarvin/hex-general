@@ -59,9 +59,30 @@ describe("orientedRiverTile", () => {
     expect(orientedRiverTile([1, 4])).toEqual({ name: "straight_d", mirror: true });
   });
 
-  it("returns null for non-straight masks (ends, turns, forks) → generic fallback", () => {
+  it("maps each gentle turn (edges 120° apart) to its generated tile", () => {
+    expect(orientedRiverTile([0, 2])).toEqual({ name: "turn_n_se", mirror: false });
+    expect(orientedRiverTile([3, 5])).toEqual({ name: "turn_s_nw", mirror: false });
+    expect(orientedRiverTile([0, 4])).toEqual({ name: "turn_se_sw", mirror: false });
+    expect(orientedRiverTile([1, 3])).toEqual({ name: "turn_ne_nw", mirror: false });
+  });
+
+  it("maps the two mirror-covered turn orientations with mirror set", () => {
+    expect(orientedRiverTile([2, 4])).toEqual({ name: "turn_n_se", mirror: true });
+    expect(orientedRiverTile([1, 5])).toEqual({ name: "turn_s_nw", mirror: true });
+  });
+
+  it("covers every two-edge mask except the sharp (adjacent-edge) turns", () => {
+    for (let a = 0; a < 6; a++) {
+      for (let b = a + 1; b < 6; b++) {
+        const sharp = b - a === 1 || (a === 0 && b === 5);
+        expect(orientedRiverTile([a, b]) === null).toBe(sharp);
+      }
+    }
+  });
+
+  it("returns null for unhandled masks (ends, sharp turns, forks) → generic fallback", () => {
     expect(orientedRiverTile([2])).toBeNull(); // end (1 edge)
-    expect(orientedRiverTile([0, 4])).toBeNull(); // 120°-apart → 60° turn
+    expect(orientedRiverTile([0, 1])).toBeNull(); // adjacent edges → sharp turn
     expect(orientedRiverTile([2, 3, 5])).toBeNull(); // fork (3 edges)
     expect(orientedRiverTile([])).toBeNull(); // isolated
   });
