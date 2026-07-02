@@ -317,12 +317,12 @@ Base map rendering shipped with one AI-generated flat-top hex tile per terrain
 at 64px — see Slice T0 and the `CLAUDE.md` memory note; originally 32px). These
 slices grow that from "one tile per terrain" toward a varied, directional tileset.
 
-**2026-07-01 update:** plains, woods, hills, and city have since been replaced by
-the painterly tile-foundry pipeline (128px, concept-art register) — the pipeline
-contract and terrain classes are documented in `docs/ART_PIPELINE.md`, with full
-provenance in `art/foundry/`. The slices below still describe the remaining
-oriented work (rivers/bridges/roads) and the town terrain, which will follow the
-same pipeline.
+**2026-07-01 update:** plains, woods, hills, city, and town have since been
+replaced by the painterly tile-foundry pipeline (128px, concept-art register) —
+the pipeline contract and terrain classes are documented in
+`docs/ART_PIPELINE.md`, with full provenance in `art/foundry/`. The slices below
+still describe the remaining oriented work (rivers/bridges/roads), which will
+follow the same pipeline.
 
 **Orientation decision (applies to rivers/bridges/road-tiles):** no 60° rotation
 — rotating 64px pixel art by 60° resamples and looks mushy. Generate the distinct

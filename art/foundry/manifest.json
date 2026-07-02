@@ -105,6 +105,23 @@
     "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section city --out-dir <dir> [--verify frontend/src/board/tiles/city]",
     "ratified": "2026-07-01 ('cities are good'), applied tiles also archived at city/picks/"
   },
+  "town": {
+    "class": "settlement vignette (whole-hex composition on a grass rim via vignette.py; the smaller sibling of city)",
+    "sprite_sheet": "town/town-clusters.png",
+    "sprite_prompt": "town/town-clusters-prompt.txt",
+    "style_refs": ["refs/town_a.png (concept1.png crop (950,240)-(1115,365), the small village at the road junction)", "city/street-guide.png (layout diagram, NOT style: same 6 lane directions as city so roads can anchor at the flat-top hex edge midpoints later)"],
+    "segmentation": "same recipe as hills.segmentation, no grass_match (like city, town needs no recolour)",
+    "vignette": {"softclip_above": 135.0, "softclip_factor": 0.45},
+    "sheet_history": "sheet 1 rejected (cluster 4 was a smeared generation failure; its 3 good clusters read more rural/sparse - offered as row town_b and not picked); sheet 2 ratified whole (all 4 clusters clean, denser small-town register)",
+    "compose": {
+      "bases": "plains/picks",
+      "variants": 4,
+      "tile_px": 128,
+      "feature_px": 80
+    },
+    "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section town --out-dir <dir> [--verify frontend/src/board/tiles/town]",
+    "ratified": "2026-07-01 ('Town a sounds fine', feature_px 80 vs the town_a90 size alternative; city-tile reference row in town/review/town-a-candidates.png), applied tiles also archived at town/picks/"
+  },
   "concept_anchors": {
     "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
     "grass_mean_luminance": 105.3,

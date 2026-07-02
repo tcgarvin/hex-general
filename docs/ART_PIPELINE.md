@@ -54,7 +54,7 @@ without a pick); the applied tiles are verified on the live board and made
    (`gate.py clique`).
 2. **Object field** (woods): sprites segmented from a white sheet, placed
    whole by a seeded compositor. Nothing is ever truncated at a hex edge.
-3. **Whole-hex vignette** (city, hills; town next): one feature cluster per
+3. **Whole-hex vignette** (city, hills, town): one feature cluster per
    hex, segmented from a white sheet and composited onto the ratified plains
    base. The grass rim **is** plains, so seam compatibility is inherited.
    Optional grass palette-match toward plains medians (hills).

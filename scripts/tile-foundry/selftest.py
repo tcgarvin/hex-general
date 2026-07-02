@@ -551,7 +551,7 @@ def test_compose_matches_ratified_woods_tiles(tmp_dir: Path) -> None:
 
 
 def test_vignette_matches_ratified_tiles(tmp_dir: Path) -> None:
-    """Reproduce the applied hills and city tiles byte-for-byte via
+    """Reproduce the applied hills, city, and town tiles byte-for-byte via
     `vignette.py --verify`.
 
     Same acceptance-test shape as the woods check above: depends on the real
@@ -561,7 +561,7 @@ def test_vignette_matches_ratified_tiles(tmp_dir: Path) -> None:
     """
     repo_root = SCRIPT_DIR.parent.parent
     manifest_path = repo_root / "art" / "foundry" / "manifest.json"
-    for section in ["hills", "city"]:
+    for section in ["hills", "city", "town"]:
         ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / section
         if not manifest_path.is_file() or not ref_dir.is_dir():
             print(f"[SKIP] vignette.py: ratified-tile check for {section} (missing inputs)")
