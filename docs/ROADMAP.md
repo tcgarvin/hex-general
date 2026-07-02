@@ -450,9 +450,13 @@ isolation.
     straight-through + 60° branch (12 masks / 6 generated tiles) and the
     symmetric 120° Y ({0,2,4}/{1,3,5} — 2 generated tiles, mirror doesn't
     relate them); fan forks like the shipped one need 3 more generated tiles
-    for full coverage. None occur in twin_rivers after course pruning —
-    generate on demand when a map needs them (fork-shape inventory discussion
-    2026-07-02).
+    for full coverage. **Ratified junction inventory (user, 2026-07-02): those
+    three fork families only** — straight+60° branch, symmetric 120° Y, and
+    fans (fans are forced whenever a N/S tributary meets a horizontal course,
+    since an E–W course crosses a hex via 120°-apart edges). No 4-arm
+    junctions: the course pruner dissolves them. None of the remaining 11 fork
+    tiles occur in twin_rivers after course pruning — generate on demand when
+    a map needs them.
 - **Slice T4 — Bridges as oriented river crossings.** Bridge orientation = the
   river axis it crosses (derivable from its two river edges); reuse T3's
   edge-mask machinery and the mirror approach. **Straight bridges ✅ shipped with
