@@ -550,6 +550,41 @@ def test_compose_matches_ratified_woods_tiles(tmp_dir: Path) -> None:
     )
 
 
+def test_vignette_matches_ratified_tiles(tmp_dir: Path) -> None:
+    """Reproduce the applied hills and city tiles byte-for-byte via
+    `vignette.py --verify`.
+
+    Same acceptance-test shape as the woods check above: depends on the real
+    sprite sheets and ratified plains bases under `art/foundry/` and the
+    applied output under `frontend/src/board/tiles/`, so it skips gracefully
+    when those are absent.
+    """
+    repo_root = SCRIPT_DIR.parent.parent
+    manifest_path = repo_root / "art" / "foundry" / "manifest.json"
+    for section in ["hills", "city"]:
+        ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / section
+        if not manifest_path.is_file() or not ref_dir.is_dir():
+            print(f"[SKIP] vignette.py: ratified-tile check for {section} (missing inputs)")
+            continue
+        out_dir = tmp_dir / f"vignette_ratified_{section}"
+        result = run_cli(
+            "vignette.py",
+            "--manifest",
+            str(manifest_path),
+            "--section",
+            section,
+            "--out-dir",
+            str(out_dir),
+            "--verify",
+            str(ref_dir),
+        )
+        check(
+            f"vignette.py: reproduces frontend/src/board/tiles/{section}/*.png byte-for-byte (--verify)",
+            result.returncode == 0,
+            result.stdout + result.stderr,
+        )
+
+
 def make_synthetic_tree_sheet(path: Path) -> None:
     """A small white-background sheet with a round blob (deciduous, h/w ~1.0) and a
     tall blob (conifer, h/w > 1.15), each well over compose.py's 400px min blob area.
@@ -632,7 +667,16 @@ def test_compose_determinism(tmp_dir: Path) -> None:
 
 
 def test_cli_help() -> None:
-    for script in ["gen.py", "cut.py", "gate.py", "pick-refs.py", "patch.py", "flatten.py", "compose.py"]:
+    for script in [
+        "gen.py",
+        "cut.py",
+        "gate.py",
+        "pick-refs.py",
+        "patch.py",
+        "flatten.py",
+        "compose.py",
+        "vignette.py",
+    ]:
         result = run_cli(script, "--help")
         check(f"{script} --help parses", result.returncode == 0, result.stderr)
     result = run_cli("gate.py", "clique", "--help")
@@ -655,6 +699,7 @@ def main() -> int:
         test_gate_summary_stays_short(tmp_dir)
         test_compose_matches_ratified_woods_tiles(tmp_dir)
         test_compose_determinism(tmp_dir)
+        test_vignette_matches_ratified_tiles(tmp_dir)
     test_cli_help()
 
     passed = sum(1 for _, ok in RESULTS if ok)

@@ -32,8 +32,17 @@ then a human montage review before touching `frontend/src/board/tiles/`.
    35% conifer by quota.
 3. **Oriented** (river/bridge/roads): per-tile generation with edge-anchored
    prompts + guide images (not yet migrated to the painterly register).
-4. **Settlement vignettes** (town/city): whole-hex compositions on a
-   full-bleed grass rim (not yet migrated).
+4. **Whole-hex vignettes** (city, hills; town will reuse the recipe): a 2x2
+   sheet of feature clusters on pure white is segmented (hole-filled — bright
+   roofs/rock read as "white" but are interior), un-matted, and composited
+   centred onto the ratified plains bases (`vignette.py`). The grass rim IS
+   the plains texture, so seam compatibility is inherited rather than earned.
+   Hills additionally get a grass palette-match toward the plains medians
+   (rocky crests untouched) — swatch-cutting hills was tried and REJECTED:
+   relief contrast breaks seams (best clique 2/49 cuts vs plains' 23).
+   City towns carry exactly six streets radiating to the hex edge midpoints
+   (generated against `city/street-guide.png`, a layout-diagram reference),
+   where roads will connect later.
 
 ## Asset spec (outputs)
 
@@ -57,8 +66,17 @@ then a human montage review before touching `frontend/src/board/tiles/`.
 - **Woods tree look**: regenerate `tree-sprites-02.png` from
   `trees-prompt-v2.txt` (or edit the prompt), keeping the white background —
   segmentation and contrast-compression parameters are in `manifest.json`.
+- **Hills look/green**: recolour targets in `manifest.json → hills.grass_match`
+  (ratified option "a" of `hills/review/hills-recolor-compare.png`); re-run
+  `vignette.py --section hills`. New formations = regenerate
+  `hills/hill-clusters.png` from its prompt.
+- **City layout/roofs**: edit `city/city-clusters-prompt.txt` (keep the
+  six-street rule + `street-guide.png` as the second ref), regenerate the
+  sheet, re-run `vignette.py --section city`.
 - **New texture terrain**: follow the plains recipe with a new prompt +
   concept-art measurement for its luminance band.
+- **New vignette terrain** (e.g. town): follow the city recipe — new sheet
+  prompt + a manifest section; `vignette.py` needs no code change.
 
 `review/` folders hold the montages the user ratified, as the visual baseline
 to compare any tweak against.

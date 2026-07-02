@@ -1,0 +1,9 @@
+Sprite sheet for a strategy wargame map, painterly retro 16-bit style matching the reference images' rendering technique and palette exactly.
+
+Subject: a 2x2 grid of FOUR separate clusters of grassy hills on a PURE WHITE background. Each cluster is a compact, roughly circular group of rounded grass-covered ridges seen from above with a slight perspective tilt (peaks lean toward the top, like the reference), warm mid-green summer grass with soft slope shading lit from the upper-left, and small muted rocky crest lines just breaking through the grass along the ridge tops. Low gentle hills, NOT tall mountains: mostly grass, minimal exposed rock, no snow.
+
+The four clusters must be CLEARLY DIFFERENT from each other: different numbers of ridges (two, three, four, five), different ridge orientations and arrangements — four distinct hill formations in the same style and palette.
+
+CRITICAL edge rule: each cluster's grass simply STOPS against the white background with a crisp irregular edge — absolutely NO pale outline, NO white or light-grey fringe, NO glow, NO halo, NO fade-out ring around any cluster. The outermost pixels of each cluster are the same mid-green grass as its interior.
+
+The four clusters must be completely separate from each other with clean pure-white gaps between them and around the image border. No hexagon grid lines, no borders, no roads, no trees, no water, no buildings, no units, no UI, no text, no drop shadows onto the white.

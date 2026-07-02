@@ -57,6 +57,54 @@
     },
     "ratified": "2026-07-01 via woods/review/woods-final-*.png ('sprites and layout are great' + packed density per 'can't really see much of the ground')"
   },
+  "hills": {
+    "class": "whole-hex vignette (composited hill formations via vignette.py; swatch-cut texture REJECTED 2026-07-01: relief contrast breaks seams - best swatch's largest seam-compatible clique was 2/49 cuts vs plains' 23, and flatten.py can't help because the contrast IS the ridges, not illumination)",
+    "sprite_sheet": "hills/hill-clusters.png",
+    "sprite_prompt": "hills/hills-clusters-prompt.txt",
+    "style_refs": ["refs/hills_a.png (concept1.png crop (40,158)-(235,330))", "refs/hills_b.png (crop (1095,60)-(1270,172))"],
+    "segmentation": {
+      "foreground": "min-channel distance from white > 25, alpha ramp (dist-25)*255/60",
+      "discovery": "downsample 8x (block max), hole-fill via border-connected background components, 4 largest clusters, row-major order",
+      "interior": "forced opaque (erode 2 at low res) so bright rock never goes transparent",
+      "unmatte": "partial-alpha edge pixels un-matted from white (kills the halo)"
+    },
+    "vignette": {"softclip_above": 135.0, "softclip_factor": 0.45},
+    "grass_match": {
+      "note": "recolour option 'a' ratified from hills/review/hills-recolor-compare.png (columns: original|a|b|c); grass-weighted so rocky crests stay put; also drops whitish low-sat pixels near the alpha boundary (the 'whitish seam' the user flagged)",
+      "target_h": 77.0,
+      "target_s": 0.52,
+      "target_v": 0.40,
+      "v_softclip": 0.62,
+      "v_softclip_k": 0.5,
+      "pale_edge": {"v_min": 0.55, "s_max": 0.30, "dilate_px": 5},
+      "measured_before": "grass hue 66-68, sat 0.47-0.51, val 0.35-0.42 (plains: 77 / 0.56 / 0.51)"
+    },
+    "compose": {
+      "bases": "plains/picks",
+      "variants": 4,
+      "tile_px": 128,
+      "feature_px": 104
+    },
+    "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section hills --out-dir <dir> [--verify frontend/src/board/tiles/hills]",
+    "ratified": "2026-07-01 ('Hills A'), applied tiles also archived at hills/picks/"
+  },
+  "city": {
+    "class": "settlement vignette (whole-hex composition on a grass rim via vignette.py)",
+    "sprite_sheet": "city/city-clusters.png",
+    "sprite_prompt": "city/city-clusters-prompt.txt",
+    "style_refs": ["refs/city_a.png (concept1.png crop (60,575)-(460,770))", "city/street-guide.png (layout diagram, NOT style: 6 streets to the flat-top hex edge midpoints at 30/90/150/210/270/330 deg, where roads will enter later)"],
+    "segmentation": "same recipe as hills.segmentation, no grass_match (city needs no recolour)",
+    "vignette": {"softclip_above": 135.0, "softclip_factor": 0.45},
+    "vignette_history": "v1 organic (no spoke control) -> v2 six spokes but a perfect wheel with boulevard streets -> v3 ratified: six narrow lanes in the diagram directions, ragged organic outline",
+    "compose": {
+      "bases": "plains/picks",
+      "variants": 4,
+      "tile_px": 128,
+      "feature_px": 100
+    },
+    "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section city --out-dir <dir> [--verify frontend/src/board/tiles/city]",
+    "ratified": "2026-07-01 ('cities are good'), applied tiles also archived at city/picks/"
+  },
   "concept_anchors": {
     "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
     "grass_mean_luminance": 105.3,
