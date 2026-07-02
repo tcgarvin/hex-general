@@ -4,7 +4,8 @@ Everything needed to **regenerate, tweak, or extend** the painterly terrain
 tiles in `frontend/src/board/tiles/`. The deployed PNGs are build artifacts of
 what's in this directory plus the tools in `scripts/tile-foundry/`.
 `manifest.json` records every parameter; this file explains the shape of the
-thing.
+thing. The pipeline contract (inputs/outputs, terrain classes, review gates)
+is `docs/ART_PIPELINE.md`.
 
 ## The pipeline in one paragraph
 
