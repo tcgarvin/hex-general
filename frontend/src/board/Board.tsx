@@ -63,7 +63,7 @@ import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
-import { connectedEdges, orientedRiverTile } from "./riverTiles";
+import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
 import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
 
 extend({ Container, Graphics, Sprite, Text });
@@ -379,6 +379,17 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   const terrainAt = useCallback(
     (q: number, r: number): Terrain | undefined => hexByKey.get(hexKey(q, r))?.terrain,
     [hexByKey],
+  );
+
+  // Course-pruned river/bridge edge masks (junction triangle chords dropped) —
+  // the whole-map derivation runs once, then each hex looks up its mask.
+  const riverCourse = useMemo(
+    () =>
+      riverCourseEdges(
+        hexes.map((h) => h.coord),
+        terrainAt,
+      ),
+    [hexes, terrainAt],
   );
 
   const settlementOwner = useMemo(() => {
@@ -1170,7 +1181,9 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 // to land at HEX_SIZE*2 world px. Shapes not yet handled fall
                 // back to the generic "00" tile.
                 if (h.terrain === "river" || h.terrain === "bridge") {
-                  const oriented = orientedRiverTile(connectedEdges(h.coord, terrainAt));
+                  const oriented = orientedRiverTile(
+                    riverCourse.get(hexKey(h.coord.q, h.coord.r)) ?? [],
+                  );
                   const name = oriented ? `${h.terrain}/${oriented.name}` : `${h.terrain}/00`;
                   const variants =
                     terrainTex.byOriented[name] ?? terrainTex.byOriented[`${h.terrain}/00`];

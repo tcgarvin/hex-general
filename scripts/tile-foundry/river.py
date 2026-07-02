@@ -15,6 +15,9 @@ stages around the shared foundry (`gen.py` does the NBP call as usual):
            each corner a future turn-tile window and (zigzag-v) each diagonal
            mid-leg a straight_d window; corner/mid anchor positions go to a
            JSON sidecar (`--anchors-out`) that `cut --shape` searches around.
+           `--kind fork` reuses the zigzag-h course and drops a straight S
+           tributary band from each peak corner: peak + branch is a
+           fork_se_sw_s junction window.
   cut      Search a generated swatch for hex windows whose crossings satisfy
            the tiling contract (centre + width match at each connected edge,
            straight entry spans; for `--shape` turns/diagonals additionally a
@@ -135,16 +138,19 @@ def build_guide(win: int, band: float, seed: int) -> Image.Image:
 # one apothem along this radial; the edge itself runs perpendicular to it.
 EDGE_THETA_DEG = {0: 30.0, 1: -30.0, 2: -90.0, 3: -150.0, 4: 150.0, 5: 90.0}
 
-# Generated oriented shapes -> their two connected edges. Render-time L<->R
+# Generated oriented shapes -> their connected edges. Render-time L<->R
 # mirroring (riverTiles.ts) supplies the missing orientations: turn_n_se
 # mirrors to N+SW, turn_s_nw mirrors to S+NE, straight_d mirrors "\" to "/",
-# and turn_se_sw / turn_ne_nw are their own mirror partners.
-SHAPES: dict[str, tuple[int, int]] = {
+# and turn_se_sw / turn_ne_nw / fork_se_sw_s are their own mirror partners.
+# fork_se_sw_s is the tributary junction: the SE->SW main course (a turn_se_sw
+# peak) with a straight S branch leaving the corner.
+SHAPES: dict[str, tuple[int, ...]] = {
     "straight_d": (0, 3),
     "turn_n_se": (2, 0),
     "turn_s_nw": (5, 3),
     "turn_se_sw": (0, 4),
     "turn_ne_nw": (1, 3),
+    "fork_se_sw_s": (0, 4, 5),
 }
 
 ZZ_ARC_T = 70.0  # arc tangent length, swatch px at win=384 (turn radius = T*sqrt(3))
@@ -226,6 +232,15 @@ def zigzag_geometry(kind: str, win: int) -> dict:
         seg, n_corners = 460.0 * k, 4
         corner_shapes = ("turn_ne_nw", "turn_se_sw")
         mid_shapes = (None, None)
+    elif kind == "fork":
+        # zigzag-h course whose peak (^) corners each drop a straight S branch
+        # to the canvas bottom: peak + branch = the fork_se_sw_s junction. The
+        # valleys stay turn_ne_nw anchors (bonus turn windows, same as zigzag-h).
+        dirs = (150.0, -150.0)
+        c0 = (1690.0 * k, 1139.0 * k)
+        seg, n_corners = 460.0 * k, 4
+        corner_shapes = ("turn_ne_nw", "fork_se_sw_s")
+        mid_shapes = (None, None)
     else:
         raise ValueError(f"unknown zigzag kind {kind!r}")
 
@@ -243,7 +258,18 @@ def zigzag_geometry(kind: str, win: int) -> dict:
         if shape is not None:
             a, b = corners[i - 1], corners[i]
             anchors.append({"shape": shape, "cx": (a[0] + b[0]) / 2, "cy": (a[1] + b[1]) / 2})
-    return {"dirs": dirs, "corners": corners, "anchors": anchors, "arc_t": ZZ_ARC_T * k}
+    branches = (
+        [(c, (c[0], float(GUIDE_SIZE))) for i, c in enumerate(corners) if i % 2 == 1]
+        if kind == "fork"
+        else []
+    )
+    return {
+        "dirs": dirs,
+        "corners": corners,
+        "anchors": anchors,
+        "arc_t": ZZ_ARC_T * k,
+        "branches": branches,
+    }
 
 
 def build_zigzag_guide(kind: str, win: int, band: float) -> tuple[Image.Image, list[dict]]:
@@ -281,6 +307,9 @@ def build_zigzag_guide(kind: str, win: int, band: float) -> tuple[Image.Image, l
         points += _straight_samples(
             prev_exit, (last[0] + ZZ_RAY * u_last[0], last[1] + ZZ_RAY * u_last[1])
         )
+    # fork kind: straight tributary bands dropping from the peak corners
+    for p0, p1 in geo.get("branches", []):
+        points += _straight_samples(p0, p1)
 
     img = Image.new("L", (GUIDE_SIZE, GUIDE_SIZE), 255)
     draw = ImageDraw.Draw(img)
@@ -453,13 +482,13 @@ def edge_crossing(water: np.ndarray, cx: int, cy: int, edge: int, gates: Gates) 
 
 
 def contained(
-    water: np.ndarray, cx: int, cy: int, edges: tuple[int, int], gates: Gates, ring: np.ndarray
+    water: np.ndarray, cx: int, cy: int, edges: tuple[int, ...], gates: Gates, ring: np.ndarray
 ) -> bool:
     """No stray water at the window's boundary away from the connected edges.
 
     `ring` is the boolean (win, win) band just inside the hex boundary. Every
     water pixel in it must sit within the water half-span limit of one of the
-    two connected edge midpoints — i.e. the creek touches the rim only where
+    connected edge midpoints — i.e. the creek touches the rim only where
     it is supposed to cross.
     """
     half = gates.win // 2
@@ -479,38 +508,53 @@ def contained(
 def measure_shape(
     water: np.ndarray, cx: int, cy: int, shape: str, gates: Gates, ring: np.ndarray
 ) -> dict | None:
-    """Both edge crossings + containment for one candidate window, or None.
+    """Every edge crossing + containment for one candidate window, or None.
 
-    Gate thresholds are the straight_v ones applied per edge; the cross-edge
-    centre-mismatch check only makes sense for opposite (parallel) edges, so
-    turns skip it.
+    Gate thresholds are the straight_v ones applied per edge; widths must agree
+    pairwise across all connected edges. The cross-edge centre-mismatch check
+    only makes sense for opposite (parallel) edges, so turns and forks apply it
+    to their opposite pairs only (forks have none).
     """
-    e_a, e_b = SHAPES[shape]
-    m_a = edge_crossing(water, cx, cy, e_a, gates)
-    m_b = edge_crossing(water, cx, cy, e_b, gates)
-    if m_a is None or m_b is None:
+    edges = SHAPES[shape]
+    ms = []
+    for e in edges:
+        m = edge_crossing(water, cx, cy, e, gates)
+        if m is None:
+            return None
+        ms.append(m)
+    if any(abs(m["c"]) > gates.max_edge_centre_off for m in ms):
         return None
-    if abs(m_a["c"]) > gates.max_edge_centre_off or abs(m_b["c"]) > gates.max_edge_centre_off:
-        return None
-    if abs(m_a["w"] - m_b["w"]) > gates.max_width_mismatch:
+    widths = [m["w"] for m in ms]
+    if max(widths) - min(widths) > gates.max_width_mismatch:
         return None
     lo, hi = gates.width_band
-    if not (lo <= min(m_a["w"], m_b["w"]) and max(m_a["w"], m_b["w"]) <= hi):
+    if not (lo <= min(widths) and max(widths) <= hi):
         return None
-    if m_a["es"] > gates.edge_straight_dev or m_b["es"] > gates.edge_straight_dev:
+    if any(m["es"] > gates.edge_straight_dev for m in ms):
         return None
-    if (e_b - e_a) % 6 == 3 and abs(m_a["c"] + m_b["c"]) > gates.max_top_bot_mismatch:
-        return None
-    if not contained(water, cx, cy, (e_a, e_b), gates, ring):
+    for i, e_a in enumerate(edges):
+        for j in range(i + 1, len(edges)):
+            if (edges[j] - e_a) % 6 == 3 and abs(ms[i]["c"] + ms[j]["c"]) > (
+                gates.max_top_bot_mismatch
+            ):
+                return None
+    if not contained(water, cx, cy, edges, gates, ring):
         return None
     return {
-        "ct": m_a["c"],
-        "cb": m_b["c"],
-        "wt": m_a["w"],
-        "wb": m_b["w"],
-        "es_top": m_a["es"],
-        "es_bot": m_b["es"],
+        "cs": [m["c"] for m in ms],
+        "ws": widths,
+        "ess": [m["es"] for m in ms],
     }
+
+
+def shape_window_score(m: dict) -> float:
+    # the shaped-cut analogue of window_score: crossings + edge entry dominate,
+    # width spread tie-breaks (identical to window_score for two-edge shapes)
+    return (
+        sum(abs(c) for c in m["cs"])
+        + 0.5 * (max(m["ws"]) - min(m["ws"]))
+        + 0.5 * sum(m["ess"])
+    )
 
 
 def _dilate(mask: np.ndarray, r: int) -> np.ndarray:
@@ -538,14 +582,14 @@ def run_cut_shape(args: argparse.Namespace) -> int:
 
     hd = hex_boundary_dist(args.win)
     ring = (hd >= 0) & (hd <= 6.0)
-    e_a, e_b = SHAPES[args.shape]
+    edges = SHAPES[args.shape]
     half = args.win // 2
-    # prefilter: both edge midpoints must sit on (dilated) water before the
+    # prefilter: every edge midpoint must sit on (dilated) water before the
     # full rotated-frame measurement runs — the search grid is ~15k points per
     # anchor and nearly all of them miss the channel entirely.
     near_water = _dilate(water, 2)
     mids = []
-    for e in (e_a, e_b):
+    for e in edges:
         ux, uy = _unit(EDGE_THETA_DEG[e])
         mids.append((int(round(gates.edge_y * ux)), int(round(gates.edge_y * uy))))
 
@@ -562,7 +606,7 @@ def run_cut_shape(args: argparse.Namespace) -> int:
                 m = measure_shape(water, cx, cy, args.shape, gates, ring)
                 if m is None:
                     continue
-                sc = window_score(m)
+                sc = shape_window_score(m)
                 if best is None or sc < best[0]:
                     best = (sc, cx, cy, m)
         if best is not None:
@@ -575,19 +619,23 @@ def run_cut_shape(args: argparse.Namespace) -> int:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     k = args.win / TILE
     print(f"shape {args.shape}, window {args.win}px ({k:.2f}:1); metrics in tile-scale px:")
-    print(f"{'file':<36}{'cA':>7}{'cB':>7}{'wA':>6}{'wB':>6}{'esA':>6}{'esB':>6}{'score':>7}")
+    heads = "".join(
+        f"{'c' + str(e):>7}{'w' + str(e):>6}{'es' + str(e):>6}" for e in edges
+    )
+    print(f"{'file':<36}{heads}{'score':>7}")
     paths = []
     for sc, cx, cy, m in kept:
         x0, y0 = cx - half, cy - half
         p = args.out_dir / f"cand_{args.shape}_x{x0:04d}_y{y0:04d}.png"
         cut_window(rgb, x0, y0, args.win).save(p)
         paths.append(p)
-        print(
-            f"{p.name:<36}{m['ct'] / k:>7.1f}{m['cb'] / k:>7.1f}{m['wt'] / k:>6.0f}"
-            f"{m['wb'] / k:>6.0f}{m['es_top'] / k:>6.1f}{m['es_bot'] / k:>6.1f}{sc / k:>7.2f}"
+        cols = "".join(
+            f"{m['cs'][i] / k:>7.1f}{m['ws'][i] / k:>6.0f}{m['ess'][i] / k:>6.1f}"
+            for i in range(len(edges))
         )
+        print(f"{p.name:<36}{cols}{sc / k:>7.2f}")
 
-    grass_edges = tuple(d for d in range(6) if d not in (e_a, e_b))
+    grass_edges = tuple(d for d in range(6) if d not in edges)
     seam_report(paths, args.plains, dirs=grass_edges, self_dirs=())
     return 0
 
@@ -766,9 +814,10 @@ def run_recolor(args: argparse.Namespace) -> int:
 
 # -------------------------------------------------------------- preview ----
 
-# Connected-edge pair -> (tile shape, render-time L<->R mirror), the python twin
-# of the frontend's riverTiles.ts mapping (extended to turns). Keys are sorted.
-ORIENTED_TILES: dict[tuple[int, int], tuple[str, bool]] = {
+# Connected-edge set -> (tile shape, render-time L<->R mirror), the python twin
+# of the frontend's riverTiles.ts mapping (extended to turns + forks). Keys are
+# sorted tuples.
+ORIENTED_TILES: dict[tuple[int, ...], tuple[str, bool]] = {
     (2, 5): ("straight_v", False),
     (0, 3): ("straight_d", False),
     (1, 4): ("straight_d", True),
@@ -778,6 +827,7 @@ ORIENTED_TILES: dict[tuple[int, int], tuple[str, bool]] = {
     (1, 5): ("turn_s_nw", True),
     (0, 4): ("turn_se_sw", False),
     (1, 3): ("turn_ne_nw", False),
+    (0, 4, 5): ("fork_se_sw_s", False),
 }
 
 # Travel directions of the default preview course: 12 hexes hitting all nine
@@ -803,16 +853,44 @@ def run_preview(args: argparse.Namespace) -> int:
     """Composite a winding river course over plains, board-style, for review."""
     from hexgeom import AXIAL_DIRECTIONS, axial_to_pixel
 
+    def walk(start: tuple[int, int], travel: list[int]) -> list[tuple[int, int]]:
+        coords = [start]
+        for d in travel:
+            dq, dr = AXIAL_DIRECTIONS[d]
+            coords.append((coords[-1][0] + dq, coords[-1][1] + dr))
+        return coords
+
+    def chain_edges(
+        coords: list[tuple[int, int]],
+        travel: list[int],
+        edge_sets: dict[tuple[int, int], set[int]],
+        entry_dir: int | None,
+    ) -> None:
+        """Each hex connects back the way it came and out the way it leaves; the
+        ends pretend the river continues off-frame in their travel direction
+        (`entry_dir=None`), or, for a spur, the first hex arrived via `entry_dir`
+        from the branch point."""
+        in_dirs = [travel[0] if entry_dir is None else entry_dir] + travel
+        out_dirs = travel + [travel[-1]]
+        for c, i, o in zip(coords, in_dirs, out_dirs):
+            edge_sets.setdefault(c, set()).update({(i + 3) % 6, o})
+
     travel = [int(t) for t in args.course.split(",")]
-    coords = [(0, 0)]
-    for d in travel:
-        dq, dr = AXIAL_DIRECTIONS[d]
-        coords.append((coords[-1][0] + dq, coords[-1][1] + dr))
-    # each hex connects back the way it came and out the way it leaves; the
-    # ends pretend the river continues off-frame in their travel direction
-    in_dirs = [travel[0]] + travel
-    out_dirs = travel + [travel[-1]]
-    edge_pairs = [tuple(sorted(((i + 3) % 6, o))) for i, o in zip(in_dirs, out_dirs)]
+    coords = walk((0, 0), travel)
+    edge_sets: dict[tuple[int, int], set[int]] = {}
+    chain_edges(coords, travel, edge_sets, entry_dir=None)
+
+    # spurs: tributaries branching off a main-course hex ("index:dir,dir,...").
+    # The branch point gains the spur's first travel dir as an extra edge —
+    # three edges make it a fork.
+    for spec in args.spur or []:
+        idx_s, dirs_s = spec.split(":")
+        spur_travel = [int(t) for t in dirs_s.split(",")]
+        bp = coords[int(idx_s)]
+        edge_sets[bp].add(spur_travel[0])
+        spur_coords = walk(bp, spur_travel)[1:]
+        chain_edges(spur_coords, spur_travel[1:] or [spur_travel[0]], edge_sets, spur_travel[0])
+        coords += spur_coords
 
     plains = [Image.open(p).convert("RGBA") for p in sorted(args.plains.glob("*.png"))]
     if not plains:
@@ -842,15 +920,16 @@ def run_preview(args: argparse.Namespace) -> int:
                 paste(plains[(q * 5 + r * 3) % len(plains)], q, r)
 
     print("course tiles:")
-    for (q, r), pair in zip(coords, edge_pairs):
-        shape, mirror = ORIENTED_TILES[pair]
+    for (q, r), edges in edge_sets.items():
+        key = tuple(sorted(edges))
+        shape, mirror = ORIENTED_TILES[key]
         files = shape_cache.setdefault(shape, shape_files(args.tiles, shape))
         img = Image.open(files[uses.get(shape, 0) % len(files)]).convert("RGBA")
         uses[shape] = uses.get(shape, 0) + 1
         if mirror:
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
         paste(img, q, r)
-        print(f"  ({q:>3},{r:>3}) edges {pair} -> {shape}{' (mirrored)' if mirror else ''}")
+        print(f"  ({q:>3},{r:>3}) edges {key} -> {shape}{' (mirrored)' if mirror else ''}")
 
     canvas.convert("RGB").save(args.out)
     print(f"wrote {args.out} ({canvas.width}x{canvas.height})")
@@ -948,10 +1027,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     g.add_argument("--band", type=float, required=True, help="band width, swatch px")
     g.add_argument(
         "--kind",
-        choices=("straight", "zigzag-v", "zigzag-h", "diag"),
+        choices=("straight", "zigzag-v", "zigzag-h", "diag", "fork"),
         default="straight",
         help="straight = the ratified straight_v meander; zigzag-* = the bend "
-        "guides; diag = one straight SE leg for straight_d",
+        "guides; diag = one straight SE leg for straight_d; fork = zigzag-h "
+        "whose peaks each drop a straight S tributary (fork_se_sw_s windows)",
     )
     g.add_argument("--seed", type=int, default=23, help="straight kind only (lobe amplitudes)")
     g.add_argument("--out", type=Path, required=True)
@@ -1000,6 +1080,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--course",
         default=PREVIEW_COURSE,
         help="comma-separated travel directions (default exercises all nine variants)",
+    )
+    v.add_argument(
+        "--spur",
+        action="append",
+        help='tributary branching off a course hex, "index:dir,dir,..." '
+        "(repeatable); the branch point becomes a fork",
     )
     v.add_argument("--out", type=Path, required=True)
 

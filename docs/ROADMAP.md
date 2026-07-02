@@ -435,9 +435,24 @@ isolation.
     `turn_se_sw`, `turn_ne_nw`) + L↔R mirror cover all six 120°-apart edge
     pairs; `straight_d` ×3 replaced the legacy PixelLab tile. `twin_rivers`'
     horizontal river (all gentle turns) now renders continuously.
-  - **T3b-rest (forks/ends/sharp turns) — remaining.** 60° sharp turn (2
-    adjacent edges), 60°/120° fork (3 edges), river end (1). Add classifier
-    cases + tiles; these still fall back to the generic `00`.
+  - **T3b-forks (tributary junction) ✅ shipped.** Two coupled pieces: (1)
+    `riverTiles.ts` now derives a *course graph* — raw adjacency over-connects
+    junctions (the hexes around a tributary mouth are mutually adjacent), so a
+    penalty-minimising prune drops junction-triangle chord edges (never
+    disconnecting a river) and the junction cluster resolves to one true fork +
+    already-shipped turn/straight shapes. (2) One generated fork tile
+    `fork_se_sw_s` (SE→SW course, S branch; mirror-symmetric) via the foundry's
+    new `fork` guide kind (zigzag-h peaks each dropping a straight S tributary)
+    — see the manifest river `sources`. twin_rivers' namesake junction now
+    renders fully painterly.
+  - **T3b-rest (other forks/ends/sharp turns) — remaining.** River end (1
+    edge), 60° sharp turn (2 adjacent edges), and the other fork families:
+    straight-through + 60° branch (12 masks / 6 generated tiles) and the
+    symmetric 120° Y ({0,2,4}/{1,3,5} — 2 generated tiles, mirror doesn't
+    relate them); fan forks like the shipped one need 3 more generated tiles
+    for full coverage. None occur in twin_rivers after course pruning —
+    generate on demand when a map needs them (fork-shape inventory discussion
+    2026-07-02).
 - **Slice T4 — Bridges as oriented river crossings.** Bridge orientation = the
   river axis it crosses (derivable from its two river edges); reuse T3's
   edge-mask machinery and the mirror approach. **Straight bridges ✅ shipped with

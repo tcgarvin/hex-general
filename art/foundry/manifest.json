@@ -1,213 +1,356 @@
 {
-  "description": "Provenance + regeneration parameters for the painterly tileset (see README.md)",
-  "generated": "2026-07-01",
-  "model": "gemini-3-pro-image-preview (Nano Banana Pro) via Vertex AI, project hex-general, location global",
-  "tile_spec": {
-    "canvas_px": 128,
-    "hex": "flat-top, point-to-point width 128 (2x render HEX_SIZE=32; drawn at 64 world px, crisp at MAX_ZOOM=2)",
-    "mask": "hexgeom.hex_mask(128,128) core >128, dilated 1px (bleed) so abutting tiles overlap real content instead of AA fading",
-    "scale_mode": "linear in tiles.ts (pixelWidth > 64)"
+ "description": "Provenance + regeneration parameters for the painterly tileset (see README.md)",
+ "generated": "2026-07-01",
+ "model": "gemini-3-pro-image-preview (Nano Banana Pro) via Vertex AI, project hex-general, location global",
+ "tile_spec": {
+  "canvas_px": 128,
+  "hex": "flat-top, point-to-point width 128 (2x render HEX_SIZE=32; drawn at 64 world px, crisp at MAX_ZOOM=2)",
+  "mask": "hexgeom.hex_mask(128,128) core >128, dilated 1px (bleed) so abutting tiles overlap real content instead of AA fading",
+  "scale_mode": "linear in tiles.ts (pixelWidth > 64)"
+ },
+ "plains": {
+  "class": "texture (swatch-cut)",
+  "swatch": "plains/plains-swatch-01.png",
+  "prompt": "plains/plains-prompt.txt",
+  "style_ref": "refs/ref_1_x384_y256.png",
+  "image_size": "2K",
+  "cut": "scripts/tile-foundry/cut.py <swatch> --stride 320 --bleed 1",
+  "picks": {
+   "00": "cand_x0000_y0000",
+   "01": "cand_x0320_y0960",
+   "02": "cand_x0640_y0640",
+   "03": "cand_x1920_y1600"
   },
-  "plains": {
-    "class": "texture (swatch-cut)",
-    "swatch": "plains/plains-swatch-01.png",
-    "prompt": "plains/plains-prompt.txt",
-    "style_ref": "refs/ref_1_x384_y256.png",
-    "image_size": "2K",
-    "cut": "scripts/tile-foundry/cut.py <swatch> --stride 320 --bleed 1",
-    "picks": {
-      "00": "cand_x0000_y0000",
-      "01": "cand_x0320_y0960",
-      "02": "cand_x0640_y0640",
-      "03": "cand_x1920_y1600"
-    },
-    "gates": "all 49 candidates passed luminance band 100-125 (measured 109-120); picks from a 23-candidate mutually seam-compatible clique (pre-v2 seam metric); truncation 0 fails",
-    "ratified": "2026-07-01 via plains/review/plains-painterly-v1.png"
+  "gates": "all 49 candidates passed luminance band 100-125 (measured 109-120); picks from a 23-candidate mutually seam-compatible clique (pre-v2 seam metric); truncation 0 fails",
+  "ratified": "2026-07-01 via plains/review/plains-painterly-v1.png"
+ },
+ "woods": {
+  "class": "object field (composited sprites; never swatch-cut - user: no cut-off canopies, trees end before the hex edge)",
+  "sprite_sheet": "woods/tree-sprites-02.png",
+  "sprite_prompt": "woods/trees-prompt-v2.txt",
+  "style_ref": "refs/forest_a.png (concept1.png crop (400,280)-(656,536))",
+  "segmentation": {
+   "foreground": "min-channel distance from white > 25",
+   "alpha_ramp": "(dist-25)*255/60 clipped 0..255",
+   "connected_components": "8-neighbour, min area 400 px (prompt asked 6x6 grid but got 7 columns; components make the layout irrelevant)",
+   "conifer_if": "bbox h/w > 1.15"
   },
-  "woods": {
-    "class": "object field (composited sprites; never swatch-cut - user: no cut-off canopies, trees end before the hex edge)",
-    "sprite_sheet": "woods/tree-sprites-02.png",
-    "sprite_prompt": "woods/trees-prompt-v2.txt",
-    "style_ref": "refs/forest_a.png (concept1.png crop (400,280)-(656,536))",
-    "segmentation": {
-      "foreground": "min-channel distance from white > 25",
-      "alpha_ramp": "(dist-25)*255/60 clipped 0..255",
-      "connected_components": "8-neighbour, min area 400 px (prompt asked 6x6 grid but got 7 columns; components make the layout irrelevant)",
-      "conifer_if": "bbox h/w > 1.15"
-    },
-    "sprite_processing": {
-      "target_mean_luminance": {"deciduous": 85.0, "conifer": 66.0},
-      "highlight_softclip": "above 135: 135 + (v-135)*0.45",
-      "desaturation": 0.9
-    },
-    "compose": {
-      "base": "plains/picks/{v}.png (the bleed-cut ratified plains)",
-      "seeds": [8800, 8801, 8802, 8803],
-      "target_trees": 110,
-      "max_attempts": 60000,
-      "achieved_trees": [76, 79, 80, 76],
-      "conifer_quota": 0.35,
-      "tree_height_px": [13, 22],
-      "min_dist": "sqrt(dx^2 + (0.52*dy)^2) >= 0.23*(w1+w2)",
-      "edge_inset": "centre of crown must satisfy in_hex with shrink 2 + 0.72*max(w,h)/2 (no tree crosses the true hex edge)",
-      "draw_order": "sorted by y_base ascending (lower trees composite over higher)",
-      "floor_discs": "per tree, r=0.72*w at crown centre, rgba(30,44,26,185), gaussian blur 2, clipped to dilated mask",
-      "final_clip": "dilated (1px bleed) hex mask",
-      "placements": "woods/placements.json (exact per-tree x, y_base, size, sprite index)"
-    },
-    "ratified": "2026-07-01 via woods/review/woods-final-*.png ('sprites and layout are great' + packed density per 'can't really see much of the ground')"
+  "sprite_processing": {
+   "target_mean_luminance": {
+    "deciduous": 85.0,
+    "conifer": 66.0
+   },
+   "highlight_softclip": "above 135: 135 + (v-135)*0.45",
+   "desaturation": 0.9
   },
-  "hills": {
-    "class": "whole-hex vignette (composited hill formations via vignette.py; swatch-cut texture REJECTED 2026-07-01: relief contrast breaks seams - best swatch's largest seam-compatible clique was 2/49 cuts vs plains' 23, and flatten.py can't help because the contrast IS the ridges, not illumination)",
-    "sprite_sheet": "hills/hill-clusters.png",
-    "sprite_prompt": "hills/hills-clusters-prompt.txt",
-    "style_refs": ["refs/hills_a.png (concept1.png crop (40,158)-(235,330))", "refs/hills_b.png (crop (1095,60)-(1270,172))"],
-    "segmentation": {
-      "foreground": "min-channel distance from white > 25, alpha ramp (dist-25)*255/60",
-      "discovery": "downsample 8x (block max), hole-fill via border-connected background components, 4 largest clusters, row-major order",
-      "interior": "forced opaque (erode 2 at low res) so bright rock never goes transparent",
-      "unmatte": "partial-alpha edge pixels un-matted from white (kills the halo)"
-    },
-    "vignette": {"softclip_above": 135.0, "softclip_factor": 0.45},
-    "grass_match": {
-      "note": "recolour option 'a' ratified from hills/review/hills-recolor-compare.png (columns: original|a|b|c); grass-weighted so rocky crests stay put; also drops whitish low-sat pixels near the alpha boundary (the 'whitish seam' the user flagged)",
-      "target_h": 77.0,
-      "target_s": 0.52,
-      "target_v": 0.40,
-      "v_softclip": 0.62,
-      "v_softclip_k": 0.5,
-      "pale_edge": {"v_min": 0.55, "s_max": 0.30, "dilate_px": 5},
-      "measured_before": "grass hue 66-68, sat 0.47-0.51, val 0.35-0.42 (plains: 77 / 0.56 / 0.51)"
-    },
-    "compose": {
-      "bases": "plains/picks",
-      "variants": 4,
-      "tile_px": 128,
-      "feature_px": 104
-    },
-    "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section hills --out-dir <dir> [--verify frontend/src/board/tiles/hills]",
-    "ratified": "2026-07-01 ('Hills A'), applied tiles also archived at hills/picks/"
+  "compose": {
+   "base": "plains/picks/{v}.png (the bleed-cut ratified plains)",
+   "seeds": [
+    8800,
+    8801,
+    8802,
+    8803
+   ],
+   "target_trees": 110,
+   "max_attempts": 60000,
+   "achieved_trees": [
+    76,
+    79,
+    80,
+    76
+   ],
+   "conifer_quota": 0.35,
+   "tree_height_px": [
+    13,
+    22
+   ],
+   "min_dist": "sqrt(dx^2 + (0.52*dy)^2) >= 0.23*(w1+w2)",
+   "edge_inset": "centre of crown must satisfy in_hex with shrink 2 + 0.72*max(w,h)/2 (no tree crosses the true hex edge)",
+   "draw_order": "sorted by y_base ascending (lower trees composite over higher)",
+   "floor_discs": "per tree, r=0.72*w at crown centre, rgba(30,44,26,185), gaussian blur 2, clipped to dilated mask",
+   "final_clip": "dilated (1px bleed) hex mask",
+   "placements": "woods/placements.json (exact per-tree x, y_base, size, sprite index)"
   },
-  "city": {
-    "class": "settlement vignette (whole-hex composition on a grass rim via vignette.py)",
-    "sprite_sheet": "city/city-clusters.png",
-    "sprite_prompt": "city/city-clusters-prompt.txt",
-    "style_refs": ["refs/city_a.png (concept1.png crop (60,575)-(460,770))", "city/street-guide.png (layout diagram, NOT style: 6 streets to the flat-top hex edge midpoints at 30/90/150/210/270/330 deg, where roads will enter later)"],
-    "segmentation": "same recipe as hills.segmentation, no grass_match (city needs no recolour)",
-    "vignette": {"softclip_above": 135.0, "softclip_factor": 0.45},
-    "vignette_history": "v1 organic (no spoke control) -> v2 six spokes but a perfect wheel with boulevard streets -> v3 ratified: six narrow lanes in the diagram directions, ragged organic outline",
-    "compose": {
-      "bases": "plains/picks",
-      "variants": 4,
-      "tile_px": 128,
-      "feature_px": 100
-    },
-    "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section city --out-dir <dir> [--verify frontend/src/board/tiles/city]",
-    "ratified": "2026-07-01 ('cities are good'), applied tiles also archived at city/picks/"
+  "ratified": "2026-07-01 via woods/review/woods-final-*.png ('sprites and layout are great' + packed density per 'can't really see much of the ground')"
+ },
+ "hills": {
+  "class": "whole-hex vignette (composited hill formations via vignette.py; swatch-cut texture REJECTED 2026-07-01: relief contrast breaks seams - best swatch's largest seam-compatible clique was 2/49 cuts vs plains' 23, and flatten.py can't help because the contrast IS the ridges, not illumination)",
+  "sprite_sheet": "hills/hill-clusters.png",
+  "sprite_prompt": "hills/hills-clusters-prompt.txt",
+  "style_refs": [
+   "refs/hills_a.png (concept1.png crop (40,158)-(235,330))",
+   "refs/hills_b.png (crop (1095,60)-(1270,172))"
+  ],
+  "segmentation": {
+   "foreground": "min-channel distance from white > 25, alpha ramp (dist-25)*255/60",
+   "discovery": "downsample 8x (block max), hole-fill via border-connected background components, 4 largest clusters, row-major order",
+   "interior": "forced opaque (erode 2 at low res) so bright rock never goes transparent",
+   "unmatte": "partial-alpha edge pixels un-matted from white (kills the halo)"
   },
-  "town": {
-    "class": "settlement vignette (whole-hex composition on a grass rim via vignette.py; the smaller sibling of city)",
-    "sprite_sheet": "town/town-clusters.png",
-    "sprite_prompt": "town/town-clusters-prompt.txt",
-    "style_refs": ["refs/town_a.png (concept1.png crop (950,240)-(1115,365), the small village at the road junction)", "city/street-guide.png (layout diagram, NOT style: same 6 lane directions as city so roads can anchor at the flat-top hex edge midpoints later)"],
-    "segmentation": "same recipe as hills.segmentation, no grass_match (like city, town needs no recolour)",
-    "vignette": {"softclip_above": 135.0, "softclip_factor": 0.45},
-    "sheet_history": "sheet 1 rejected (cluster 4 was a smeared generation failure; its 3 good clusters read more rural/sparse - offered as row town_b and not picked); sheet 2 ratified whole (all 4 clusters clean, denser small-town register)",
-    "compose": {
-      "bases": "plains/picks",
-      "variants": 4,
-      "tile_px": 128,
-      "feature_px": 80
-    },
-    "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section town --out-dir <dir> [--verify frontend/src/board/tiles/town]",
-    "ratified": "2026-07-01 ('Town a sounds fine', feature_px 80 vs the town_a90 size alternative; city-tile reference row in town/review/town-a-candidates.png), applied tiles also archived at town/picks/"
+  "vignette": {
+   "softclip_above": 135.0,
+   "softclip_factor": 0.45
   },
-  "river": {
-    "class": "oriented texture (swatch-cut straight_v + straight_d + the four gentle-turn shapes; forks and bridge still legacy PixelLab — later slices per ART_PIPELINE decision 4). Render-time L↔R mirror covers the other diagonal/turn orientations (see frontend riverTiles.ts).",
-    "swatch": "river/river-swatch-10-n384.png",
-    "prompt": "river/river-prompt-v7.txt (v4-v6 history: v4 good register but sandbars + curved edge entries; v7 bans sandbars outright and demands the course track the band's straights exactly)",
-    "style_refs": ["refs/ref_1_x384_y256.png (grass register, same as plains)", "refs/ref_river_concept.png (creek register: narrow grey-teal water, concept-art crop)"],
+  "grass_match": {
+   "note": "recolour option 'a' ratified from hills/review/hills-recolor-compare.png (columns: original|a|b|c); grass-weighted so rocky crests stay put; also drops whitish low-sat pixels near the alpha boundary (the 'whitish seam' the user flagged)",
+   "target_h": 77.0,
+   "target_s": 0.52,
+   "target_v": 0.4,
+   "v_softclip": 0.62,
+   "v_softclip_k": 0.5,
+   "pale_edge": {
+    "v_min": 0.55,
+    "s_max": 0.3,
+    "dilate_px": 5
+   },
+   "measured_before": "grass hue 66-68, sat 0.47-0.51, val 0.35-0.42 (plains: 77 / 0.56 / 0.51)"
+  },
+  "compose": {
+   "bases": "plains/picks",
+   "variants": 4,
+   "tile_px": 128,
+   "feature_px": 104
+  },
+  "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section hills --out-dir <dir> [--verify frontend/src/board/tiles/hills]",
+  "ratified": "2026-07-01 ('Hills A'), applied tiles also archived at hills/picks/"
+ },
+ "city": {
+  "class": "settlement vignette (whole-hex composition on a grass rim via vignette.py)",
+  "sprite_sheet": "city/city-clusters.png",
+  "sprite_prompt": "city/city-clusters-prompt.txt",
+  "style_refs": [
+   "refs/city_a.png (concept1.png crop (60,575)-(460,770))",
+   "city/street-guide.png (layout diagram, NOT style: 6 streets to the flat-top hex edge midpoints at 30/90/150/210/270/330 deg, where roads will enter later)"
+  ],
+  "segmentation": "same recipe as hills.segmentation, no grass_match (city needs no recolour)",
+  "vignette": {
+   "softclip_above": 135.0,
+   "softclip_factor": 0.45
+  },
+  "vignette_history": "v1 organic (no spoke control) -> v2 six spokes but a perfect wheel with boulevard streets -> v3 ratified: six narrow lanes in the diagram directions, ragged organic outline",
+  "compose": {
+   "bases": "plains/picks",
+   "variants": 4,
+   "tile_px": 128,
+   "feature_px": 100
+  },
+  "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section city --out-dir <dir> [--verify frontend/src/board/tiles/city]",
+  "ratified": "2026-07-01 ('cities are good'), applied tiles also archived at city/picks/"
+ },
+ "town": {
+  "class": "settlement vignette (whole-hex composition on a grass rim via vignette.py; the smaller sibling of city)",
+  "sprite_sheet": "town/town-clusters.png",
+  "sprite_prompt": "town/town-clusters-prompt.txt",
+  "style_refs": [
+   "refs/town_a.png (concept1.png crop (950,240)-(1115,365), the small village at the road junction)",
+   "city/street-guide.png (layout diagram, NOT style: same 6 lane directions as city so roads can anchor at the flat-top hex edge midpoints later)"
+  ],
+  "segmentation": "same recipe as hills.segmentation, no grass_match (like city, town needs no recolour)",
+  "vignette": {
+   "softclip_above": 135.0,
+   "softclip_factor": 0.45
+  },
+  "sheet_history": "sheet 1 rejected (cluster 4 was a smeared generation failure; its 3 good clusters read more rural/sparse - offered as row town_b and not picked); sheet 2 ratified whole (all 4 clusters clean, denser small-town register)",
+  "compose": {
+   "bases": "plains/picks",
+   "variants": 4,
+   "tile_px": 128,
+   "feature_px": 80
+  },
+  "regenerate": "python3 scripts/tile-foundry/vignette.py --manifest art/foundry/manifest.json --section town --out-dir <dir> [--verify frontend/src/board/tiles/town]",
+  "ratified": "2026-07-01 ('Town a sounds fine', feature_px 80 vs the town_a90 size alternative; city-tile reference row in town/review/town-a-candidates.png), applied tiles also archived at town/picks/"
+ },
+ "river": {
+  "class": "oriented texture (swatch-cut straight_v + straight_d + the four gentle-turn shapes + the fork_se_sw_s tributary junction; remaining fork orientations, ends and bridge still legacy PixelLab \u2014 later slices per ART_PIPELINE decision 4). Render-time L\u2194R mirror covers the other diagonal/turn orientations (see frontend riverTiles.ts, which also prunes junction-triangle adjacency artifacts so only the true junction hex renders a fork).",
+  "swatch": "river/river-swatch-10-n384.png",
+  "prompt": "river/river-prompt-v7.txt (v4-v6 history: v4 good register but sandbars + curved edge entries; v7 bans sandbars outright and demands the course track the band's straights exactly)",
+  "style_refs": [
+   "refs/ref_1_x384_y256.png (grass register, same as plains)",
+   "refs/ref_river_concept.png (creek register: narrow grey-teal water, concept-art crop)"
+  ],
+  "layout_guide": {
+   "file": "river/guide-node384-flat.png",
+   "win_px": 384,
+   "band_px": 40,
+   "seed": 23,
+   "note": "node-straightened meander (river.py guide): straight vertical plateaus at every tile-period node, one sin^2 out-and-back lobe between - bends finish before the flat edges, so tiled columns never jerk at seams (user requirement 2026-07-02). Constant band width: a mid-lobe bulge in earlier guides invited per-bend sandbars."
+  },
+  "image_size": "2K",
+  "generation_variance": "NBP band-following is ~50/50 with no seed control; 3 of 6 rolls painted 150-250px braided rivers instead. Re-roll on failure; this swatch was roll 2 of the v7 prompt.",
+  "cut": {
+   "win_px": 384,
+   "note": "3:1 multi-scale cut (384px window LANCZOS-downscaled to the 128px tile) is the width control: the model overshoots the band ~1.5x, so cutting at 3x brings the water to 13-15 tile px. Side effect: river grass grain is finer than the 1:1-cut plains.",
+   "windows": [
+    {
+     "tile": "straight_v_00.png",
+     "x0": 832,
+     "y0": 976
+    },
+    {
+     "tile": "straight_v_01.png",
+     "x0": 833,
+     "y0": 306
+    },
+    {
+     "tile": "straight_v_02.png",
+     "x0": 833,
+     "y0": 1640
+    }
+   ]
+  },
+  "gates": "river.py cut, tile px: crossing centre off <=3, top/bottom centre mismatch <=2, width mismatch <=4, width band 12-36, drift <=26, water half-span <=31, edge-straight dev <=2.5 over 18px spans; picks measured ct/cb <=0.9, water 13-15px, es <=1.8",
+  "recolor": {
+   "plains_picks": "plains/picks",
+   "sat_ramp": [
+    0.3,
+    0.42
+   ],
+   "hue_ramp_lo": [
+    30.0,
+    40.0
+   ],
+   "hue_ramp_hi": [
+    165.0,
+    175.0
+   ],
+   "core_w": 0.9,
+   "note": "hills-style grass-weighted HSV match toward the plains grass-core medians (recomputed from plains/picks, not hardcoded), with the sat ramp raised from hills' 0.12 so the desaturated water (sat ~0.21, hue ~90 - inside the hills weight!) keeps its ratified colour. Dropped worst angled seam 3.36->2.15 and dc step 15.8->6.9-9.4.",
+   "measured": "grass h 70.6-72.8 s 0.58-0.60 v 0.51-0.53 -> plains target h 76.8 s 0.56 v 0.50"
+  },
+  "sources": [
+   {
+    "swatch": "river/river-swatch-zzv-r2.png",
+    "prompt": "river/river-prompt-v8-zzv.txt (v7 base reworded for a zigzagging course: crisp 60\u00b0 corners, straight legs between)",
     "layout_guide": {
-      "file": "river/guide-node384-flat.png",
-      "win_px": 384,
-      "band_px": 40,
-      "seed": 23,
-      "note": "node-straightened meander (river.py guide): straight vertical plateaus at every tile-period node, one sin^2 out-and-back lobe between - bends finish before the flat edges, so tiled columns never jerk at seams (user requirement 2026-07-02). Constant band width: a mid-lobe bulge in earlier guides invited per-bend sandbars."
+     "file": "river/guide-zzv.png",
+     "kind": "zigzag-v",
+     "win_px": 384,
+     "band_px": 40
     },
-    "image_size": "2K",
-    "generation_variance": "NBP band-following is ~50/50 with no seed control; 3 of 6 rolls painted 150-250px braided rivers instead. Re-roll on failure; this swatch was roll 2 of the v7 prompt.",
+    "generation_variance": "NBP smooths the crisp zigzag into meanders more often than not (rolls 1 and 3 unusable); this swatch was roll 2, whose painted corners sat close enough to the guide's for the \u00b1300px window search to find them.",
     "cut": {
-      "win_px": 384,
-      "note": "3:1 multi-scale cut (384px window LANCZOS-downscaled to the 128px tile) is the width control: the model overshoots the band ~1.5x, so cutting at 3x brings the water to 13-15 tile px. Side effect: river grass grain is finer than the 1:1-cut plains.",
-      "windows": [
-        {"tile": "straight_v_00.png", "x0": 832, "y0": 976},
-        {"tile": "straight_v_01.png", "x0": 833, "y0": 306},
-        {"tile": "straight_v_02.png", "x0": 833, "y0": 1640}
-      ]
-    },
-    "gates": "river.py cut, tile px: crossing centre off <=3, top/bottom centre mismatch <=2, width mismatch <=4, width band 12-36, drift <=26, water half-span <=31, edge-straight dev <=2.5 over 18px spans; picks measured ct/cb <=0.9, water 13-15px, es <=1.8",
-    "recolor": {
-      "plains_picks": "plains/picks",
-      "sat_ramp": [0.30, 0.42],
-      "hue_ramp_lo": [30.0, 40.0],
-      "hue_ramp_hi": [165.0, 175.0],
-      "core_w": 0.9,
-      "note": "hills-style grass-weighted HSV match toward the plains grass-core medians (recomputed from plains/picks, not hardcoded), with the sat ramp raised from hills' 0.12 so the desaturated water (sat ~0.21, hue ~90 - inside the hills weight!) keeps its ratified colour. Dropped worst angled seam 3.36->2.15 and dc step 15.8->6.9-9.4.",
-      "measured": "grass h 70.6-72.8 s 0.58-0.60 v 0.51-0.53 -> plains target h 76.8 s 0.56 v 0.50"
-    },
-    "sources": [
+     "win_px": 864,
+     "note": "6.75:1 multi-scale cut: the zigzag swatches over-painted the band ~2.4x (vs straight_v's ~1.5x), so the wider window brings the water back to the shipped 14-16 tile px. Corner geometry is scale-free (both legs' lines pass through the corner point), so only the window size changes.",
+     "windows": [
       {
-        "swatch": "river/river-swatch-zzv-r2.png",
-        "prompt": "river/river-prompt-v8-zzv.txt (v7 base reworded for a zigzagging course: crisp 60° corners, straight legs between)",
-        "layout_guide": {"file": "river/guide-zzv.png", "kind": "zigzag-v", "win_px": 384, "band_px": 40},
-        "generation_variance": "NBP smooths the crisp zigzag into meanders more often than not (rolls 1 and 3 unusable); this swatch was roll 2, whose painted corners sat close enough to the guide's for the ±300px window search to find them.",
-        "cut": {
-          "win_px": 864,
-          "note": "6.75:1 multi-scale cut: the zigzag swatches over-painted the band ~2.4x (vs straight_v's ~1.5x), so the wider window brings the water back to the shipped 14-16 tile px. Corner geometry is scale-free (both legs' lines pass through the corner point), so only the window size changes.",
-          "windows": [
-            {"tile": "turn_n_se_00.png", "x0": 403, "y0": 918},
-            {"tile": "turn_s_nw_00.png", "x0": 393, "y0": 342},
-            {"tile": "turn_s_nw_01.png", "x0": 874, "y0": 1184}
-          ]
-        }
+       "tile": "turn_n_se_00.png",
+       "x0": 403,
+       "y0": 918
       },
       {
-        "swatch": "river/river-swatch-zzh-r1.png",
-        "prompt": "river/river-prompt-v8-zzh.txt (zzv prompt with the course running between the left and right edges)",
-        "layout_guide": {"file": "river/guide-zzh.png", "kind": "zigzag-h", "win_px": 384, "band_px": 40},
-        "generation_variance": "roll 1 followed the band; corners within the ±200px search.",
-        "cut": {
-          "win_px": 864,
-          "windows": [
-            {"tile": "turn_se_sw_00.png", "x0": 862, "y0": 493},
-            {"tile": "turn_se_sw_01.png", "x0": 73, "y0": 491},
-            {"tile": "turn_ne_nw_00.png", "x0": 471, "y0": 723}
-          ]
-        }
+       "tile": "turn_s_nw_00.png",
+       "x0": 393,
+       "y0": 342
       },
       {
-        "swatch": "river/river-swatch-diag-r1.png",
-        "prompt": "river/river-prompt-v8-diag.txt (single dead-straight 30° course; the zigzag swatches' diagonal legs always curved, so straight_d got its own guide)",
-        "layout_guide": {"file": "river/guide-diag.png", "kind": "diag", "win_px": 384, "band_px": 40},
-        "generation_variance": "roll 1 followed the band exactly; cleanest of the v8 swatches (3 of 4 gate-passing cuts under the 2.0 seam gate post-recolor, matching the shipped straight_v range).",
-        "cut": {
-          "win_px": 864,
-          "windows": [
-            {"tile": "straight_d_00.png", "x0": 918, "y0": 786},
-            {"tile": "straight_d_01.png", "x0": 606, "y0": 608},
-            {"tile": "straight_d_02.png", "x0": 218, "y0": 378}
-          ]
-        }
+       "tile": "turn_s_nw_01.png",
+       "x0": 874,
+       "y0": 1184
       }
-    ],
-    "shape_gates": "river.py cut --shape, tile px (auto-scaled by window): per-edge crossing centre off <=3, width band 12-36, width mismatch <=4, edge-straight dev <=2.5, opposite-edge centre mismatch <=2 (straights only), hex-boundary ring water only within half-span 31 of connected edge midpoints; picks measured crossings <=0.1, water 14-16px",
-    "regenerate": "python3 scripts/tile-foundry/river.py build --manifest art/foundry/manifest.json --section river --out-dir <dir> [--verify frontend/src/board/tiles/river]",
-    "ratified": "straight_v 2026-07-02 via river/review/creek-v7-recolor-compare.png + creek-v7-recolor-mixcol-*.png ('Nice, looks good'); straight_d + turns 2026-07-02 via montages river-simple-shapes.png + river-course-preview.png ('Looks good... OK taking more than one and using them as variants' — all seam-clean candidates applied). Applied tiles archived at river/picks/"
-  },
-  "concept_anchors": {
-    "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
-    "grass_mean_luminance": 105.3,
-    "forest_mean_luminance": 71.8,
-    "forest_iqr": [56.3, 88.7]
-  }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-zzh-r1.png",
+    "prompt": "river/river-prompt-v8-zzh.txt (zzv prompt with the course running between the left and right edges)",
+    "layout_guide": {
+     "file": "river/guide-zzh.png",
+     "kind": "zigzag-h",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "roll 1 followed the band; corners within the \u00b1200px search.",
+    "cut": {
+     "win_px": 864,
+     "windows": [
+      {
+       "tile": "turn_se_sw_00.png",
+       "x0": 862,
+       "y0": 493
+      },
+      {
+       "tile": "turn_se_sw_01.png",
+       "x0": 73,
+       "y0": 491
+      },
+      {
+       "tile": "turn_ne_nw_00.png",
+       "x0": 471,
+       "y0": 723
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-diag-r1.png",
+    "prompt": "river/river-prompt-v8-diag.txt (single dead-straight 30\u00b0 course; the zigzag swatches' diagonal legs always curved, so straight_d got its own guide)",
+    "layout_guide": {
+     "file": "river/guide-diag.png",
+     "kind": "diag",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "roll 1 followed the band exactly; cleanest of the v8 swatches (3 of 4 gate-passing cuts under the 2.0 seam gate post-recolor, matching the shipped straight_v range).",
+    "cut": {
+     "win_px": 864,
+     "windows": [
+      {
+       "tile": "straight_d_00.png",
+       "x0": 918,
+       "y0": 786
+      },
+      {
+       "tile": "straight_d_01.png",
+       "x0": 606,
+       "y0": 608
+      },
+      {
+       "tile": "straight_d_02.png",
+       "x0": 218,
+       "y0": 378
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-fork-r1.png",
+    "prompt": "river/river-prompt-v9-fork.txt (v8-zzh reworded for two straight S tributaries leaving the zigzag peaks; bans junction pools/ponds/islands/deltas outright \u2014 the fork-specific failure mode)",
+    "layout_guide": {
+     "file": "river/guide-fork.png",
+     "kind": "fork",
+     "win_px": 384,
+     "band_px": 40.0
+    },
+    "generation_variance": "roll 1 followed the band cleanly at both junctions \u2014 no braiding, no delta, width overshoot only ~1.3x (vs the zigzags' ~2.4x), hence the smaller 512px cut window.",
+    "cut": {
+     "win_px": 512,
+     "note": "4:1 multi-scale cut: this swatch tracked the 40px band much closer than the zigzag swatches, so 512px (not 864) lands the water at the shipped 14-18 tile px. Post-recolor grass seams 2.65/3.23 \u2014 the ratified turn range (user ratified 2026-07-02, w512 pair).",
+     "windows": [
+      {
+       "tile": "fork_se_sw_s_00.png",
+       "x0": 241,
+       "y0": 645
+      },
+      {
+       "tile": "fork_se_sw_s_01.png",
+       "x0": 1036,
+       "y0": 645
+      }
+     ]
+    }
+   }
+  ],
+  "shape_gates": "river.py cut --shape, tile px (auto-scaled by window): per-edge crossing centre off <=3, width band 12-36, width mismatch <=4, edge-straight dev <=2.5, opposite-edge centre mismatch <=2 (straights only), hex-boundary ring water only within half-span 31 of connected edge midpoints; picks measured crossings <=0.1, water 14-16px",
+  "regenerate": "python3 scripts/tile-foundry/river.py build --manifest art/foundry/manifest.json --section river --out-dir <dir> [--verify frontend/src/board/tiles/river]",
+  "ratified": "straight_v 2026-07-02 via river/review/creek-v7-recolor-compare.png + creek-v7-recolor-mixcol-*.png ('Nice, looks good'); straight_d + turns 2026-07-02 via montages river-simple-shapes.png + river-course-preview.png ('Looks good... OK taking more than one and using them as variants' \u2014 all seam-clean candidates applied). Applied tiles archived at river/picks/"
+ },
+ "concept_anchors": {
+  "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
+  "grass_mean_luminance": 105.3,
+  "forest_mean_luminance": 71.8,
+  "forest_iqr": [
+   56.3,
+   88.7
+  ]
+ }
 }

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/lib/api/schema";
 
-import { AXIAL_DIRECTIONS, type Axial } from "./hex";
-import { connectedEdges, orientedRiverTile } from "./riverTiles";
+import { AXIAL_DIRECTIONS, hexKey, type Axial } from "./hex";
+import { connectedEdges, orientedRiverTile, riverCourseEdges } from "./riverTiles";
 
 type Terrain = components["schemas"]["Terrain"];
 
@@ -80,10 +80,95 @@ describe("orientedRiverTile", () => {
     }
   });
 
-  it("returns null for unhandled masks (ends, sharp turns, forks) → generic fallback", () => {
+  it("maps the SE/SW/S junction fork to its generated tile (mirror-symmetric)", () => {
+    expect(orientedRiverTile([0, 4, 5])).toEqual({ name: "fork_se_sw_s", mirror: false });
+  });
+
+  it("returns null for unhandled masks (ends, sharp turns, other forks) → generic fallback", () => {
     expect(orientedRiverTile([2])).toBeNull(); // end (1 edge)
     expect(orientedRiverTile([0, 1])).toBeNull(); // adjacent edges → sharp turn
-    expect(orientedRiverTile([2, 3, 5])).toBeNull(); // fork (3 edges)
+    expect(orientedRiverTile([2, 3, 5])).toBeNull(); // unhandled fork orientation
     expect(orientedRiverTile([])).toBeNull(); // isolated
+  });
+});
+
+describe("riverCourseEdges", () => {
+  /** Probe + coord list over an explicit "q,r" → terrain map. */
+  function world(cells: Record<string, Terrain>) {
+    const coords = Object.keys(cells).map((k) => {
+      const [q, r] = k.split(",").map(Number);
+      return { q, r };
+    });
+    return { coords, probe: terrainProbe(cells) };
+  }
+
+  it("leaves a triangle-free course untouched (matches raw connectedEdges)", () => {
+    // A vertical three-hex run: end / straight_v / end.
+    const { coords, probe } = world({
+      "0,-1": "river",
+      "0,0": "river",
+      "0,1": "river",
+    });
+    const course = riverCourseEdges(coords, probe);
+    expect(course.get(hexKey(0, 0))).toEqual([2, 5]);
+    expect(course.get(hexKey(0, -1))).toEqual([5]);
+    expect(course.get(hexKey(0, 1))).toEqual([2]);
+  });
+
+  it("excludes non-river hexes from the result", () => {
+    const { coords, probe } = world({ "0,0": "river", "1,0": "plains" });
+    const course = riverCourseEdges(coords, probe);
+    expect(course.has(hexKey(0, 0))).toBe(true);
+    expect(course.has(hexKey(1, 0))).toBe(false);
+  });
+
+  it("resolves a tributary junction into one fork + calm course shapes", () => {
+    // The twin_rivers junction: a horizontal (zigzagging) main course meeting a
+    // vertical tributary. Raw adjacency makes J, E, W *and* T mutual forks; the
+    // course graph keeps only J's.
+    //
+    //   … W2  W   J   E   E2 …      (main course, zigzag row)
+    //              T               (tributary head, directly S of J)
+    //              T2              (tributary continues S)
+    const J = { q: 0, r: 0 };
+    const E = { q: 1, r: 0 }; // J's SE neighbour
+    const W = { q: -1, r: 1 }; // J's SW neighbour
+    const T = { q: 0, r: 1 }; // J's S neighbour — adjacent to E and W too
+    const { coords, probe } = world({
+      "0,0": "river",
+      "1,0": "river",
+      "-1,1": "river",
+      "0,1": "river",
+      "2,-1": "river", // E2: E's NE neighbour, main course continuing east
+      "-2,1": "river", // W2: W's NW neighbour, main course continuing west
+      "0,2": "river", // T2: tributary continuing south
+    });
+    const course = riverCourseEdges(coords, probe);
+    // J keeps all three edges: the one true fork.
+    expect(course.get(hexKey(J.q, J.r))).toEqual([0, 4, 5]);
+    expect(orientedRiverTile(course.get(hexKey(J.q, J.r))!)).toEqual({
+      name: "fork_se_sw_s",
+      mirror: false,
+    });
+    // E and W lose their artifact edge to T → gentle turns (existing art).
+    expect(course.get(hexKey(E.q, E.r))).toEqual([1, 3]);
+    expect(course.get(hexKey(W.q, W.r))).toEqual([1, 3]);
+    // T loses both artifact edges → plain straight_v.
+    expect(course.get(hexKey(T.q, T.r))).toEqual([2, 5]);
+  });
+
+  it("never disconnects a river when pruning", () => {
+    // A bare triangle of three mutually-adjacent river hexes: any single chord
+    // drop keeps it connected, dropping two would strand a hex. Whatever the
+    // penalty optimum, every hex must keep at least one edge.
+    const { coords, probe } = world({
+      "0,0": "river",
+      "1,0": "river",
+      "0,1": "river",
+    });
+    const course = riverCourseEdges(coords, probe);
+    for (const edges of course.values()) {
+      expect(edges.length).toBeGreaterThan(0);
+    }
   });
 });
