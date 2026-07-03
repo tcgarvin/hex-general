@@ -8,7 +8,7 @@ it is unit-testable against an in-memory fake repo.
 
 The central rule: a turn resolves exactly when *every* player in the game has a
 locked submission for the current turn. The submission that completes the set
-triggers `resolve_execution` synchronously, records the resolved `turns` row, and
+triggers turn resolution synchronously, records the resolved `turns` row, and
 advances `games.state`. Victory ends the game (status ``finished``).
 
 Domain failures are raised as typed `GameError` subclasses; the route layer maps
@@ -21,12 +21,14 @@ from __future__ import annotations
 
 import re
 import secrets
+import uuid
 from pathlib import Path
 
 from pydantic import TypeAdapter
 
+from app.ai.arena import REGISTRY as BOT_REGISTRY
+from app.ai.simulate import resolve_plan
 from app.engine.events import Event
-from app.engine.execution import resolve_execution
 from app.engine.fog import filter_events, redact_state
 from app.engine.models import GameState, Order, Recruitment
 from app.engine.visibility import visible_hexes
@@ -34,6 +36,7 @@ from app.engine.scenario import load_scenario_file
 from app.engine.victory import VictoryStatus, victory_status
 from app.games.repo import GameRecord, GameRepo, PlayerRecord
 from app.games.schemas import (
+    DEFAULT_BOT_POLICY,
     ActiveGame,
     DispatchView,
     GameHistoryEntry,
@@ -87,24 +90,53 @@ class ReplayNotFound(GameError):
     """No resolved turn with the requested number exists for this game."""
 
 
+class UnknownBotPolicy(GameError):
+    """The requested bot policy name is not in the AI registry (AI_SPEC §9)."""
+
+
 class GameService:
     """Coordinates persistence and the engine across the turn lifecycle."""
 
     def __init__(self, repo: GameRepo) -> None:
         self._repo = repo
 
-    def create_game(self, scenario: str, user_id: str) -> PlayerCredentials:
-        """Create a game from ``scenario`` and claim its first slot for ``user_id``."""
+    def create_game(
+        self,
+        scenario: str,
+        user_id: str,
+        *,
+        vs_bot: bool = False,
+        bot_policy: str = DEFAULT_BOT_POLICY,
+    ) -> PlayerCredentials:
+        """Create a game from ``scenario`` and claim its first slot for ``user_id``.
+
+        With ``vs_bot`` (AI_SPEC §9) every remaining slot is filled by a bot
+        player — a row whose ``user_id`` is a fresh UUID matching no auth user and
+        whose ``bot_policy`` names the AI — and the game starts immediately.
+        """
+        if vs_bot and bot_policy not in BOT_REGISTRY:
+            raise UnknownBotPolicy(
+                f"no bot policy named {bot_policy!r}; known: {sorted(BOT_REGISTRY)}"
+            )
         self._require_no_active_game(user_id)
         state = _load_scenario_state(scenario)
         invite_token = secrets.token_urlsafe(_INVITE_TOKEN_BYTES)
         game = self._repo.create_game(scenario, state, invite_token)
         first_slot = state.players[0].id
         player = self._repo.create_player(game.id, first_slot, user_id)
+
+        status = game.status
+        if vs_bot:
+            for slot in (p.id for p in state.players[1:]):
+                self._repo.create_player(
+                    game.id, slot, str(uuid.uuid4()), bot_policy=bot_policy
+                )
+            status = "active"
+            self._repo.set_game_state(game.id, state, status)
         return PlayerCredentials(
             game_id=game.id,
             slot=player.slot,
-            status=game.status,
+            status=status,
             invite_token=game.invite_token,
         )
 
@@ -234,6 +266,7 @@ class GameService:
         )
 
         players = self._repo.list_players(game.id)
+        self._submit_bot_orders(game, players, turn)
         submissions = self._repo.list_turn_orders(game.id, turn)
         if len(submissions) < len(players):
             return SubmitResult(
@@ -285,10 +318,52 @@ class GameService:
             victory=record.victory,
         )
 
+    def _submit_bot_orders(
+        self, game: GameRecord, players: list[PlayerRecord], turn: int
+    ) -> None:
+        """Plan and lock a submission for every bot slot still open this turn.
+
+        Runs after a human submission is stored (AI_SPEC §9), so a bot never
+        blocks a turn: once the last human is in, every bot's plan is computed
+        synchronously — fog-redacted view in, `Policy.plan` out — and validated
+        by the same `validate_submission` path as a human body (no trust
+        shortcut) before being stored like any other submission.
+        """
+        bots = [(p, p.bot_policy) for p in players if p.bot_policy is not None]
+        if not bots:
+            return
+        submitted = {o.player_id for o in self._repo.list_turn_orders(game.id, turn)}
+        for bot, policy_name in bots:
+            if bot.id in submitted:
+                continue
+            policy = BOT_REGISTRY[policy_name](turn)
+            view = redact_state(game.state, bot.slot)
+            plan = policy.plan(view, bot.slot)
+            validate_submission(game.state, bot.slot, plan.orders, plan.recruitments)
+            self._repo.record_orders(
+                game.id,
+                bot.id,
+                turn,
+                {
+                    "orders": [o.model_dump(mode="json") for o in plan.orders],
+                    "recruitments": [
+                        r.model_dump(mode="json") for r in plan.recruitments
+                    ],
+                },
+            )
+
     def _resolve_turn(
         self, game: GameRecord, players: list[PlayerRecord]
     ) -> tuple[GameState, str]:
-        """Run the engine over the full set of submissions and persist the result."""
+        """Run the engine over the full set of submissions and persist the result.
+
+        Resolution goes through `resolve_plan`, which drops intents that the
+        turn's simultaneous dynamics make moot — an order for a unit destroyed
+        by pre-movement barrage, or a recruit at a city lost/occupied mid-turn
+        (possible under fog even though each submission validated statically).
+        The engine treats those stale intents as caller bugs and would crash
+        the turn; in a live game they must instead resolve as no-ops.
+        """
         turn = game.state.turn
         slot_by_player_id = {p.id: p.slot for p in players}
         submissions = sorted(
@@ -304,7 +379,7 @@ class GameService:
                 _RECRUITMENTS.validate_python(submission.orders["recruitments"])
             )
 
-        next_state, events = resolve_execution(game.state, orders, recruitments)
+        next_state, events = resolve_plan(game.state, orders, recruitments)
         victory = victory_status(next_state)
         status = "finished" if victory.decided else "active"
 

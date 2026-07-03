@@ -42,3 +42,10 @@ plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The full statistical arena gates (AI_SPEC §7.3) are slow (90 games on the
+# 40x40 map); they run only via `uv run pytest -m arena` or the arena CLI. The
+# default suite (and CI) runs the fast smoke subset in tests/ai/test_gates.py.
+markers = [
+    "arena: full statistical acceptance gates (slow; run with -m arena)",
+]
+addopts = "-m 'not arena'"

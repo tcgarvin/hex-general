@@ -41,6 +41,7 @@ from app.games.service import (
     GameService,
     InvalidInvite,
     ReplayNotFound,
+    UnknownBotPolicy,
 )
 from app.games.validation import OrderValidationError
 
@@ -114,10 +115,21 @@ def create_game(
     identity: AuthIdentity = Depends(current_identity),
     service: GameService = Depends(get_service),
 ) -> PlayerCredentials:
-    """Create a game from a scenario and claim its first slot for the caller."""
+    """Create a game from a scenario and claim its first slot for the caller.
+
+    With ``vs_bot`` the remaining slot is filled by an AI opponent and the game
+    starts immediately (AI_SPEC §9).
+    """
     try:
-        return service.create_game(body.scenario, identity.user_id)
+        return service.create_game(
+            body.scenario,
+            identity.user_id,
+            vs_bot=body.vs_bot,
+            bot_policy=body.bot_policy,
+        )
     except GameNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except UnknownBotPolicy as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except GameAlreadyActive as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

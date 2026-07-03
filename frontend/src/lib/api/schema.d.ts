@@ -39,6 +39,9 @@ export interface paths {
         /**
          * Create Game
          * @description Create a game from a scenario and claim its first slot for the caller.
+         *
+         *     With ``vs_bot`` the remaining slot is filled by an AI opponent and the game
+         *     starts immediately (AI_SPEC §9).
          */
         post: operations["create_game_games_post"];
         delete?: never;
@@ -432,13 +435,28 @@ export interface components {
         /**
          * CreateGameRequest
          * @description Body for ``POST /games``: which authored scenario to instantiate.
+         *
+         *     ``vs_bot`` requests a game against the computer (AI_SPEC §9): the service
+         *     fills the second slot with a bot player and the game starts immediately.
+         *     ``bot_policy`` picks the AI (resolved via `app.ai.arena`'s registry) and is
+         *     only consulted when ``vs_bot`` is true.
          */
         CreateGameRequest: {
+            /**
+             * Bot Policy
+             * @default search
+             */
+            bot_policy: string;
             /**
              * Scenario
              * @default twin_rivers
              */
             scenario: string;
+            /**
+             * Vs Bot
+             * @default false
+             */
+            vs_bot: boolean;
         };
         /**
          * DevProfile
