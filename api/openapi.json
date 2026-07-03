@@ -265,12 +265,22 @@
       },
       "CreateGameRequest": {
         "additionalProperties": false,
-        "description": "Body for ``POST /games``: which authored scenario to instantiate.",
+        "description": "Body for ``POST /games``: which authored scenario to instantiate.\n\n``vs_bot`` requests a game against the computer (AI_SPEC \u00a79): the service\nfills the second slot with a bot player and the game starts immediately.\n``bot_policy`` picks the AI (resolved via `app.ai.arena`'s registry) and is\nonly consulted when ``vs_bot`` is true.",
         "properties": {
+          "bot_policy": {
+            "default": "search",
+            "title": "Bot Policy",
+            "type": "string"
+          },
           "scenario": {
             "default": "twin_rivers",
             "title": "Scenario",
             "type": "string"
+          },
+          "vs_bot": {
+            "default": false,
+            "title": "Vs Bot",
+            "type": "boolean"
           }
         },
         "title": "CreateGameRequest",
@@ -1457,7 +1467,7 @@
     },
     "/games": {
       "post": {
-        "description": "Create a game from a scenario and claim its first slot for the caller.",
+        "description": "Create a game from a scenario and claim its first slot for the caller.\n\nWith ``vs_bot`` the remaining slot is filled by an AI opponent and the game\nstarts immediately (AI_SPEC \u00a79).",
         "operationId": "create_game_games_post",
         "parameters": [
           {

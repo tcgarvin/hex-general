@@ -20,12 +20,24 @@ from app.engine.victory import VictoryStatus
 DEFAULT_SCENARIO = "twin_rivers"
 
 
+# Default AI opponent for a "vs bot" game (AI_SPEC §9): the Tier-1 SearchPolicy.
+DEFAULT_BOT_POLICY = "search"
+
+
 class CreateGameRequest(BaseModel):
-    """Body for ``POST /games``: which authored scenario to instantiate."""
+    """Body for ``POST /games``: which authored scenario to instantiate.
+
+    ``vs_bot`` requests a game against the computer (AI_SPEC §9): the service
+    fills the second slot with a bot player and the game starts immediately.
+    ``bot_policy`` picks the AI (resolved via `app.ai.arena`'s registry) and is
+    only consulted when ``vs_bot`` is true.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     scenario: str = DEFAULT_SCENARIO
+    vs_bot: bool = False
+    bot_policy: str = DEFAULT_BOT_POLICY
 
 
 class SubmitOrdersRequest(BaseModel):

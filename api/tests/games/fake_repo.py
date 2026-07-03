@@ -57,7 +57,9 @@ class FakeGameRepo:
             update={"state": state, "status": status}
         )
 
-    def create_player(self, game_id: str, slot: str, user_id: str) -> PlayerRecord:
+    def create_player(
+        self, game_id: str, slot: str, user_id: str, bot_policy: str | None = None
+    ) -> PlayerRecord:
         if any(p.game_id == game_id and p.slot == slot for p in self._players.values()):
             raise RepoError(f"slot {slot} already claimed in game {game_id}")
         if any(
@@ -66,7 +68,11 @@ class FakeGameRepo:
         ):
             raise RepoError(f"user {user_id} already in game {game_id}")
         player = PlayerRecord(
-            id=str(uuid.uuid4()), game_id=game_id, slot=slot, user_id=user_id
+            id=str(uuid.uuid4()),
+            game_id=game_id,
+            slot=slot,
+            user_id=user_id,
+            bot_policy=bot_policy,
         )
         self._players[player.id] = player
         return player

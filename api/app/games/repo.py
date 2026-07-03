@@ -42,7 +42,13 @@ class GameRecord(BaseModel):
 
 
 class PlayerRecord(BaseModel):
-    """A players row: a Supabase Auth user bound to one game slot."""
+    """A players row: a Supabase Auth user bound to one game slot.
+
+    ``bot_policy`` names the AI policy driving this slot for a "vs bot" game
+    (AI_SPEC §9), resolved through `app.ai.arena`'s registry; ``None`` means a
+    human player. A bot row's ``user_id`` is a generated UUID matching no auth
+    user, so the slot can never be claimed or driven from outside.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -50,6 +56,7 @@ class PlayerRecord(BaseModel):
     game_id: str
     slot: str
     user_id: str
+    bot_policy: str | None = None
 
 
 class UserGameRecord(BaseModel):
@@ -102,7 +109,9 @@ class GameRepo(Protocol):
 
     def set_game_state(self, game_id: str, state: GameState, status: str) -> None: ...
 
-    def create_player(self, game_id: str, slot: str, user_id: str) -> PlayerRecord: ...
+    def create_player(
+        self, game_id: str, slot: str, user_id: str, bot_policy: str | None = None
+    ) -> PlayerRecord: ...
 
     def list_players(self, game_id: str) -> list[PlayerRecord]: ...
 
@@ -165,6 +174,7 @@ def _player_record(row: dict[str, Any]) -> PlayerRecord:
         game_id=row["game_id"],
         slot=row["slot"],
         user_id=row["user_id"],
+        bot_policy=row["bot_policy"],
     )
 
 
@@ -221,10 +231,19 @@ class SupabaseGameRepo:
         )
         _one_row(response, "set_game_state")
 
-    def create_player(self, game_id: str, slot: str, user_id: str) -> PlayerRecord:
+    def create_player(
+        self, game_id: str, slot: str, user_id: str, bot_policy: str | None = None
+    ) -> PlayerRecord:
         response = (
             self._client.table("players")
-            .insert({"game_id": game_id, "slot": slot, "user_id": user_id})
+            .insert(
+                {
+                    "game_id": game_id,
+                    "slot": slot,
+                    "user_id": user_id,
+                    "bot_policy": bot_policy,
+                }
+            )
             .execute()
         )
         return _player_record(_one_row(response, "create_player"))
@@ -232,7 +251,7 @@ class SupabaseGameRepo:
     def list_players(self, game_id: str) -> list[PlayerRecord]:
         response = (
             self._client.table("players")
-            .select("id, game_id, slot, user_id")
+            .select("id, game_id, slot, user_id, bot_policy")
             .eq("game_id", game_id)
             .execute()
         )
@@ -241,7 +260,7 @@ class SupabaseGameRepo:
     def get_player(self, game_id: str, user_id: str) -> PlayerRecord | None:
         response = (
             self._client.table("players")
-            .select("id, game_id, slot, user_id")
+            .select("id, game_id, slot, user_id, bot_policy")
             .eq("game_id", game_id)
             .eq("user_id", user_id)
             .execute()
@@ -259,7 +278,7 @@ class SupabaseGameRepo:
         """
         response = (
             self._client.table("players")
-            .select("id, game_id, slot, user_id, games!inner(status)")
+            .select("id, game_id, slot, user_id, bot_policy, games!inner(status)")
             .eq("user_id", user_id)
             .neq("games.status", "finished")
             .execute()
