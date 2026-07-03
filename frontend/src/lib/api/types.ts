@@ -28,3 +28,8 @@ export const SLOTS: readonly PlayerId[] = ["blue", "red"];
 // `scenario` body field required (it has a default), so create-game must send it;
 // when a scenario picker lands this becomes the picker's default.
 export const DEFAULT_SCENARIO = "twin_rivers";
+
+// Mirrors the API's DEFAULT_BOT_POLICY (schemas.py). Same openapi-typescript quirk:
+// the `bot_policy` body field is marked required despite its server default, so
+// create-game must send it. It's only consulted when `vs_bot` is true.
+export const DEFAULT_BOT_POLICY = "search";

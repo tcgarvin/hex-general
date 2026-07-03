@@ -4,7 +4,11 @@ import { Link, Navigate, useNavigate } from "react-router";
 import { Button, Centered, ErrorBanner, Loading } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
-import { DEFAULT_SCENARIO, type ActiveGame } from "@/lib/api/types";
+import {
+  DEFAULT_BOT_POLICY,
+  DEFAULT_SCENARIO,
+  type ActiveGame,
+} from "@/lib/api/types";
 
 type State =
   | { status: "loading" }
@@ -74,7 +78,11 @@ function StartScreen() {
     setCreating(true);
     setError(null);
     const { data, error: apiError } = await api.POST("/games", {
-      body: { scenario: DEFAULT_SCENARIO },
+      body: {
+        scenario: DEFAULT_SCENARIO,
+        vs_bot: false,
+        bot_policy: DEFAULT_BOT_POLICY,
+      },
     });
     if (apiError) {
       setError(describeApiError(apiError));
