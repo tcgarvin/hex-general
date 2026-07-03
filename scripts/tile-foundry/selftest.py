@@ -27,6 +27,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import cut  # noqa: E402
 import flatten  # noqa: E402
 import gate  # noqa: E402
+import river  # noqa: E402
 from gate import truncation_score  # noqa: E402
 from hexgeom import axial_to_pixel, hex_mask, neighbor_pixel_offset, shared_edge  # noqa: E402
 
@@ -622,6 +623,116 @@ def test_river_matches_ratified_tiles(tmp_dir: Path) -> None:
     )
 
 
+def test_river_ends_guide_audits_clean() -> None:
+    """The `ends` guide builds and every anchor measures as its 1-edge shape.
+
+    `audit_tree_guide` runs the real swatch cut gates (crossing + containment +
+    the new terminus gate) at each anchor and raises on any failure — the free
+    correctness check for the whole end-cap spec, no NBP spend required.
+    """
+    win, band = 384, 40.0
+    img, anchors = river.build_tree_guide("ends", win, band)
+    names = sorted(a["shape"] for a in anchors)
+    if not check(
+        "river.py ends: guide yields the four end-cap anchors",
+        names == ["end_n", "end_ne", "end_s", "end_se"],
+        f"anchors={names}",
+    ):
+        return
+    detail = ""
+    try:
+        river.audit_tree_guide(img, anchors, win)
+        audited = True
+    except RuntimeError as exc:
+        audited, detail = False, str(exc)
+    check("river.py ends: audit_tree_guide passes all four anchors", audited, detail)
+
+
+def test_river_end_shape_tables() -> None:
+    """SHAPES/ORIENTED_TILES 1-edge entries are self-consistent and obey the mirror."""
+    end_shapes = {s: e for s, e in river.SHAPES.items() if s.startswith("end_")}
+    check(
+        "river.py: end_* shapes are all exactly 1-edge",
+        len(end_shapes) == 4 and all(len(e) == 1 for e in end_shapes.values()),
+        f"end_shapes={end_shapes}",
+    )
+
+    singles = {k: v for k, v in river.ORIENTED_TILES.items() if len(k) == 1}
+    check(
+        "river.py: all six 1-edge masks map to an end tile",
+        set(singles) == {(0,), (1,), (2,), (3,), (4,), (5,)},
+        f"masks={sorted(singles)}",
+    )
+
+    # M swaps 0<->4 and 1<->3, fixing 2 and 5. A registered mask's edge must be
+    # its base shape's edge (unmirrored) or its mirror image (mirrored).
+    mirror = {0: 4, 1: 3, 2: 2, 3: 1, 4: 0, 5: 5}
+    consistent = True
+    for (edge,), (shape, flag) in singles.items():
+        base_edge = river.SHAPES[shape][0]
+        expect = mirror[base_edge] if flag else base_edge
+        consistent = consistent and expect == edge
+    check(
+        "river.py: 1-edge ORIENTED_TILES obey the mirror convention (0<->4, 1<->3)",
+        consistent,
+        f"singles={singles}",
+    )
+    check(
+        "river.py: end_n and end_s straddle the mirror axis (never flagged)",
+        singles[(2,)] == ("end_n", False) and singles[(5,)] == ("end_s", False),
+        f"n={singles[(2,)]} s={singles[(5,)]}",
+    )
+
+
+def test_river_measure_shape_end_terminus() -> None:
+    """measure_shape accepts the v2 snake head and rejects too-deep water.
+
+    Bracket the terminus gate: the real spring head (tip ~0.24*win past the
+    centre) passes; a straight band ending 0.36*win past the centre — deeper
+    than the 0.30*win limit but far short of the opposite edge — fails on the
+    terminus gate specifically; a full straight-through fails too.
+    """
+    win, band = 384, 40.0
+    gates = river.Gates(win)
+    hd = river.hex_boundary_dist(win)
+    ring = (hd >= 0) & (hd <= 6.0)
+    cx = cy = river.GUIDE_SIZE // 2
+
+    pts, radii = river._end_head((cx, cy), river._ray_end((cx, cy), 2, river.TREE_RAY), band, win)
+    water_cap = np.asarray(river._stamp_band(pts, band, radii).convert("L")) == 128
+    m_cap = river.measure_shape(water_cap, cx, cy, "end_n", gates, ring)
+    check(
+        "river.py measure_shape: the v2 snake head measures as end_n, tip past the centre",
+        m_cap is not None and 0 < m_cap["terminus"] <= river.T_TERMINUS_MAX * win,
+        f"m={m_cap}",
+    )
+
+    # over-deep band: full width, ending 0.36*win past the centre (inside the
+    # hex, so containment and the crossing gates all pass — only terminus trips)
+    ux, uy = river._unit(river.EDGE_THETA_DEG[2])
+    deep_end = (cx + 0.36 * win * -ux, cy + 0.36 * win * -uy)
+    deep = river._straight_samples(river._ray_end((cx, cy), 2, river.TREE_RAY), deep_end)
+    water_deep = np.asarray(river._stamp_band(deep, band).convert("L")) == 128
+    m_deep = river.measure_shape(water_deep, cx, cy, "end_n", gates, ring)
+    term_deep = river.terminus_offset(water_deep, cx, cy, 2, gates)
+    check(
+        "river.py measure_shape: a band ending past the 0.30*win limit FAILS the terminus gate",
+        m_deep is None and term_deep > river.T_TERMINUS_MAX * win,
+        f"m={m_deep} terminus={term_deep:.1f}",
+    )
+
+    thru = river._straight_samples(
+        river._ray_end((cx, cy), 5, river.TREE_RAY), river._ray_end((cx, cy), 2, river.TREE_RAY)
+    )
+    water_thru = np.asarray(river._stamp_band(thru, band).convert("L")) == 128
+    m_thru = river.measure_shape(water_thru, cx, cy, "end_n", gates, ring)
+    check(
+        "river.py measure_shape: a straight-through band FAILS the end_n terminus gate",
+        m_thru is None,
+        f"m={m_thru}",
+    )
+
+
 def make_synthetic_tree_sheet(path: Path) -> None:
     """A small white-background sheet with a round blob (deciduous, h/w ~1.0) and a
     tall blob (conifer, h/w > 1.15), each well over compose.py's 400px min blob area.
@@ -724,6 +835,9 @@ def test_cli_help() -> None:
 def main() -> int:
     test_hex_mask_geometry()
     test_dc_step_and_texture_mode()
+    test_river_ends_guide_audits_clean()
+    test_river_end_shape_tables()
+    test_river_measure_shape_end_terminus()
     with tempfile.TemporaryDirectory() as td:
         tmp_dir = Path(td)
         test_cut_produces_gate_passing_tiles(tmp_dir)

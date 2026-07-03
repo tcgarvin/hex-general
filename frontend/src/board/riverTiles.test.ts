@@ -47,6 +47,15 @@ describe("connectedEdges", () => {
 });
 
 describe("orientedRiverTile", () => {
+  it("maps each one-edge end mask to its generated tile", () => {
+    expect(orientedRiverTile([0])).toEqual({ name: "end_se", mirror: false });
+    expect(orientedRiverTile([4])).toEqual({ name: "end_se", mirror: true });
+    expect(orientedRiverTile([1])).toEqual({ name: "end_ne", mirror: false });
+    expect(orientedRiverTile([3])).toEqual({ name: "end_ne", mirror: true });
+    expect(orientedRiverTile([2])).toEqual({ name: "end_n", mirror: false });
+    expect(orientedRiverTile([5])).toEqual({ name: "end_s", mirror: false });
+  });
+
   it("maps the vertical axis to straight_v, unmirrored (self-symmetric)", () => {
     expect(orientedRiverTile([2, 5])).toEqual({ name: "straight_v", mirror: false });
   });
@@ -84,9 +93,12 @@ describe("orientedRiverTile", () => {
     expect(orientedRiverTile([0, 4, 5])).toEqual({ name: "fork_se_sw_s", mirror: false });
   });
 
-  it("returns null for unhandled masks (ends, sharp turns, 4+-edge blobs) → generic fallback", () => {
-    expect(orientedRiverTile([2])).toBeNull(); // end (1 edge)
+  it("returns null for unhandled masks (sharp turns, 4+-edge blobs, isolated) → generic fallback", () => {
+    // Sharp turns are disallowed by design ruling (user, 2026-07-03): map
+    // authoring must never create adjacent-edge connections, so this is a
+    // defensive fallback, not "art pending".
     expect(orientedRiverTile([0, 1])).toBeNull(); // adjacent edges → sharp turn
+    expect(orientedRiverTile([1, 2])).toBeNull(); // adjacent edges → sharp turn
     expect(orientedRiverTile([0, 1, 2, 3])).toBeNull(); // 4-edge mask, not modelled
     expect(orientedRiverTile([])).toBeNull(); // isolated
   });

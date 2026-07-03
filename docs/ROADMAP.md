@@ -445,7 +445,7 @@ isolation.
     new `fork` guide kind (zigzag-h peaks each dropping a straight S tributary)
     — see the manifest river `sources`. twin_rivers' namesake junction now
     renders fully painterly.
-  - **T3b-rest (other forks/ends/sharp turns) — forks ✅ shipped 2026-07-03.**
+  - **T3b-rest (other forks/ends/sharp turns) — forks + ends ✅ shipped 2026-07-03; sharp 60° turns disallowed.**
     The three ratified fork families landed as 9 new generated shapes / 12
     tiles via the foundry's all-straight junction-tree guide kinds
     (`branch-v` / `branch-d1` / `branch-d2` / `y` / `fans-b`) — straight-through
@@ -457,8 +457,17 @@ isolation.
     {1,2,3}) is **parked**: across 5 rolls NBP always paints a downstream outlet
     through the dead-end fan junction (an all-arms-upward junction is
     hydrologically outlet-free), so those two shapes need a guide redesign if a
-    map ever demands them. **Still remaining:** the river end (1 edge) and the
-    60° sharp turn (2 adjacent edges). **Ratified junction inventory (user,
+    map ever demands them. **Ends ✅ shipped 2026-07-03:** four generated end-cap
+    tiles (`end_n` / `end_s` / `end_ne` / `end_se`) via the foundry's tapered
+    `ends` guide kind — each a spring head that, per user direction, snakes into
+    a very thin trickle petering out past the hex centre (the first wedge/arrow
+    round was rejected and re-rolled against a revised guide). With the render-time
+    L↔R mirror **all six 1-edge masks now have real art**; see the manifest river
+    `sources`. **Sharp 60° turns (2 adjacent edges) are disallowed outright (user,
+    2026-07-03):** map authoring must not create them, the course pruner penalizes
+    them, the `00` single-tile fallback stays defensive-only, and they will never
+    get art. (A scenario-loader lint that rejects sharp-turn courses is possible
+    future work, out of scope here.) **Ratified junction inventory (user,
     2026-07-02): those three fork families only** — straight+60° branch,
     symmetric 120° Y, and fans (fans are forced whenever a N/S tributary meets a
     horizontal course, since an E–W course crosses a hex via 120°-apart edges).

@@ -517,6 +517,43 @@
       }
      ]
     }
+   },
+   {
+    "swatch": "river/river-swatch-v11b-ends-r1.png",
+    "prompt": "river/river-prompt-v11b-ends.txt (v11b = the v10b pattern reworded for four independent spring heads: each stream winds into a very thin trickle that peters out just past the hex centre, explicit no-arrowhead/no-triangular-point language; drives the guide's tapered `ends` kind)",
+    "layout_guide": {
+     "file": "river/guide-ends.png",
+     "kind": "ends",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "The v11 round painted wedge/arrow-shaped heads; superseded by user direction (2026-07-03) to a snaking, concavely-thinning trickle (guide re-rendered, T_TERMINUS_MAX loosened 0.20→0.30). v11b roll 1 then followed the band at ~0.93–0.95x — the lowest overshoot in the river series (historical 0.93x–3.1x) — with no dead-end pathologies across both rounds (0 re-rolls). A single 352px window cut all four spring heads.",
+    "cut": {
+     "win_px": 352,
+     "note": "2.75:1 cut for the ~0.93–0.95x band-follow. Edge widths ride the bottom of the 12-tile-px width band when NBP obeys the band exactly, so windows below ~320 or above ~380 fail the floor at this follow; the w320 alternates also passed but the w352 set was ratified (spring nearest the hex centre, airier read). End caps have no water-self pairing; post-recolor grass seams 2.58–3.04, within the ratified fork/turn range.",
+     "windows": [
+      {
+       "tile": "end_n_00.png",
+       "x0": 344,
+       "y0": 1128
+      },
+      {
+       "tile": "end_s_00.png",
+       "x0": 644,
+       "y0": 348
+      },
+      {
+       "tile": "end_ne_00.png",
+       "x0": 1224,
+       "y0": 626
+      },
+      {
+       "tile": "end_se_00.png",
+       "x0": 1218,
+       "y0": 1318
+      }
+     ]
+    }
    }
   ],
   "shape_gates": "river.py cut --shape, tile px (auto-scaled by window): per-edge crossing centre off <=3, width band 12-36, width mismatch <=4, edge-straight dev <=2.5, opposite-edge centre mismatch <=2 (straights only), hex-boundary ring water only within half-span 31 of connected edge midpoints; picks measured crossings <=0.1, water 14-16px",

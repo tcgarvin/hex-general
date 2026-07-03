@@ -93,6 +93,9 @@ T_CENTRE_DRIFT = 26.0  # meander wander inside the tile
 T_WATER_HALF_SPAN = 31.0  # water stays inside the flat-edge x-band
 T_EDGE_STRAIGHT_SPAN = 18.0  # rows adjacent to each flat edge that must run straight
 T_EDGE_STRAIGHT_DEV = 2.5  # max centreline x-deviation within that span
+T_TERMINUS_MAX = 0.30  # end-cap: max inward reach past the window centre, fraction of win
+# (the v2 snake head's tip sits ~0.234*win past the centre and needs headroom;
+# a straight-through reaches ~0.5*win and still fails)
 
 # recolor: grass weight ramps. The saturation ramp starts ABOVE the water's
 # saturation (~0.21, vs hills' 0.12 start which would catch it) so the water
@@ -174,6 +177,11 @@ SHAPES: dict[str, tuple[int, ...]] = {
     "fork_ne_n_nw": (1, 2, 3),
     "fork_se_ne_n": (0, 1, 2),
     "fork_se_ne_s": (0, 1, 5),
+    # end caps: one edge, the stream's spring/head (see the `ends` guide kind)
+    "end_se": (0,),
+    "end_ne": (1,),
+    "end_n": (2,),
+    "end_s": (5,),
 }
 
 ZZ_ARC_T = 70.0  # arc tangent length, swatch px at win=384 (turn radius = T*sqrt(3))
@@ -337,16 +345,21 @@ def build_zigzag_guide(kind: str, win: int, band: float) -> tuple[Image.Image, l
     return _stamp_band(points, band), geo["anchors"]
 
 
-def _stamp_band(points: list[tuple[float, float]], band: float) -> Image.Image:
+def _stamp_band(
+    points: list[tuple[float, float]], band: float, radii: list[float] | None = None
+) -> Image.Image:
     """Stamp a centerline point list as a hard-edged grey-128 band on white.
 
-    Each ~1px-spaced point becomes a band/2-radius disc; the disc union is the
-    same stadium-width band the straight and zigzag guides use.
+    With the default `radii=None` every point becomes a band/2-radius disc and
+    the union is the same stadium-width band the straight and zigzag guides use.
+    Pass `radii` (parallel to `points`) to vary the disc radius per point — the
+    `ends` head taper narrows the band to a spring tip. The default branch is
+    bit-for-bit the original loop, so shipped guides stay byte-reproducible.
     """
     img = Image.new("L", (GUIDE_SIZE, GUIDE_SIZE), 255)
     draw = ImageDraw.Draw(img)
-    r = band / 2.0
-    for x, y in points:
+    for i, (x, y) in enumerate(points):
+        r = band / 2.0 if radii is None else radii[i]
         draw.ellipse([x - r, y - r, x + r, y + r], fill=128)
     return img.convert("RGB")
 
@@ -359,8 +372,18 @@ def _stamp_band(points: list[tuple[float, float]], band: float) -> Image.Image:
 # canvas edge (PIL clips) exactly like the shipped fork guide's branches.
 # Coordinates are authored at win=384 on the 2048 canvas and scale by
 # k = win/384, matching zigzag_geometry's constants.
-TREE_KINDS = ("branch-v", "branch-d1", "branch-d2", "y", "fans-a", "fans-b")
+TREE_KINDS = ("branch-v", "branch-d1", "branch-d2", "y", "fans-a", "fans-b", "ends")
 TREE_RAY = 2600.0  # free-ray overshoot past the canvas edge, authored px
+# End-cap spring heads (spec v2, user revision 2026-07-03): the head must snake
+# into a very thin trickle that peters out PAST the hex centre — a linear taper
+# along a straight ray read as an arrowhead. Parametrised by inbound distance t
+# from the flat-edge crossing (t=0 at the crossing; anchor at t = apothem ~166).
+END_PLATEAU_T = 60.0  # dead-straight entry run inbound of the crossing, authored px
+END_TIP_T = 256.0  # tip parameter: the trickle ends ~90px past the hex centre
+END_SNAKE_AMP = 26.0  # lateral S-curve amplitude, authored px
+END_SNAKE_WAVELEN = 120.0  # S-curve wavelength, authored px (~2 lobes before the tip)
+END_WIDTH_EXP = 1.6  # concave width-profile exponent (kills the wedge read)
+END_TIP_FLOOR_R = 1.5  # radius floor near the tip: a thread, then gone (authored px)
 
 
 def _ray_end(p: tuple[float, float], edge: int, reach: float) -> tuple[float, float]:
@@ -434,6 +457,21 @@ def tree_geometry(kind: str, win: int) -> dict:
             (j, _ray_end(j, 1, R)),  # NE ray
             (j, _ray_end(j, 5, R)),  # S ray
         ]
+    elif kind == "ends":  # four independent end caps: a spring + one free ray each
+        # Each stream springs near its anchor (the v2 head trickle runs ~90px
+        # past it) and flows off-canvas along a single ray. Hand-verified
+        # layout: every anchor >=450px from every canvas edge, pairwise >=600px
+        # apart, and no ray or head tail enters another anchor's 384px window
+        # (see the ends spec). segment p0 IS the anchor so _end_head can derive
+        # the crossing point and ray direction from the segment.
+        heads = [
+            ("end_n", (520.0, 1300.0), 2),  # N ray, up
+            ("end_s", (820.0, 520.0), 5),  # S ray, down
+            ("end_ne", (1400.0, 800.0), 1),  # NE ray, up-right
+            ("end_se", (1400.0, 1500.0), 0),  # SE ray, down-right
+        ]
+        junctions = [(shape, p) for shape, p, _ in heads]
+        segments = [(p, _ray_end(p, edge, R)) for _, p, edge in heads]
     else:
         raise ValueError(f"unknown tree kind {kind!r}")
 
@@ -443,10 +481,71 @@ def tree_geometry(kind: str, win: int) -> dict:
     return {"segments": segments, "anchors": anchors}
 
 
+def _end_head(
+    anchor: tuple[float, float], ray_end: tuple[float, float], band: float, win: int
+) -> tuple[list[tuple[float, float]], list[float]]:
+    """Points + per-point radii for one end-cap stream head (spec v2 snake).
+
+    Parametrised by inbound distance t from the flat-edge crossing (t=0 at the
+    crossing; the anchor/hex centre sits at t = apothem). Off-canvas (t < 0)
+    the ray is straight at full band/2 as before. Inbound: a dead-straight
+    entry plateau to END_PLATEAU_T (the seam rule is untouchable), then a
+    damped lateral S-curve to the tip at END_TIP_T — past the hex centre —
+    while the radius follows the concave profile
+    r(t) = (band/2) * ((tip - t) / tip) ** END_WIDTH_EXP, floored at
+    END_TIP_FLOOR_R so the head reads as a thinning trickle, not a wedge.
+    """
+    k = win / 384.0
+    ux, uy = (ray_end[0] - anchor[0]), (ray_end[1] - anchor[1])
+    norm = math.hypot(ux, uy)
+    ux, uy = ux / norm, uy / norm  # outward radial through the crossed edge
+    apothem = 0.8660254 * win / 2.0
+    crossing = (anchor[0] + apothem * ux, anchor[1] + apothem * uy)
+    plateau, tip = END_PLATEAU_T * k, END_TIP_T * k
+    full, floor_r = band / 2.0, END_TIP_FLOOR_R * k
+    amp, lam = END_SNAKE_AMP * k, END_SNAKE_WAVELEN * k
+
+    def radius(t: float) -> float:
+        if t <= 0.0:
+            return full
+        return max(floor_r, full * ((tip - t) / tip) ** END_WIDTH_EXP)
+
+    # straight run: ray end (far off-canvas) up to the snake start at t=plateau
+    pts = _straight_samples(
+        ray_end, (crossing[0] - plateau * ux, crossing[1] - plateau * uy)
+    )
+    radii = [radius((crossing[0] - x) * ux + (crossing[1] - y) * uy) for x, y in pts]
+    # snake: damped S-curve, ~1px t-steps; the sin^2 envelope is 0 with zero
+    # slope at both ends, so there's no kink at the plateau or the tip
+    n = max(2, int(math.ceil(tip - plateau)))
+    for i in range(n + 1):
+        t = plateau + (tip - plateau) * i / n
+        s = (t - plateau) / (tip - plateau)
+        o = amp * math.sin(2 * math.pi * (t - plateau) / lam) * math.sin(math.pi * s) ** 2
+        pts.append(
+            (crossing[0] - t * ux - o * uy, crossing[1] - t * uy + o * ux)
+        )
+        radii.append(radius(t))
+    return pts, radii
+
+
 def build_tree_guide(kind: str, win: int, band: float) -> tuple[Image.Image, list[dict]]:
-    """All-straight junction-tree band + its shape anchors (one per junction)."""
+    """All-straight junction-tree band + its shape anchors (one per junction).
+
+    Most kinds stamp a constant-width band; `ends` replaces each ray's inbound
+    run with the spec-v2 spring head — a snaking, concavely thinning trickle
+    that peters out past the hex centre (see `_end_head`).
+    """
     geo = tree_geometry(kind, win)
-    points: list[tuple[float, float]] = []
+    if kind == "ends":
+        points: list[tuple[float, float]] = []
+        radii: list[float] = []
+        for p0, p1 in geo["segments"]:
+            pts, rs = _end_head(p0, p1, band, win)
+            points += pts
+            radii += rs
+        return _stamp_band(points, band, radii), geo["anchors"]
+    points = []
     for p0, p1 in geo["segments"]:
         points += _straight_samples(p0, p1)
     return _stamp_band(points, band), geo["anchors"]
@@ -672,6 +771,21 @@ def contained(
     return bool(ok.all())
 
 
+def terminus_offset(water: np.ndarray, cx: int, cy: int, edge: int, gates: Gates) -> float:
+    """Signed inward reach of the water past the window centre for an end cap.
+
+    The stream crosses `edge` and must peter out inside the hex. Project every
+    water pixel in the window onto the inward radial (opposite `edge`); the max
+    projection is the terminus (the water pixel farthest inward). A spring
+    ending at the centre returns ~0; a straight-through that reaches the far
+    edge returns ~the apothem.
+    """
+    half = gates.win // 2
+    ys, xs = np.nonzero(water[cy - half : cy + half, cx - half : cx + half])
+    ux, uy = _unit(EDGE_THETA_DEG[edge])
+    return float(np.max(-((xs - half + 0.5) * ux + (ys - half + 0.5) * uy)))
+
+
 def measure_shape(
     water: np.ndarray, cx: int, cy: int, shape: str, gates: Gates, ring: np.ndarray
 ) -> dict | None:
@@ -707,21 +821,34 @@ def measure_shape(
                 return None
     if not contained(water, cx, cy, edges, gates, ring):
         return None
-    return {
+    result = {
         "cs": [m["c"] for m in ms],
         "ws": widths,
         "ess": [m["es"] for m in ms],
     }
+    if len(edges) == 1:
+        # end cap: the water must terminate (spring) inside the hex, not run
+        # straight through — its inward reach past the centre stays well under
+        # the apothem. Kept only for 1-edge shapes; score prefers a centred one.
+        terminus = terminus_offset(water, cx, cy, edges[0], gates)
+        if terminus > T_TERMINUS_MAX * gates.win:
+            return None
+        result["terminus"] = terminus
+    return result
 
 
 def shape_window_score(m: dict) -> float:
     # the shaped-cut analogue of window_score: crossings + edge entry dominate,
-    # width spread tie-breaks (identical to window_score for two-edge shapes)
-    return (
+    # width spread tie-breaks (identical to window_score for two-edge shapes);
+    # end caps additionally prefer the terminus (spring) nearest the centre
+    score = (
         sum(abs(c) for c in m["cs"])
         + 0.5 * (max(m["ws"]) - min(m["ws"]))
         + 0.5 * sum(m["ess"])
     )
+    if "terminus" in m:
+        score += abs(m["terminus"])
+    return score
 
 
 def _dilate(mask: np.ndarray, r: int) -> np.ndarray:
@@ -985,6 +1112,14 @@ def run_recolor(args: argparse.Namespace) -> int:
 # of the frontend's riverTiles.ts mapping (extended to turns + forks). Keys are
 # sorted tuples.
 ORIENTED_TILES: dict[tuple[int, ...], tuple[str, bool]] = {
+    # end caps (1-edge masks): four base shapes + the two masks the L<->R mirror
+    # (0<->4, 1<->3) covers; n and s straddle the mirror axis so are their own.
+    (0,): ("end_se", False),
+    (4,): ("end_se", True),
+    (1,): ("end_ne", False),
+    (3,): ("end_ne", True),
+    (2,): ("end_n", False),
+    (5,): ("end_s", False),
     (2, 5): ("straight_v", False),
     (0, 3): ("straight_d", False),
     (1, 4): ("straight_d", True),
@@ -1053,31 +1188,58 @@ def run_preview(args: argparse.Namespace) -> int:
         travel: list[int],
         edge_sets: dict[tuple[int, int], set[int]],
         entry_dir: int | None,
+        terminate: bool = False,
+        start_cap: bool = False,
     ) -> None:
         """Each hex connects back the way it came and out the way it leaves; the
         ends pretend the river continues off-frame in their travel direction
         (`entry_dir=None`), or, for a spur, the first hex arrived via `entry_dir`
-        from the branch point."""
+        from the branch point. `terminate` caps the last hex (drop its outgoing
+        edge) and `start_cap` caps the first (drop its incoming edge): a capped
+        hex keeps a single edge and renders as an end tile (a spring/mouth)."""
         in_dirs = [travel[0] if entry_dir is None else entry_dir] + travel
         out_dirs = travel + [travel[-1]]
-        for c, i, o in zip(coords, in_dirs, out_dirs):
-            edge_sets.setdefault(c, set()).update({(i + 3) % 6, o})
+        n = len(coords)
+        for idx, (c, i, o) in enumerate(zip(coords, in_dirs, out_dirs)):
+            if start_cap and idx == 0:
+                edges = {o}  # spring: only the outgoing edge
+            elif terminate and idx == n - 1:
+                edges = {(i + 3) % 6}  # mouth: only the incoming edge
+            else:
+                edges = {(i + 3) % 6, o}
+            edge_sets.setdefault(c, set()).update(edges)
 
     travel = [int(t) for t in args.course.split(",")]
     coords = walk((0, 0), travel)
     edge_sets: dict[tuple[int, int], set[int]] = {}
-    chain_edges(coords, travel, edge_sets, entry_dir=None)
+    chain_edges(
+        coords,
+        travel,
+        edge_sets,
+        entry_dir=None,
+        terminate=args.terminate_course,
+        start_cap=args.terminate_course,
+    )
 
     # spurs: tributaries branching off a main-course hex ("index:dir,dir,...").
     # The branch point gains the spur's first travel dir as an extra edge —
-    # three edges make it a fork.
+    # three edges make it a fork. A trailing "!" caps the spur's far hex as an
+    # end tile (a spring): a length-1 spur "idx:d!" makes the branch point a
+    # fork and its neighbour an end cap.
     for spec in args.spur or []:
         idx_s, dirs_s = spec.split(":")
-        spur_travel = [int(t) for t in dirs_s.split(",")]
+        cap = dirs_s.endswith("!")
+        spur_travel = [int(t) for t in dirs_s.rstrip("!").split(",")]
         bp = coords[int(idx_s)]
         edge_sets[bp].add(spur_travel[0])
         spur_coords = walk(bp, spur_travel)[1:]
-        chain_edges(spur_coords, spur_travel[1:] or [spur_travel[0]], edge_sets, spur_travel[0])
+        chain_edges(
+            spur_coords,
+            spur_travel[1:] or [spur_travel[0]],
+            edge_sets,
+            spur_travel[0],
+            terminate=cap,
+        )
         coords += spur_coords
 
     plains = [Image.open(p).convert("RGBA") for p in sorted(args.plains.glob("*.png"))]
@@ -1274,7 +1436,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--spur",
         action="append",
         help='tributary branching off a course hex, "index:dir,dir,..." '
-        "(repeatable); the branch point becomes a fork",
+        "(repeatable); the branch point becomes a fork. A trailing '!' "
+        "(\"index:dir!\") caps the spur's far hex as an end tile (a spring)",
+    )
+    v.add_argument(
+        "--terminate-course",
+        action="store_true",
+        help="cap both ends of the main course as end tiles (spring + mouth) "
+        "instead of running off-frame",
     )
     v.add_argument("--out", type=Path, required=True)
 

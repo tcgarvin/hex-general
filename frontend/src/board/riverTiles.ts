@@ -10,11 +10,16 @@
 // Per the ROADMAP orientation decision we never rotate the pixel art (60° rotation
 // resamples and looks mushy); instead we generate distinct oriented tiles and use
 // a render-time horizontal (left↔right) mirror to halve the art. Handled shapes:
-// the three straights (two opposite connected edges), the six gentle turns
-// (edges 120° apart), and all 20 three-edge junction forks (C(6,3) — every
-// three-edge mask). Sharp turns (two adjacent connected edges) and masks of
-// four or more connected edges are not modelled at all and fall back to the
-// generic `00` tile.
+// the six ends (one connected edge — a river/bridge terminus), the three
+// straights (two opposite connected edges), the six gentle turns (edges 120°
+// apart), and all 20 three-edge junction forks (C(6,3) — every three-edge mask).
+// Sharp turns (two adjacent connected edges) are disallowed by design ruling
+// (user, 2026-07-03): a river course must never be authored to produce one, and
+// `shapePenalty` already steers the course-graph pruner away from choosing one
+// over a calmer routing. They are not "art pending" — no tile will ever be
+// generated for them, and the generic `00` fallback that catches them is purely
+// defensive (a bug in map authoring, not a missing-art gap). Masks of four or
+// more connected edges are likewise not modelled and fall back to `00`.
 //
 // Art for 11 of the 20 fork names (everything but the shipped `fork_se_sw_s`)
 // lands separately (ROADMAP Phase 8, T3b-rest) — until then `orientedRiverTile`
@@ -216,6 +221,19 @@ export interface OrientedTile {
   readonly mirror: boolean;
 }
 
+// Every handled one-edge shape (a river/bridge terminus), keyed by the single
+// connected edge. Same mirror convention as the pairs/triples tables below
+// (M: 0↔4, 1↔3, 2→2, 5→5); {2} (due N) and {5} (due S) are fixed points of M,
+// like the self-symmetric turns, so each needs only one generated tile.
+const ORIENTED_SINGLES: Readonly<Record<string, OrientedTile>> = {
+  "0": { name: "end_se", mirror: false },
+  "4": { name: "end_se", mirror: true },
+  "1": { name: "end_ne", mirror: false },
+  "3": { name: "end_ne", mirror: true },
+  "2": { name: "end_n", mirror: false },
+  "5": { name: "end_s", mirror: false },
+};
+
 // Every handled two-edge shape, keyed by its ascending connected-edge pair.
 // Screen-angle geometry (flat-top, edge index → angle: 0=30° 1=330° 2=270°
 // 3=210° 4=150° 5=90°, y-down).
@@ -282,13 +300,18 @@ const ORIENTED_TRIPLES: Readonly<Record<string, OrientedTile>> = {
 /**
  * Choose the oriented tile + mirror flag for a river/bridge hex from its
  * connected-edge set (ideally the pruned {@link riverCourseEdges} mask), or
- * `null` if the shape isn't handled yet (the caller falls back to the generic
- * `00` tile). Handles the straights, the gentle turns, and all twenty
- * three-edge fork orientations; only the two-edge sharp turns (edges adjacent
- * in {@link AXIAL_DIRECTIONS}) and masks of four or more edges remain
- * unhandled.
+ * `null` if the shape isn't handled (the caller falls back to the generic `00`
+ * tile). Handles the six ends, the three straights, the six gentle turns, and
+ * all twenty three-edge fork orientations. Two-edge sharp turns (edges
+ * adjacent in {@link AXIAL_DIRECTIONS}) are permanently unhandled by design
+ * ruling — see the module header — not a gap awaiting art; masks of four or
+ * more edges are likewise unmodelled. Both fall back to the generic `00` tile
+ * as a defensive render, not an expected map state.
  */
 export function orientedRiverTile(edges: number[]): OrientedTile | null {
+  if (edges.length === 1) {
+    return ORIENTED_SINGLES[`${edges[0]}`] ?? null;
+  }
   if (edges.length === 2) {
     return ORIENTED_PAIRS[`${edges[0]},${edges[1]}`] ?? null;
   }
