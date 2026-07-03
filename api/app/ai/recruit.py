@@ -27,12 +27,23 @@ _TARGET_SHARE: dict[UnitType, float] = {
 _RESERVE = 0  # never spend the bank below this (a tuning knob)
 
 
-def _net_income(board: BoardIndex, slot: PlayerId) -> int:
-    """This turn's settlement income minus current upkeep for ``slot`` (SPEC §6)."""
+def _safe_net_income(board: BoardIndex, slot: PlayerId) -> int:
+    """Guaranteed post-economy net muster for ``slot`` this turn (SPEC §6.2–6.4).
+
+    The engine resolves recruitment *after* economy (`resolve_execution`), so the
+    bank a recruit is charged against is ``bank + income − upkeep`` (floored at 0,
+    capped), not the pre-turn bank that `validate_submission` checks. To never
+    produce a recruit the engine rejects, we count only income the enemy cannot
+    take away this turn — settlements out of enemy reach — and subtract full
+    upkeep. Actual income can only exceed this, so the estimate is a safe lower
+    bound on the recruitment-time bank.
+    """
     income = 0
     for settlement in board.controlled_settlements(slot):
         terrain = board.hex_by_coord[settlement.coord].terrain
-        if terrain in SETTLEMENT_STATS:
+        if terrain in SETTLEMENT_STATS and not _enemy_can_reach(
+            board, settlement.coord
+        ):
             income += SETTLEMENT_STATS[terrain].income
     upkeep = sum(UNIT_STATS[u.type].upkeep for u in board.own_units)
     return income - upkeep
@@ -108,8 +119,11 @@ def plan_recruitment(board: BoardIndex, slot: PlayerId) -> list[Recruitment]:
     total_units = len(board.view.units)
     own_total = len(board.own_units)
 
-    bank = player.bank
-    net_income = _net_income(board, slot)
+    net_income = _safe_net_income(board, slot)
+    # Spend from the amount guaranteed legal for *both* gates: the pre-turn bank
+    # (`validate_submission`) and the post-economy bank the engine charges against.
+    # When upkeep outruns guaranteed income the latter binds, so cap spend there.
+    bank = max(0, player.bank + min(0, net_income))
     unit_cap = board.view.config.unit_cap
 
     recruits: list[Recruitment] = []

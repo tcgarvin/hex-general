@@ -28,6 +28,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.ai.baselines import PassivePolicy, RandomPolicy
+from app.ai.planner import SearchPolicy
 from app.ai.policy import BotPlan, Policy
 from app.ai.scripted import ScriptedPolicy
 from app.ai.simulate import resolve_plan
@@ -48,6 +49,7 @@ REGISTRY: dict[str, PolicyFactory] = {
     "passive": lambda seed: PassivePolicy(),
     "random": lambda seed: RandomPolicy(seed),
     "scripted": lambda seed: ScriptedPolicy(),
+    "search": lambda seed: SearchPolicy(),
 }
 
 

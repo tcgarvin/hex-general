@@ -63,8 +63,8 @@ def test_decided_victory_dominates_material() -> None:
 
 def test_antisymmetry_on_own_minus_enemy_terms() -> None:
     # Material/settlement/economy are strictly own-minus-enemy, so on those terms
-    # evaluate(s, blue) == -evaluate(s, red). Position/exposure are per-side (not
-    # antisymmetric), so they are zeroed for this check (AI_SPEC §4.3 "mirrored").
+    # evaluate(s, blue) == -evaluate(s, red). Position/exposure/threat are
+    # per-side (not antisymmetric), so they are zeroed here (§4.3 "mirrored").
     state = build(
         ["c...t"],
         [
@@ -78,7 +78,13 @@ def test_antisymmetry_on_own_minus_enemy_terms() -> None:
         players=[{"id": "blue", "bank": 4}, {"id": "red", "bank": 1}],
         victory=_NO_ELIM,
     )
-    weights = EvalWeights(advance=0.0, exposure_in=0.0, exposure_out=0.0)
+    weights = EvalWeights(
+        advance=0.0,
+        exposure_in=0.0,
+        exposure_out=0.0,
+        settlement_threat=0.0,
+        doomed=0.0,
+    )
     blue = evaluate(state, "blue", weights)
     red = evaluate(state, "red", weights)
     assert blue != 0.0
