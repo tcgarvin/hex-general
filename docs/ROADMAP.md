@@ -445,18 +445,26 @@ isolation.
     new `fork` guide kind (zigzag-h peaks each dropping a straight S tributary)
     — see the manifest river `sources`. twin_rivers' namesake junction now
     renders fully painterly.
-  - **T3b-rest (other forks/ends/sharp turns) — remaining.** River end (1
-    edge), 60° sharp turn (2 adjacent edges), and the other fork families:
-    straight-through + 60° branch (12 masks / 6 generated tiles) and the
-    symmetric 120° Y ({0,2,4}/{1,3,5} — 2 generated tiles, mirror doesn't
-    relate them); fan forks like the shipped one need 3 more generated tiles
-    for full coverage. **Ratified junction inventory (user, 2026-07-02): those
-    three fork families only** — straight+60° branch, symmetric 120° Y, and
-    fans (fans are forced whenever a N/S tributary meets a horizontal course,
-    since an E–W course crosses a hex via 120°-apart edges). No 4-arm
-    junctions: the course pruner dissolves them. None of the remaining 11 fork
-    tiles occur in twin_rivers after course pruning — generate on demand when
-    a map needs them.
+  - **T3b-rest (other forks/ends/sharp turns) — forks ✅ shipped 2026-07-03.**
+    The three ratified fork families landed as 9 new generated shapes / 12
+    tiles via the foundry's all-straight junction-tree guide kinds
+    (`branch-v` / `branch-d1` / `branch-d2` / `y` / `fans-b`) — straight-through
+    + 60° branch, the symmetric 120° Y ({0,2,4}/{1,3,5}, self-mirror), and the
+    consecutive-edge fans — see the manifest river `sources`. With render-time
+    L↔R mirrors and the already-shipped `fork_se_sw_s`, **17 of the 20 three-edge
+    masks now have real art**; all 20 are mapped in `riverTiles.ts`. The fans-a
+    pair (`fork_se_ne_n`, `fork_ne_n_nw`, covering masks {0,1,2}/{2,3,4} and
+    {1,2,3}) is **parked**: across 5 rolls NBP always paints a downstream outlet
+    through the dead-end fan junction (an all-arms-upward junction is
+    hydrologically outlet-free), so those two shapes need a guide redesign if a
+    map ever demands them. **Still remaining:** the river end (1 edge) and the
+    60° sharp turn (2 adjacent edges). **Ratified junction inventory (user,
+    2026-07-02): those three fork families only** — straight+60° branch,
+    symmetric 120° Y, and fans (fans are forced whenever a N/S tributary meets a
+    horizontal course, since an E–W course crosses a hex via 120°-apart edges).
+    No 4-arm junctions: the course pruner dissolves them. None of these fork
+    tiles occur in twin_rivers after course pruning — generated on demand when a
+    map needs them.
 - **Slice T4 — Bridges as oriented river crossings.** Bridge orientation = the
   river axis it crosses (derivable from its two river edges); reuse T3's
   edge-mask machinery and the mirror approach. **Straight bridges ✅ shipped with

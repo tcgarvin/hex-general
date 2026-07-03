@@ -338,11 +338,190 @@
       }
      ]
     }
+   },
+   {
+    "swatch": "river/river-swatch-v10-branch-v-r2.png",
+    "prompt": "river/river-prompt-v10-branch-v.txt (vertical creek with a single straight 60\u00b0 tributary joining each junction; v9-fork base, same junction-pool/pond/island/delta bans)",
+    "layout_guide": {
+     "file": "river/guide-branch-v.png",
+     "kind": "branch-v",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "r1 ignored the band (width blowout ~4.2x, unusable); r2 tracked both junctions cleanly but painted wide \u2014 core ~126px, ~3.1x overshoot vs the 40px band.",
+    "cut": {
+     "win_px": 960,
+     "note": "7.5:1 primary cut for the ~3.1x overshoot \u2014 brings the water back to the shipped 14-18 tile px. The 864 cut of the same r2 swatch supplies the _01 variants.",
+     "windows": [
+      {
+       "tile": "fork_ne_n_s_00.png",
+       "x0": 300,
+       "y0": 148
+      },
+      {
+       "tile": "fork_se_n_s_00.png",
+       "x0": 304,
+       "y0": 932
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-v10-branch-v-r2.png",
+    "prompt": "river/river-prompt-v10-branch-v.txt (vertical creek with a single straight 60\u00b0 tributary joining each junction; v9-fork base, same junction-pool/pond/island/delta bans)",
+    "layout_guide": {
+     "file": "river/guide-branch-v.png",
+     "kind": "branch-v",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "r1 ignored the band (width blowout ~4.2x, unusable); r2 tracked both junctions cleanly but painted wide \u2014 core ~126px, ~3.1x overshoot vs the 40px band.",
+    "cut": {
+     "win_px": 864,
+     "note": "6.75:1 second cut of the branch-v r2 swatch (a tighter window over the same junctions) for the _01 variants.",
+     "windows": [
+      {
+       "tile": "fork_ne_n_s_01.png",
+       "x0": 344,
+       "y0": 202
+      },
+      {
+       "tile": "fork_se_n_s_01.png",
+       "x0": 352,
+       "y0": 980
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-v10-branch-d1-r1.png",
+    "prompt": "river/river-prompt-v10-branch-d1.txt (dead-straight 30\u00b0 course with a 60\u00b0 tributary off each junction; v9-fork base on the v8-diag course description)",
+    "layout_guide": {
+     "file": "river/guide-branch-d1.png",
+     "kind": "branch-d1",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "roll 1 followed the band at both junctions; painted core ~75px, ~1.9x overshoot vs the 40px band.",
+    "cut": {
+     "win_px": 640,
+     "note": "5:1 cut for the ~1.9x overshoot.",
+     "windows": [
+      {
+       "tile": "fork_se_ne_nw_00.png",
+       "x0": 269,
+       "y0": 452
+      },
+      {
+       "tile": "fork_se_nw_s_00.png",
+       "x0": 1137,
+       "y0": 964
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-v10-branch-d2-r1.png",
+    "prompt": "river/river-prompt-v10-branch-d2.txt (same 30\u00b0 course, the other pair of tributary orientations off each junction)",
+    "layout_guide": {
+     "file": "river/guide-branch-d2.png",
+     "kind": "branch-d2",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "roll 1 followed the band \u2014 tightest follow of the fork set: painted core ~50px, only ~1.26x overshoot vs the 40px band.",
+    "cut": {
+     "win_px": 448,
+     "note": "3.5:1 primary cut for the ~1.26x overshoot. The 384 cut of the same r1 swatch supplies fork_se_nw_sw_01.",
+     "windows": [
+      {
+       "tile": "fork_se_n_nw_00.png",
+       "x0": 379,
+       "y0": 566
+      },
+      {
+       "tile": "fork_se_nw_sw_00.png",
+       "x0": 1229,
+       "y0": 1048
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-v10-branch-d2-r1.png",
+    "prompt": "river/river-prompt-v10-branch-d2.txt (same 30\u00b0 course, the other pair of tributary orientations off each junction)",
+    "layout_guide": {
+     "file": "river/guide-branch-d2.png",
+     "kind": "branch-d2",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "roll 1 followed the band \u2014 tightest follow of the fork set: painted core ~50px, only ~1.26x overshoot vs the 40px band.",
+    "cut": {
+     "win_px": 384,
+     "note": "3:1 second cut of the branch-d2 r1 swatch for the fork_se_nw_sw_01 variant; post-recolor grass seam 3.32, at the ratified turn/fork range edge (user accepted).",
+     "windows": [
+      {
+       "tile": "fork_se_nw_sw_01.png",
+       "x0": 1265,
+       "y0": 1082
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-v10-y-r1.png",
+    "prompt": "river/river-prompt-v10-y.txt (connected double-Y: two symmetric 120\u00b0 Y junctions sharing a short connector; v9-fork base)",
+    "layout_guide": {
+     "file": "river/guide-y.png",
+     "kind": "y",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "roll 1 followed the band; painted core ~78px, ~1.95x overshoot vs the 40px band.",
+    "cut": {
+     "win_px": 640,
+     "note": "5:1 cut for the ~1.95x overshoot. Both 120\u00b0 Y shapes are self-mirror-symmetric, so each window is its own applied tile.",
+     "windows": [
+      {
+       "tile": "fork_se_n_sw_00.png",
+       "x0": 440,
+       "y0": 390
+      },
+      {
+       "tile": "fork_ne_nw_s_00.png",
+       "x0": 1038,
+       "y0": 738
+      }
+     ]
+    }
+   },
+   {
+    "swatch": "river/river-swatch-v10-fans-b-r2.png",
+    "prompt": "river/river-prompt-v10b-fans-b.txt (v10b = flat-map disclaimer + explicit per-arm compass walk; the plain v10 prompt on r1 replaced the SE arm with a W arm and blew the width ~3.6x)",
+    "layout_guide": {
+     "file": "river/guide-fans-b.png",
+     "kind": "fans-b",
+     "win_px": 384,
+     "band_px": 40
+    },
+    "generation_variance": "r1 (v10 prompt) mis-drew the fan \u2014 swapped the SE arm for a W arm, width ~3.6x, unusable; r2 (v10b prompt) followed perfectly, painted core ~107px, ~2.7x overshoot vs the 40px band.",
+    "cut": {
+     "win_px": 864,
+     "note": "6.75:1 cut for the ~2.7x overshoot.",
+     "windows": [
+      {
+       "tile": "fork_se_ne_s_00.png",
+       "x0": 598,
+       "y0": 598
+      }
+     ]
+    }
    }
   ],
   "shape_gates": "river.py cut --shape, tile px (auto-scaled by window): per-edge crossing centre off <=3, width band 12-36, width mismatch <=4, edge-straight dev <=2.5, opposite-edge centre mismatch <=2 (straights only), hex-boundary ring water only within half-span 31 of connected edge midpoints; picks measured crossings <=0.1, water 14-16px",
   "regenerate": "python3 scripts/tile-foundry/river.py build --manifest art/foundry/manifest.json --section river --out-dir <dir> [--verify frontend/src/board/tiles/river]",
-  "ratified": "straight_v 2026-07-02 via river/review/creek-v7-recolor-compare.png + creek-v7-recolor-mixcol-*.png ('Nice, looks good'); straight_d + turns 2026-07-02 via montages river-simple-shapes.png + river-course-preview.png ('Looks good... OK taking more than one and using them as variants' \u2014 all seam-clean candidates applied). Applied tiles archived at river/picks/"
+  "ratified": "straight_v 2026-07-02 via river/review/creek-v7-recolor-compare.png + creek-v7-recolor-mixcol-*.png ('Nice, looks good'); straight_d + turns 2026-07-02 via montages river-simple-shapes.png + river-course-preview.png ('Looks good... OK taking more than one and using them as variants' \u2014 all seam-clean candidates applied); forks (families A/B/C) 2026-07-03 via the fork-candidate montages ('Not bad! ... fine with having multiples of any given shape' \u2014 all seam-clean candidates applied as variants): 9 fork shapes / 12 tiles, post-recolor grass seams 2.25-3.32. Parked: the fans-a pair (fork_se_ne_n, fork_ne_n_nw) \u2014 5 rolls, NBP always paints a downstream outlet through the dead-end fan junction (all-arms-upward junctions are hydrologically outlet-free), so it needs a guide redesign if ever wanted. Applied tiles archived at river/picks/"
  },
  "concept_anchors": {
   "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",

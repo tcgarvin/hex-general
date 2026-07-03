@@ -84,11 +84,81 @@ describe("orientedRiverTile", () => {
     expect(orientedRiverTile([0, 4, 5])).toEqual({ name: "fork_se_sw_s", mirror: false });
   });
 
-  it("returns null for unhandled masks (ends, sharp turns, other forks) → generic fallback", () => {
+  it("returns null for unhandled masks (ends, sharp turns, 4+-edge blobs) → generic fallback", () => {
     expect(orientedRiverTile([2])).toBeNull(); // end (1 edge)
     expect(orientedRiverTile([0, 1])).toBeNull(); // adjacent edges → sharp turn
-    expect(orientedRiverTile([2, 3, 5])).toBeNull(); // unhandled fork orientation
+    expect(orientedRiverTile([0, 1, 2, 3])).toBeNull(); // 4-edge mask, not modelled
     expect(orientedRiverTile([])).toBeNull(); // isolated
+  });
+
+  // Ratified fork inventory (name, edges, mirror coverage): see
+  // /home/timg/.claude/jobs/37d5bab1/tmp/fork-inventory.md. All twenty
+  // three-edge masks (C(6,3)) resolve to a tile: twelve base masks (11
+  // generated here + the shipped `fork_se_sw_s`) plus eight L↔R mirrors under
+  // the render-time edge permutation M: 0↔4, 1↔3, 2→2, 5→5.
+  const MIRROR: Record<number, number> = { 0: 4, 1: 3, 2: 2, 3: 1, 4: 0, 5: 5 };
+
+  /** Every ascending 3-of-6 edge combination, e.g. "0,1,2" .. "3,4,5". */
+  function allTripleMasks(): number[][] {
+    const masks: number[][] = [];
+    for (let a = 0; a < 6; a++) {
+      for (let b = a + 1; b < 6; b++) {
+        for (let c = b + 1; c < 6; c++) {
+          masks.push([a, b, c]);
+        }
+      }
+    }
+    return masks;
+  }
+
+  it("resolves all 20 three-edge masks (C(6,3)) to a non-null oriented tile", () => {
+    const masks = allTripleMasks();
+    expect(masks).toHaveLength(20);
+    for (const mask of masks) {
+      expect(orientedRiverTile(mask)).not.toBeNull();
+    }
+  });
+
+  it("is mirror-consistent: M(mask) resolves to the same tile with mirror flipped, except self-symmetric masks (mirror: false on both sides)", () => {
+    for (const mask of allTripleMasks()) {
+      const mirroredMask = mask.map((e) => MIRROR[e]).sort((x, y) => x - y);
+      const self = orientedRiverTile(mask)!;
+      const mirrored = orientedRiverTile(mirroredMask)!;
+      expect(mirrored.name).toBe(self.name);
+      if (mirroredMask.join(",") === mask.join(",")) {
+        // Fixed point of M: mirror-symmetric, must never set the mirror flag.
+        expect(self.mirror).toBe(false);
+        expect(mirrored.mirror).toBe(false);
+      } else {
+        expect(mirrored.mirror).toBe(!self.mirror);
+      }
+    }
+  });
+
+  it.each([
+    ["0,2,5", { name: "fork_se_n_s", mirror: false }],
+    ["2,4,5", { name: "fork_se_n_s", mirror: true }],
+    ["1,2,5", { name: "fork_ne_n_s", mirror: false }],
+    ["2,3,5", { name: "fork_ne_n_s", mirror: true }],
+    ["0,1,3", { name: "fork_se_ne_nw", mirror: false }],
+    ["1,3,4", { name: "fork_se_ne_nw", mirror: true }],
+    ["0,2,3", { name: "fork_se_n_nw", mirror: false }],
+    ["1,2,4", { name: "fork_se_n_nw", mirror: true }],
+    ["0,3,4", { name: "fork_se_nw_sw", mirror: false }],
+    ["0,1,4", { name: "fork_se_nw_sw", mirror: true }],
+    ["0,3,5", { name: "fork_se_nw_s", mirror: false }],
+    ["1,4,5", { name: "fork_se_nw_s", mirror: true }],
+    ["0,2,4", { name: "fork_se_n_sw", mirror: false }],
+    ["1,3,5", { name: "fork_ne_nw_s", mirror: false }],
+    ["1,2,3", { name: "fork_ne_n_nw", mirror: false }],
+    ["0,1,2", { name: "fork_se_ne_n", mirror: false }],
+    ["2,3,4", { name: "fork_se_ne_n", mirror: true }],
+    ["0,1,5", { name: "fork_se_ne_s", mirror: false }],
+    ["3,4,5", { name: "fork_se_ne_s", mirror: true }],
+    ["0,4,5", { name: "fork_se_sw_s", mirror: false }],
+  ])("spot-check: mask %s → %o", (maskKey, expected) => {
+    const mask = maskKey.split(",").map(Number);
+    expect(orientedRiverTile(mask)).toEqual(expected);
   });
 });
 

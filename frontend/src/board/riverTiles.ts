@@ -11,8 +11,18 @@
 // resamples and looks mushy); instead we generate distinct oriented tiles and use
 // a render-time horizontal (left↔right) mirror to halve the art. Handled shapes:
 // the three straights (two opposite connected edges), the six gentle turns
-// (edges 120° apart), and the SE/SW/S junction fork. Sharp turns, other forks and
-// remaining masks fall back to the generic `00` tile until their later slices.
+// (edges 120° apart), and all 20 three-edge junction forks (C(6,3) — every
+// three-edge mask). Sharp turns (two adjacent connected edges) and masks of
+// four or more connected edges are not modelled at all and fall back to the
+// generic `00` tile.
+//
+// Art for 11 of the 20 fork names (everything but the shipped `fork_se_sw_s`)
+// lands separately (ROADMAP Phase 8, T3b-rest) — until then `orientedRiverTile`
+// still returns those names, but no PNG exists for them. The fallback to the
+// generic `00` tile for a missing texture is *not* here: it's the render-site
+// lookup in `Board.tsx` (`terrainTex.byOriented[name] ?? terrainTex.byOriented[
+// \`${terrain}/00\`]`), which falls through to the "00" group whenever the
+// named oriented group has no loaded variants.
 
 import type { components } from "@/lib/api/schema";
 
@@ -230,11 +240,42 @@ const ORIENTED_PAIRS: Readonly<Record<string, OrientedTile>> = {
   "1,3": { name: "turn_ne_nw", mirror: false },
 };
 
-// Handled three-edge shapes (forks), keyed like ORIENTED_PAIRS. Named through-
-// course first, branch last. {0,4,5} (SE→SW course, S branch — twin_rivers'
-// tributary junction) is mirror-symmetric, so one generated tile covers it;
-// further fork orientations gain entries (and mirror pairs) as their art lands.
+// All twenty three-edge shapes (forks), keyed like ORIENTED_PAIRS — C(6,3) = 20,
+// so every three-edge mask is handled. Named through-course first, branch last.
+// Twelve base masks (11 generated here + the shipped `fork_se_sw_s`) carry
+// `mirror: false`; the other eight are the L↔R mirror of a base mask under the
+// render-time edge permutation M: 0↔4, 1↔3, 2→2, 5→5 (same convention as
+// ORIENTED_PAIRS' turn mirrors) and map to that base's tile name with
+// `mirror: true`. Four masks are fixed points of M ({0,2,4}, {1,3,5}, {1,2,3},
+// and the shipped {0,4,5}) — each is mirror-symmetric, so a single generated
+// tile covers it and `mirror` is always `false`. See
+// `/home/timg/.claude/jobs/37d5bab1/tmp/fork-inventory.md` for the ratified
+// name/edge inventory this table is generated from.
 const ORIENTED_TRIPLES: Readonly<Record<string, OrientedTile>> = {
+  // Family A — straight course + 60° branch (6 base tiles / 12 masks).
+  "0,2,5": { name: "fork_se_n_s", mirror: false },
+  "2,4,5": { name: "fork_se_n_s", mirror: true },
+  "1,2,5": { name: "fork_ne_n_s", mirror: false },
+  "2,3,5": { name: "fork_ne_n_s", mirror: true },
+  "0,1,3": { name: "fork_se_ne_nw", mirror: false },
+  "1,3,4": { name: "fork_se_ne_nw", mirror: true },
+  "0,2,3": { name: "fork_se_n_nw", mirror: false },
+  "1,2,4": { name: "fork_se_n_nw", mirror: true },
+  "0,3,4": { name: "fork_se_nw_sw", mirror: false },
+  "0,1,4": { name: "fork_se_nw_sw", mirror: true },
+  "0,3,5": { name: "fork_se_nw_s", mirror: false },
+  "1,4,5": { name: "fork_se_nw_s", mirror: true },
+  // Family B — symmetric 120° Y (2 tiles, self-mirror-symmetric).
+  "0,2,4": { name: "fork_se_n_sw", mirror: false },
+  "1,3,5": { name: "fork_ne_nw_s", mirror: false },
+  // Family C — fans, 3 consecutive edges (3 tiles / 5 masks).
+  "1,2,3": { name: "fork_ne_n_nw", mirror: false },
+  "0,1,2": { name: "fork_se_ne_n", mirror: false },
+  "2,3,4": { name: "fork_se_ne_n", mirror: true },
+  "0,1,5": { name: "fork_se_ne_s", mirror: false },
+  "3,4,5": { name: "fork_se_ne_s", mirror: true },
+  // SE/SW/S junction fork (twin_rivers' tributary junction) — self-symmetric,
+  // shipped ahead of the rest of the family in an earlier slice.
   "0,4,5": { name: "fork_se_sw_s", mirror: false },
 };
 
@@ -242,8 +283,10 @@ const ORIENTED_TRIPLES: Readonly<Record<string, OrientedTile>> = {
  * Choose the oriented tile + mirror flag for a river/bridge hex from its
  * connected-edge set (ideally the pruned {@link riverCourseEdges} mask), or
  * `null` if the shape isn't handled yet (the caller falls back to the generic
- * `00` tile). Handles the straights, gentle turns, and the SE/SW/S fork; sharp
- * turns and the remaining fork orientations come in later slices.
+ * `00` tile). Handles the straights, the gentle turns, and all twenty
+ * three-edge fork orientations; only the two-edge sharp turns (edges adjacent
+ * in {@link AXIAL_DIRECTIONS}) and masks of four or more edges remain
+ * unhandled.
  */
 export function orientedRiverTile(edges: number[]): OrientedTile | null {
   if (edges.length === 2) {

@@ -17,7 +17,12 @@ stages around the shared foundry (`gen.py` does the NBP call as usual):
            JSON sidecar (`--anchors-out`) that `cut --shape` searches around.
            `--kind fork` reuses the zigzag-h course and drops a straight S
            tributary band from each peak corner: peak + branch is a
-           fork_se_sw_s junction window.
+           fork_se_sw_s junction window. `--kind branch-v / branch-d1 /
+           branch-d2 / y / fans-a / fans-b` are the all-straight
+           junction-tree guides for the remaining fork orientations: straight
+           course/connector bands plus free rays that overshoot the canvas,
+           one junction anchor per fork, each audited against the shape gates
+           (measure_shape) before the guide is accepted.
   cut      Search a generated swatch for hex windows whose crossings satisfy
            the tiling contract (centre + width match at each connected edge,
            straight entry spans; for `--shape` turns/diagonals additionally a
@@ -143,7 +148,11 @@ EDGE_THETA_DEG = {0: 30.0, 1: -30.0, 2: -90.0, 3: -150.0, 4: 150.0, 5: 90.0}
 # mirrors to N+SW, turn_s_nw mirrors to S+NE, straight_d mirrors "\" to "/",
 # and turn_se_sw / turn_ne_nw / fork_se_sw_s are their own mirror partners.
 # fork_se_sw_s is the tributary junction: the SE->SW main course (a turn_se_sw
-# peak) with a straight S branch leaving the corner.
+# peak) with a straight S branch leaving the corner. The remaining 11 forks
+# (families A/B/C in the T3b-rest inventory) are all-straight junction trees:
+# names list their connected edges in ascending index order. Render-time L<->R
+# mirroring supplies eight more orientations; the two 120° Y shapes and the
+# two three-consecutive-edge fans that straddle N are their own mirror partners.
 SHAPES: dict[str, tuple[int, ...]] = {
     "straight_d": (0, 3),
     "turn_n_se": (2, 0),
@@ -151,6 +160,20 @@ SHAPES: dict[str, tuple[int, ...]] = {
     "turn_se_sw": (0, 4),
     "turn_ne_nw": (1, 3),
     "fork_se_sw_s": (0, 4, 5),
+    # family A: straight course + 60° branch
+    "fork_se_n_s": (0, 2, 5),
+    "fork_ne_n_s": (1, 2, 5),
+    "fork_se_ne_nw": (0, 1, 3),
+    "fork_se_n_nw": (0, 2, 3),
+    "fork_se_nw_sw": (0, 3, 4),
+    "fork_se_nw_s": (0, 3, 5),
+    # family B: symmetric 120° Y
+    "fork_se_n_sw": (0, 2, 4),
+    "fork_ne_nw_s": (1, 3, 5),
+    # family C: fans, three consecutive edges
+    "fork_ne_n_nw": (1, 2, 3),
+    "fork_se_ne_n": (0, 1, 2),
+    "fork_se_ne_s": (0, 1, 5),
 }
 
 ZZ_ARC_T = 70.0  # arc tangent length, swatch px at win=384 (turn radius = T*sqrt(3))
@@ -311,12 +334,156 @@ def build_zigzag_guide(kind: str, win: int, band: float) -> tuple[Image.Image, l
     for p0, p1 in geo.get("branches", []):
         points += _straight_samples(p0, p1)
 
+    return _stamp_band(points, band), geo["anchors"]
+
+
+def _stamp_band(points: list[tuple[float, float]], band: float) -> Image.Image:
+    """Stamp a centerline point list as a hard-edged grey-128 band on white.
+
+    Each ~1px-spaced point becomes a band/2-radius disc; the disc union is the
+    same stadium-width band the straight and zigzag guides use.
+    """
     img = Image.new("L", (GUIDE_SIZE, GUIDE_SIZE), 255)
     draw = ImageDraw.Draw(img)
     r = band / 2.0
     for x, y in points:
         draw.ellipse([x - r, y - r, x + r, y + r], fill=128)
-    return img.convert("RGB"), geo["anchors"]
+    return img.convert("RGB")
+
+
+# ----------------------------------------------- junction-tree geometry ----
+
+# The all-straight fork guides (T3b-rest families A/B/C). Unlike the zigzag
+# kinds these have no arcs: every band is a straight segment, junctions are
+# where segments meet, and each free ray runs from its junction out past the
+# canvas edge (PIL clips) exactly like the shipped fork guide's branches.
+# Coordinates are authored at win=384 on the 2048 canvas and scale by
+# k = win/384, matching zigzag_geometry's constants.
+TREE_KINDS = ("branch-v", "branch-d1", "branch-d2", "y", "fans-a", "fans-b")
+TREE_RAY = 2600.0  # free-ray overshoot past the canvas edge, authored px
+
+
+def _ray_end(p: tuple[float, float], edge: int, reach: float) -> tuple[float, float]:
+    """Endpoint of a free ray leaving `p` outward along `edge`'s radial."""
+    ux, uy = _unit(EDGE_THETA_DEG[edge])
+    return (p[0] + reach * ux, p[1] + reach * uy)
+
+
+def _course(
+    a: tuple[float, float], b: tuple[float, float], edge: int, reach: float
+) -> tuple[tuple[float, float], tuple[float, float]]:
+    """A straight through-course along `edge`'s axis, overshooting past a and b."""
+    ux, uy = _unit(EDGE_THETA_DEG[edge])
+    return ((a[0] - reach * ux, a[1] - reach * uy), (b[0] + reach * ux, b[1] + reach * uy))
+
+
+def tree_geometry(kind: str, win: int) -> dict:
+    """Junction anchors and straight band segments for one junction-tree kind.
+
+    Each junction's connected edges are supplied by through-course bands
+    (straight lines crossing two opposite edges), junction->junction connectors,
+    and free rays. The authored (win=384) layout is scaled by k = win/384 at the
+    end. See docs/ROADMAP Phase 8 / the T3b-rest fork inventory for the
+    hand-verified margins (junctions >=450px from every edge, >=600px apart).
+    """
+    R = TREE_RAY
+    if kind == "branch-v":  # vertical course, a 60° branch off each junction
+        j1, j2 = (720.0, 620.0), (720.0, 1420.0)
+        junctions = [("fork_ne_n_s", j1), ("fork_se_n_s", j2)]
+        segments = [
+            _course(j1, j2, 5, R),  # S-axis vertical course through both
+            (j1, _ray_end(j1, 1, R)),  # NE branch
+            (j2, _ray_end(j2, 0, R)),  # SE branch
+        ]
+    elif kind in ("branch-d1", "branch-d2"):  # 30° course, a 60° branch each
+        j1, j2 = (591.0, 774.0), (1457.0, 1274.0)
+        course = _course(j1, j2, 0, R)  # SE-axis course through the canvas centre
+        if kind == "branch-d1":
+            junctions = [("fork_se_ne_nw", j1), ("fork_se_nw_s", j2)]
+            segments = [course, (j1, _ray_end(j1, 1, R)), (j2, _ray_end(j2, 5, R))]
+        else:
+            junctions = [("fork_se_n_nw", j1), ("fork_se_nw_sw", j2)]
+            segments = [course, (j1, _ray_end(j1, 2, R)), (j2, _ray_end(j2, 4, R))]
+    elif kind == "y":  # connected double-Y
+        a = (760.0, 700.0)
+        b = _ray_end(a, 0, 700.0)  # connector A->B along SE, length 700
+        junctions = [("fork_se_n_sw", a), ("fork_ne_nw_s", b)]
+        segments = [
+            (a, b),  # A->B connector: A's SE edge, B's NW edge
+            (a, _ray_end(a, 2, R)),  # A: N ray
+            (a, _ray_end(a, 4, R)),  # A: SW ray
+            (b, _ray_end(b, 1, R)),  # B: NE ray
+            (b, _ray_end(b, 5, R)),  # B: S ray
+        ]
+    elif kind == "fans-a":  # chained fans
+        p1 = (480.0, 700.0)
+        p2 = _ray_end(p1, 0, 700.0)  # connector P1->P2 along SE, length 700
+        junctions = [("fork_se_ne_n", p1), ("fork_ne_n_nw", p2)]
+        segments = [
+            (p1, p2),  # P1->P2 connector: P1's SE edge, P2's NW edge
+            (p1, _ray_end(p1, 1, R)),  # P1: NE ray
+            (p1, _ray_end(p1, 2, R)),  # P1: N ray  (crosses P2's N ray at (1086,350))
+            (p2, _ray_end(p2, 1, R)),  # P2: NE ray
+            (p2, _ray_end(p2, 2, R)),  # P2: N ray
+        ]
+    elif kind == "fans-b":  # solo fan
+        j = (1024.0, 1024.0)
+        junctions = [("fork_se_ne_s", j)]
+        segments = [
+            (j, _ray_end(j, 0, R)),  # SE ray
+            (j, _ray_end(j, 1, R)),  # NE ray
+            (j, _ray_end(j, 5, R)),  # S ray
+        ]
+    else:
+        raise ValueError(f"unknown tree kind {kind!r}")
+
+    k = win / 384.0
+    segments = [((p0[0] * k, p0[1] * k), (p1[0] * k, p1[1] * k)) for p0, p1 in segments]
+    anchors = [{"shape": s, "cx": p[0] * k, "cy": p[1] * k} for s, p in junctions]
+    return {"segments": segments, "anchors": anchors}
+
+
+def build_tree_guide(kind: str, win: int, band: float) -> tuple[Image.Image, list[dict]]:
+    """All-straight junction-tree band + its shape anchors (one per junction)."""
+    geo = tree_geometry(kind, win)
+    points: list[tuple[float, float]] = []
+    for p0, p1 in geo["segments"]:
+        points += _straight_samples(p0, p1)
+    return _stamp_band(points, band), geo["anchors"]
+
+
+def build_layout_guide(kind: str, win: int, band: float) -> tuple[Image.Image, list[dict]]:
+    """Dispatch to the zigzag or junction-tree builder for an anchored guide.
+
+    Both return (band image, anchor sidecar list), so `guide` and the build
+    replay can drive every non-`straight` kind through this one call.
+    """
+    if kind in TREE_KINDS:
+        return build_tree_guide(kind, win, band)
+    return build_zigzag_guide(kind, win, band)
+
+
+def audit_tree_guide(img: Image.Image, anchors: list[dict], win: int) -> None:
+    """Verify each anchor measures as its shape against the swatch cut gates.
+
+    Threshold the drawn band (pixel == 128) as water and run measure_shape at
+    each anchor's exact (cx, cy) with win Gates and the hex-boundary ring — the
+    same gates a real swatch cut uses. Any anchor that fails to resolve is a
+    layout bug; raise loudly rather than shipping an unfollowable guide.
+    """
+    water = np.asarray(img.convert("L")) == 128
+    gates = Gates(win)
+    hd = hex_boundary_dist(win)
+    ring = (hd >= 0) & (hd <= 6.0)
+    for a in anchors:
+        cx, cy = int(round(a["cx"])), int(round(a["cy"]))
+        m = measure_shape(water, cx, cy, a["shape"], gates, ring)
+        if m is None:
+            raise RuntimeError(
+                f"guide audit FAILED: anchor {a['shape']} at ({cx}, {cy}) does not "
+                f"measure as a valid {a['shape']} window at win={win}"
+            )
+        print(f"  audit {a['shape']:<14} ({cx}, {cy}) OK")
 
 
 # ------------------------------------------------------------------ cut ----
@@ -827,7 +994,28 @@ ORIENTED_TILES: dict[tuple[int, ...], tuple[str, bool]] = {
     (1, 5): ("turn_s_nw", True),
     (0, 4): ("turn_se_sw", False),
     (1, 3): ("turn_ne_nw", False),
+    # every three-edge mask, mirroring frontend riverTiles.ts ORIENTED_TRIPLES:
+    # 12 base tiles plus the 8 masks the L<->R mirror (0<->4, 1<->3) covers
     (0, 4, 5): ("fork_se_sw_s", False),
+    (0, 2, 5): ("fork_se_n_s", False),
+    (2, 4, 5): ("fork_se_n_s", True),
+    (1, 2, 5): ("fork_ne_n_s", False),
+    (2, 3, 5): ("fork_ne_n_s", True),
+    (0, 1, 3): ("fork_se_ne_nw", False),
+    (1, 3, 4): ("fork_se_ne_nw", True),
+    (0, 2, 3): ("fork_se_n_nw", False),
+    (1, 2, 4): ("fork_se_n_nw", True),
+    (0, 3, 4): ("fork_se_nw_sw", False),
+    (0, 1, 4): ("fork_se_nw_sw", True),
+    (0, 3, 5): ("fork_se_nw_s", False),
+    (1, 4, 5): ("fork_se_nw_s", True),
+    (0, 2, 4): ("fork_se_n_sw", False),
+    (1, 3, 5): ("fork_ne_nw_s", False),
+    (1, 2, 3): ("fork_ne_n_nw", False),
+    (0, 1, 2): ("fork_se_ne_n", False),
+    (2, 3, 4): ("fork_se_ne_n", True),
+    (0, 1, 5): ("fork_se_ne_s", False),
+    (3, 4, 5): ("fork_se_ne_s", True),
 }
 
 # Travel directions of the default preview course: 12 hexes hitting all nine
@@ -993,7 +1181,7 @@ def run_build(args: argparse.Namespace) -> int:
     for src in section.get("sources", []):
         g = src["layout_guide"]
         committed_src = np.asarray(Image.open(root / g["file"]).convert("RGB"))
-        rebuilt_src, _ = build_zigzag_guide(g["kind"], int(g["win_px"]), float(g["band_px"]))
+        rebuilt_src, _ = build_layout_guide(g["kind"], int(g["win_px"]), float(g["band_px"]))
         if not np.array_equal(committed_src, np.asarray(rebuilt_src.convert("RGB"))):
             print(f"GUIDE DIFFERS from recorded parameters: {g['file']}")
             return 1
@@ -1027,11 +1215,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     g.add_argument("--band", type=float, required=True, help="band width, swatch px")
     g.add_argument(
         "--kind",
-        choices=("straight", "zigzag-v", "zigzag-h", "diag", "fork"),
+        choices=("straight", "zigzag-v", "zigzag-h", "diag", "fork", *TREE_KINDS),
         default="straight",
         help="straight = the ratified straight_v meander; zigzag-* = the bend "
         "guides; diag = one straight SE leg for straight_d; fork = zigzag-h "
-        "whose peaks each drop a straight S tributary (fork_se_sw_s windows)",
+        "whose peaks each drop a straight S tributary (fork_se_sw_s windows); "
+        "branch-*/y/fans-* = the all-straight junction-tree fork guides",
     )
     g.add_argument("--seed", type=int, default=23, help="straight kind only (lobe amplitudes)")
     g.add_argument("--out", type=Path, required=True)
@@ -1111,13 +1300,18 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.anchors_out is None:
             raise SystemExit(f"guide --kind {args.kind} requires --anchors-out")
-        img, anchors = build_zigzag_guide(args.kind, args.win, args.band)
+        img, anchors = build_layout_guide(args.kind, args.win, args.band)
         img.save(args.out)
         print(f"wrote {args.out}  {args.kind}, win {args.win}px, band {args.band:.0f}px")
         args.anchors_out.write_text(json.dumps(anchors, indent=1) + "\n")
         for a in anchors:
             print(f"  anchor {a['shape']:<12} ({a['cx']:.0f}, {a['cy']:.0f})")
         print(f"wrote {args.anchors_out}")
+        # the junction-tree kinds are new geometry; verify each anchor really
+        # measures as its shape before the guide is used to drive a gen.
+        if args.kind in TREE_KINDS:
+            audit_tree_guide(img, anchors, args.win)
+            print("guide audit passed: every anchor measures as its shape")
         return 0
     if args.cmd == "cut":
         if args.shape == "straight_v":
