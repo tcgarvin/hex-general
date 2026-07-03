@@ -8,6 +8,10 @@ from app.engine.events import (
     CombatRole,
     EconomyResolved,
     Event,
+    OrderMooted,
+    OrderMootedReason,
+    RecruitmentVoided,
+    RecruitmentVoidedReason,
     UnitMoved,
 )
 from app.engine.fog import filter_events, redact_state
@@ -166,6 +170,47 @@ def test_filter_makes_economy_private_to_its_owner() -> None:
         lost_to_cap=0,
     )
     assert filter_events([blue_econ, red_econ], state, "blue") == [blue_econ]
+
+
+def test_filter_makes_order_mooted_private_to_the_owner() -> None:
+    # Blue and red stand adjacent, so red sees every hex involved — but a mooted
+    # order is private bookkeeping (the event carries no location), so red never
+    # learns that blue's dead unit had an order at all.
+    state = build(
+        ["..."],
+        [
+            {"type": "infantry", "owner": "blue", "q": 0, "r": 0},  # id 1
+            {"type": "infantry", "owner": "red", "q": 1, "r": 0},  # id 2
+        ],
+    )
+    mooted = OrderMooted(
+        unit_id=7, owner="blue", reason=OrderMootedReason.DESTROYED_IN_BARRAGE
+    )
+    assert filter_events([mooted], state, "blue") == [mooted]
+    assert filter_events([mooted], state, "red") == []
+
+
+def test_filter_makes_recruitment_voided_private_to_the_owner() -> None:
+    # Red stands adjacent to blue's city, so red can see the hex the voided
+    # recruit named — but the event is still private to blue: a voided recruit
+    # changes nothing on the board, and gating on the city hex would leak blue's
+    # recruit *intent* to anyone who can merely see the city.
+    state = build(
+        ["c.."],
+        [
+            {"type": "infantry", "owner": "blue", "q": 0, "r": 0},  # id 1
+            {"type": "infantry", "owner": "red", "q": 1, "r": 0},  # id 2
+        ],
+        settlements=[{"q": 0, "r": 0, "owner": "blue"}],
+    )
+    voided = RecruitmentVoided(
+        owner="blue",
+        coord=Axial(q=0, r=0),
+        unit_type=UnitType.INFANTRY,
+        reason=RecruitmentVoidedReason.HEX_OCCUPIED,
+    )
+    assert filter_events([voided], state, "blue") == [voided]
+    assert filter_events([voided], state, "red") == []
 
 
 def test_filter_preserves_event_order() -> None:

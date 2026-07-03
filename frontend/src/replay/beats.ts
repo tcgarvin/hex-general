@@ -42,8 +42,11 @@ function isPulseEvent(e: ReplayEvent): e is PulseEvent {
 export function groupBeats(events: ReplayEvent[]): Beat[] {
   const beats: Beat[] = [];
 
-  // Phase 1: Barrage
-  const barrageEvents = events.filter((e) => e.kind === "barrage_resolved");
+  // Phase 1: Barrage — including orders mooted by barrage kills, which the engine
+  // logs between the barrage and movement events (SPEC §11.3).
+  const barrageEvents = events.filter(
+    (e) => e.kind === "barrage_resolved" || e.kind === "order_mooted",
+  );
   if (barrageEvents.length > 0) {
     beats.push({ phase: "barrage", label: "BARRAGE", events: barrageEvents });
   }
@@ -87,8 +90,10 @@ export function groupBeats(events: ReplayEvent[]): Beat[] {
     beats.push({ phase: "economy", label: "ECONOMY", events: economyEvents });
   }
 
-  // Phase 6: Recruitment
-  const recruitEvents = events.filter((e) => e.kind === "unit_recruited");
+  // Phase 6: Recruitment — including requests voided mid-turn (SPEC §11.3).
+  const recruitEvents = events.filter(
+    (e) => e.kind === "unit_recruited" || e.kind === "recruitment_voided",
+  );
   if (recruitEvents.length > 0) {
     beats.push({
       phase: "recruitment",

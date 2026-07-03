@@ -770,6 +770,44 @@
         "title": "MoveOrder",
         "type": "object"
       },
+      "OrderMooted": {
+        "additionalProperties": false,
+        "description": "A unit's order was dropped because the turn voided it before it applied.\n\nBarrage (\u00a711.3 Phase 1) removes destroyed units before movement (Phase 2), so a\nstatically-legal Move/Hold/Rest order can name a unit that no longer exists by\nthe time movement resolves. That is defined simultaneity, not a caller bug: the\norder is skipped and this event records it for the replay. Emitted between the\nbarrage events and the movement events. (An order naming a unit that *never*\nexisted remains a caller bug and still raises `EngineError` in movement. A\nBarrage order whose artillery died in the exchange is *not* mooted \u2014 barrage\nresolves simultaneously, so that order already applied in Phase 1.)\n\n``owner`` is carried on the event because the unit is destroyed: fog filtering\nruns against the post-turn state, where the dead unit can no longer be resolved\nto its owner.",
+        "properties": {
+          "kind": {
+            "const": "order_mooted",
+            "default": "order_mooted",
+            "title": "Kind",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/OrderMootedReason"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "owner",
+          "reason"
+        ],
+        "title": "OrderMooted",
+        "type": "object"
+      },
+      "OrderMootedReason": {
+        "description": "Why a statically-legal order became moot mid-turn (SPEC \u00a711.3).",
+        "enum": [
+          "destroyed_in_barrage"
+        ],
+        "title": "OrderMootedReason",
+        "type": "string"
+      },
       "Player": {
         "description": "A participant's mutable economy state (SPEC \u00a76).\n\n``bank`` is the muster bank, clamped to 0..`MUSTER_BANK_CAP` (SPEC \u00a76.3,\n\u00a76.4). Settlement control is not duplicated here \u2014 derive it from\n`GameState.settlements` to keep one source of truth.",
         "properties": {
@@ -842,6 +880,50 @@
         ],
         "title": "Recruitment",
         "type": "object"
+      },
+      "RecruitmentVoided": {
+        "additionalProperties": false,
+        "description": "A recruit request was skipped because the turn voided it (SPEC \u00a76.5, \u00a711.3).\n\nRecruitment resolves last (\u00a711.3 Phase 6), after movement/capture/economy, so a\nstatically-legal recruit can be voided by the turn itself: the city was captured\n(possibly by a fog-hidden enemy), a unit ended its move on the hex, the running\nunit cap filled, or the post-economy bank fell short. The muster stays banked and\nthe request is skipped rather than crashing the turn.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "recruitment_voided",
+            "default": "recruitment_voided",
+            "title": "Kind",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/RecruitmentVoidedReason"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "owner",
+          "coord",
+          "unit_type",
+          "reason"
+        ],
+        "title": "RecruitmentVoided",
+        "type": "object"
+      },
+      "RecruitmentVoidedReason": {
+        "description": "Why a submission-legal recruit was voided by the turn (SPEC \u00a76.5, \u00a711.3).",
+        "enum": [
+          "city_not_friendly",
+          "hex_occupied",
+          "unit_cap_reached",
+          "insufficient_muster"
+        ],
+        "title": "RecruitmentVoidedReason",
+        "type": "string"
       },
       "RestOrder": {
         "description": "Do not move; repair HP if undamaged during execution (SPEC \u00a77.3).",
@@ -1064,6 +1146,8 @@
                   "combat_resolved": "#/components/schemas/CombatResolved",
                   "economy_resolved": "#/components/schemas/EconomyResolved",
                   "move_blocked": "#/components/schemas/MoveBlocked",
+                  "order_mooted": "#/components/schemas/OrderMooted",
+                  "recruitment_voided": "#/components/schemas/RecruitmentVoided",
                   "settlement_captured": "#/components/schemas/SettlementCaptured",
                   "traffic_jam": "#/components/schemas/TrafficJam",
                   "unit_moved": "#/components/schemas/UnitMoved",
@@ -1089,6 +1173,9 @@
                   "$ref": "#/components/schemas/BarrageResolved"
                 },
                 {
+                  "$ref": "#/components/schemas/OrderMooted"
+                },
+                {
                   "$ref": "#/components/schemas/SettlementCaptured"
                 },
                 {
@@ -1099,6 +1186,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/UnitRecruited"
+                },
+                {
+                  "$ref": "#/components/schemas/RecruitmentVoided"
                 }
               ]
             },

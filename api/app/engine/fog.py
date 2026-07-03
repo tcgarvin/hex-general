@@ -30,6 +30,8 @@ from app.engine.events import (
     EconomyResolved,
     Event,
     MoveBlocked,
+    OrderMooted,
+    RecruitmentVoided,
     SettlementCaptured,
     TrafficJam,
     UnitMoved,
@@ -107,6 +109,15 @@ def _event_scope(
         return {event.player}, set()
     if isinstance(event, UnitRecruited):
         return {event.owner}, {event.coord}
+    if isinstance(event, OrderMooted):
+        # Private bookkeeping for the dead unit's owner, like economy. The event
+        # carries its own owner because the unit no longer exists post-turn.
+        return {event.owner}, set()
+    if isinstance(event, RecruitmentVoided):
+        # Private to the requester, with NO location: a voided recruit changes
+        # nothing on the board, and gating on the city hex would leak the enemy's
+        # recruit *intent* to an opponent who can merely see the city.
+        return {event.owner}, set()
     raise AssertionError(f"unhandled event kind for fog: {event!r}")
 
 

@@ -27,7 +27,7 @@ from pathlib import Path
 from pydantic import TypeAdapter
 
 from app.ai.arena import REGISTRY as BOT_REGISTRY
-from app.ai.simulate import resolve_plan
+from app.engine.execution import resolve_execution
 from app.engine.events import Event
 from app.engine.fog import filter_events, redact_state
 from app.engine.models import GameState, Order, Recruitment
@@ -357,12 +357,12 @@ class GameService:
     ) -> tuple[GameState, str]:
         """Run the engine over the full set of submissions and persist the result.
 
-        Resolution goes through `resolve_plan`, which drops intents that the
-        turn's simultaneous dynamics make moot — an order for a unit destroyed
-        by pre-movement barrage, or a recruit at a city lost/occupied mid-turn
-        (possible under fog even though each submission validated statically).
-        The engine treats those stale intents as caller bugs and would crash
-        the turn; in a live game they must instead resolve as no-ops.
+        Resolution goes through `resolve_execution`, which owns mooted-intent
+        semantics: it drops intents the turn's own simultaneous dynamics make moot
+        — an order for a unit destroyed by pre-movement barrage, or a recruit at a
+        city lost/occupied/unaffordable mid-turn (possible under fog even though
+        each submission validated statically) — resolving them as no-ops with a
+        replay event rather than crashing the turn.
         """
         turn = game.state.turn
         slot_by_player_id = {p.id: p.slot for p in players}
@@ -379,7 +379,7 @@ class GameService:
                 _RECRUITMENTS.validate_python(submission.orders["recruitments"])
             )
 
-        next_state, events = resolve_plan(game.state, orders, recruitments)
+        next_state, events = resolve_execution(game.state, orders, recruitments)
         victory = victory_status(next_state)
         status = "finished" if victory.decided else "active"
 

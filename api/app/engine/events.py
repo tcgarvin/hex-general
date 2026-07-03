@@ -167,6 +167,37 @@ class BarrageResolved(BaseModel):
     hit: BarrageHit | None = None
 
 
+class OrderMootedReason(StrEnum):
+    """Why a statically-legal order became moot mid-turn (SPEC §11.3)."""
+
+    DESTROYED_IN_BARRAGE = "destroyed_in_barrage"  # the ordered unit died in Phase 1
+
+
+class OrderMooted(BaseModel):
+    """A unit's order was dropped because the turn voided it before it applied.
+
+    Barrage (§11.3 Phase 1) removes destroyed units before movement (Phase 2), so a
+    statically-legal Move/Hold/Rest order can name a unit that no longer exists by
+    the time movement resolves. That is defined simultaneity, not a caller bug: the
+    order is skipped and this event records it for the replay. Emitted between the
+    barrage events and the movement events. (An order naming a unit that *never*
+    existed remains a caller bug and still raises `EngineError` in movement. A
+    Barrage order whose artillery died in the exchange is *not* mooted — barrage
+    resolves simultaneously, so that order already applied in Phase 1.)
+
+    ``owner`` is carried on the event because the unit is destroyed: fog filtering
+    runs against the post-turn state, where the dead unit can no longer be resolved
+    to its owner.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["order_mooted"] = "order_mooted"
+    unit_id: UnitId
+    owner: PlayerId
+    reason: OrderMootedReason
+
+
 class SettlementCaptured(BaseModel):
     """An infantry/armor unit captured a town or city (SPEC §14.1, §11.3 Phase 3).
 
@@ -240,16 +271,46 @@ class UnitRecruited(BaseModel):
     bank_after: int
 
 
+class RecruitmentVoidedReason(StrEnum):
+    """Why a submission-legal recruit was voided by the turn (SPEC §6.5, §11.3)."""
+
+    CITY_NOT_FRIENDLY = "city_not_friendly"  # the city was captured/lost mid-turn
+    HEX_OCCUPIED = "hex_occupied"  # a unit ended its move on the target hex
+    UNIT_CAP_REACHED = "unit_cap_reached"  # the running cap filled first
+    INSUFFICIENT_MUSTER = "insufficient_muster"  # the post-economy bank fell short
+
+
+class RecruitmentVoided(BaseModel):
+    """A recruit request was skipped because the turn voided it (SPEC §6.5, §11.3).
+
+    Recruitment resolves last (§11.3 Phase 6), after movement/capture/economy, so a
+    statically-legal recruit can be voided by the turn itself: the city was captured
+    (possibly by a fog-hidden enemy), a unit ended its move on the hex, the running
+    unit cap filled, or the post-economy bank fell short. The muster stays banked and
+    the request is skipped rather than crashing the turn.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["recruitment_voided"] = "recruitment_voided"
+    owner: PlayerId
+    coord: Axial
+    unit_type: UnitType
+    reason: RecruitmentVoidedReason
+
+
 Event = Annotated[
     UnitMoved
     | MoveBlocked
     | TrafficJam
     | CombatResolved
     | BarrageResolved
+    | OrderMooted
     | SettlementCaptured
     | UnitRepaired
     | EconomyResolved
-    | UnitRecruited,
+    | UnitRecruited
+    | RecruitmentVoided,
     Field(discriminator="kind"),
 ]
 """Tagged union of all execution events, discriminated on ``kind``."""

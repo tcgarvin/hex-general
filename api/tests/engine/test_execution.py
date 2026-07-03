@@ -7,11 +7,20 @@ can walk into the hex it vacated.
 
 from __future__ import annotations
 
-from app.engine.events import BarrageResolved, SettlementCaptured, UnitMoved
+import pytest
+
+from app.engine.events import (
+    BarrageResolved,
+    OrderMooted,
+    OrderMootedReason,
+    SettlementCaptured,
+    UnitMoved,
+)
 from app.engine.execution import resolve_execution
 from app.engine.models import GameState, Order
+from app.engine.movement import EngineError
 from app.engine.victory import VictoryReason, victory_status
-from engine.helpers import alive, at, barrage, build, hp_of, move
+from engine.helpers import alive, at, barrage, build, hold, hp_of, move, rest
 
 
 def test_barrage_resolves_before_movement() -> None:
@@ -65,6 +74,92 @@ def test_units_without_orders_hold_through_execution() -> None:
     # accounting (one per player), and the turn advanced.
     assert {e.kind for e in events} == {"economy_resolved"}
     assert new_state.turn == state.turn + 1
+
+
+def test_order_for_barrage_killed_unit_is_mooted_not_crashed() -> None:
+    # Blue artillery flattens the red infantry, which was itself ordered to Hold.
+    # Barrage removes it before movement, so its Hold order is moot: the engine
+    # drops it and logs OrderMooted rather than crashing (SPEC §11.3).
+    state = build(
+        ["...."],
+        [
+            {"type": "artillery", "owner": "blue", "q": 3, "r": 0},
+            {"type": "infantry", "owner": "red", "q": 1, "r": 0, "hp": 1},
+        ],
+    )
+    orders: list[Order] = [barrage(1, 1, 0), hold(2)]
+    new_state, events = resolve_execution(state, orders)
+
+    assert not alive(new_state, 2)  # barraged to death
+    mooted = [e for e in events if isinstance(e, OrderMooted)]
+    assert len(mooted) == 1
+    assert mooted[0].unit_id == 2
+    assert mooted[0].owner == "red"  # the dead unit's owner, for fog filtering
+    assert mooted[0].reason is OrderMootedReason.DESTROYED_IN_BARRAGE
+    # The mooted event sits between the barrage events and the movement events.
+    kinds = [e.kind for e in events]
+    assert kinds.index("barrage_resolved") < kinds.index("order_mooted")
+
+
+def test_move_and_rest_orders_for_barrage_killed_units_are_mooted() -> None:
+    # Two red units, one ordered to Move and one to Rest, are both barraged dead.
+    # Neither order applies; both are mooted and resolution completes.
+    state = build(
+        [".....", "....."],
+        [
+            {"type": "artillery", "owner": "blue", "q": 4, "r": 0},
+            {"type": "artillery", "owner": "blue", "q": 4, "r": 1},
+            {"type": "infantry", "owner": "red", "q": 1, "r": 0, "hp": 1},
+            {"type": "infantry", "owner": "red", "q": 1, "r": 1, "hp": 1},
+        ],
+    )
+    orders: list[Order] = [
+        barrage(1, 1, 0),
+        barrage(2, 1, 1),
+        move(3, (2, 0)),
+        rest(4),
+    ]
+    new_state, events = resolve_execution(state, orders)
+
+    assert not alive(new_state, 3)
+    assert not alive(new_state, 4)
+    mooted = {e.unit_id for e in events if isinstance(e, OrderMooted)}
+    assert mooted == {3, 4}
+    assert not [e for e in events if isinstance(e, UnitMoved)]  # nobody moved
+
+
+def test_mutual_barrage_kill_moots_nothing() -> None:
+    # Two artillery shell each other; barrage is simultaneous, so both shots
+    # resolve even though both firers die (SPEC §7.2, §11.3 Phase 1). Their
+    # Barrage orders already applied — nothing is mooted, nothing crashes.
+    state = build(
+        ["..."],
+        [
+            {"type": "artillery", "owner": "blue", "q": 0, "r": 0, "hp": 1},
+            {"type": "artillery", "owner": "red", "q": 2, "r": 0, "hp": 1},
+        ],
+    )
+    orders: list[Order] = [barrage(1, 2, 0), barrage(2, 0, 0)]
+    new_state, events = resolve_execution(state, orders)
+
+    assert not alive(new_state, 1)
+    assert not alive(new_state, 2)
+    barrages = [e for e in events if isinstance(e, BarrageResolved)]
+    assert len(barrages) == 2  # both shots resolved despite both firers dying
+    assert all(b.hit is not None and b.hit.destroyed for b in barrages)
+    assert not [e for e in events if isinstance(e, OrderMooted)]
+
+
+def test_order_for_never_existed_unit_still_raises() -> None:
+    # An order naming a unit id that never existed is a caller bug: the barrage
+    # phase ignores it (not a BarrageOrder), and movement raises EngineError.
+    state = build(
+        ["..."],
+        [{"type": "infantry", "owner": "blue", "q": 0, "r": 0}],
+    )
+    orders: list[Order] = [move(99, (1, 0))]
+    with pytest.raises(EngineError):
+        resolve_execution(state, orders)
 
 
 def _march_order(state: GameState, unit_id: int, target_q: int) -> Order:
