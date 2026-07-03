@@ -31,7 +31,7 @@ from app.ai.baselines import PassivePolicy, RandomPolicy
 from app.ai.planner import SearchPolicy
 from app.ai.policy import BotPlan, Policy
 from app.ai.scripted import ScriptedPolicy
-from app.ai.simulate import resolve_plan
+from app.engine.execution import resolve_execution
 from app.engine.fog import redact_state
 from app.engine.models import GameState, Order, PlayerId, Recruitment
 from app.engine.scenario import load_scenario_file
@@ -149,7 +149,7 @@ def play_game(
             recruitments.extend(plan.recruitments)
 
         order_log.append(TurnLog(turn=state.turn, plans=plans))
-        state, _events = resolve_plan(state, orders, recruitments)
+        state, _events = resolve_execution(state, orders, recruitments)
 
         after_ids = {
             slot: {u.id for u in state.units if u.owner == slot} for slot in slots

@@ -37,6 +37,16 @@ const MOVE_BLOCKED_REASON: Record<
   attack_forbidden: "it may not attack from there",
 };
 
+const RECRUIT_VOIDED_REASON: Record<
+  components["schemas"]["RecruitmentVoidedReason"],
+  string
+> = {
+  city_not_friendly: "the city was no longer friendly",
+  hex_occupied: "the hex was occupied",
+  unit_cap_reached: "the unit cap was reached",
+  insufficient_muster: "the bank fell short",
+};
+
 /**
  * Render a single resolved event as one or more log lines (SPEC §16.3). `nameOf`
  * resolves the display name of units the event references only by id.
@@ -179,6 +189,20 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
         {
           indent: 0,
           text: `Traffic jam at ${coord(event.coord)}: ${event.unit_ids.length} friendly units collided and stopped.`,
+        },
+      ];
+
+    case "order_mooted":
+      // The ordered unit died in barrage before its order could apply (SPEC §11.3).
+      return [
+        { indent: 0, text: `${nameOf(event.unit_id)}'s order was mooted — destroyed by barrage.` },
+      ];
+
+    case "recruitment_voided":
+      return [
+        {
+          indent: 0,
+          text: `${unitName(event.owner, event.unit_type)} recruit at ${coord(event.coord)} was voided — ${RECRUIT_VOIDED_REASON[event.reason]}.`,
         },
       ];
   }

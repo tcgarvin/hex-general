@@ -726,6 +726,41 @@ export interface components {
             unit_id: number;
         };
         /**
+         * OrderMooted
+         * @description A unit's order was dropped because the turn voided it before it applied.
+         *
+         *     Barrage (§11.3 Phase 1) removes destroyed units before movement (Phase 2), so a
+         *     statically-legal Move/Hold/Rest order can name a unit that no longer exists by
+         *     the time movement resolves. That is defined simultaneity, not a caller bug: the
+         *     order is skipped and this event records it for the replay. Emitted between the
+         *     barrage events and the movement events. (An order naming a unit that *never*
+         *     existed remains a caller bug and still raises `EngineError` in movement. A
+         *     Barrage order whose artillery died in the exchange is *not* mooted — barrage
+         *     resolves simultaneously, so that order already applied in Phase 1.)
+         *
+         *     ``owner`` is carried on the event because the unit is destroyed: fog filtering
+         *     runs against the post-turn state, where the dead unit can no longer be resolved
+         *     to its owner.
+         */
+        OrderMooted: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "order_mooted";
+            /** Owner */
+            owner: string;
+            reason: components["schemas"]["OrderMootedReason"];
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
+         * OrderMootedReason
+         * @description Why a statically-legal order became moot mid-turn (SPEC §11.3).
+         * @enum {string}
+         */
+        OrderMootedReason: "destroyed_in_barrage";
+        /**
          * Player
          * @description A participant's mutable economy state (SPEC §6).
          *
@@ -775,6 +810,34 @@ export interface components {
             owner: string;
             type: components["schemas"]["UnitType"];
         };
+        /**
+         * RecruitmentVoided
+         * @description A recruit request was skipped because the turn voided it (SPEC §6.5, §11.3).
+         *
+         *     Recruitment resolves last (§11.3 Phase 6), after movement/capture/economy, so a
+         *     statically-legal recruit can be voided by the turn itself: the city was captured
+         *     (possibly by a fog-hidden enemy), a unit ended its move on the hex, the running
+         *     unit cap filled, or the post-economy bank fell short. The muster stays banked and
+         *     the request is skipped rather than crashing the turn.
+         */
+        RecruitmentVoided: {
+            coord: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "recruitment_voided";
+            /** Owner */
+            owner: string;
+            reason: components["schemas"]["RecruitmentVoidedReason"];
+            unit_type: components["schemas"]["UnitType"];
+        };
+        /**
+         * RecruitmentVoidedReason
+         * @description Why a submission-legal recruit was voided by the turn (SPEC §6.5, §11.3).
+         * @enum {string}
+         */
+        RecruitmentVoidedReason: "city_not_friendly" | "hex_occupied" | "unit_cap_reached" | "insufficient_muster";
         /**
          * RestOrder
          * @description Do not move; repair HP if undamaged during execution (SPEC §7.3).
@@ -892,7 +955,7 @@ export interface components {
          */
         TurnReplay: {
             /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"])[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"])[];
             state_after: components["schemas"]["GameState"];
             /** Turn */
             turn: number;

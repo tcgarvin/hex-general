@@ -35,8 +35,8 @@ from app.ai.evaluation import EvalWeights, evaluate
 from app.ai.objectives import Objective, ObjectiveKind, assign_objectives
 from app.ai.policy import BotPlan
 from app.ai.recruit import plan_recruitment
-from app.ai.simulate import resolve_plan
 from app.engine.events import Event, TrafficJam
+from app.engine.execution import resolve_execution
 from app.engine.hex_coords import Axial, distance
 from app.engine.models import (
     GameState,
@@ -204,11 +204,11 @@ class SearchPolicy:
     ) -> float:
         """Simulate ``orders`` (+ enemy Hold) and score the result (AI_SPEC §4.7).
 
-        The §4.4 opponent model has every visible enemy Hold; `resolve_plan` runs
-        the real engine, so jams, ZOC stops, and simultaneous combat are exact. A
-        self-jam is docked (`_JAM_PENALTY`) on top of the static evaluation.
+        The §4.4 opponent model has every visible enemy Hold; `resolve_execution`
+        runs the real engine, so jams, ZOC stops, and simultaneous combat are exact.
+        A self-jam is docked (`_JAM_PENALTY`) on top of the static evaluation.
         """
         full: list[Order] = list(orders.values()) + enemy_hold
-        resolved, events = resolve_plan(view, full, recruitments)
+        resolved, events = resolve_execution(view, full, recruitments)
         score = evaluate(resolved, slot, self._weights, anchors)
         return score - _JAM_PENALTY * _own_jam_count(events, own_ids)

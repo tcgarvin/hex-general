@@ -3,15 +3,23 @@
 The final end-of-turn phase: players spend banked muster to deploy new units at
 friendly cities. A recruit is legal only when (SPEC §6.5, §6.1):
 
-  * the target hex is a **city** the player controls (towns cannot deploy in v0.1);
+  * the target hex is a **city** (towns cannot deploy in v0.1);
+  * that city is controlled by the requesting player;
   * the hex is empty — no unit may stack onto it (SPEC §8.1);
   * the player is below the unit cap (SPEC §6.1); and
   * the player can afford the recruit cost (SPEC §6.5) from their bank.
 
-Per the engine's boundary contract (CLAUDE.md), this validates that structural
-contract and raises `EngineError` on any violation — Phase 5's API layer screens
-requests before they reach here, so an illegal recruit at this point is a bug to
-surface loudly, not to silently drop. Requests are applied in order, each one
+Two of these are *static* — the hex is a city, and the owner is a real player.
+They are guaranteed at submission time and cannot be undone by the turn, so a
+violation here is a caller bug: this validates them at the boundary and raises
+`EngineError` (CLAUDE.md).
+
+The other four are *dynamic*: recruitment resolves last (§11.3 Phase 6), so a
+submission-legal recruit can be voided by the turn itself — the city was captured
+(possibly by a fog-hidden enemy), a unit ended its move on the hex, the running
+unit cap filled, or the post-economy bank fell short. These are defined
+simultaneity, not bugs: the request is skipped with a ``RecruitmentVoided`` event
+and its muster stays banked. Requests are applied in order, each surviving one
 spending from the running bank and counting against the running cap and the hexes
 already claimed by earlier recruits this phase.
 
@@ -23,7 +31,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from app.engine.events import Event, UnitRecruited
+from app.engine.events import (
+    Event,
+    RecruitmentVoided,
+    RecruitmentVoidedReason,
+    UnitRecruited,
+)
 from app.engine.models import GameState, PlayerId, Recruitment, Unit
 from app.engine.movement import EngineError
 from app.engine.stats import UNIT_STATS, Terrain
@@ -34,9 +47,13 @@ def resolve_recruitment(
 ) -> tuple[GameState, list[Event]]:
     """Deploy each requested unit, deducting its cost (SPEC §6.5).
 
-    ``state`` is not mutated. Raises `EngineError` if a request names an unknown
-    player, a hex that is not a friendly city, an occupied hex, exceeds the unit
-    cap, or is unaffordable. New unit ids continue from the current maximum.
+    ``state`` is not mutated. Raises `EngineError` on a *static* violation — an
+    unknown player, or a hex that is not a city — since those are guaranteed at
+    submission time. A *dynamic* violation — the city is no longer friendly, the
+    hex is occupied, the unit cap is reached, or the bank is short — skips the
+    request with a ``RecruitmentVoided`` event (muster stays banked), because the
+    turn itself can void a submission-legal recruit. New unit ids continue from the
+    current maximum.
     """
     new_state = state.model_copy(deep=True)
     if not recruitments:
@@ -64,24 +81,46 @@ def resolve_recruitment(
                 f"recruitment for {request.owner!r} at {request.coord} is not a city"
             )
         if control_at.get(request.coord) != request.owner:
-            raise EngineError(
-                f"recruitment for {request.owner!r} at {request.coord} is not a "
-                "friendly city"
+            events.append(
+                RecruitmentVoided(
+                    owner=request.owner,
+                    coord=request.coord,
+                    unit_type=request.type,
+                    reason=RecruitmentVoidedReason.CITY_NOT_FRIENDLY,
+                )
             )
+            continue
         if request.coord in occupied:
-            raise EngineError(
-                f"recruitment for {request.owner!r} at {request.coord} is occupied"
+            events.append(
+                RecruitmentVoided(
+                    owner=request.owner,
+                    coord=request.coord,
+                    unit_type=request.type,
+                    reason=RecruitmentVoidedReason.HEX_OCCUPIED,
+                )
             )
+            continue
         if unit_counts[request.owner] >= unit_cap:
-            raise EngineError(
-                f"recruitment for {request.owner!r} exceeds the unit cap of {unit_cap}"
+            events.append(
+                RecruitmentVoided(
+                    owner=request.owner,
+                    coord=request.coord,
+                    unit_type=request.type,
+                    reason=RecruitmentVoidedReason.UNIT_CAP_REACHED,
+                )
             )
+            continue
         cost = UNIT_STATS[request.type].recruit_cost
         if player.bank < cost:
-            raise EngineError(
-                f"recruitment of {request.type} for {request.owner!r} costs {cost} "
-                f"but bank is {player.bank}"
+            events.append(
+                RecruitmentVoided(
+                    owner=request.owner,
+                    coord=request.coord,
+                    unit_type=request.type,
+                    reason=RecruitmentVoidedReason.INSUFFICIENT_MUSTER,
+                )
             )
+            continue
 
         unit = Unit(
             id=next_id,

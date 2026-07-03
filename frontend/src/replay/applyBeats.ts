@@ -145,7 +145,8 @@ function applyOneEvent(
       return { units: [...units, newUnit], settlements, players };
     }
 
-    // move_blocked, traffic_jam, zoc_control_stop: unit positions unchanged.
+    // move_blocked, traffic_jam, order_mooted, recruitment_voided: no board-state
+    // change — these are dropped/no-op intents, recorded only for the replay log.
     default:
       return unchanged;
   }

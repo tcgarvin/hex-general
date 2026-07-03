@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from app.ai.planner import SearchPolicy
 from app.ai.scripted import ScriptedPolicy
-from app.ai.simulate import resolve_plan
 from app.engine.events import TrafficJam
+from app.engine.execution import resolve_execution
 from app.engine.models import GameState, Order, PlayerId, Recruitment
 from app.games.validation import validate_submission
 from engine.helpers import build
@@ -26,7 +26,7 @@ def _own_traffic_jams(
     slot: PlayerId,
 ) -> list[TrafficJam]:
     own_ids = {u.id for u in state.units if u.owner == slot}
-    _resolved, events = resolve_plan(state, orders, recruitments)
+    _resolved, events = resolve_execution(state, orders, recruitments)
     jams = [e for e in events if isinstance(e, TrafficJam)]
     return [j for j in jams if any(uid in own_ids for uid in j.unit_ids)]
 
