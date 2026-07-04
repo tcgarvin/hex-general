@@ -66,15 +66,17 @@ export function Dispatcher() {
   return <StartScreen />;
 }
 
-/** Create a new game, or join an existing one by pasting its id + invite token. */
+/**
+ * Hub screen: three ways into a game. "Start Game" creates a human match here
+ * (nothing to configure — one scenario) and drops into its lobby/invite screen;
+ * "Play vs Bot" and "Join Game" route to their own spokes to collect details.
+ */
 function StartScreen() {
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [joinId, setJoinId] = useState("");
-  const [joinToken, setJoinToken] = useState("");
 
-  async function createGame() {
+  async function startHumanGame() {
     setCreating(true);
     setError(null);
     const { data, error: apiError } = await api.POST("/games", {
@@ -92,43 +94,27 @@ function StartScreen() {
     navigate(`/game/${data.game_id}`);
   }
 
-  function gotoJoin() {
-    const id = joinId.trim();
-    const token = joinToken.trim();
-    if (id === "" || token === "") {
-      setError("Enter both the game id and the invite token.");
-      return;
-    }
-    navigate(`/join/${id}#invite=${encodeURIComponent(token)}`);
-  }
-
   return (
     <Centered fill>
       <h1 className="text-2xl font-semibold">Start a match</h1>
 
       <div className="flex w-full max-w-sm flex-col gap-3 rounded-lg border border-zinc-800 p-5">
-        <h2 className="text-sm font-medium text-zinc-300">New game</h2>
-        <Button onClick={() => void createGame()} disabled={creating}>
-          {creating ? "Creating…" : "Create game"}
+        <Button onClick={() => void startHumanGame()} disabled={creating}>
+          {creating ? "Creating…" : "Start Game"}
         </Button>
-      </div>
-
-      <div className="flex w-full max-w-sm flex-col gap-3 rounded-lg border border-zinc-800 p-5">
-        <h2 className="text-sm font-medium text-zinc-300">Join with an invite</h2>
-        <input
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
-          placeholder="Game id"
-          value={joinId}
-          onChange={(e) => setJoinId(e.target.value)}
-        />
-        <input
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
-          placeholder="Invite token"
-          value={joinToken}
-          onChange={(e) => setJoinToken(e.target.value)}
-        />
-        <Button variant="ghost" onClick={gotoJoin}>
-          Join game
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/play/bot")}
+          disabled={creating}
+        >
+          Play vs Bot
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/join")}
+          disabled={creating}
+        >
+          Join Game
         </Button>
       </div>
 

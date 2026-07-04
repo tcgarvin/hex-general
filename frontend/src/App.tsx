@@ -2,10 +2,12 @@ import { Navigate, Route, Routes } from "react-router";
 
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { Account } from "@/routes/Account";
+import { BotPicker } from "@/routes/BotPicker";
 import { ChromeLayout } from "@/routes/ChromeLayout";
 import { Dispatcher } from "@/routes/Dispatcher";
 import { GameShell } from "@/routes/GameShell";
 import { Join } from "@/routes/Join";
+import { JoinForm } from "@/routes/JoinForm";
 import { Login } from "@/routes/Login";
 import { ReplayShell } from "@/routes/ReplayShell";
 import { Stats } from "@/routes/Stats";
@@ -25,6 +27,8 @@ export function App() {
         <Route element={<ChromeLayout />}>
           <Route path="/" element={<Dispatcher />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/play/bot" element={<BotPicker />} />
+          <Route path="/join" element={<JoinForm />} />
           <Route path="/join/:id" element={<Join />} />
         </Route>
         <Route path="/game/:id" element={<GameShell />} />

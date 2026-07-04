@@ -7,18 +7,17 @@ work.
 **When an item is finished, delete it from this file — don't check it off.** This
 list tracks only outstanding work; completed work lives in git history.
 
-## Frontend: new game vs. human *or* bot
+## Label bot games in history / header
 
-The API side shipped (AI_SPEC §9): `POST /games` accepts `vs_bot: bool` and
-`bot_policy` (`"scripted"` / `"search"`, registry in `app/ai/arena.py`), fills
-the open slot with a bot, and the game starts immediately — the bot plans
-synchronously when the human submits. Types are already regenerated in
-`schema.d.ts`. Remaining work is all frontend UX:
+The new-game opponent flow shipped (hub + `Play vs Bot` / `Join` spokes;
+vs-bot create routes straight to the board — `Dispatcher`, `BotPicker`,
+`JoinForm`). What's left is making a bot game *legible after creation*, which
+turned out **not** to be frontend-only: `GameView` and `GameHistoryEntry`
+(`api/app/games/schemas.py`) carry no `vs_bot` flag or opponent identity, so the
+frontend can't tell a finished bot game from a human one.
 
-- New-game flow offers an opponent choice: invite a human (current flow) or
-  play the computer (pick a difficulty/policy — scripted is the more aggressive
-  opponent until the search bot's tuning lands).
-- Vs-bot games skip the invite/lobby wait state — the game is active from
-  creation, so route straight to planning.
-- Sanity-pass the dispatch/history screens for bot games (opponent display
-  name, resign, outcome labels).
+- Add `vs_bot` (and ideally an opponent label / `bot_policy`) to `GameView` +
+  `GameHistoryEntry`; regen `schema.d.ts` (`npm run gen:api`).
+- Surface it: "vs Computer (Blitz/Sage)" in the game header and history rows
+  (`Account.tsx` `HistoryRow`), and sanity-pass resign / outcome labels for bot
+  games.
