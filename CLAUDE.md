@@ -39,12 +39,17 @@ context). To health-check them, **spawn the `dev-doctor` subagent**
 returns a compact verdict, restarts a cleanly-dead server, and escalates real
 faults rather than fixing them. See `docs/LOCAL_DEV.md`.
 
-Board tileset work (PixelLab hex tiles in `frontend/src/board/tiles/`): `python3
-scripts/tile-montage.py <dir|globs> --out <path>` renders a labelled montage for
-visual variant review. Spawn the **`tile-smith` subagent** to run a PixelLab
-generate→poll→download→montage loop off the main thread, and use the
-**`verify-board`** skill to render the local board in Chrome after an art/render
-change. See the `hex-general-terrain-tiles` memory note + ROADMAP Phase 8.
+Board tileset work (painterly hex tiles in `frontend/src/board/tiles/`, 128px
+flat-top RGBA): the pipeline is the NBP (Nano Banana Pro / Vertex, keyless)
+tile-foundry — **`docs/ART_PIPELINE.md` is the canonical contract** (inputs, asset
+spec, terrain classes, command quick-ref); tooling lives in `scripts/tile-foundry/`
+and provenance in `art/foundry/`. `python3 scripts/tile-montage.py <dir|globs>
+--out <path>` renders a labelled variant montage. Spawn the **`tile-smith`
+subagent** to run a generate→cut/composite→gate→montage loop off the main thread
+(it returns candidates + review images; the user ratifies, the main agent applies),
+and use the **`verify-board`** skill to render the local board in Chrome after an
+art/render change. See ART_PIPELINE.md + ROADMAP Phase 8. (The old PixelLab
+per-hex `create_tiles_pro` path is retired — see the art-pipeline-pivot memory.)
 
 - **Hex art is the user's call — never auto-ratify.** Before you apply, overwrite,
   or commit *any* change to tiles under `frontend/src/board/tiles/` (new variants,

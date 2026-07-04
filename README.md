@@ -7,12 +7,12 @@ A prototype **turn-based operational hex wargame** with a twist: players issue o
 ## Architecture
 
 ```
-Browser ──> Vercel (Next.js frontend) ──> Cloud Run (FastAPI API) ──> Supabase (Postgres)
+Browser ──> Vercel (Vite SPA frontend) ──> Cloud Run (FastAPI API) ──> Supabase (Postgres)
 ```
 
 | Tier | Tech | Hosting | Notes |
 | ---- | ---- | ------- | ----- |
-| Frontend | Next.js 16 (App Router, TypeScript, Tailwind) | Vercel | Talks to Supabase (publishable key, RLS-protected) and to the API |
+| Frontend | Vite SPA (React 19, React Router v8, TypeScript, Tailwind v4) | Vercel | Talks to Supabase (publishable key, RLS-protected) and to the API |
 | API | FastAPI (Python 3.13, [uv](https://docs.astral.sh/uv/)) | Cloud Run (`hex-api`, `us-central1`) | Hosts the deterministic execution engine; reaches Supabase server-side with the service-role key |
 | Database / Auth | Supabase (Postgres) | Supabase Cloud | Project ref `amhkpsrvjlthmmemwssc` |
 
@@ -22,7 +22,7 @@ Everything deploys via **GitHub Actions** on push to `main` (path-filtered, see 
 
 ```
 docs/SPEC.md            Game design spec (v0.1)
-frontend/               Next.js app (deployed to Vercel)
+frontend/               Vite SPA (deployed to Vercel)
 api/                    FastAPI service (deployed to Cloud Run; uv-managed)
 infra/setup-gcp.sh      One-time GCP provisioning (WIF, deployer/runtime SAs, Artifact Registry, Secret Manager)
 .github/workflows/      CI/CD: frontend.yml, api.yml, supabase.yml

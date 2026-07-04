@@ -53,9 +53,9 @@ lands somewhere other than a game, the local stack likely needs
   mix of the terrains/units you changed to judge crispness at native resolution.
 - For a tile/art change, confirm the **art renders** (right tiles, no upscale blur,
   cohesive palette) — that's the real check. A passing `vite build` only proves the
-  PNGs are valid and discovered, not that they look right. (At 64px some tiles
-  inline as base64 and some emit as `dist/assets/*.png` — a normal mix; don't infer
-  anything from grepping the bundle.)
+  PNGs are valid and discovered, not that they look right. (Vite inlines assets
+  under its size threshold as base64 and emits the rest as `dist/assets/*.png` — a
+  normal mix; don't infer anything from grepping the bundle.)
 - **Judge at board scale, not just zoomed-in.** The board auto-fits the map, so the
   default view renders hexes small (~50px). A tile that looks great in a montage can
   collapse into muddy "rocky" speckle when shrunk, and a terrain much darker than its
@@ -66,7 +66,8 @@ lands somewhere other than a game, the local stack likely needs
 
 - **"What terrain is that hex?" → solid-colour probe.** To map which hexes are which
   terrain/variant, temporarily overwrite the variant PNGs with solid colours
-  (`PIL Image.new('RGBA',(64,64),(255,0,255,255))` → magenta, etc.), reload, and read
+  (`PIL Image.new('RGBA',(128,128),(255,0,255,255))` → magenta, etc.; 64px for
+  legacy terrains), reload, and read
   the board. Instantly disambiguates; restore the real tiles after. (Variants are
   chosen per-hex by a coord hash, so each `{nn}.png` lights up a deterministic subset.)
 - **Rule out caching before chasing ghosts.** A full `navigate` reload re-fetches
@@ -85,5 +86,5 @@ lands somewhere other than a game, the local stack likely needs
 | Board URL | `http://localhost:<vite-port>` → redirects to `/login`, then `/game/<uuid>` |
 | Dev login | `dev1@hex.local` / `DEV_PASSWORD` in `api/app/dev_seed.py` |
 | Servers | Vite `5173+100N`, API `8080+100N` (per-worktree); `scripts/dev.sh status` shows them |
-| Tiles | `frontend/src/board/tiles/{terrain}/{nn}.png` (64px, flat-top hex) |
+| Tiles | `frontend/src/board/tiles/{terrain}/{nn}.png` (128px painterly flat-top hex; legacy terrains 64px) |
 | Montage a tile set | `python3 scripts/tile-montage.py <dir|globs> --out <path>` |
