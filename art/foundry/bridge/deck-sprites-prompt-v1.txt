@@ -1,0 +1,13 @@
+Sprite sheet of straight bridge deck segments for a strategy wargame map, painterly retro 16-bit style matching the reference images' rendering technique and muted palette exactly (the same painterly register as the grass/river and the small bridges in the concept crops).
+
+Layout: a clean 3-columns x 4-rows grid of TWELVE separate bridge deck segments on a PURE WHITE background, each grid cell containing exactly ONE deck segment, with clean pure-white gaps between them and around the image border.
+
+View: STRICTLY TOP-DOWN, orthographic, looking straight down onto the flat deck surface from directly above — like a map tile, NOT a photograph from the side. Absolutely NO side-view, NO visible arch underneath, NO tall bridge silhouette, NO pillars, NO reflection. Just the flat top surface of a low crossing seen from directly overhead.
+
+Orientation: every deck is HORIZONTAL — its long axis runs left-to-right across the cell, roughly a 2:1 rectangle (about twice as long as it is wide). A short straight segment of roadway deck, the kind that would span a narrow creek.
+
+TOP TWO ROWS (6 segments): WEATHERED WOODEN PLANK decks — a run of aged timber planks laid crosswise (the individual planks run top-to-bottom, perpendicular to the left-right span), muted grey-brown and warm-brown weathered wood, subtle plank-to-plank tone variation, a slightly darker timber beam or low rail along the two long edges, gentle painterly wear. Slight variation between the six.
+
+BOTTOM TWO ROWS (6 segments): ROUGH GREY STONE decks — a low flat stone causeway crossing, a surface of fitted rough grey stones / worn cobbles, muted cool grey with faint moss-green and warm-tan flecks, a low stone kerb along the two long edges, NO arch and NO height — this is a flat top-down stone roadbed, not an arched bridge. Slight variation between the six.
+
+Critical: pure flat white background everywhere between the segments; NO cast shadows on the white, NO water, NO river, NO grass, NO ground texture around the decks, NO outlines, NO grid lines, NO text, NO numbers. Each segment cleanly separated from its neighbours by white.

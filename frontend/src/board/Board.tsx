@@ -938,6 +938,18 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       // road network: link road/bridge hexes centre-to-edge toward road neighbours
       for (const h of hexes) {
         if (!h.road && h.terrain !== "bridge") continue;
+        // Painterly (128px) bridge tiles bake their own road ramps, which stop
+        // at the deck face — vector stubs here would stripe brown across the
+        // deck. Legacy 64px bridge art has no ramps and still needs the stubs.
+        if (h.terrain === "bridge" && terrainTex !== null) {
+          const oriented = orientedRiverTile(
+            riverCourse.get(hexKey(h.coord.q, h.coord.r)) ?? [],
+          );
+          const variants = oriented
+            ? terrainTex.byOriented[`bridge/${oriented.name}`]
+            : undefined;
+          if (variants !== undefined && variants[0].source.pixelWidth > 64) continue;
+        }
         const c = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
         for (const d of AXIAL_DIRECTIONS) {
           const n = hexByKey.get(hexKey(h.coord.q + d.q, h.coord.r + d.r));
@@ -974,7 +986,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         }
       }
     },
-    [hexes, hexByKey, settlementOwner, visibleKeys],
+    [hexes, hexByKey, settlementOwner, visibleKeys, riverCourse, terrainTex],
   );
 
   const drawSelection = useCallback(

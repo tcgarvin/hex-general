@@ -478,7 +478,23 @@ isolation.
   river axis it crosses (derivable from its two river edges); reuse T3's
   edge-mask machinery and the mirror approach. **Straight bridges ✅ shipped with
   T3a** (`bridge/straight_v`, `bridge/straight_d`); they reuse the river edge
-  mask + edge-snap. Turn/fork bridges follow T3b if needed.
+  mask + edge-snap. **Painterly turn bridges ✅ shipped 2026-07-03:**
+  `bridge/turn_se_sw` + `bridge/turn_ne_nw` (stone deck) via the foundry's new
+  deck-composite route (`scripts/tile-foundry/bridge.py`): an NBP deck sprite +
+  baked road ramps + contact shadow composited over the ratified river tiles, so
+  water/grass stay byte-identical and seam-compat is inherited. Rulings: bridge
+  decks (and structures generally) get a *little* 3/4 perspective like the woods
+  trees — strictly-top-down decks were rejected as unreadable, and perspective
+  forbids sprite rotation (horizontal and vertical decks are generated natively);
+  a placement gate in `bridge.py` asserts the deck covers every water pixel on
+  the crossing line. Painterly bridge tiles bake their ramps, so `Board.tsx`
+  suppresses the hex's own vector road stubs when the resolved bridge texture is
+  128px (legacy 64px bridge art keeps them). **Not ratified:** the painterly
+  `straight_v` bridge (vertical water, road bending se↔sw over the deck) — the
+  road-bend composition read poorly; out of scope for now, twin_rivers' (4,20)
+  keeps the legacy `straight_v` tile. Legacy `straight_d` deleted (unused by any
+  map; regenerate through the foundry on demand). Fork bridges likewise on
+  demand.
 - **Slice T5 — Road rendering experiment (scoped as throwaway-friendly).**
   Compare, on the same map: today's **vector overlay** (centre-to-edge brown
   lines, `Board.tsx`) vs **baked road tiles** autotiled by road-edge mask (reuses

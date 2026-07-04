@@ -24,6 +24,7 @@ from PIL import Image, ImageDraw, ImageFilter
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
+import bridge  # noqa: E402,F401  (kept for parity / future in-process checks)
 import cut  # noqa: E402
 import flatten  # noqa: E402
 import gate  # noqa: E402
@@ -623,6 +624,44 @@ def test_river_matches_ratified_tiles(tmp_dir: Path) -> None:
     )
 
 
+def test_bridge_matches_ratified_tiles(tmp_dir: Path) -> None:
+    """Reproduce the applied bridge turn tiles byte-for-byte via
+    `bridge.py build --verify`.
+
+    Same acceptance-test shape as the woods/hills/river checks: depends on the
+    committed v2 deck sheet and ratified river bases under `art/foundry/` and the
+    applied output under `frontend/src/board/tiles/bridge/`, so it skips
+    gracefully when those are absent. The build segments the combined deck sheet,
+    composites the recorded deck sprite over each river base, and re-runs the
+    placement gate before the byte-compare.
+    """
+    repo_root = SCRIPT_DIR.parent.parent
+    manifest_path = repo_root / "art" / "foundry" / "manifest.json"
+    ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / "bridge"
+    if not manifest_path.is_file() or not ref_dir.is_dir():
+        print(f"[SKIP] bridge.py: ratified-tile check (missing {manifest_path} or {ref_dir})")
+        return
+
+    out_dir = tmp_dir / "bridge_ratified"
+    result = run_cli(
+        "bridge.py",
+        "build",
+        "--manifest",
+        str(manifest_path),
+        "--section",
+        "bridge",
+        "--out-dir",
+        str(out_dir),
+        "--verify",
+        str(ref_dir),
+    )
+    check(
+        "bridge.py: reproduces frontend/src/board/tiles/bridge/turn_*_00.png byte-for-byte (--verify)",
+        result.returncode == 0,
+        result.stdout + result.stderr,
+    )
+
+
 def test_river_ends_guide_audits_clean() -> None:
     """The `ends` guide builds and every anchor measures as its 1-edge shape.
 
@@ -825,11 +864,14 @@ def test_cli_help() -> None:
         "compose.py",
         "vignette.py",
         "river.py",
+        "bridge.py",
     ]:
         result = run_cli(script, "--help")
         check(f"{script} --help parses", result.returncode == 0, result.stderr)
     result = run_cli("gate.py", "clique", "--help")
     check("gate.py clique --help parses", result.returncode == 0, result.stderr)
+    result = run_cli("bridge.py", "build", "--help")
+    check("bridge.py build --help parses", result.returncode == 0, result.stderr)
 
 
 def main() -> int:
@@ -853,6 +895,7 @@ def main() -> int:
         test_compose_determinism(tmp_dir)
         test_vignette_matches_ratified_tiles(tmp_dir)
         test_river_matches_ratified_tiles(tmp_dir)
+        test_bridge_matches_ratified_tiles(tmp_dir)
     test_cli_help()
 
     passed = sum(1 for _, ok in RESULTS if ok)
