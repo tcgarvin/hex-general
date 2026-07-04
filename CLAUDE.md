@@ -49,15 +49,17 @@ change. See the `hex-general-terrain-tiles` memory note + ROADMAP Phase 8.
 - **Hex art is the user's call — never auto-ratify.** Before you apply, overwrite,
   or commit *any* change to tiles under `frontend/src/board/tiles/` (new variants,
   regens, recolours, or programmatic edits like the river bank-rough pass),
-  **render a before/after montage, host it, and give the user a clickable link, then
-  wait for their direction.** Host with `./scripts/dev.sh montage up` (serves
-  `.dev/montages/` on the worktree's montage port `8011+100N`); `tile-montage.py`
-  defaults `--out` there, so the montage is reachable at
-  `http://127.0.0.1:<montage-port>/<file>.png` (the inline image alone is not the
-  deliverable — give the link). This applies whether the
-  tiles came from PixelLab or a deterministic script; the main agent prepares the
-  candidate, the **user** picks. (Board-scale `verify-board` is for *after* a pick
-  is ratified, not a substitute for the pre-apply montage sign-off.)
+  **render a before/after montage, publish it as a claude.ai Artifact, and give the
+  user the artifact link, then wait for their direction.** Build the page with
+  `scripts/review-page.py` (self-contained HTML, data-URI images; subagents render
+  the montages and the page, the main agent publishes with the Artifact tool) —
+  the user reviews from anywhere, so localhost montage links are **not** the
+  deliverable (user, 2026-07-04). `./scripts/dev.sh montage up` still serves
+  `.dev/montages/` on port `8011+100N` for quick local self-checks only. This
+  applies whether the tiles came from PixelLab/NBP or a deterministic script; the
+  main agent prepares the candidate, the **user** picks. (Board-scale
+  `verify-board` is for *after* a pick is ratified, not a substitute for the
+  pre-apply sign-off.)
 
 ## API code standards: trust internal invariants, validate only at boundaries
 

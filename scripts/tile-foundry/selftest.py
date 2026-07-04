@@ -662,6 +662,43 @@ def test_bridge_matches_ratified_tiles(tmp_dir: Path) -> None:
     )
 
 
+def test_roadfinish_matches_ratified_tiles(tmp_dir: Path) -> None:
+    """Reproduce the applied NBP-finished road tiles byte-for-byte via
+    ``roadfinish.py build --verify``.
+
+    Same acceptance-test shape as the woods/river/bridge checks: depends on the
+    committed 128px sources under ``art/foundry/road/gens128/`` and the applied
+    output under ``frontend/src/board/tiles/road/``, so it skips gracefully when
+    those are absent. ``build`` re-derives each deterministic input composite and
+    replays the recolour + rim-blend post-chain from the committed source.
+    """
+    repo_root = SCRIPT_DIR.parent.parent
+    manifest_path = repo_root / "art" / "foundry" / "manifest.json"
+    ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / "road"
+    if not manifest_path.is_file() or not ref_dir.is_dir():
+        print(f"[SKIP] roadfinish.py: ratified-tile check (missing {manifest_path} or {ref_dir})")
+        return
+
+    out_dir = tmp_dir / "roadfinish_ratified"
+    result = run_cli(
+        "roadfinish.py",
+        "build",
+        "--manifest",
+        str(manifest_path),
+        "--section",
+        "road_nbp",
+        "--out-dir",
+        str(out_dir),
+        "--verify",
+        str(ref_dir),
+    )
+    check(
+        "roadfinish.py: reproduces frontend/src/board/tiles/road/*.png byte-for-byte (--verify)",
+        result.returncode == 0,
+        result.stdout + result.stderr,
+    )
+
+
 def test_river_ends_guide_audits_clean() -> None:
     """The `ends` guide builds and every anchor measures as its 1-edge shape.
 
@@ -865,6 +902,7 @@ def test_cli_help() -> None:
         "vignette.py",
         "river.py",
         "bridge.py",
+        "roadfinish.py",
     ]:
         result = run_cli(script, "--help")
         check(f"{script} --help parses", result.returncode == 0, result.stderr)
@@ -872,6 +910,9 @@ def test_cli_help() -> None:
     check("gate.py clique --help parses", result.returncode == 0, result.stderr)
     result = run_cli("bridge.py", "build", "--help")
     check("bridge.py build --help parses", result.returncode == 0, result.stderr)
+    for cmd in ("build", "export-sources"):
+        result = run_cli("roadfinish.py", cmd, "--help")
+        check(f"roadfinish.py {cmd} --help parses", result.returncode == 0, result.stderr)
 
 
 def main() -> int:
@@ -896,6 +937,7 @@ def main() -> int:
         test_vignette_matches_ratified_tiles(tmp_dir)
         test_river_matches_ratified_tiles(tmp_dir)
         test_bridge_matches_ratified_tiles(tmp_dir)
+        test_roadfinish_matches_ratified_tiles(tmp_dir)
     test_cli_help()
 
     passed = sum(1 for _, ok in RESULTS if ok)

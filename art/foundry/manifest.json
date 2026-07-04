@@ -662,6 +662,751 @@
    "regenerate": "python3 scripts/tile-foundry/bridge.py build --manifest art/foundry/manifest.json --section bridge --out-dir <dir> [--verify frontend/src/board/tiles/bridge]",
    "ratified": "2026-07-03: the two stone_a turn tiles, via bridge-candidates-v2.png / bridge-deck-zoom-v2.png / bridge-course-strip-v2.png (kept under bridge/review/). v1 strictly-top-down round rejected ('too top-down' + placement bug); straight_v candidates not ratified (road-bend out of scope)."
   },
+ "road_nbp": {
+  "class": "NBP-finished painterly road tiles (ROADMAP Phase 8, Slice T5). Deterministic road composite (road.py flat ribbon over the ratified plains/hills bases) -> Nano-Banana-Pro image-to-image finish (wears the road into the ground / grades it over hill relief) -> deterministic post-chain (road-mask recolour to the ribbon palette + b08 rim blend) that tames NBP's width/colour freelancing and pins the grassy rim + crossings back to the deterministic input so tiles still abut invisibly. Auto-gated (drift/width/rim/lum/phantom); the user ratified the per-slot picks 2026-07-04. Plains fully covered (18 tiles); hills 6 tiles (straight_v is a width-waived near-miss, see gate_waiver). The four remaining hills shapes (turn_n_se, turn_ne_nw, end_ne, end_s) are deliberately left to the frontend vector road overlay (roadTiles.ts) \u2014 partial art coverage never breaks a road network. Render-time L<->R mirror covers the other orientations. Tool: scripts/tile-foundry/roadfinish.py.",
+  "model": "gemini-3-pro-image-preview",
+  "date": "2026-07-04",
+  "prompts": {
+   "plains": "road/prompts/plains-road-finish.txt",
+   "hills": "road/prompts/hills-road-finish.txt"
+  },
+  "refs": {
+   "plains": [
+    "refs/ref_1_x384_y256.png"
+   ],
+   "hills": [
+    "refs/hills_a.png",
+    "refs/hills_b.png"
+   ]
+  },
+  "sources": "road/gens128/{tile} \u2014 committed 128px post-resize intermediates (raw 2K NBP gens under road/production/ are NOT committed). build replays the deterministic post-chain from these; regenerate with roadfinish.py export-sources.",
+  "post_chain": {
+   "blend_px": 8.0,
+   "recolour": {
+    "hue_strength": 1.0,
+    "sat_strength": 1.0,
+    "value_strength": 0.5,
+    "recolour_hue": [
+     6,
+     42
+    ],
+    "recolour_smin": 25,
+    "core_hue": [
+     8,
+     38
+    ],
+    "core_smin": 60,
+    "morph_size": 3
+   }
+  },
+  "geometry": {
+   "approach_px": 20,
+   "road_width_px": 12,
+   "road_color": "0x6b4f2a",
+   "bezier_steps": 40,
+   "noise_amp": 7.0,
+   "note": "input composite geometry (road.py); the deterministic flat ribbon the NBP finish repaints."
+  },
+  "gate_config": {
+   "drift_tol_px": 2.0,
+   "core_width_max_px": 20.0,
+   "rim_delta_max": 2.5,
+   "lum_band": [
+    93.3,
+    117.3
+   ],
+   "phantom_frac_max": 0.25
+  },
+  "shapes": {
+   "end_s": [
+    5
+   ],
+   "end_se": [
+    0
+   ],
+   "turn_n_se": [
+    0,
+    2
+   ],
+   "end_n": [
+    2
+   ],
+   "straight_d": [
+    0,
+    3
+   ],
+   "end_ne": [
+    1
+   ],
+   "turn_s_nw": [
+    3,
+    5
+   ],
+   "turn_se_sw": [
+    0,
+    4
+   ],
+   "straight_v": [
+    2,
+    5
+   ],
+   "turn_ne_nw": [
+    1,
+    3
+   ]
+  },
+  "tiles": [
+   {
+    "tile": "plains_straight_v_00.png",
+    "terrain": "plains",
+    "shape": "straight_v",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 130873,
+    "gen": "g2",
+    "source": "road/gens128/plains_straight_v_00.png",
+    "raw": "road/production/gens/plains_straight_v_00__g2__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 13.5,
+     "max_drift_px": 0.75,
+     "rim": [
+      1.56,
+      0.95,
+      2.11
+     ],
+     "lum": 111.7
+    }
+   },
+   {
+    "tile": "plains_straight_v_01.png",
+    "terrain": "plains",
+    "shape": "straight_v",
+    "variant": "01",
+    "base": "plains/picks/01.png",
+    "treatment": "flat",
+    "seed": 164874,
+    "gen": "g1",
+    "source": "road/gens128/plains_straight_v_01.png",
+    "raw": "road/production/gens/plains_straight_v_01__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 18.0,
+     "max_drift_px": 0.75,
+     "rim": [
+      1.24,
+      1.93,
+      1.36
+     ],
+     "lum": 109.8
+    }
+   },
+   {
+    "tile": "plains_straight_v_02.png",
+    "terrain": "plains",
+    "shape": "straight_v",
+    "variant": "02",
+    "base": "plains/picks/02.png",
+    "treatment": "flat",
+    "seed": 97587,
+    "gen": "g1",
+    "source": "road/gens128/plains_straight_v_02.png",
+    "raw": "road/production/gens/plains_straight_v_02__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 14.0,
+     "max_drift_px": 1.75,
+     "rim": [
+      0.92,
+      1.29,
+      1.36
+     ],
+     "lum": 108.2
+    }
+   },
+   {
+    "tile": "plains_straight_d_00.png",
+    "terrain": "plains",
+    "shape": "straight_d",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 117535,
+    "gen": "g1",
+    "source": "road/gens128/plains_straight_d_00.png",
+    "raw": "road/production/gens/plains_straight_d_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 11.5,
+     "max_drift_px": 0.5,
+     "rim": [
+      0.85,
+      1.66,
+      1.05
+     ],
+     "lum": 110.6
+    }
+   },
+   {
+    "tile": "plains_straight_d_01.png",
+    "terrain": "plains",
+    "shape": "straight_d",
+    "variant": "01",
+    "base": "plains/picks/01.png",
+    "treatment": "flat",
+    "seed": 151298,
+    "gen": "g2",
+    "source": "road/gens128/plains_straight_d_01.png",
+    "raw": "road/production/gens/plains_straight_d_01__g2__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 14.0,
+     "max_drift_px": 0.5,
+     "rim": [
+      1.05,
+      0.93,
+      1.3
+     ],
+     "lum": 111.8
+    }
+   },
+   {
+    "tile": "plains_straight_d_02.png",
+    "terrain": "plains",
+    "shape": "straight_d",
+    "variant": "02",
+    "base": "plains/picks/02.png",
+    "treatment": "flat",
+    "seed": 127486,
+    "gen": "g1",
+    "source": "road/gens128/plains_straight_d_02.png",
+    "raw": "road/production/gens/plains_straight_d_02__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 19.0,
+     "max_drift_px": 0.75,
+     "rim": [
+      1.19,
+      1.93,
+      1.1
+     ],
+     "lum": 107.6
+    }
+   },
+   {
+    "tile": "plains_turn_n_se_00.png",
+    "terrain": "plains",
+    "shape": "turn_n_se",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 80771,
+    "gen": "g1",
+    "source": "road/gens128/plains_turn_n_se_00.png",
+    "raw": "road/production/gens/plains_turn_n_se_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 15.0,
+     "max_drift_px": 0.75,
+     "rim": [
+      1.36,
+      1.27,
+      1.57
+     ],
+     "lum": 111.1
+    }
+   },
+   {
+    "tile": "plains_turn_n_se_01.png",
+    "terrain": "plains",
+    "shape": "turn_n_se",
+    "variant": "01",
+    "base": "plains/picks/01.png",
+    "treatment": "flat",
+    "seed": 71822,
+    "gen": "g2",
+    "source": "road/gens128/plains_turn_n_se_01.png",
+    "raw": "road/production/gens/plains_turn_n_se_01__g2__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 12.5,
+     "max_drift_px": 0.5,
+     "rim": [
+      0.79,
+      1.22,
+      1.11
+     ],
+     "lum": 111.0
+    }
+   },
+   {
+    "tile": "plains_turn_s_nw_00.png",
+    "terrain": "plains",
+    "shape": "turn_s_nw",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 102714,
+    "gen": "g1",
+    "source": "road/gens128/plains_turn_s_nw_00.png",
+    "raw": "road/production/gens/plains_turn_s_nw_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 14.0,
+     "max_drift_px": 0.75,
+     "rim": [
+      1.86,
+      1.68,
+      1.3
+     ],
+     "lum": 110.9
+    }
+   },
+   {
+    "tile": "plains_turn_s_nw_01.png",
+    "terrain": "plains",
+    "shape": "turn_s_nw",
+    "variant": "01",
+    "base": "plains/picks/01.png",
+    "treatment": "flat",
+    "seed": 101180,
+    "gen": "g2",
+    "source": "road/gens128/plains_turn_s_nw_01.png",
+    "raw": "road/production/gens/plains_turn_s_nw_01__g2__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 12.5,
+     "max_drift_px": 1.25,
+     "rim": [
+      1.31,
+      0.88,
+      1.47
+     ],
+     "lum": 112.3
+    }
+   },
+   {
+    "tile": "plains_turn_se_sw_00.png",
+    "terrain": "plains",
+    "shape": "turn_se_sw",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 152181,
+    "gen": "g1",
+    "source": "road/gens128/plains_turn_se_sw_00.png",
+    "raw": "road/production/gens/plains_turn_se_sw_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 14.0,
+     "max_drift_px": 1.0,
+     "rim": [
+      1.76,
+      0.78,
+      1.78
+     ],
+     "lum": 112.9
+    }
+   },
+   {
+    "tile": "plains_turn_se_sw_01.png",
+    "terrain": "plains",
+    "shape": "turn_se_sw",
+    "variant": "01",
+    "base": "plains/picks/01.png",
+    "treatment": "flat",
+    "seed": 158733,
+    "gen": "g3",
+    "source": "road/gens128/plains_turn_se_sw_01.png",
+    "raw": "road/production/gens/plains_turn_se_sw_01__g3__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 12.0,
+     "max_drift_px": 0.25,
+     "rim": [
+      1.86,
+      0.85,
+      1.74
+     ],
+     "lum": 112.7
+    }
+   },
+   {
+    "tile": "plains_turn_ne_nw_00.png",
+    "terrain": "plains",
+    "shape": "turn_ne_nw",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 166623,
+    "gen": "g1",
+    "source": "road/gens128/plains_turn_ne_nw_00.png",
+    "raw": "road/production/gens/plains_turn_ne_nw_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 12.0,
+     "max_drift_px": 0.0,
+     "rim": [
+      1.65,
+      0.62,
+      1.31
+     ],
+     "lum": 112.6
+    }
+   },
+   {
+    "tile": "plains_turn_ne_nw_01.png",
+    "terrain": "plains",
+    "shape": "turn_ne_nw",
+    "variant": "01",
+    "base": "plains/picks/01.png",
+    "treatment": "flat",
+    "seed": 130368,
+    "gen": "g1",
+    "source": "road/gens128/plains_turn_ne_nw_01.png",
+    "raw": "road/production/gens/plains_turn_ne_nw_01__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 13.0,
+     "max_drift_px": 0.0,
+     "rim": [
+      1.12,
+      1.18,
+      1.86
+     ],
+     "lum": 111.9
+    }
+   },
+   {
+    "tile": "hills_straight_v_00.png",
+    "terrain": "hills",
+    "shape": "straight_v",
+    "variant": "00",
+    "base": "hills/picks/00.png",
+    "treatment": "flat",
+    "seed": 150106,
+    "gen": "g4",
+    "source": "road/gens128/hills_straight_v_00.png",
+    "raw": "road/production/gens/hills_straight_v_00__g4__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 20.5,
+     "max_drift_px": 1.0,
+     "rim": [
+      1.72,
+      0.64,
+      0.99
+     ],
+     "lum": 103.5
+    },
+    "gate_waiver": "width 20.5 ratified 2026-07-04"
+   },
+   {
+    "tile": "hills_straight_d_00.png",
+    "terrain": "hills",
+    "shape": "straight_d",
+    "variant": "00",
+    "base": "hills/picks/00.png",
+    "treatment": "flat",
+    "seed": 161949,
+    "gen": "g1",
+    "source": "road/gens128/hills_straight_d_00.png",
+    "raw": "road/production/gens/hills_straight_d_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 20.0,
+     "max_drift_px": 1.0,
+     "rim": [
+      1.18,
+      1.76,
+      1.42
+     ],
+     "lum": 104.0
+    }
+   },
+   {
+    "tile": "hills_turn_s_nw_00.png",
+    "terrain": "hills",
+    "shape": "turn_s_nw",
+    "variant": "00",
+    "base": "hills/picks/00.png",
+    "treatment": "flat",
+    "seed": 150567,
+    "gen": "g4",
+    "source": "road/gens128/hills_turn_s_nw_00.png",
+    "raw": "road/production/gens/hills_turn_s_nw_00__g4__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 19.5,
+     "max_drift_px": 0.0,
+     "rim": [
+      0.81,
+      0.45,
+      0.45
+     ],
+     "lum": 102.4
+    }
+   },
+   {
+    "tile": "hills_turn_se_sw_00.png",
+    "terrain": "hills",
+    "shape": "turn_se_sw",
+    "variant": "00",
+    "base": "hills/picks/00.png",
+    "treatment": "flat",
+    "seed": 149477,
+    "gen": "g3",
+    "source": "road/gens128/hills_turn_se_sw_00.png",
+    "raw": "road/production/gens/hills_turn_se_sw_00__g3__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 16.0,
+     "max_drift_px": 1.0,
+     "rim": [
+      1.77,
+      0.83,
+      1.49
+     ],
+     "lum": 103.8
+    }
+   },
+   {
+    "tile": "plains_end_se_00.png",
+    "terrain": "plains",
+    "shape": "end_se",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 156550,
+    "gen": "g1",
+    "source": "road/gens128/plains_end_se_00.png",
+    "raw": "road/production/gens/plains_end_se_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 10.5,
+     "max_drift_px": 0.0,
+     "rim": [
+      1.42,
+      0.56,
+      1.76
+     ],
+     "lum": 113.7
+    }
+   },
+   {
+    "tile": "plains_end_ne_00.png",
+    "terrain": "plains",
+    "shape": "end_ne",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 145105,
+    "gen": "g1",
+    "source": "road/gens128/plains_end_ne_00.png",
+    "raw": "road/production/gens/plains_end_ne_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 12.5,
+     "max_drift_px": 0.5,
+     "rim": [
+      1.0,
+      0.67,
+      1.02
+     ],
+     "lum": 112.9
+    }
+   },
+   {
+    "tile": "plains_end_n_00.png",
+    "terrain": "plains",
+    "shape": "end_n",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 80868,
+    "gen": "g1",
+    "source": "road/gens128/plains_end_n_00.png",
+    "raw": "road/production/gens/plains_end_n_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 16.0,
+     "max_drift_px": 0.5,
+     "rim": [
+      1.58,
+      0.69,
+      1.69
+     ],
+     "lum": 113.5
+    }
+   },
+   {
+    "tile": "plains_end_s_00.png",
+    "terrain": "plains",
+    "shape": "end_s",
+    "variant": "00",
+    "base": "plains/picks/00.png",
+    "treatment": "flat",
+    "seed": 94543,
+    "gen": "g2",
+    "source": "road/gens128/plains_end_s_00.png",
+    "raw": "road/production/gens/plains_end_s_00__g2__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 156,
+     "v": 106
+    },
+    "gate": {
+     "core_width_px": 14.5,
+     "max_drift_px": 0.5,
+     "rim": [
+      1.45,
+      1.36,
+      1.28
+     ],
+     "lum": 112.7
+    }
+   },
+   {
+    "tile": "hills_end_se_00.png",
+    "terrain": "hills",
+    "shape": "end_se",
+    "variant": "00",
+    "base": "hills/picks/00.png",
+    "treatment": "flat",
+    "seed": 170222,
+    "gen": "g1",
+    "source": "road/gens128/hills_end_se_00.png",
+    "raw": "road/production/gens/hills_end_se_00__g1__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 19.0,
+     "max_drift_px": 0.0,
+     "rim": [
+      1.17,
+      0.62,
+      1.03
+     ],
+     "lum": 105.4
+    }
+   },
+   {
+    "tile": "hills_end_n_00.png",
+    "terrain": "hills",
+    "shape": "end_n",
+    "variant": "00",
+    "base": "hills/picks/00.png",
+    "treatment": "flat",
+    "seed": 151691,
+    "gen": "g4",
+    "source": "road/gens128/hills_end_n_00.png",
+    "raw": "road/production/gens/hills_end_n_00__g4__raw.png",
+    "recolour_target": {
+     "h": 24,
+     "s": 154,
+     "v": 107
+    },
+    "gate": {
+     "core_width_px": 18.5,
+     "max_drift_px": 0.0,
+     "rim": [
+      1.09,
+      0.59,
+      0.45
+     ],
+     "lum": 104.4
+    }
+   }
+  ]
+ },
  "concept_anchors": {
   "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
   "grass_mean_luminance": 105.3,

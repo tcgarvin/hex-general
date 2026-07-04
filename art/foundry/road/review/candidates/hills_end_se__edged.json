@@ -1,0 +1,43 @@
+{
+  "shape": "end_se",
+  "edges": [
+    0
+  ],
+  "base": "frontend/src/board/tiles/hills/00.png",
+  "treatment": "edged",
+  "seed": 153186,
+  "geometry": {
+    "approach_px": 20,
+    "road_width_px": 12,
+    "road_color": "0x6b4f2a",
+    "bezier_steps": 40,
+    "path_kind": "end",
+    "control_point": null,
+    "endpoints": [
+      [
+        112.0,
+        91.71
+      ],
+      [
+        64.0,
+        64.0
+      ]
+    ],
+    "edge_midpoints": {
+      "0": [
+        112.0,
+        91.71
+      ]
+    }
+  },
+  "noise_amp": 7.0,
+  "edge_shade": {
+    "factor": 0.75,
+    "core_width_px": 8,
+    "dark_color": "0x503b20"
+  },
+  "name": "hills_end_se__edged",
+  "terrain": "hills",
+  "variant": "00",
+  "apply_target": "frontend/src/board/tiles/road/hills_end_se_00.png"
+}

@@ -1,0 +1,44 @@
+{
+  "shape": "straight_v",
+  "edges": [
+    2,
+    5
+  ],
+  "base": "frontend/src/board/tiles/hills/00.png",
+  "treatment": "flat",
+  "seed": 150106,
+  "geometry": {
+    "approach_px": 20,
+    "road_width_px": 12,
+    "road_color": "0x6b4f2a",
+    "bezier_steps": 40,
+    "path_kind": "straight",
+    "control_point": null,
+    "endpoints": [
+      [
+        64.0,
+        8.57
+      ],
+      [
+        64.0,
+        119.43
+      ]
+    ],
+    "edge_midpoints": {
+      "2": [
+        64.0,
+        8.57
+      ],
+      "5": [
+        64.0,
+        119.43
+      ]
+    }
+  },
+  "noise_amp": 7.0,
+  "edge_shade": null,
+  "name": "hills_straight_v__flat",
+  "terrain": "hills",
+  "variant": "00",
+  "apply_target": "frontend/src/board/tiles/road/hills_straight_v_00.png"
+}

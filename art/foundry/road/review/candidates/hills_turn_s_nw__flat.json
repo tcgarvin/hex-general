@@ -1,0 +1,47 @@
+{
+  "shape": "turn_s_nw",
+  "edges": [
+    3,
+    5
+  ],
+  "base": "frontend/src/board/tiles/hills/00.png",
+  "treatment": "flat",
+  "seed": 150567,
+  "geometry": {
+    "approach_px": 20,
+    "road_width_px": 12,
+    "road_color": "0x6b4f2a",
+    "bezier_steps": 40,
+    "path_kind": "turn",
+    "control_point": [
+      64.0,
+      64.0
+    ],
+    "endpoints": [
+      [
+        16.0,
+        36.29
+      ],
+      [
+        64.0,
+        119.43
+      ]
+    ],
+    "edge_midpoints": {
+      "3": [
+        16.0,
+        36.29
+      ],
+      "5": [
+        64.0,
+        119.43
+      ]
+    }
+  },
+  "noise_amp": 7.0,
+  "edge_shade": null,
+  "name": "hills_turn_s_nw__flat",
+  "terrain": "hills",
+  "variant": "00",
+  "apply_target": "frontend/src/board/tiles/road/hills_turn_s_nw_00.png"
+}

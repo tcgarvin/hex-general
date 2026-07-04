@@ -32,3 +32,7 @@ supabase/.temp/
 
 # Local dev-server state (scripts/dev.sh): per-server PID + log files.
 .dev/
+
+# T5 road foundry: heavy non-committed working sets (reproducibility sources live in art/foundry/road/gens128/)
+art/foundry/road/production/
+art/foundry/road/review/experiment/

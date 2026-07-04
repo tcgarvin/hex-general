@@ -495,11 +495,33 @@ isolation.
   keeps the legacy `straight_v` tile. Legacy `straight_d` deleted (unused by any
   map; regenerate through the foundry on demand). Fork bridges likewise on
   demand.
-- **Slice T5 — Road rendering experiment (scoped as throwaway-friendly).**
-  Compare, on the same map: today's **vector overlay** (centre-to-edge brown
-  lines, `Board.tsx`) vs **baked road tiles** autotiled by road-edge mask (reuses
-  T3 machinery). Decide on visual cohesion vs art/credit cost vs flexibility;
-  discard the loser.
+- **Slice T5 — Road rendering ✅ shipped 2026-07-04 (baked tiles win).** The
+  experiment compared, on the same map, today's **vector overlay** (centre-to-edge
+  brown lines, `Board.tsx`) vs **baked road tiles** autotiled by road-edge mask
+  (reuses T3 machinery). Verdict: **baked NBP-finished road tiles win** on visual
+  cohesion — the vector overlay reads as a flat ribbon pasted over the terrain,
+  while a baked tile wears the road *into* the ground and grades it over hill
+  relief. The vector overlay is **kept as the fallback**: a road hex renders its
+  baked tile only when one exists for its `(terrain, shape)` pair
+  (`byOriented["road/{terrain}_{shape}"]`, `roadTiles.ts`), so partial art
+  coverage never breaks a network's continuity. Pipeline (`scripts/tile-foundry/`
+  `roadfinish.py`): deterministic composite (`road.py` bakes the flat 12px ribbon
+  onto the ratified plains/hills bases) → **NBP image-to-image finish** (wear/grade
+  the road) → deterministic post-chain (road-mask recolour back to the ribbon
+  palette + b08 rim blend) that tames NBP's width/colour freelancing and pins the
+  grassy rim + edge crossings to the deterministic input, so tiles still abut
+  invisibly. Auto-gated (drift/width/rim/lum, +phantom for ends); the user ratified
+  the per-slot picks off board strips. **Shipped: 24 tiles — plains fully covered
+  (18: straights ×3, turns ×2, ends ×1 each), hills 6** (straight_v — a
+  20.5px-core width-waived near-miss ratified from the board strip, gate 20.0 —
+  plus straight_d, turn_s_nw, turn_se_sw, end_se, end_n). The **four remaining
+  hills shapes** (`turn_n_se`, `turn_ne_nw`, `end_ne`, `end_s`) are deliberately
+  left to the vector fallback — NBP kept over-widening the road over their steeper
+  relief. Settlements out of scope. **Reproducibility:** the 2K raw NBP gens
+  (~210MB) are *not* committed; the committed per-tile source is the 128px
+  post-resize intermediate (`art/foundry/road/gens128/`, ~0.5MB total), from which
+  the deterministic post-chain byte-replays (`roadfinish.py build --verify`, wired
+  into `selftest.py`; regenerate the sources with `export-sources`).
 
 ## Phase 9 — Frontend: planning UI
 

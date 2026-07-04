@@ -58,8 +58,23 @@ without a pick); the applied tiles are verified on the live board and made
    hex, segmented from a white sheet and composited onto the ratified plains
    base. The grass rim **is** plains, so seam compatibility is inherited.
    Optional grass palette-match toward plains medians (hills).
-4. **Oriented** (river/bridge/roads): edge-anchored per-tile generation with
-   guide images. **Not yet migrated** to the painterly register.
+4. **Oriented** (river/bridge/roads): edge-anchored per-tile art keyed by the
+   connected-edge mask (`riverTiles.ts`), with a render-time L↔R mirror. **Rivers
+   and bridges migrated** to the painterly register earlier (swatch-cut water +
+   deck-composite crossings). **Roads (T5, 2026-07-04) use a distinct NBP-finish
+   route** (`scripts/tile-foundry/roadfinish.py`): a deterministic flat road ribbon
+   is baked onto the ratified plains/hills bases (`road.py`), an NBP image-to-image
+   pass wears/grades the road into the ground, then a deterministic post-chain
+   (road-mask recolour to the ribbon palette + a b08 rim blend, `rimblend.py`) pins
+   the width, colour, grassy rim, and edge crossings back to the deterministic
+   input so tiles still abut invisibly. Auto-gated on drift/width/rim/lum (+phantom
+   for end caps); 24 tiles shipped (plains full, hills partial), the rest keep the
+   vector-overlay fallback. **Reproducibility:** the 2K raw NBP gens are *not*
+   committed; the committed source is the 128px post-resize intermediate
+   (`art/foundry/road/gens128/`), from which the post-chain byte-replays
+   (`roadfinish.py build --verify`, in `selftest.py`; regenerate via
+   `export-sources`) — same "commit the cheap deterministic-replay seed, not the
+   heavy raw" rule the river/bridge foundries follow.
 
 Learned rulings that constrain the classes: hills-as-texture is dead (relief
 contrast breaks seams — best clique 2/49 vs plains' 23); "calm" = low detail,

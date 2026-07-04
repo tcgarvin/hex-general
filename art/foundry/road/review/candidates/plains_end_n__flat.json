@@ -1,0 +1,39 @@
+{
+  "shape": "end_n",
+  "edges": [
+    2
+  ],
+  "base": "frontend/src/board/tiles/plains/00.png",
+  "treatment": "flat",
+  "seed": 80868,
+  "geometry": {
+    "approach_px": 20,
+    "road_width_px": 12,
+    "road_color": "0x6b4f2a",
+    "bezier_steps": 40,
+    "path_kind": "end",
+    "control_point": null,
+    "endpoints": [
+      [
+        64.0,
+        8.57
+      ],
+      [
+        64.0,
+        64.0
+      ]
+    ],
+    "edge_midpoints": {
+      "2": [
+        64.0,
+        8.57
+      ]
+    }
+  },
+  "noise_amp": 7.0,
+  "edge_shade": null,
+  "name": "plains_end_n__flat",
+  "terrain": "plains",
+  "variant": "00",
+  "apply_target": "frontend/src/board/tiles/road/plains_end_n_00.png"
+}

@@ -64,6 +64,7 @@ import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panel
 import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
+import { roadTileRefs } from "./roadTiles";
 import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
 
 extend({ Container, Graphics, Sprite, Text });
@@ -390,6 +391,13 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         terrainAt,
       ),
     [hexes, terrainAt],
+  );
+
+  // Baked road tile references for road-flagged hexes (T5). Whether the
+  // referenced texture exists decides baked-vs-vector per hex at render time.
+  const roadTiles = useMemo(
+    () => roadTileRefs(hexes, (q, r) => hexByKey.get(hexKey(q, r))),
+    [hexes, hexByKey],
   );
 
   const settlementOwner = useMemo(() => {
@@ -950,6 +958,16 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             : undefined;
           if (variants !== undefined && variants[0].source.pixelWidth > 64) continue;
         }
+        // Hexes rendering a baked road tile (T5) carry their road in the art;
+        // vector stubs would double-draw across it. Their neighbours still draw
+        // half-stubs toward this hex, which meet the baked art's edge-midpoint
+        // crossing (same width/colour by construction).
+        if (h.road && terrainTex !== null) {
+          const ref = roadTiles.get(hexKey(h.coord.q, h.coord.r));
+          if (ref !== undefined && terrainTex.byOriented[ref.lookup] !== undefined) {
+            continue;
+          }
+        }
         const c = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
         for (const d of AXIAL_DIRECTIONS) {
           const n = hexByKey.get(hexKey(h.coord.q + d.q, h.coord.r + d.r));
@@ -986,7 +1004,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         }
       }
     },
-    [hexes, hexByKey, settlementOwner, visibleKeys, riverCourse, terrainTex],
+    [hexes, hexByKey, settlementOwner, visibleKeys, riverCourse, roadTiles, terrainTex],
   );
 
   const drawSelection = useCallback(
@@ -1209,6 +1227,32 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                       y={y}
                       anchor={0.5}
                       scale={{ x: oriented?.mirror ? -s : s, y: s }}
+                    />
+                  );
+                }
+                // Road hexes with baked road-on-terrain art (T5) render it in
+                // place of the base terrain tile, mirrored like river tiles; a
+                // missing texture (settlements, forks, unbaked terrains) falls
+                // through to the base tile + the vector road overlay.
+                const roadRef = h.road
+                  ? roadTiles.get(hexKey(h.coord.q, h.coord.r))
+                  : undefined;
+                const roadVariants =
+                  roadRef === undefined
+                    ? undefined
+                    : terrainTex.byOriented[roadRef.lookup];
+                if (roadRef !== undefined && roadVariants !== undefined) {
+                  const tex =
+                    roadVariants[variantIndex(h.coord.q, h.coord.r, roadVariants.length)];
+                  const s = (HEX_SIZE * 2) / tex.width;
+                  return (
+                    <pixiSprite
+                      key={hexKey(h.coord.q, h.coord.r)}
+                      texture={tex}
+                      x={x}
+                      y={y}
+                      anchor={0.5}
+                      scale={{ x: roadRef.mirror ? -s : s, y: s }}
                     />
                   );
                 }

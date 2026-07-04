@@ -1,0 +1,14 @@
+# NBP road-finish prompt — plains (T5 production round, 2026-07-04)
+# Model: gemini-3-pro-image-preview on Vertex AI (keyless). image_size=2K, aspect=1:1.
+# Generated verbatim by scripts/tile-foundry/roadfinish.py build_prompt(terrain, shape).
+# The prompt is templated per shape: the '{shape_clause}' below is one of three forms.
+# Refs passed after the per-tile input composite: refs/ref_1_x384_y256.png
+#
+# shape-clause forms:
+#   - straight (edge-to-edge, antipodal): The tile shows a single dirt road running straight across it, edge to edge.
+#   - gentle turn (edges 120 apart): The tile shows a single dirt road curving gently through it, edge to edge.
+#   - end (single edge): The tile shows a single dirt road that enters from one hexagon edge, runs a short way in, and ends within the tile.
+#
+# Full prompt (shown for shape=straight_v):
+
+Repaint this top-down strategy-wargame hex tile in a painterly retro 16-bit style matching the grass reference's technique and palette. The tile shows a single dirt road running straight across it, edge to edge. Finish it: wear the road naturally into the ground — soft blended earthen shoulders, subtle wheel ruts and worn packed dirt along its length, a few blades of grass encroaching at the verge — so it reads as a real worn dirt track, not a flat ribbon pasted on top. Keep the grass calm and smooth: calm via smoothness, not paleness; keep the green saturated and mid-toned. The road must stay EXACTLY as wide as the input's ribbon — a narrow single-lane dirt track; do not widen it, do not add extra lanes or a broad shoulder, do not flare it at the edges. Keep the road's earthy brown close to the input ribbon's colour — the same warm packed-dirt brown; do not tint it grey, orange-red, or pale, and do not change its colour from one part of the road to another. Keep the road's exact centreline, its exact width, and the exact points where it meets each hexagon edge UNCHANGED — do not move, widen, narrow, reroute, bend, or add branches or forks to the road; it must still cross the same edges at the same spots. Do not add, remove, move, or resize any terrain features; leave the grass near the hexagon border untouched. Straight overhead top-down view, flat even daylight, no long cast shadows. Render it as a finished game map tile in the same painterly retro 16-bit register as the reference: no hexagon grid lines, no border or outline, no vignette or edge darkening, no text, no UI, no units. Keep the outer rim of terrain around the hexagon edge exactly as in the input so the tile still abuts its neighbours. Output the same hexagonal tile at the same scale, framing and orientation; leave the four corners outside the hexagon empty.

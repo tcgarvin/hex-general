@@ -1,0 +1,47 @@
+{
+  "shape": "turn_se_sw",
+  "edges": [
+    0,
+    4
+  ],
+  "base": "frontend/src/board/tiles/plains/00.png",
+  "treatment": "flat",
+  "seed": 152181,
+  "geometry": {
+    "approach_px": 20,
+    "road_width_px": 12,
+    "road_color": "0x6b4f2a",
+    "bezier_steps": 40,
+    "path_kind": "turn",
+    "control_point": [
+      64.0,
+      64.0
+    ],
+    "endpoints": [
+      [
+        112.0,
+        91.71
+      ],
+      [
+        16.0,
+        91.71
+      ]
+    ],
+    "edge_midpoints": {
+      "0": [
+        112.0,
+        91.71
+      ],
+      "4": [
+        16.0,
+        91.71
+      ]
+    }
+  },
+  "noise_amp": 7.0,
+  "edge_shade": null,
+  "name": "plains_turn_se_sw__flat",
+  "terrain": "plains",
+  "variant": "00",
+  "apply_target": "frontend/src/board/tiles/road/plains_turn_se_sw_00.png"
+}
