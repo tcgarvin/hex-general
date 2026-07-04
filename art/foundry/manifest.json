@@ -561,7 +561,7 @@
   "ratified": "straight_v 2026-07-02 via river/review/creek-v7-recolor-compare.png + creek-v7-recolor-mixcol-*.png ('Nice, looks good'); straight_d + turns 2026-07-02 via montages river-simple-shapes.png + river-course-preview.png ('Looks good... OK taking more than one and using them as variants' \u2014 all seam-clean candidates applied); forks (families A/B/C) 2026-07-03 via the fork-candidate montages ('Not bad! ... fine with having multiples of any given shape' \u2014 all seam-clean candidates applied as variants): 9 fork shapes / 12 tiles, post-recolor grass seams 2.25-3.32. Parked: the fans-a pair (fork_se_ne_n, fork_ne_n_nw) \u2014 5 rolls, NBP always paints a downstream outlet through the dead-end fan junction (all-arms-upward junctions are hydrologically outlet-free), so it needs a guide redesign if ever wanted. Applied tiles archived at river/picks/"
  },
   "bridge": {
-   "class": "oriented deck-sprite composite (bridge.py): a slight-perspective bridge deck sprite (segmented from a white-background NBP deck sheet, the same white-sheet route as woods/city/hills - see vignette.py) + baked road ramps drawn to match the render-time vector road overlay + a soft contact shadow, all composited over a ratified painterly river base (frontend/src/board/tiles/river/*, archived at river/picks/). The composite preserves the base's own 1px-dilated hex alpha, so bridge tiles stay seam-compatible with river. The decks carry a little perspective lift (low railings, a shaded south front face), so the compositor NEVER rotates a sprite - rotating a perspective deck would swing its lit front face onto a side - and the sheet instead draws BOTH orientations natively (horizontal E-W decks and vertical N-S decks). Register per user direction: a strictly-top-down v1 round was rejected 2026-07-03 (placement bug + 'too top-down'); the v2 slight-perspective sheet was ratified. Only the two vertical turn tiles are applied so far; the remaining bridge orientations stay legacy PixelLab (later slices, per ART_PIPELINE decision 4).",
+   "class": "oriented deck-sprite composite (bridge.py): a slight-perspective bridge deck sprite (segmented from a white-background NBP deck sheet, the same white-sheet route as woods/city/hills - see vignette.py) + baked road ramps drawn to match the render-time vector road overlay + a soft contact shadow, all composited over a ratified painterly river base (frontend/src/board/tiles/river/*, archived at river/picks/). The composite preserves the base's own 1px-dilated hex alpha, so bridge tiles stay seam-compatible with river. The decks carry a little perspective lift (low railings, a shaded south front face), so the compositor NEVER rotates a sprite - rotating a perspective deck would swing its lit front face onto a side - and the sheet instead draws BOTH orientations natively (horizontal E-W decks and vertical N-S decks). Register per user direction: a strictly-top-down v1 round was rejected 2026-07-03 (placement bug + 'too top-down'); the v2 slight-perspective sheet was ratified. Three tiles are applied: the two vertical turn tiles (v2 round) and the horizontal-deck straight_v (v3 round); the remaining bridge orientations stay legacy PixelLab (later slices, per ART_PIPELINE decision 4).",
    "prompt": "bridge/deck-sprites-prompt-v2.txt (v2 = slight-perspective decks, ratified; bridge/deck-sprites-prompt-v1.txt = the strictly-top-down v1 round, rejected - prompt kept, its rejected-round sheets/sprites are not committed)",
    "sheet": "bridge/sheets/deck-sheet-v2.png",
    "sheets": {
@@ -577,11 +577,11 @@
     "cover_alpha": 40,
     "note": "deck footprint = measured water span + 2*bank_px, at deck width_px (a touch wider than the 12px road so it shoulders past the ramps). Scaled from the native sprite with LANCZOS, never rotated. Position is derived, not stored: centred on the measured water crossing along the x=64 line."
    },
-   "water_gate": "water_mask() classifies desaturated grey-teal water on hue 82-200 deg AND sat < 0.36, val 0.20-0.75 (the hue gate is load-bearing: warm low-sat tan/brown banks would otherwise mis-measure as water). measure_crossing scans a 3px strip at x=64 for the longest contiguous water run -> the deck span/centre.",
+   "water_gate": "water_mask() classifies desaturated grey-teal water on hue 82-200 deg AND sat < 0.36, val 0.20-0.75 (the hue gate is load-bearing: warm low-sat tan/brown banks would otherwise mis-measure as water). measure_crossing scans a 3px strip for the longest contiguous water run -> the deck span/centre: at x=64 (vertical) for turn_ns, at the road-course apex row (y=73, recorded as strip_y) for straight_v_sesw.",
    "road": {
     "color": "0x6b4f2a",
     "width_px": 12,
-    "note": "baked ramps match the render-time vector road overlay (Board.tsx: 6 world px = 12 tile px, colour 0x6b4f2a). For the turn_ns shape they run straight from the n edge midpoint down through the deck to the s edge midpoint; the deck, composited on top, covers the join so the road appears to stop at the deck front face. Round-capped polylines; endpoints hit the edge midpoints exactly so neighbour road half-segments align."
+    "note": "baked ramps match the render-time vector road overlay (Board.tsx: 6 world px = 12 tile px, colour 0x6b4f2a). For the turn_ns shape they run straight from the n edge midpoint down through the deck to the s edge midpoint; for straight_v_sesw the road is the ratified T5 road-turn course for edges [0 (se), 4 (sw)], reused verbatim from road.py road_path('turn_se_sw') (straight APPROACH_PX=20 approaches from the edge midpoints joined by a quadratic Bezier through the hex centre) - byte-identical geometry to the neighbouring baked road turn tiles. The deck, composited on top, covers the join so the road appears to stop at the deck front face. Round-capped polylines; endpoints hit the edge midpoints exactly so neighbour road half-segments align."
    },
    "noise": {
     "ramp_noise_amp": 7.0,
@@ -593,7 +593,7 @@
     "grow_px": 2,
     "note": "soft dark footprint just larger than the deck, under its long edges"
    },
-   "placement_gate": "After compositing, placement_gate asserts (1) along the x=64 crossing line every base-water pixel is covered by deck pixels (the deck must span the water - the v1 bug was a road crossing bare water) and (2) no road/ramp pixel remains visible on a former-water pixel; a failing tile raises PlacementError instead of being emitted. Both applied tiles pass.",
+   "placement_gate": "After compositing, placement_gate asserts (1) along the measured crossing line (the x=64 column for turn_ns, the course-apex row strip_y for straight_v_sesw) every base-water pixel is covered by deck pixels (the deck must span the water - the v1 bug was a road crossing bare water) and (2) no road/ramp pixel remains visible on a former-water pixel; a failing tile raises PlacementError instead of being emitted. All three applied tiles pass.",
    "tiles": [
     {
      "tile": "turn_se_sw_00.png",
@@ -654,13 +654,44 @@
      "deck_length_px": 22,
      "ramps": "edges 2 (n) and 5 (s), straight to the edge midpoints (64.0, 8.57) and (64.0, 119.43)",
      "note": "vertical N-S stone deck over the ratified river turn_ne_nw base; deck index 6 (stone_a). Same deck sprite as turn_se_sw; the crossing sits higher (centre y 59.5 vs 66.5) so the deck rides higher."
+    },
+    {
+     "tile": "straight_v_00.png",
+     "shape": "straight_v_sesw",
+     "base": "river/picks/straight_v_00.png",
+     "sprite_index": 2,
+     "sprite_bbox": [
+      1056,
+      448,
+      1504,
+      576
+     ],
+     "deck_width_px": 16,
+     "bank_px": 4,
+     "seed": 4433,
+     "candidate": "straight_v_stone_a",
+     "water_crossing": {
+      "axis": "x",
+      "lo": 47,
+      "hi": 58,
+      "span": 12,
+      "centre": 52.5,
+      "strip_y": 73
+     },
+     "deck_centre": [
+      52.5,
+      74.11
+     ],
+     "deck_length_px": 20,
+     "ramps": "edges 0 (se) and 4 (sw), one continuous course: the ratified T5 road-turn polyline from road.road_path('turn_se_sw') - se midpoint (112.0, 91.71) -> 20px straight approach -> quadratic Bezier, control point (64.0, 64.0), apex (64.0, 72.86) -> 20px straight approach -> sw midpoint (16.0, 91.71). Deck centre x = measured water-centre x (52.5); deck centre y = course y at that x (74.11, one refinement pass off the apex, which is only horizontal at x=64).",
+     "note": "horizontal E-W stone deck over the ratified river straight_v base; deck index 2 (stone_a), matching the stone_a turn decks"
     }
    ],
-   "straight_v": "straight_v (horizontal deck across the vertical water, gentle bezier ramps from the se/sw edge midpoints) was generated in v2 (candidates straight_v_wood_a/b, straight_v_stone_a/b, from the horizontal deck row of deck-sheet-v2-h-r2.png) but NOT ratified - out of scope for now (user: the road-bend read poorly). Legacy bridge/straight_v.png and bridge/00.png stay legacy; legacy bridge/straight_d.png was deleted (unused by any map).",
+   "straight_v": "RATIFIED 2026-07-04 (v3 round) and applied as bridge/straight_v_00.png: a horizontal E-W deck across the vertical N-S water, with the road drawn as the ratified T5 road-turn course for edges [0 (se), 4 (sw)] reused verbatim from road.py (straight 20px approaches from the edge midpoints joined by a quadratic Bezier through the hex centre; the apex crosses x=64 with a horizontal tangent, matching the horizontal deck) and the deck dropped onto the course at the apex latitude. The v2 round (2026-07-03) drew each ramp as an independent bezier swung out to the hex's east/west extremes - it read as a brown horseshoe and was rejected (user: the road-bend read poorly). Legacy bridge/straight_v.png was deleted at apply time (it grouped under the same oriented key bridge/straight_v and would have become a second variant); legacy bridge/00.png stays legacy; legacy bridge/straight_d.png was deleted earlier (unused by any map).",
    "road_stub_suppression": "Board.tsx suppresses the render-time vector road stubs for painterly (128px) bridge tiles - they bake their own road ramps that stop at the deck face, so a vector stub would stripe brown across the deck (guard: bridge terrain + pixelWidth > 64 -> continue). Legacy 64px bridge art has no baked ramps and still gets the stubs.",
-   "provenance": "applied 2026-07-03 (user pick from bridge-candidates-v2.png + bridge-deck-zoom-v2.png + bridge-course-strip-v2.png): candidate turn_se_sw_stone_a -> bridge/turn_se_sw_00.png; candidate turn_ne_nw_stone_a -> bridge/turn_ne_nw_00.png",
+   "provenance": "applied 2026-07-03 (user pick from bridge-candidates-v2.png + bridge-deck-zoom-v2.png + bridge-course-strip-v2.png): candidate turn_se_sw_stone_a -> bridge/turn_se_sw_00.png; candidate turn_ne_nw_stone_a -> bridge/turn_ne_nw_00.png; applied 2026-07-04 (user pick from the v3 review artifact: bridge-candidates-v3.png + bridge-deck-zoom-v3.png + bridge-context-strip-v3.png + bridge-before-after-v3.png): candidate straight_v_stone_a -> bridge/straight_v_00.png (legacy bridge/straight_v.png deleted)",
    "regenerate": "python3 scripts/tile-foundry/bridge.py build --manifest art/foundry/manifest.json --section bridge --out-dir <dir> [--verify frontend/src/board/tiles/bridge]",
-   "ratified": "2026-07-03: the two stone_a turn tiles, via bridge-candidates-v2.png / bridge-deck-zoom-v2.png / bridge-course-strip-v2.png (kept under bridge/review/). v1 strictly-top-down round rejected ('too top-down' + placement bug); straight_v candidates not ratified (road-bend out of scope)."
+   "ratified": "2026-07-03: the two stone_a turn tiles, via bridge-candidates-v2.png / bridge-deck-zoom-v2.png / bridge-course-strip-v2.png (kept under bridge/review/). v1 strictly-top-down round rejected ('too top-down' + placement bug); the v2 straight_v candidates were rejected (independent-bezier ramps read as a brown horseshoe). 2026-07-04: straight_v_stone_a (v3 round, seeds 4431-4434, ramps re-rolled onto the ratified T5 road-turn course), via the v3 review artifact (bridge-candidates-v3 / bridge-deck-zoom-v3 / bridge-context-strip-v3 / bridge-before-after-v3, kept under bridge/review/): all four candidates passed the gates and were approved; stone_a chosen for material consistency with the two stone_a turn tiles."
   },
  "road_nbp": {
   "class": "NBP-finished painterly road tiles (ROADMAP Phase 8, Slice T5). Deterministic road composite (road.py flat ribbon over the ratified plains/hills bases) -> Nano-Banana-Pro image-to-image finish (wears the road into the ground / grades it over hill relief) -> deterministic post-chain (road-mask recolour to the ribbon palette + b08 rim blend) that tames NBP's width/colour freelancing and pins the grassy rim + crossings back to the deterministic input so tiles still abut invisibly. Auto-gated (drift/width/rim/lum/phantom); the user ratified the per-slot picks 2026-07-04. Plains fully covered (18 tiles); hills 6 tiles (straight_v is a width-waived near-miss, see gate_waiver). The four remaining hills shapes (turn_n_se, turn_ne_nw, end_ne, end_s) are deliberately left to the frontend vector road overlay (roadTiles.ts) \u2014 partial art coverage never breaks a road network. Render-time L<->R mirror covers the other orientations. Tool: scripts/tile-foundry/roadfinish.py.",

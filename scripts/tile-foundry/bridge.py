@@ -25,9 +25,16 @@ Three shapes (flat-top hexes; edge index -> compass 0=se 1=ne 2=n 3=nw 4=sw
   the deck is centred on the *measured* water crossing along the x=64 line
   (the two turn bases cross that line off-centre).
 - straight_v            (shape "straight_v_sesw"): a horizontal deck across the
-  vertical water at the crossing, with gently curved ramps from the se edge
-  midpoint to the deck's east end and the sw edge midpoint to the deck's west
-  end.
+  vertical water, with the road drawn as the *ratified T5 road-turn course* for
+  edges [0 (se), 4 (sw)] — reused verbatim from `road.py` (`road_path`), so the
+  ramps are byte-identical geometry to the neighbouring baked road tiles: two
+  straight `APPROACH_PX` approaches inward from the se/sw edge midpoints, joined
+  by a quadratic Bezier through the hex centre. The course apex crosses x=64 with
+  a horizontal tangent (matching the horizontal deck), and the deck is dropped
+  onto the course at that apex latitude. The deck, composited on top, hides the
+  water crossing so the road appears to stop at the deck faces. (The v2 round drew
+  each ramp as an independent bezier swung out to the east/west extremes — that
+  read as a brown horseshoe and was rejected 2026-07-03.)
 
 Geometry is *measured, not assumed*: the water pixels of the **unmodified** base
 tile along the deck's crossing line set the deck's span and centre. Water is the
@@ -187,7 +194,10 @@ def measure_crossing(base: np.ndarray, shape: str) -> dict:
     """Measure the water span/centre along the deck's crossing line.
 
     - turn_ns: vertical deck at x=CENTRE -> water y-extent (scan a 3-px strip).
-    - straight_v_sesw: horizontal deck at y=CENTRE -> water x-extent.
+    - straight_v_sesw: horizontal deck at the course *apex* latitude -> water
+      x-extent (scan a 3-px strip at the apex y, not y=CENTRE): the deck sits on
+      the road-turn course, whose apex is a few px below centre. `strip_y` (the
+      scanned row) is returned so the placement gate checks the same line.
     """
     wm = water_mask(base)
     c = int(round(CENTRE))
@@ -196,9 +206,17 @@ def measure_crossing(base: np.ndarray, shape: str) -> dict:
         lo, hi = _contiguous_run(strip)
         return {"axis": "y", "lo": lo, "hi": hi, "span": hi - lo + 1, "centre": (lo + hi) / 2.0}
     if shape == "straight_v_sesw":
-        strip = wm[c - 2 : c + 3, :].any(axis=0)
+        apex_y = int(round(_straight_v_course()["apex"][1]))
+        strip = wm[apex_y - 1 : apex_y + 2, :].any(axis=0)
         lo, hi = _contiguous_run(strip)
-        return {"axis": "x", "lo": lo, "hi": hi, "span": hi - lo + 1, "centre": (lo + hi) / 2.0}
+        return {
+            "axis": "x",
+            "lo": lo,
+            "hi": hi,
+            "span": hi - lo + 1,
+            "centre": (lo + hi) / 2.0,
+            "strip_y": apex_y,
+        }
     raise ValueError(f"unknown shape {shape!r}")
 
 
@@ -282,6 +300,57 @@ def _bezier(p0, p1, p2, steps: int = 40) -> list[tuple[float, float]]:
     return pts
 
 
+def _straight_v_course() -> dict:
+    """The ratified T5 road-turn course for the straight_v_sesw bridge shape.
+
+    Edges [0 (se), 4 (sw)] are exactly `road.SHAPES['turn_se_sw']`, so we reuse
+    `road.road_path('turn_se_sw')` verbatim — the identical APPROACH_PX, Bezier
+    construction and sampling density that bake the neighbouring plains/hills
+    road turn tiles. The returned `points` are the full course polyline (se
+    midpoint -> straight approach -> Bezier through the hex centre -> straight
+    approach -> sw midpoint); `apex` is the Bezier midpoint (t=0.5), which sits
+    at x=64 with a horizontal tangent (matching the horizontal deck sprite).
+
+    `road.py` imports names from `bridge.py` at module load, so importing `road`
+    at module scope here would be circular; the function-level import is resolved
+    only when this runs, by which point both modules are fully initialised.
+    """
+    import road
+
+    path = road.road_path("turn_se_sw")
+    m0 = edge_midpoint(0)
+    m1 = edge_midpoint(4)
+    n0 = road.edge_normal(0)
+    n1 = road.edge_normal(4)
+    a0 = (m0[0] + n0[0] * road.APPROACH_PX, m0[1] + n0[1] * road.APPROACH_PX)
+    a1 = (m1[0] + n1[0] * road.APPROACH_PX, m1[1] + n1[1] * road.APPROACH_PX)
+    ctrl = (float(path["control_point"][0]), float(path["control_point"][1]))
+    apex = _bezier(a0, ctrl, a1, 2)[1]  # steps=2 -> [t0, t0.5, t1]; index 1 is t=0.5
+    return {"points": path["points"], "apex": apex, "control_point": ctrl}
+
+
+def _course_y_at_x(points: list[tuple[float, float]], x: float) -> float:
+    """Interpolate the course polyline's y where it crosses vertical line `x`.
+
+    Used to drop the horizontal deck onto the course at the measured water-centre
+    x (the deck rides the road, not a flat y=64 line). The turn course is monotone
+    in x on each side of the apex, so a given x brackets a unique segment; when
+    x sits right at the apex (both flanking segments bracket it) the topmost
+    (min-y) crossing — the one nearest the deck — is returned. Raises if the line
+    misses the polyline entirely (a bad course/x, not a state to paper over).
+    """
+    ys: list[float] = []
+    for (x0, y0), (x1, y1) in zip(points, points[1:]):
+        if x0 == x1:
+            continue
+        if (x0 - x) * (x1 - x) <= 0:
+            t = (x - x0) / (x1 - x0)
+            ys.append(y0 + t * (y1 - y0))
+    if not ys:
+        raise ValueError(f"course polyline does not cross x={x}")
+    return min(ys)
+
+
 def draw_ramp(draw: ImageDraw.ImageDraw, pts: list[tuple[float, float]], width: int) -> None:
     """Draw a thick round-capped road ramp along a polyline."""
     draw.line(pts, fill=ROAD_COLOR, width=width, joint="curve")
@@ -291,14 +360,22 @@ def draw_ramp(draw: ImageDraw.ImageDraw, pts: list[tuple[float, float]], width: 
 
 
 def ramp_paths(shape: str, deck_centre: tuple[float, float], deck_len: int) -> list[dict]:
-    """Ramp polylines/beziers from edge midpoints to the deck ends.
+    """Ramp polyline(s) for the shape, as the road drawn under the deck.
 
-    Returns a list of `{"edge", "control_points", "points"}` records so the
-    exact geometry lands in the sidecar. Endpoints hit the edge midpoints
-    precisely (neighbouring road half-segments terminate there); the deck ends
-    are the sprite's actual top/bottom (or east/west) extents, so the deck —
-    composited on top of the ramps — covers the join and the road appears to
-    stop at the deck's front face rather than running over it.
+    Returns a list of records so the exact geometry lands in the sidecar:
+
+    - turn_ns: two straight ramps `{"edge", "control_points", "points"}` from the
+      deck ends out to the n/s edge midpoints. Endpoints hit the edge midpoints
+      precisely (neighbouring road half-segments terminate there); the deck ends
+      are the sprite's actual top/bottom extents, so the deck — composited on top
+      of the ramps — covers the join and the road appears to stop at the deck's
+      front face rather than running over it.
+    - straight_v_sesw: one continuous record `{"edges", "control_points",
+      "points"}` — the full ratified T5 road-turn course for edges [0, 4] (se
+      midpoint -> approach -> Bezier through the centre -> approach -> sw
+      midpoint). The deck, composited on top at the course apex, hides the
+      crossing so the road reads as stopping at the deck faces. The course is
+      fixed hex geometry, so `deck_centre`/`deck_len` are unused for this shape.
     """
     cx, cy = deck_centre
     ramps: list[dict] = []
@@ -310,18 +387,61 @@ def ramp_paths(shape: str, deck_centre: tuple[float, float], deck_len: int) -> l
             pts = [deck_end, mid]
             ramps.append({"edge": edge, "control_points": [], "points": pts})
     elif shape == "straight_v_sesw":
-        east_end = (cx + deck_len / 2.0, cy)
-        west_end = (cx - deck_len / 2.0, cy)
-        for edge, deck_end in ((0, east_end), (4, west_end)):
-            mid = edge_midpoint(edge)
-            # gentle quarter-curve: leave the deck horizontally, arrive at the
-            # midpoint from directly above it (control at (mid_x, deck_y)).
-            ctrl = (mid[0], cy)
-            pts = _bezier(deck_end, ctrl, mid)
-            ramps.append({"edge": edge, "control_points": [ctrl], "points": pts})
+        course = _straight_v_course()
+        ramps.append(
+            {
+                "edges": [0, 4],
+                "control_points": [list(course["control_point"])],
+                "points": course["points"],
+            }
+        )
     else:
         raise ValueError(f"unknown shape {shape!r}")
     return ramps
+
+
+def _ramp_sidecar(shape: str, ramps: list[dict]) -> list[dict]:
+    """Serialise the ramp geometry for the JSON sidecar (shape-specific schema).
+
+    turn_ns records are per-edge (`edge` + its midpoint); the straight_v course is
+    one continuous record spanning both edges (`edges` + both midpoints + point
+    count), reflecting that it is a single ratified road-turn polyline rather than
+    two independent ramps.
+    """
+    records: list[dict] = []
+    for r in ramps:
+        endpoints = [
+            [round(r["points"][0][0], 2), round(r["points"][0][1], 2)],
+            [round(r["points"][-1][0], 2), round(r["points"][-1][1], 2)],
+        ]
+        control_points = [[round(c, 2) for c in cp] for cp in r["control_points"]]
+        if shape == "turn_ns":
+            records.append(
+                {
+                    "edge": r["edge"],
+                    "edge_midpoint": [round(v, 2) for v in edge_midpoint(r["edge"])],
+                    "control_points": control_points,
+                    "endpoints": endpoints,
+                    "width_px": ROAD_WIDTH_PX,
+                    "color": "0x6b4f2a",
+                }
+            )
+        else:
+            records.append(
+                {
+                    "edges": r["edges"],
+                    "edge_midpoints": [
+                        [round(v, 2) for v in edge_midpoint(e)] for e in r["edges"]
+                    ],
+                    "control_points": control_points,
+                    "endpoints": endpoints,
+                    "n_points": len(r["points"]),
+                    "source": "road.road_path('turn_se_sw') — ratified T5 turn course",
+                    "width_px": ROAD_WIDTH_PX,
+                    "color": "0x6b4f2a",
+                }
+            )
+    return records
 
 
 def deck_coverage(deck_img: Image.Image, pos: tuple[int, int]) -> np.ndarray:
@@ -352,24 +472,29 @@ def add_ramp_noise(tile: Image.Image, ramp_mask: np.ndarray, seed: int) -> None:
     tile.paste(Image.fromarray(arr.astype(np.uint8), "RGBA"))
 
 
-def placement_gate(base: np.ndarray, shape: str, deck_cov: np.ndarray, ramp_mask: np.ndarray) -> None:
+def placement_gate(
+    base: np.ndarray, shape: str, deck_cov: np.ndarray, ramp_mask: np.ndarray, cross: dict
+) -> None:
     """Fail loud unless the deck spans the water and no road sits on the water.
 
-    1. Along the crossing centre line, every base-water pixel must be covered by
-       deck pixels (otherwise the road crosses bare water — the v1 bug).
+    1. Along the crossing line, every base-water pixel must be covered by deck
+       pixels (otherwise the road crosses bare water — the v1 bug). The crossing
+       line is the *measured* strip: x=CENTRE column for turn_ns, the apex row
+       (`cross["strip_y"]`) for straight_v_sesw, so the gate checks exactly where
+       the span was measured.
     2. No road/ramp pixel may remain visible on a former-water pixel (the deck,
        composited on top, must cover any ramp-water overlap).
     """
     wm = water_mask(base)
-    c = int(round(CENTRE))
     if shape == "turn_ns":
-        line_water = np.zeros(TILE_PX, dtype=bool)
+        c = int(round(CENTRE))
         line_water_idx = np.nonzero(wm[:, c])[0]
         line_cov = deck_cov[:, c]
     else:
-        line_water_idx = np.nonzero(wm[c, :])[0]
-        line_cov = deck_cov[c, :]
-        line_water = np.zeros(TILE_PX, dtype=bool)
+        row = cross["strip_y"]
+        line_water_idx = np.nonzero(wm[row, :])[0]
+        line_cov = deck_cov[row, :]
+    line_water = np.zeros(TILE_PX, dtype=bool)
     line_water[line_water_idx] = True
     uncovered = line_water & ~line_cov
     if uncovered.any():
@@ -400,7 +525,12 @@ def compose_bridge(
     if vertical:
         deck_centre = (CENTRE, cross["centre"])
     else:
-        deck_centre = (cross["centre"], CENTRE)
+        # straight_v: the horizontal deck rides the road-turn course. Its x is the
+        # measured water-crossing centre; its y is the course's y at that x (one
+        # refinement pass off the apex — the apex is only horizontal at x=64, so a
+        # water centre off 64 sits slightly lower on the descending course flank).
+        course = _straight_v_course()
+        deck_centre = (cross["centre"], _course_y_at_x(course["points"], cross["centre"]))
 
     deck_img = build_deck_image(sprite, deck_len, deck_width_px, vertical)
     pos = (
@@ -426,7 +556,7 @@ def compose_bridge(
     tile.alpha_composite(deck_img, pos)
 
     # 4. placement gate — fail loud before we ever emit a bad tile
-    placement_gate(base, shape, deck_cov, ramp_mask)
+    placement_gate(base, shape, deck_cov, ramp_mask, cross)
 
     # 5. reclip to the base's own alpha exactly (seam-compatible with river)
     arr = np.asarray(tile).copy()
@@ -448,23 +578,22 @@ def compose_bridge(
             "size": [deck_img.width, deck_img.height],
         },
         "water_crossing": {k: (round(v, 2) if isinstance(v, float) else v) for k, v in cross.items()},
-        "ramps": [
-            {
-                "edge": r["edge"],
-                "edge_midpoint": [round(v, 2) for v in edge_midpoint(r["edge"])],
-                "control_points": [[round(c, 2) for c in cp] for cp in r["control_points"]],
-                "endpoints": [
-                    [round(r["points"][0][0], 2), round(r["points"][0][1], 2)],
-                    [round(r["points"][-1][0], 2), round(r["points"][-1][1], 2)],
-                ],
-                "width_px": ROAD_WIDTH_PX,
-                "color": "0x6b4f2a",
-            }
-            for r in ramps
-        ],
+        "ramps": _ramp_sidecar(shape, ramps),
         "road_noise_amp": RAMP_NOISE_AMP,
         "shadow": {"alpha": SHADOW_ALPHA, "blur": SHADOW_BLUR, "grow_px": SHADOW_GROW_PX},
     }
+    if not vertical:
+        course = _straight_v_course()
+        sidecar["course"] = {
+            "source": "road.road_path('turn_se_sw') edges [0 (se), 4 (sw)]",
+            "apex": [round(course["apex"][0], 2), round(course["apex"][1], 2)],
+            "strip_y": cross["strip_y"],
+            "deck_latitude": (
+                "deck centre x = measured water-centre x; deck centre y = course y "
+                "at that x (one refinement pass off the apex, which is only horizontal "
+                "at x=64)"
+            ),
+        }
     return tile, sidecar
 
 
@@ -484,10 +613,10 @@ CANDIDATES = [
     ("turn_ne_nw_stone_a", "turn_ns", "turn_ne_nw_00.png", 6, "stone", 4413),
     ("turn_ne_nw_stone_b", "turn_ns", "turn_ne_nw_00.png", 7, "stone", 4414),
     # straight_v (base straight_v_00, horizontal deck across the vertical water)
-    ("straight_v_wood_a", "straight_v_sesw", "straight_v_00.png", 0, "wood", 4421),
-    ("straight_v_wood_b", "straight_v_sesw", "straight_v_00.png", 1, "wood", 4422),
-    ("straight_v_stone_a", "straight_v_sesw", "straight_v_00.png", 2, "stone", 4423),
-    ("straight_v_stone_b", "straight_v_sesw", "straight_v_00.png", 3, "stone", 4424),
+    ("straight_v_wood_a", "straight_v_sesw", "straight_v_00.png", 0, "wood", 4431),
+    ("straight_v_wood_b", "straight_v_sesw", "straight_v_00.png", 1, "wood", 4432),
+    ("straight_v_stone_a", "straight_v_sesw", "straight_v_00.png", 2, "stone", 4433),
+    ("straight_v_stone_b", "straight_v_sesw", "straight_v_00.png", 3, "stone", 4434),
 ]
 
 

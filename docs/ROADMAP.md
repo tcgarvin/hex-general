@@ -489,12 +489,19 @@ isolation.
   a placement gate in `bridge.py` asserts the deck covers every water pixel on
   the crossing line. Painterly bridge tiles bake their ramps, so `Board.tsx`
   suppresses the hex's own vector road stubs when the resolved bridge texture is
-  128px (legacy 64px bridge art keeps them). **Not ratified:** the painterly
-  `straight_v` bridge (vertical water, road bending se↔sw over the deck) — the
-  road-bend composition read poorly; out of scope for now, twin_rivers' (4,20)
-  keeps the legacy `straight_v` tile. Legacy `straight_d` deleted (unused by any
-  map; regenerate through the foundry on demand). Fork bridges likewise on
-  demand.
+  128px (legacy 64px bridge art keeps them). **Painterly `straight_v` ✅ shipped
+  2026-07-04 (v3 re-roll):** the rejected v2 round invented its own ramp curve
+  (a quarter-bezier that swung the road into a wide horseshoe); v3 instead
+  reuses the **ratified T5 road-turn course** (`road.py` `turn_se_sw`: straight
+  20px approaches + centre-through bezier) as the ramp geometry and drops the
+  deck to the course apex (where the bezier's tangent is horizontal, matching
+  the horizontal deck sprite), measuring the water crossing at that latitude.
+  User approved all four v3 candidates; `stone_a` applied for material
+  consistency with the turn bridges, replacing the legacy 64px `straight_v.png`
+  (same oriented key, so the legacy file had to go). Legacy `straight_d` deleted
+  (unused by any map; regenerate through the foundry on demand). Fork bridges
+  likewise on demand — with them, every bridge shape twin_rivers uses is now
+  painterly.
 - **Slice T5 — Road rendering ✅ shipped 2026-07-04 (baked tiles win).** The
   experiment compared, on the same map, today's **vector overlay** (centre-to-edge
   brown lines, `Board.tsx`) vs **baked road tiles** autotiled by road-edge mask

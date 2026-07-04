@@ -1,0 +1,95 @@
+{
+  "shape": "straight_v_sesw",
+  "base": "art/foundry/river/picks/straight_v_00.png",
+  "seed": 4433,
+  "deck": {
+    "width_px": 16,
+    "length_px": 20,
+    "bank_px": 4,
+    "centre": [
+      52.5,
+      74.11
+    ],
+    "vertical": false,
+    "rotation_deg": 0,
+    "paste_pos": [
+      42,
+      66
+    ],
+    "size": [
+      20,
+      16
+    ]
+  },
+  "water_crossing": {
+    "axis": "x",
+    "lo": 47,
+    "hi": 58,
+    "span": 12,
+    "centre": 52.5,
+    "strip_y": 73
+  },
+  "ramps": [
+    {
+      "edges": [
+        0,
+        4
+      ],
+      "edge_midpoints": [
+        [
+          112.0,
+          91.71
+        ],
+        [
+          16.0,
+          91.71
+        ]
+      ],
+      "control_points": [
+        [
+          64.0,
+          64.0
+        ]
+      ],
+      "endpoints": [
+        [
+          112.0,
+          91.71
+        ],
+        [
+          16.0,
+          91.71
+        ]
+      ],
+      "n_points": 43,
+      "source": "road.road_path('turn_se_sw') \u2014 ratified T5 turn course",
+      "width_px": 12,
+      "color": "0x6b4f2a"
+    }
+  ],
+  "road_noise_amp": 7.0,
+  "shadow": {
+    "alpha": 100,
+    "blur": 2.0,
+    "grow_px": 2
+  },
+  "course": {
+    "source": "road.road_path('turn_se_sw') edges [0 (se), 4 (sw)]",
+    "apex": [
+      64.0,
+      72.86
+    ],
+    "strip_y": 73,
+    "deck_latitude": "deck centre x = measured water-centre x; deck centre y = course y at that x (one refinement pass off the apex, which is only horizontal at x=64)"
+  },
+  "name": "straight_v_stone_a",
+  "style": "stone",
+  "sheet": "art/foundry/bridge/sheets/deck-sheet-v2.png",
+  "sprite_index": 2,
+  "sprite_bbox": [
+    1056,
+    448,
+    1504,
+    576
+  ]
+}
