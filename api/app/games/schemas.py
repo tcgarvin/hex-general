@@ -138,6 +138,12 @@ class GameView(BaseModel):
     victory: VictoryStatus
     # The invite token for the still-open slot, or None once the game is full.
     invite_token: str | None
+    # Whether the opponent is an AI (AI_SPEC §9). The caller is always a human
+    # (bots never call the API), so this describes the other slot: ``vs_bot`` is
+    # true iff a bot holds it, and ``bot_policy`` names that AI (e.g. "search"),
+    # or ``None`` for a human opponent / a slot no one has claimed yet.
+    vs_bot: bool
+    bot_policy: str | None
 
 
 class SubmitResult(BaseModel):
@@ -173,3 +179,7 @@ class GameHistoryEntry(BaseModel):
     turn: int
     outcome: str
     created_at: str
+    # The opponent AI, mirroring `GameView` (AI_SPEC §9): ``vs_bot`` is true iff a
+    # bot holds the other slot and ``bot_policy`` names it, else ``None``.
+    vs_bot: bool
+    bot_policy: str | None

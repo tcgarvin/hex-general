@@ -197,6 +197,8 @@ class GameService:
                 turn=record.state.turn,
                 outcome=_outcome_for(victory_status(record.state), record.slot),
                 created_at=record.created_at,
+                vs_bot=record.bot_policy is not None,
+                bot_policy=record.bot_policy,
             )
             for record in records
         ]
@@ -208,6 +210,11 @@ class GameService:
         players = self._repo.list_players(player.game_id)
         slot_by_player_id = {p.id: p.slot for p in players}
         slots_present = sorted(p.slot for p in players)
+        # The caller is human (bots never call the API), so any bot row is the
+        # opponent. A game has at most one bot (AI_SPEC §9).
+        opponent_bot_policy = next(
+            (p.bot_policy for p in players if p.bot_policy is not None), None
+        )
         submitted = {
             slot_by_player_id[o.player_id]
             for o in self._repo.list_turn_orders(player.game_id, game.state.turn)
@@ -231,6 +238,8 @@ class GameService:
             ),
             victory=victory_status(game.state),
             invite_token=invite_token,
+            vs_bot=opponent_bot_policy is not None,
+            bot_policy=opponent_bot_policy,
         )
 
     def submit_orders(

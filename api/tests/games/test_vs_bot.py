@@ -55,6 +55,38 @@ def test_unknown_bot_policy_rejected() -> None:
         _service().create_game("twin_rivers", HUMAN, vs_bot=True, bot_policy="skynet")
 
 
+def test_view_and_history_expose_the_opponent_bot() -> None:
+    # A vs-bot game reports the AI opponent to the human in both the live view and
+    # the history row, so the frontend can label it (TODO: label bot games).
+    service = _service()
+    creds = service.create_game("twin_rivers", HUMAN, vs_bot=True, bot_policy="search")
+    player = _human_player(service, creds.game_id)
+
+    view = service.get_view(player)
+    assert view.vs_bot is True
+    assert view.bot_policy == "search"
+
+    history = service.get_history(HUMAN)
+    assert len(history) == 1
+    assert history[0].vs_bot is True
+    assert history[0].bot_policy == "search"
+
+
+def test_human_game_reports_no_bot() -> None:
+    # A game whose second slot is still open (or held by a human) is not vs-bot.
+    service = _service()
+    creds = service.create_game("twin_rivers", HUMAN)
+    player = _human_player(service, creds.game_id)
+
+    view = service.get_view(player)
+    assert view.vs_bot is False
+    assert view.bot_policy is None
+
+    history = service.get_history(HUMAN)
+    assert history[0].vs_bot is False
+    assert history[0].bot_policy is None
+
+
 def test_vs_bot_turns_resolve_on_the_human_submission_alone() -> None:
     # Play several turns: each human submission must both lock and execute
     # (the bot plans synchronously, so it can never block a turn).

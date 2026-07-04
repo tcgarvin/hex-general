@@ -5,37 +5,7 @@ import { Button, Centered, ErrorBanner } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 import { DEFAULT_SCENARIO } from "@/lib/api/types";
-
-/**
- * A selectable AI opponent. `policy` is the `bot_policy` sent to `POST /games`
- * (resolved server-side through `app.ai.arena`'s registry); the rest is
- * player-facing presentation. Blurbs describe playstyle rather than a strict
- * easy/hard ladder — the search bot's tuning isn't finished, so we don't promise
- * a difficulty ranking yet.
- */
-type Bot = {
-  policy: string;
-  name: string;
-  tagline: string;
-  blurb: string;
-};
-
-const BOTS: readonly Bot[] = [
-  {
-    policy: "scripted",
-    name: "Blitz",
-    tagline: "Aggressive · no lookahead",
-    blurb:
-      "Charges straight at you. Blitz picks the best move for each unit on its own and commits — relentless and punchy, but it doesn't plan around your response.",
-  },
-  {
-    policy: "search",
-    name: "Sage",
-    tagline: "Measured · thinks ahead",
-    blurb:
-      "Simulates a turn before committing, refining its plan to avoid traffic jams and bad trades. Sage plays more cautiously and coordinates its units.",
-  },
-];
+import { BOTS, type Bot } from "@/lib/bots";
 
 /**
  * "Play vs Bot" spoke (hub → this). Two panes: pick an opponent on the left, read

@@ -407,6 +407,17 @@
       "GameHistoryEntry": {
         "description": "One row of a user's game history (account screen).\n\n``outcome`` is from the caller's perspective: ``win``/``loss``/``draw`` once the\ngame is decided, else ``in_progress`` (a lobby or active game). ``turn`` is the\ncurrent/final turn number; ``created_at`` is the game's ISO creation timestamp.",
         "properties": {
+          "bot_policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bot Policy"
+          },
           "created_at": {
             "title": "Created At",
             "type": "string"
@@ -431,6 +442,10 @@
             "title": "Turn",
             "type": "integer"
           },
+          "vs_bot": {
+            "title": "Vs Bot",
+            "type": "boolean"
+          },
           "your_slot": {
             "title": "Your Slot",
             "type": "string"
@@ -443,7 +458,9 @@
           "your_slot",
           "turn",
           "outcome",
-          "created_at"
+          "created_at",
+          "vs_bot",
+          "bot_policy"
         ],
         "title": "GameHistoryEntry",
         "type": "object"
@@ -532,6 +549,17 @@
       "GameView": {
         "description": "A player's fog-filtered view of a game (SPEC \u00a79).\n\n``state`` is redacted to the caller's perspective: enemy units on hexes the\ncaller cannot see are removed (the map, settlement control, and banks are\npublic in v0.1). ``victory`` is the authoritative global outcome. ``visible``\nis the set of hexes the caller's units currently illuminate (SPEC \u00a79), so the\nfrontend can dim everything outside it as fog of war; the map itself is public,\nso fog is a rendering hint, not a redaction.",
         "properties": {
+          "bot_policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bot Policy"
+          },
           "game_id": {
             "title": "Game Id",
             "type": "string"
@@ -582,6 +610,10 @@
             "title": "Visible",
             "type": "array"
           },
+          "vs_bot": {
+            "title": "Vs Bot",
+            "type": "boolean"
+          },
           "your_slot": {
             "title": "Your Slot",
             "type": "string"
@@ -597,7 +629,9 @@
           "state",
           "visible",
           "victory",
-          "invite_token"
+          "invite_token",
+          "vs_bot",
+          "bot_policy"
         ],
         "title": "GameView",
         "type": "object"

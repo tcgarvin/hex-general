@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { AccountMenu } from "@/components/AccountMenu";
 import { GameMenu } from "@/components/GameMenu";
 import type { GameView } from "@/lib/api/types";
+import { opponentLabel } from "@/lib/bots";
 import type { Economy } from "@/planning/economy";
 import type { OrderTally } from "@/planning/warnings";
 
@@ -56,6 +57,10 @@ export function GameHeader({
       <span className="font-mono text-xs font-semibold uppercase tracking-wider text-indigo-300">
         {phase}
       </span>
+
+      {view.vs_bot && view.bot_policy !== null && (
+        <Stat label="Opponent">{opponentLabel(view.bot_policy)}</Stat>
+      )}
 
       <Stat label="Muster">
         <span className="font-mono">

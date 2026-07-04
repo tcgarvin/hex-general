@@ -100,6 +100,16 @@ class FakeGameRepo:
             if player.user_id != user_id:
                 continue
             game = self._games[player.game_id]
+            opponent_bot_policy = next(
+                (
+                    p.bot_policy
+                    for p in self._players.values()
+                    if p.game_id == game.id
+                    and p.slot != player.slot
+                    and p.bot_policy is not None
+                ),
+                None,
+            )
             records.append(
                 UserGameRecord(
                     game_id=game.id,
@@ -108,6 +118,7 @@ class FakeGameRepo:
                     state=game.state,
                     created_at=self._created_at[game.id],
                     slot=player.slot,
+                    bot_policy=opponent_bot_policy,
                 )
             )
         return records

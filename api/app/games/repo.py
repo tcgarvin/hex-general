@@ -65,6 +65,8 @@ class UserGameRecord(BaseModel):
     Carries the slot the user holds plus enough of the game to derive an outcome
     (``state`` for the victory check, ``turn`` from it). ``invite_token`` is
     deliberately excluded — history must not leak another game's open-slot secret.
+    ``bot_policy`` names the opponent AI (AI_SPEC §9) when the other slot is a bot,
+    else ``None`` (a human opponent or an unfilled slot).
     """
 
     model_config = ConfigDict(frozen=True)
@@ -75,6 +77,7 @@ class UserGameRecord(BaseModel):
     state: GameState
     created_at: str
     slot: str
+    bot_policy: str | None = None
 
 
 class OrdersRecord(BaseModel):
@@ -176,6 +179,18 @@ def _player_record(row: dict[str, Any]) -> PlayerRecord:
         user_id=row["user_id"],
         bot_policy=row["bot_policy"],
     )
+
+
+def _opponent_bot_policy(players: list[dict[str, Any]], own_slot: str) -> str | None:
+    """The bot policy driving a slot other than ``own_slot``, or ``None`` if none.
+
+    A game has at most one bot (the creator is always human and only the remaining
+    slot is filled by AI), so the first non-own bot row is the opponent.
+    """
+    for player in players:
+        if player["slot"] != own_slot and player["bot_policy"] is not None:
+            return cast(str, player["bot_policy"])
+    return None
 
 
 class SupabaseGameRepo:
@@ -290,10 +305,18 @@ class SupabaseGameRepo:
         return _player_record(row)
 
     def list_user_games(self, user_id: str) -> list[UserGameRecord]:
-        """Return every game the user holds a slot in, for their history screen."""
+        """Return every game the user holds a slot in, for their history screen.
+
+        The nested ``players(slot, bot_policy)`` embed pulls *every* player of each
+        game (not just the caller's row) so the opponent's ``bot_policy`` is
+        available to label bot games — one query, no per-game round trip.
+        """
         response = (
             self._client.table("players")
-            .select("slot, games!inner(id, scenario, status, state, created_at)")
+            .select(
+                "slot, games!inner(id, scenario, status, state, created_at, "
+                "players(slot, bot_policy))"
+            )
             .eq("user_id", user_id)
             .execute()
         )
@@ -308,6 +331,7 @@ class SupabaseGameRepo:
                     state=GameState.model_validate(game["state"]),
                     created_at=game["created_at"],
                     slot=row["slot"],
+                    bot_policy=_opponent_bot_policy(game["players"], row["slot"]),
                 )
             )
         return records

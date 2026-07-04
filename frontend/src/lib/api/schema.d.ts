@@ -539,6 +539,8 @@ export interface components {
          *     current/final turn number; ``created_at`` is the game's ISO creation timestamp.
          */
         GameHistoryEntry: {
+            /** Bot Policy */
+            bot_policy: string | null;
             /** Created At */
             created_at: string;
             /** Game Id */
@@ -551,6 +553,8 @@ export interface components {
             status: string;
             /** Turn */
             turn: number;
+            /** Vs Bot */
+            vs_bot: boolean;
             /** Your Slot */
             your_slot: string;
         };
@@ -605,6 +609,8 @@ export interface components {
          *     so fog is a rendering hint, not a redaction.
          */
         GameView: {
+            /** Bot Policy */
+            bot_policy: string | null;
             /** Game Id */
             game_id: string;
             /** Invite Token */
@@ -623,6 +629,8 @@ export interface components {
             victory: components["schemas"]["VictoryStatus"];
             /** Visible */
             visible: components["schemas"]["Axial"][];
+            /** Vs Bot */
+            vs_bot: boolean;
             /** Your Slot */
             your_slot: string;
         };

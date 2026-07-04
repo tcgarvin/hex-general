@@ -6,6 +6,7 @@ import { Centered, ErrorBanner, Loading } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 import type { GameHistoryEntry, MeView } from "@/lib/api/types";
+import { opponentLabel } from "@/lib/bots";
 
 type State =
   | { status: "loading" }
@@ -106,6 +107,9 @@ function HistoryRow({ entry }: { entry: GameHistoryEntry }) {
             {entry.scenario.replace(/_/g, " ")}
           </span>
           <span className="text-xs text-zinc-500">
+            {entry.vs_bot && entry.bot_policy !== null && (
+              <>vs {opponentLabel(entry.bot_policy)} · </>
+            )}
             you are {entry.your_slot} · turn {entry.turn} ·{" "}
             {formatDate(entry.created_at)}
           </span>
