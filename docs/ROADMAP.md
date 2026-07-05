@@ -523,6 +523,55 @@ isolation.
   the deterministic post-chain byte-replays (`roadfinish.py build --verify`, wired
   into `selftest.py`; regenerate the sources with `export-sources`).
 
+### Unit art (painterly sprites)
+
+Replace the vector unit markers (`UnitMarker` in `Board.tsx`: tinted
+circle/square/triangle + centred HP digit) with painterly sprites in the
+concept-art register. Design ratified with the user 2026-07-05:
+
+- **Register: WWII, no national insignia** — infantry = a small 2–3 soldier
+  squad, armor = one mid-century medium tank, artillery = a towed field gun
+  (crew optional; offer both in candidates). Team colour does the faction work.
+  The concept art's units are illustrative-only for *content*, but its mood/
+  palette register applies.
+- **Team colour: two-layer sprite (base + tint mask)** — must scale to **32+
+  player colours** (user requirement), which rules out baked per-player files
+  and whole-sprite multiply tint. Generate each unit once with its team areas
+  (tunics/helmets, hull panels, gun carriage — the areas the concept art
+  team-tints) painted in a keyable colour; the foundry classifies those pixels
+  by hue (the hills/river HSV machinery) and emits a neutral **base** PNG plus
+  a luminance-preserving **mask** PNG that Pixi tints with `playerColor` at
+  render time. Metal, wood, and skin stay natural in the base.
+- **HP: 10-segment pip bar** (SPEC max HP 10) replaces the centred digit —
+  the concept art's pip-row look. Exact geometry decided at integration; must
+  stay legible at ~50px board-scale hexes.
+- **Perspective/facing:** the standing "a LITTLE 3/4 perspective" ruling
+  (woods trees, bridge decks) applies; strictly top-down was already rejected
+  as unreadable. Units have no gameplay facing — one generated facing
+  (west), optional render-time L↔R mirror for variety. No rotation.
+- **Asset class 5 — free-standing sprites** (new foundry class, easiest of
+  the five: no seams, no edge anchoring, no cut-off risk). White-background
+  candidate sheet via NBP (`gen.py`) → segment by connected components +
+  un-matte + contrast-compress toward the concept register (the
+  `vignette.py`/tree-sprite treatment) → mask cut + gates (footprint band,
+  luminance band, mask-coverage sanity) in a new manifest-driven
+  `scripts/tile-foundry/unit.py` with `--verify` byte-reproduction, wired
+  into `selftest.py`. Provenance under `art/foundry/units/`.
+- **Sizing:** ~75–95px footprint on a 128×128 transparent canvas (the vector
+  marker is ~62% of hex width today), soft ground-shadow disc like the woods
+  trees, strong silhouette — terrain was deliberately made to recede so units
+  pop.
+- **Integration (code):** sprites live outside the terrain glob (e.g.
+  `frontend/src/board/units/` assets + a small loader beside `tiles.ts`);
+  `UnitMarker`/`RecruitGhost` render base sprite + tinted mask sprite + pip
+  bar; slide/fade replay animation and order badges unchanged. No API or
+  scenario change.
+- **Ratification:** per the CLAUDE.md hard gate — montage + board-scale
+  strips over plains/woods/hills/city, published as a claude.ai Artifact;
+  the user picks. Suggested slices: **U1** candidate sheets + picks (art),
+  **U2** `unit.py` foundry pipeline (base/mask split + gates), **U3**
+  renderer integration (two-layer sprites + pip bar).
+
 ## Phase 9 — Frontend: planning UI
 
 **Goal:** §16.1.
