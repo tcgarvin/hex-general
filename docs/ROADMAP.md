@@ -568,9 +568,32 @@ concept-art register. Design ratified with the user 2026-07-05:
   scenario change.
 - **Ratification:** per the CLAUDE.md hard gate — montage + board-scale
   strips over plains/woods/hills/city, published as a claude.ai Artifact;
-  the user picks. Suggested slices: **U1** candidate sheets + picks (art),
+  the user picks. Slices: **U1** candidate sheets + picks (art),
   **U2** `unit.py` foundry pipeline (base/mask split + gates), **U3**
   renderer integration (two-layer sprites + pip bar).
+
+**✅ Shipped 2026-07-05 (U1+U2+U3).** Four NBP candidate rounds → user picks:
+armor = v3-r1 tank, artillery = v3-r2 gun+two-crew, infantry = v4 5-man wedge
+at 0.9× footprint (90/90/81px bbox on the 128 canvas — infantry is drawn at
+**footprint parity** with the tank, NOT realistic soldier scale, which fixed
+both "reads small" and pixelation). `scripts/tile-foundry/unit.py`
+(manifest-driven, `build --verify` byte-clean, selftest-wired) splits each
+crop into `frontend/src/board/units/{type}_{base,mask}.png`; `units.ts` +
+`UnitMarker`/`RecruitGhost` render base + owner-tinted mask + a 10-pip HP
+bar, vector markers kept as the pre-load fallback. Verified on the live
+local board (both armies, tint clean, pips legible). Rulings that transfer:
+- **Style refs containing units override prompt facing AND camera** — use
+  terrain-only concept crops when the prompt must control pose/heading.
+- **NBP's native unit facing is east** (persists even with terrain-only
+  refs); don't fight it — generate east, mirror deterministically in the
+  foundry (sprites carry no text/insignia, so mirroring is safe).
+- **High camera angle only partially takes** (tanks best, infantry worst);
+  strict side-profile heading + slightly raised camera is reliably
+  achievable and was the accepted register.
+- **+1px baked near-black rim** (validated at 50px board scale) is the
+  woods/city legibility fix and a deterministic pipeline knob — don't rely
+  on NBP outlines alone. **Ground shadows dropped** (read poorly off-plains).
+- Per-row variety must be demanded explicitly or NBP returns five clones.
 
 ## Phase 9 — Frontend: planning UI
 
