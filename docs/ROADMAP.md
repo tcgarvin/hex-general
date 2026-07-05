@@ -530,6 +530,84 @@ isolation.
   the deterministic post-chain byte-replays (`roadfinish.py build --verify`, wired
   into `selftest.py`; regenerate the sources with `export-sources`).
 
+### Unit sprites & facing
+
+The next active art workstream — the *other half* of Phase 8's art (tilesets
+above). Today `Board.tsx` `UnitMarker` is a placeholder: a solid faction-coloured
+shape per type (circle=infantry / rounded-square=armor / triangle=artillery),
+black stroke, raw HP number centred on it. This replaces it with the real
+AI-generated unit sprite set (decision 7), adds directional facing, on-board
+health, and a reserved status-icon slot. Because Phase 9 planning overlays and the
+shipped Phase 10 replay both render through `UnitMarker` (incl. `posOverride` /
+`alpha` for slides and fades), this is a swap behind a stable component — do it
+right and both phases inherit it.
+
+**Rulings (settled):**
+
+- **Facing: left/right, mirror-based, driven by last movement.** One sprite per
+  type, drawn facing a canonical direction and **horizontally mirrored** to face
+  the other way — the same L↔R mirror trick the tileset uses, no rotation. A unit
+  faces the way it last moved: reduce its final move step to a net horizontal sign
+  (rightward → face right, leftward → face left; a purely vertical step keeps the
+  prior facing). This is **persisted engine state**, not a client guess — see U0.
+- **No damage overlay / cracks / marks** — *revises decision 7's "damage is an
+  overlay."* v0.1 conveys damage only via the on-board health indicator (U3) and
+  the side panel. **Later, possibly:** distinct *whole* sprites for low-HP / routed
+  states (an alternate sprite, not a scorch decal) — out of scope now.
+- **Faction colour via Pixi tint** stays (decision 7); the exact method is an open
+  call below.
+- **No 8-way / per-direction art.** The game has no facing *mechanic* beyond this
+  cosmetic L/R; movement is pulses. One sprite + mirror per type is the whole set.
+
+**Open art-direction calls (settle at slice start — user's pick per CLAUDE.md):**
+
+- **Faction-colour method:** full-sprite tint vs neutral sprite on a
+  faction-coloured base-plate/ring vs hybrid. Full-tint fights legibility (needs
+  near-grayscale, tint-clean art); a base-plate keeps the sprite fully rendered and
+  puts colour in a shape we control. This choice drives what U1 generates.
+- **On-board health display:** segmented bar (10 ticks) / continuous bar / ring /
+  number; shown always vs only when `hp < max`. (Leaning: a bar above the sprite,
+  shown only when damaged, so a healthy army stays visually quiet.)
+- **HUD anchor layout:** define fixed slots around the sprite — health above,
+  status-icon stack in a corner (empty in v0.1 but reserved), order badge
+  (rest/hold), selection ring, faction base-plate — so nothing collides and future
+  statuses (veteran/exhaustion, none yet) drop in without a re-layout.
+- **Zoom LOD:** the zoom threshold below which health/status collapse to just the
+  sprite (+ base-plate), so a zoomed-out board isn't noise.
+
+**Slices:**
+
+- **U0 — backend: persist unit facing.** Add a `facing` field to the `Unit` model
+  (`api/app/engine/models.py`) — minimally a left/right enum. Movement resolution
+  (`movement.py`) sets it from each unit's final move step of the turn;
+  Rest/Hold/Barrage/idle preserve the prior facing; recruited units take a sensible
+  default (e.g. facing the enemy). It rides in the state JSONB like any other Unit
+  field, surfaces through the fog-filtered view (a *visible* enemy's facing is
+  public), and requires a frontend schema regen (`npm run gen:api`). Pure-engine +
+  boundary rules unchanged. Tests: facing follows movement; a vertical-only move
+  preserves the prior facing.
+- **U1 — unit concept register + sprite generation.** Commission a unit art
+  register the way terrain got one (concept art + `ART_PIPELINE.md`): fixed style
+  matching the painterly tiles, fixed canvas fitting one hex, **strong per-type
+  silhouettes** (must beat today's shape-coding at min zoom), drawn facing
+  canonical-right for the mirror, and tint-clean per the chosen faction method.
+  Generate infantry / armor / artillery. Ratify via an Artifact montage (the
+  hex-art sign-off rule).
+- **U2 — render swap + facing + faction colour.** Replace `UnitMarker`'s `Graphics`
+  with the sprite (`Sprite` + tint, or sprite-over-plate), flip `scale.x` by the
+  unit's facing, apply the owner's faction colour. Recruit-ghost and replay
+  slide/fade paths keep working (they already flow through `UnitMarker` +
+  pos/alpha overrides). Drive enemy facing from the view payload.
+- **U3 — on-board health + reserved HUD slots.** Add the health indicator (chosen
+  style) above the sprite, shown per the chosen rule; define and **reserve** the
+  status-icon slot (empty in v0.1); lay out selection ring / order badge / health /
+  status on a fixed anchor scheme that survives zoom (LOD-hide below the threshold).
+  Visible enemies show health too.
+
+**Demonstrable:** real unit sprites on the board — each facing the way it last
+moved, tinted to its owner, showing a health indicator when damaged, with room
+reserved for future status icons — in planning and replay alike.
+
 ## Phase 9 — Frontend: planning UI
 
 **Goal:** §16.1.
