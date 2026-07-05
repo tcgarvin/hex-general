@@ -514,6 +514,20 @@ export interface components {
             upkeep: number;
         };
         /**
+         * Facing
+         * @description Which way a unit's sprite faces on the board: left or right only.
+         *
+         *     Purely cosmetic render state — the game has no facing *mechanic* (movement is
+         *     pulses, combat is omnidirectional). It exists so the client can mirror one
+         *     sprite horizontally instead of authoring per-direction art (roadmap Phase 8,
+         *     slice U0). Semantics: a unit faces the way it last moved — its final completed
+         *     move step of the turn reduced to a net horizontal sign on the flat-top board's
+         *     ``q`` axis (rightward → `RIGHT`, leftward → `LEFT`; a purely vertical step
+         *     keeps the prior facing). No rotation, no 8-way. `RIGHT` is the default.
+         * @enum {string}
+         */
+        Facing: "left" | "right";
+        /**
          * GameConfig
          * @description Per-game limits and victory config (SPEC §6.1, §6.4, §15).
          */
@@ -976,9 +990,16 @@ export interface components {
          *     Static type stats (move, attack, vision, …) are looked up from
          *     `app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives
          *     here. ``hp`` is clamped to 0..10 (SPEC §5.2); a unit at 0 HP is destroyed.
+         *
+         *     ``facing`` is cosmetic render state (see `Facing`): the left/right direction
+         *     the sprite faces, set by the unit's last movement. It defaults so state JSONB
+         *     persisted before this field existed still validates (older games load with
+         *     the default facing).
          */
         Unit: {
             coord: components["schemas"]["Axial"];
+            /** @default right */
+            facing: components["schemas"]["Facing"];
             /** Hp */
             hp: number;
             /** Id */

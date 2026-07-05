@@ -381,6 +381,15 @@
         "title": "EconomyResolved",
         "type": "object"
       },
+      "Facing": {
+        "description": "Which way a unit's sprite faces on the board: left or right only.\n\nPurely cosmetic render state \u2014 the game has no facing *mechanic* (movement is\npulses, combat is omnidirectional). It exists so the client can mirror one\nsprite horizontally instead of authoring per-direction art (roadmap Phase 8,\nslice U0). Semantics: a unit faces the way it last moved \u2014 its final completed\nmove step of the turn reduced to a net horizontal sign on the flat-top board's\n``q`` axis (rightward \u2192 `RIGHT`, leftward \u2192 `LEFT`; a purely vertical step\nkeeps the prior facing). No rotation, no 8-way. `RIGHT` is the default.",
+        "enum": [
+          "left",
+          "right"
+        ],
+        "title": "Facing",
+        "type": "string"
+      },
       "GameConfig": {
         "description": "Per-game limits and victory config (SPEC \u00a76.1, \u00a76.4, \u00a715).",
         "properties": {
@@ -1250,10 +1259,14 @@
         "type": "object"
       },
       "Unit": {
-        "description": "A single unit instance (SPEC \u00a75).\n\nStatic type stats (move, attack, vision, \u2026) are looked up from\n`app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives\nhere. ``hp`` is clamped to 0..10 (SPEC \u00a75.2); a unit at 0 HP is destroyed.",
+        "description": "A single unit instance (SPEC \u00a75).\n\nStatic type stats (move, attack, vision, \u2026) are looked up from\n`app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives\nhere. ``hp`` is clamped to 0..10 (SPEC \u00a75.2); a unit at 0 HP is destroyed.\n\n``facing`` is cosmetic render state (see `Facing`): the left/right direction\nthe sprite faces, set by the unit's last movement. It defaults so state JSONB\npersisted before this field existed still validates (older games load with\nthe default facing).",
         "properties": {
           "coord": {
             "$ref": "#/components/schemas/Axial"
+          },
+          "facing": {
+            "$ref": "#/components/schemas/Facing",
+            "default": "right"
           },
           "hp": {
             "maximum": 10.0,

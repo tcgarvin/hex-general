@@ -37,7 +37,13 @@ from app.engine.events import (
     RecruitmentVoidedReason,
     UnitRecruited,
 )
-from app.engine.models import GameState, PlayerId, Recruitment, Unit
+from app.engine.models import (
+    GameState,
+    PlayerId,
+    Recruitment,
+    Unit,
+    default_facing,
+)
 from app.engine.movement import EngineError
 from app.engine.stats import UNIT_STATS, Terrain
 
@@ -128,6 +134,7 @@ def resolve_recruitment(
             owner=request.owner,
             coord=request.coord,
             hp=UNIT_STATS[request.type].max_hp,
+            facing=default_facing(request.coord, request.owner, new_state.units),
         )
         new_state.units.append(unit)
         player.bank -= cost

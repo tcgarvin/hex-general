@@ -150,3 +150,25 @@ def test_order_union_dispatches_on_kind() -> None:
 def test_move_order_requires_nonempty_path() -> None:
     with pytest.raises(ValidationError):
         MoveOrder(unit_id=1, path=[])
+
+
+def test_state_with_units_lacking_facing_still_validates() -> None:
+    # State JSONB persisted before the `facing` field existed must keep loading:
+    # a unit dict without `facing` validates with the default (roadmap U0).
+    state = GameState.model_validate(
+        {
+            "turn": 0,
+            "map": {"width": 1, "height": 1, "hexes": []},
+            "units": [
+                {
+                    "id": 1,
+                    "type": "infantry",
+                    "owner": "blue",
+                    "coord": {"q": 0, "r": 0},
+                    "hp": 10,
+                }
+            ],
+            "config": {"victory": {"turn_limit": 10}},
+        }
+    )
+    assert state.units[0].facing == "right"

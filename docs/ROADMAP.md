@@ -641,7 +641,7 @@ behind that stable component and both phases inherit them.
 
 **Slices:**
 
-- **U0 — backend: persist unit facing.** Add a `facing` field to the `Unit` model
+- ✅ **U0 — backend: persist unit facing** *(shipped 2026-07-05)*. Add a `facing` field to the `Unit` model
   (`api/app/engine/models.py`) — minimally a left/right enum. Movement resolution
   (`movement.py`) sets it from each unit's final move step of the turn;
   Rest/Hold/Barrage/idle preserve the prior facing; recruited units take a sensible
@@ -650,6 +650,11 @@ behind that stable component and both phases inherit them.
   public), and requires a frontend schema regen (`npm run gen:api`). Pure-engine +
   boundary rules unchanged. Tests: facing follows movement; a vertical-only move
   preserves the prior facing.
+  *Shipped as specced: `Facing` left/right `StrEnum` on `Unit` (default `right`, so
+  pre-existing state JSONB loads); `_complete_move` sets it from the step's `q`
+  sign, so the final completed step wins and blocked/Rest/Hold/idle preserve it
+  for free; recruits and turn-0 scenario units face the nearest enemy
+  (`default_facing`, tie-break lowest id). Schema regenerated.*
 - **U1 — frontend: apply facing.** Flip `UnitMarker`'s sprite `scale.x` by the
   unit's facing (own and visible-enemy alike, from the view payload).
   Recruit-ghost and replay slide/fade paths keep working.

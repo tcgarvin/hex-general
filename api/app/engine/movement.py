@@ -51,6 +51,7 @@ from app.engine.events import (
 )
 from app.engine.hex_coords import Axial, is_adjacent, neighbors
 from app.engine.models import (
+    Facing,
     GameState,
     Hex,
     HoldOrder,
@@ -537,12 +538,24 @@ def _settle_contest(
 
 def _complete_move(ctx: _PulseState, mover: _Mover, dest: Axial) -> bool:
     """Move ``mover`` into ``dest`` (which must be free), returning whether it may
-    continue (it has movement pulses remaining, SPEC §11.2/§12.5)."""
-    origin = ctx.units[mover.unit_id].coord
+    continue (it has movement pulses remaining, SPEC §11.2/§12.5).
+
+    This is the single point where a unit's coord changes, so it also updates the
+    unit's cosmetic ``facing`` from the net horizontal sign of the step (roadmap
+    U0): the board is flat-top, so rightward on the ``q`` axis faces `RIGHT`,
+    leftward faces `LEFT`, and a purely vertical step keeps the prior facing.
+    Because each completed step overwrites facing, the final step of the turn wins.
+    """
+    unit = ctx.units[mover.unit_id]
+    origin = unit.coord
+    if dest.q > origin.q:
+        unit.facing = Facing.RIGHT
+    elif dest.q < origin.q:
+        unit.facing = Facing.LEFT
     if ctx.positions.get(origin) == mover.unit_id:
         del ctx.positions[origin]
     ctx.positions[dest] = mover.unit_id
-    ctx.units[mover.unit_id].coord = dest
+    unit.coord = dest
     mover.steps_taken += 1
     continued = mover.steps_taken < mover.max_steps
     if not continued:

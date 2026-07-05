@@ -43,6 +43,7 @@ from app.engine.models import (
     Settlement,
     Unit,
     VictoryConfig,
+    default_facing,
 )
 from app.engine.stats import (
     SETTLEMENT_TERRAINS,
@@ -327,6 +328,11 @@ def _build_units(
         units.append(
             Unit(id=unit_id, type=entry.type, owner=entry.owner, coord=coord, hp=hp)
         )
+
+    # Second pass: point each turn-0 unit at the nearest enemy (all units must be
+    # built first, since a unit's enemies aren't known mid-loop). Cosmetic only.
+    for unit in units:
+        unit.facing = default_facing(unit.coord, unit.owner, units)
     return units
 
 

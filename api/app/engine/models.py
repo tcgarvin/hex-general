@@ -16,11 +16,13 @@ Identity types:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from enum import StrEnum
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.engine.hex_coords import Axial
+from app.engine.hex_coords import Axial, distance
 from app.engine.stats import (
     MUSTER_BANK_CAP,
     UNIT_CAP,
@@ -30,6 +32,26 @@ from app.engine.stats import (
 
 PlayerId = str
 UnitId = int
+
+
+class Facing(StrEnum):
+    """Which way a unit's sprite faces on the board: left or right only.
+
+    Purely cosmetic render state — the game has no facing *mechanic* (movement is
+    pulses, combat is omnidirectional). It exists so the client can mirror one
+    sprite horizontally instead of authoring per-direction art (roadmap Phase 8,
+    slice U0). Semantics: a unit faces the way it last moved — its final completed
+    move step of the turn reduced to a net horizontal sign on the flat-top board's
+    ``q`` axis (rightward → `RIGHT`, leftward → `LEFT`; a purely vertical step
+    keeps the prior facing). No rotation, no 8-way. `RIGHT` is the default.
+    """
+
+    LEFT = "left"
+    RIGHT = "right"
+
+
+DEFAULT_FACING: Facing = Facing.RIGHT
+"""The facing used when no better signal exists (no enemies, same column)."""
 
 
 class Hex(BaseModel):
@@ -78,6 +100,11 @@ class Unit(BaseModel):
     Static type stats (move, attack, vision, …) are looked up from
     `app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives
     here. ``hp`` is clamped to 0..10 (SPEC §5.2); a unit at 0 HP is destroyed.
+
+    ``facing`` is cosmetic render state (see `Facing`): the left/right direction
+    the sprite faces, set by the unit's last movement. It defaults so state JSONB
+    persisted before this field existed still validates (older games load with
+    the default facing).
     """
 
     id: UnitId
@@ -85,6 +112,28 @@ class Unit(BaseModel):
     owner: PlayerId
     coord: Axial
     hp: int = Field(ge=0, le=10)
+    facing: Facing = DEFAULT_FACING
+
+
+def default_facing(coord: Axial, owner: PlayerId, units: Iterable[Unit]) -> Facing:
+    """Cosmetic facing for a freshly placed unit: face the nearest enemy.
+
+    Used for recruits and turn-0 scenario units, which have no movement to derive
+    facing from. Deterministic: pick the enemy (any unit not owned by ``owner``)
+    at the least hex distance from ``coord``, ties broken by lowest unit id, then
+    face `RIGHT` if that enemy's ``q`` is greater than ``coord``'s, `LEFT` if less.
+    With no enemies on the board, or an enemy in the same column, use
+    `DEFAULT_FACING`.
+    """
+    enemies = [u for u in units if u.owner != owner]
+    if not enemies:
+        return DEFAULT_FACING
+    nearest = min(enemies, key=lambda u: (distance(coord, u.coord), u.id))
+    if nearest.coord.q > coord.q:
+        return Facing.RIGHT
+    if nearest.coord.q < coord.q:
+        return Facing.LEFT
+    return DEFAULT_FACING
 
 
 class Player(BaseModel):

@@ -62,6 +62,23 @@ def test_redact_hides_enemy_units_outside_vision() -> None:
     assert visible_ids == {1, 2}  # own unit + the adjacent enemy; the far one hidden
 
 
+def test_redact_preserves_visible_enemy_facing() -> None:
+    # A visible enemy's cosmetic facing is public: it survives redaction intact
+    # (roadmap U0 — the client renders visible enemies too).
+    state = build(
+        ["..."],
+        [
+            {"type": "infantry", "owner": "blue", "q": 0, "r": 0},  # id 1
+            {"type": "infantry", "owner": "red", "q": 1, "r": 0},  # id 2, adjacent
+        ],
+    )
+    red = next(u for u in state.units if u.id == 2)
+    assert red.facing == "left"  # red loads facing the blue unit on its left
+    redacted = redact_state(state, "blue")
+    red_view = next(u for u in redacted.units if u.id == 2)
+    assert red_view.facing == red.facing
+
+
 def test_redact_keeps_all_of_the_viewers_own_units() -> None:
     state = build(
         [".........."],
