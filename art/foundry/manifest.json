@@ -1438,6 +1438,64 @@
    }
   ]
  },
+ "units": {
+  "class": "two-layer unit sprites (unit.py): each ratified NBP unit crop is split into a base layer (team-cobalt areas desaturated to grey, per-pixel value kept, 1px #14140f rim under-composited around the silhouette) and a tint-mask layer (RGB = value grey, alpha = soft team-area weight, no rim). The renderer multiplies the mask by playerColor and draws it over the base, so player colours scale to 32+ without baking any colour. Team areas are painted in a keyable cobalt (#3B5FC0 family, hue ~213-229 across all rounds); the classifier is a SOFT weight (feathered hue window x saturation ramp) so the base/mask boundary blends instead of haloing. All shipped sprites face WEST (native gen facing is east; every source carries mirror=true). Footprints ratified 2026-07-05: solid-bbox width 90px armor/artillery, 81px infantry ('downscale ~10%, it dwarfs the tank'), centred both axes on the 128 canvas, NO ground shadow. Tool: scripts/tile-foundry/unit.py.",
+  "model": "gemini-3-pro-image-preview",
+  "date": "2026-07-05",
+  "prompts": [
+   "units/units-sheet-prompt-v1.txt",
+   "units/units-sheet-prompt-v2.txt",
+   "units/units-sheet-prompt-v3.txt",
+   "units/units-sheet-prompt-v4-infantry.txt"
+  ],
+  "sources": "units/gens/extracted/ - committed un-matted RGBA crops of the ratified picks (the raw 2K gen sheets under units/gens/*.png are NOT committed, same reproducibility ruling as road/production/). build replays the full split from these.",
+  "canvas_px": 128,
+  "rim": {
+   "color": 1315855,
+   "px": 1,
+   "note": "0x14140f; base layer only, under-composited so AA edges darken into the outline instead of leaving a translucent halo"
+  },
+  "classify": {
+   "hue_lo": 195.0,
+   "hue_hi": 255.0,
+   "hue_feather": 10.0,
+   "sat_lo": 0.14,
+   "sat_hi": 0.3,
+   "note": "weight = hue-window ramp x saturation ramp x alpha. Measured cobalt: hue 202.5-240 (p1-p99), highlight saturation bottoms out ~0.22 (tank p1); gunmetal/khaki sit below sat 0.14 or outside the hue window. Residue gate: no base pixel with hue 205-245, sat>0.25, v>0.12."
+  },
+  "unmatte": "partial-alpha AA pixels are un-matted against the mean RGB of the crop's alpha==0 pixels (the extractions kept coloured sheet-background bleed on their edges); gated against white fringe (v>0.85, s<0.15).",
+  "units": {
+   "infantry": {
+    "source": "units/gens/extracted/v4inf-r1-5man-wedge.png",
+    "mirror": true,
+    "target_bbox_w": 81,
+    "coverage_band": [
+     0.29,
+     0.39
+    ]
+   },
+   "armor": {
+    "source": "units/gens/extracted/v3r1-tank-r2c0.png",
+    "mirror": true,
+    "target_bbox_w": 90,
+    "coverage_band": [
+     0.59,
+     0.69
+    ]
+   },
+   "artillery": {
+    "source": "units/gens/extracted/v3r2-gun-crew-push.png",
+    "mirror": true,
+    "target_bbox_w": 90,
+    "coverage_band": [
+     0.49,
+     0.59
+    ]
+   }
+  },
+  "outputs": "frontend/src/board/units/{unit}_{base|mask}.png",
+  "regenerate": "python3 scripts/tile-foundry/unit.py build --manifest art/foundry/manifest.json --section units --out-dir <dir> [--verify frontend/src/board/units]; review montages: unit.py review --out-dir art/foundry/units/review"
+ },
  "concept_anchors": {
   "note": "luminance bands are anchored by MEASURING docs/concept-art/concept1.png, not by fiat",
   "grass_mean_luminance": 105.3,

@@ -1,0 +1,57 @@
+A sprite candidate sheet on a PURE WHITE background (#FFFFFF). This is a
+flat sprite sheet for a 2D strategy game, NOT a scene: no ground, no
+horizon, no cast shadows, no text, no labels, no grid lines, no borders.
+Each sprite is separate and free-standing, surrounded by clean white. No
+sprite touches another sprite, and no sprite comes closer than 60 pixels to
+any edge of the canvas or closer than 40 pixels to another sprite.
+
+This sheet is INFANTRY SQUADS ONLY. EXACTLY THREE rows, four squads per
+row:
+
+- TOP ROW: four squads of THREE riflemen each.
+- MIDDLE ROW: four squads of FOUR riflemen each.
+- BOTTOM ROW: four squads of FIVE riflemen each.
+
+Each squad is ONE compact sprite: its soldiers stand close together,
+shoulders overlapping or nearly touching, forming a single connected
+cluster with no wide gaps — a tight fighting group, not a spread line. Each
+squad's cluster fills a roughly circular footprint about 300 pixels across.
+
+FIGURES (critical): stocky game-sprite proportions, NOT realistic
+proportions — broad shoulders, thick chunky limbs, oversized helmets, big
+boots, short legs. Solid, blocky little soldiers that stay readable when
+shrunk very small. Each standing figure is roughly 150-180 pixels tall. No
+thin spindly rifles floating in space: rifles are held tight against the
+body silhouette.
+
+FACING (critical): every rifleman in every squad faces the SAME direction —
+due WEST (left) — with his rifle aimed due west. Never mix facings within a
+squad; no soldier looks east, toward the viewer, or away from the viewer.
+
+CAMERA (critical): a HIGH angle, viewed from steeply above — helmet tops
+and shoulders dominate each figure, with only a small hint of each
+soldier's side visible below. NOT a side view, NOT eye-level, NOT
+isometric — close to top-down, softened just enough that the figures stay
+readable as little soldiers.
+
+READABILITY (critical): these sprites display very small over dark forest
+canopy and busy rooftop textures. Every squad needs a BOLD, CONTINUOUS dark
+outline around the whole cluster silhouette — clearly heavier than interior
+linework — with simplified chunky geometry and strong value contrast.
+
+VARIETY: the four squads within each row must be four DIFFERENT poses and
+arrangements — firing line, advancing, kneeling mix, weapon variations —
+while keeping the same scale, facing, camera, and style, so any one could
+be chosen as THE infantry sprite.
+
+Style: painterly 16-bit military strategy-game sprites matching the
+reference image's muted, naturalistic register — soft painted shading
+inside bold outlines.
+
+TEAM COLOUR KEY (critical): paint every team-identification area in ONE
+single medium cobalt blue (#3B5FC0) — the soldiers' tunics and helmets.
+Shading inside these areas must stay the SAME cobalt blue hue, only lighter
+or darker — never drifting toward teal, cyan, or purple. Everything else
+keeps natural materials: gunmetal grey rifles, khaki webbing, packs, and
+trousers, brown boots and wooden stocks, natural skin tones. No insignia of
+any kind — no stars, crosses, roundels, flags, or markings.

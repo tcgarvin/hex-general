@@ -809,6 +809,116 @@ def test_river_measure_shape_end_terminus() -> None:
     )
 
 
+def test_unit_matches_shipped_assets(tmp_dir: Path) -> None:
+    """Reproduce the shipped two-layer unit sprites byte-for-byte via
+    `unit.py build --verify`.
+
+    Same acceptance-test shape as the woods/river/road checks: depends on the
+    committed ratified crops under `art/foundry/units/gens/extracted/` and the
+    shipped assets under `frontend/src/board/units/`, so it skips gracefully
+    when those are absent. `build` re-runs every shipping gate (bbox width,
+    cobalt residue, mask coverage band, registration, centring) before the
+    byte-compare.
+    """
+    repo_root = SCRIPT_DIR.parent.parent
+    manifest_path = repo_root / "art" / "foundry" / "manifest.json"
+    ref_dir = repo_root / "frontend" / "src" / "board" / "units"
+    if not manifest_path.is_file() or not ref_dir.is_dir():
+        print(f"[SKIP] unit.py: shipped-asset check (missing {manifest_path} or {ref_dir})")
+        return
+
+    out_dir = tmp_dir / "units_shipped"
+    result = run_cli(
+        "unit.py",
+        "build",
+        "--manifest",
+        str(manifest_path),
+        "--section",
+        "units",
+        "--out-dir",
+        str(out_dir),
+        "--verify",
+        str(ref_dir),
+    )
+    check(
+        "unit.py: reproduces frontend/src/board/units/*_{base,mask}.png byte-for-byte (--verify)",
+        result.returncode == 0,
+        result.stdout + result.stderr,
+    )
+
+
+def test_unit_shipped_asset_contract() -> None:
+    """Structural gates on the shipped unit PNGs themselves (renderer contract).
+
+    Independent of the build replay above: reads the six shipped files and
+    checks the fixed asset contract — 128x128 RGBA, solid-bbox width at the
+    ratified footprint (+-1), bbox centred, mask alpha strictly inside the
+    (opaque, rimmed) base silhouette, mask coverage inside the manifest band,
+    and the mask carrying no rim (no near-black opaque mask pixels outside
+    the base's interior would even be possible given registration, so the
+    rim check is: every mask pixel sits on a fully opaque base pixel).
+    """
+    repo_root = SCRIPT_DIR.parent.parent
+    manifest_path = repo_root / "art" / "foundry" / "manifest.json"
+    units_dir = repo_root / "frontend" / "src" / "board" / "units"
+    if not manifest_path.is_file() or not units_dir.is_dir():
+        print(f"[SKIP] unit assets: contract check (missing {manifest_path} or {units_dir})")
+        return
+
+    section = json.loads(manifest_path.read_text())["units"]
+    rim_px = int(section["rim"]["px"])
+    for name, spec in section["units"].items():
+        base_path = units_dir / f"{name}_base.png"
+        mask_path = units_dir / f"{name}_mask.png"
+        if not check(f"unit assets: {name} base+mask PNGs exist", base_path.is_file() and mask_path.is_file()):
+            continue
+        base = np.asarray(Image.open(base_path))
+        mask = np.asarray(Image.open(mask_path))
+        check(
+            f"unit assets: {name} layers are 128x128 RGBA",
+            base.shape == (128, 128, 4) and mask.shape == (128, 128, 4),
+            f"base={base.shape} mask={mask.shape}",
+        )
+
+        base_a = base[..., 3].astype(np.float64) / 255.0
+        mask_a = mask[..., 3].astype(np.float64) / 255.0
+        ys, xs = np.nonzero(base_a >= 0.5)
+        width = int(xs.max() - xs.min() + 1)
+        # the shipped base bakes the rim, so its silhouette is the ratified
+        # sprite footprint plus rim_px on each side (build gates the pre-rim
+        # width exactly; this is the shipped-file view of the same contract)
+        target = int(spec["target_bbox_w"]) + 2 * rim_px
+        check(
+            f"unit assets: {name} rimmed silhouette width == {target} (+-1)",
+            abs(width - target) <= 1,
+            f"width={width}",
+        )
+        cx = (float(xs.min()) + float(xs.max()) + 1) / 2
+        cy = (float(ys.min()) + float(ys.max()) + 1) / 2
+        check(
+            f"unit assets: {name} bbox centred on the canvas (+-1)",
+            abs(cx - 64) <= 1 and abs(cy - 64) <= 1,
+            f"centre=({cx},{cy})",
+        )
+        check(
+            f"unit assets: {name} mask registered inside the opaque base silhouette",
+            bool(((mask_a > 0) <= (base_a == 1.0)).all()),
+            f"outside={int(((mask_a > 0) & (base_a < 1.0)).sum())}",
+        )
+        lo, hi = spec["coverage_band"]
+        # coverage is gated against the PRE-rim alpha at build time; against
+        # the shipped rimmed base (larger denominator) it reads lower, so the
+        # shipped-file view relaxes the floor by the worst observed rim share
+        # (~25% for the sparse artillery silhouette) instead of re-deriving
+        # the pre-rim alpha here. The exact band is enforced by unit.py build.
+        coverage = float(mask_a.sum() / base_a.sum())
+        check(
+            f"unit assets: {name} mask coverage {coverage:.3f} within rim-adjusted band [{lo * 0.75:.3f}, {hi}]",
+            lo * 0.75 <= coverage <= hi,
+            f"coverage={coverage:.3f}",
+        )
+
+
 def make_synthetic_tree_sheet(path: Path) -> None:
     """A small white-background sheet with a round blob (deciduous, h/w ~1.0) and a
     tall blob (conifer, h/w > 1.15), each well over compose.py's 400px min blob area.
@@ -903,9 +1013,13 @@ def test_cli_help() -> None:
         "river.py",
         "bridge.py",
         "roadfinish.py",
+        "unit.py",
     ]:
         result = run_cli(script, "--help")
         check(f"{script} --help parses", result.returncode == 0, result.stderr)
+    for cmd in ("build", "review"):
+        result = run_cli("unit.py", cmd, "--help")
+        check(f"unit.py {cmd} --help parses", result.returncode == 0, result.stderr)
     result = run_cli("gate.py", "clique", "--help")
     check("gate.py clique --help parses", result.returncode == 0, result.stderr)
     result = run_cli("bridge.py", "build", "--help")
@@ -938,6 +1052,8 @@ def main() -> int:
         test_river_matches_ratified_tiles(tmp_dir)
         test_bridge_matches_ratified_tiles(tmp_dir)
         test_roadfinish_matches_ratified_tiles(tmp_dir)
+        test_unit_matches_shipped_assets(tmp_dir)
+    test_unit_shipped_asset_contract()
     test_cli_help()
 
     passed = sum(1 for _, ok in RESULTS if ok)

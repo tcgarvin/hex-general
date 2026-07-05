@@ -36,3 +36,7 @@ supabase/.temp/
 # T5 road foundry: heavy non-committed working sets (reproducibility sources live in art/foundry/road/gens128/)
 art/foundry/road/production/
 art/foundry/road/review/experiment/
+
+# U2 unit foundry: raw 2K NBP gen sheets are NOT committed (reproducibility
+# sources are the small ratified crops in art/foundry/units/gens/extracted/)
+art/foundry/units/gens/*.png

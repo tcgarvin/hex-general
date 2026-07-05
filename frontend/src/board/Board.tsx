@@ -66,6 +66,7 @@ import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
 import { roadTileRefs } from "./roadTiles";
 import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
+import { loadUnitTextures, type LoadedUnits } from "./units";
 
 extend({ Container, Graphics, Sprite, Text });
 
@@ -411,6 +412,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   // AI-generated terrain tile textures; null until loaded (flat colours until then).
   // Each terrain holds one or more interchangeable variants (see `tiles.ts`).
   const [terrainTex, setTerrainTex] = useState<LoadedTiles | null>(null);
+  // Two-layer unit sprites; null until loaded (vector markers until then).
+  const [unitTex, setUnitTex] = useState<LoadedUnits | null>(null);
 
   const selectedUnitId = planning?.selectedUnitId ?? null;
   const selectedCity = planning?.selectedCity ?? null;
@@ -463,6 +466,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       },
       (err) => {
         console.error("Failed to load terrain tile textures", err);
+      },
+    );
+    loadUnitTextures().then(
+      (tex) => {
+        if (active) setUnitTex(tex);
+      },
+      (err) => {
+        console.error("Failed to load unit sprite textures", err);
       },
     );
     return () => {
@@ -1278,6 +1289,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
               <UnitMarker
                 key={u.id}
                 unit={u}
+                tex={unitTex}
                 posOverride={replayAnim?.slideOverrides.get(u.id)}
                 alpha={replayAnim?.fadingOut.get(u.id) ?? 1}
               />
@@ -1285,7 +1297,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             {/* Recruited units fading in — not yet in `state.units`. */}
             {replayAnim?.fadingIn &&
               Array.from(replayAnim.fadingIn.values()).map(({ unit, alpha }) => (
-                <UnitMarker key={`recruit-${unit.id}`} unit={unit} alpha={alpha} />
+                <UnitMarker
+                  key={`recruit-${unit.id}`}
+                  unit={unit}
+                  tex={unitTex}
+                  alpha={alpha}
+                />
               ))}
             {planning !== undefined &&
               units.map((u) => {
@@ -1301,6 +1318,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   coord={r.coord}
                   type={r.type}
                   owner={yourSlot}
+                  tex={unitTex}
                 />
               ))}
           </pixiContainer>
@@ -1376,13 +1394,48 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   );
 }
 
-/** A single unit: owner-tinted marker (shape encodes type) + hp text. */
+// SPEC §5.2: every unit type has 10 max HP, so the pip bar always has 10 slots.
+const MAX_HP = 10;
+// Pip-bar geometry in world px, sized to sit under the sprite inside the hex
+// (flat-to-flat half-height is √3/2·HEX_SIZE ≈ 27.7).
+const PIP_BAR_WIDTH = 36;
+const PIP_BAR_HEIGHT = 5;
+const PIP_BAR_Y = 21;
+
+/**
+ * Draw the 10-slot HP bar: a dark backing chip with `hp` segments filled in
+ * the owner's colour. Lost HP reads as empty backing, like the concept art's
+ * pip rows.
+ */
+function drawPipBar(g: Graphics, hp: number, color: number): void {
+  g.clear();
+  const left = -PIP_BAR_WIDTH / 2;
+  const top = PIP_BAR_Y - PIP_BAR_HEIGHT / 2;
+  g.roundRect(left, top, PIP_BAR_WIDTH, PIP_BAR_HEIGHT, 1.5);
+  g.fill({ color: 0x14140f, alpha: 0.85 });
+  const pad = 1;
+  const gap = 1;
+  const pipWidth = (PIP_BAR_WIDTH - 2 * pad - (MAX_HP - 1) * gap) / MAX_HP;
+  for (let i = 0; i < hp; i++) {
+    g.rect(left + pad + i * (pipWidth + gap), top + pad, pipWidth, PIP_BAR_HEIGHT - 2 * pad);
+  }
+  g.fill({ color });
+}
+
+/**
+ * A single unit: two-layer painterly sprite (neutral base + owner-tinted team
+ * mask, see `units.ts`) with a 10-pip HP bar. Until the sprite textures load,
+ * falls back to the original vector marker (shape encodes type) + hp text,
+ * mirroring the terrain tiles' flat-colour fallback.
+ */
 function UnitMarker({
   unit,
+  tex,
   posOverride,
   alpha = 1,
 }: {
   unit: Unit;
+  tex: LoadedUnits | null;
   posOverride?: { x: number; y: number };
   alpha?: number;
 }) {
@@ -1390,7 +1443,7 @@ function UnitMarker({
   const { x, y } = posOverride ?? computed;
   const color = playerColor(unit.owner);
 
-  const draw = useCallback(
+  const drawFallback = useCallback(
     (g: Graphics) => {
       g.clear();
       const r = HEX_SIZE * 0.62;
@@ -1408,16 +1461,42 @@ function UnitMarker({
     [unit.type, color],
   );
 
+  const drawPips = useCallback(
+    (g: Graphics) => drawPipBar(g, unit.hp, color),
+    [unit.hp, color],
+  );
+
+  const pair = tex?.[unit.type] ?? null;
+  if (pair === null) {
+    return (
+      <pixiContainer x={x} y={y} alpha={alpha}>
+        <pixiGraphics draw={drawFallback} />
+        <pixiText
+          text={String(unit.hp)}
+          style={hpStyle}
+          anchor={0.5}
+          x={0}
+          y={2}
+        />
+      </pixiContainer>
+    );
+  }
   return (
     <pixiContainer x={x} y={y} alpha={alpha}>
-      <pixiGraphics draw={draw} />
-      <pixiText
-        text={String(unit.hp)}
-        style={hpStyle}
+      <pixiSprite
+        texture={pair.base}
         anchor={0.5}
-        x={0}
-        y={2}
+        width={HEX_SIZE * 2}
+        height={HEX_SIZE * 2}
       />
+      <pixiSprite
+        texture={pair.mask}
+        anchor={0.5}
+        width={HEX_SIZE * 2}
+        height={HEX_SIZE * 2}
+        tint={color}
+      />
+      <pixiGraphics draw={drawPips} />
     </pixiContainer>
   );
 }
@@ -1427,10 +1506,12 @@ function RecruitGhost({
   coord,
   type,
   owner,
+  tex,
 }: {
   coord: Axial;
   type: UnitType;
   owner: string;
+  tex: LoadedUnits | null;
 }) {
   const { x, y } = axialToPixel(coord.q, coord.r, HEX_SIZE);
   const color = playerColor(owner);
@@ -1450,9 +1531,28 @@ function RecruitGhost({
     },
     [type, color],
   );
+  const pair = tex?.[type] ?? null;
   return (
     <pixiContainer x={x} y={y}>
-      <pixiGraphics draw={draw} />
+      {pair === null ? (
+        <pixiGraphics draw={draw} />
+      ) : (
+        <pixiContainer alpha={0.55}>
+          <pixiSprite
+            texture={pair.base}
+            anchor={0.5}
+            width={HEX_SIZE * 2}
+            height={HEX_SIZE * 2}
+          />
+          <pixiSprite
+            texture={pair.mask}
+            anchor={0.5}
+            width={HEX_SIZE * 2}
+            height={HEX_SIZE * 2}
+            tint={color}
+          />
+        </pixiContainer>
+      )}
       <pixiText text="+" style={recruitGhostStyle} anchor={0.5} x={0} y={2} />
     </pixiContainer>
   );

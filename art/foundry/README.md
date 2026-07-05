@@ -44,6 +44,18 @@ then a human montage review before touching `frontend/src/board/tiles/`.
    City towns carry exactly six streets radiating to the hex edge midpoints
    (generated against `city/street-guide.png`, a layout-diagram reference),
    where roads will connect later.
+5. **Units** (infantry, armor, artillery): not terrain — two-layer sprites in
+   `frontend/src/board/units/`, built by `unit.py` from the ratified crops in
+   `units/gens/extracted/` (the raw 2K gen sheets are not committed, same
+   ruling as the road gens). Team areas are painted in a keyable cobalt
+   (#3B5FC0 family); a soft hue/saturation weight splits each crop into
+   `{unit}_base.png` (team pixels desaturated to grey, 1px #14140f rim) and
+   `{unit}_mask.png` (alpha = team coverage, RGB = the value channel), so the
+   renderer multiplies the mask by any player colour live — colours are never
+   baked and scale to 32+ players. All units face WEST (sources face east and
+   are mirrored); footprints 90px bbox (armor/artillery) / 81px (infantry) on
+   the 128 canvas, no ground shadow. Parameters in `manifest.json → units`;
+   `unit.py build --verify` reproduces the shipped PNGs byte-for-byte.
 
 ## Asset spec (outputs)
 

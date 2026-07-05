@@ -1,0 +1,61 @@
+A sprite candidate sheet on a PURE WHITE background (#FFFFFF). This is a
+flat sprite sheet for a 2D strategy game, NOT a scene: no ground, no
+horizon, no cast shadows, no text, no labels, no grid lines, no borders.
+Each unit is a separate free-standing sprite surrounded by clean white. No
+sprite touches another sprite, and no sprite comes closer than 60 pixels to
+any edge of the canvas or closer than 40 pixels to another sprite.
+
+EXACTLY THREE rows of sprites, five sprites per row:
+
+- TOP ROW: five infantry squads. Each squad is ONE compact sprite of 2-3
+  WWII-era riflemen standing close together (a single connected group).
+  Every rifleman in every squad faces the SAME direction — due WEST (left)
+  — with his rifle aimed due west. Never mix facings within a squad; no
+  soldier looks east, toward the viewer, or away from the viewer.
+- MIDDLE ROW: five medium tanks of mid-1940s design, each a single tank,
+  hull and barrel heading due WEST (left).
+- BOTTOM ROW: five towed field guns (artillery pieces) with a split-trail
+  carriage and a flat armour shield, barrel pointing due WEST (left).
+  Guns 1-3: the gun alone. Guns 4-5: the gun plus two crew figures beside
+  it, drawn as one connected sprite, both crewmen also facing west.
+
+HEADING (critical): every unit heads due WEST (left). The tank hull's long
+axis runs exactly horizontal across the image, barrel pointing straight
+left. The field gun's barrel points straight left. Do NOT angle any unit
+toward or away from the viewer — no front-quarter or rear-quarter headings,
+nothing pointing diagonally.
+
+CAMERA (critical): a HIGH angle, viewed from steeply above — the TOP
+surfaces dominate each sprite: the tank's deck and turret top, the
+soldiers' helmet tops and shoulders, the gun's shield top edge and carriage
+seen mostly from above. Only a small hint of each unit's south-facing side
+is visible below the top surfaces. NOT a side view, NOT isometric — close
+to top-down, softened just enough to stay readable.
+
+READABILITY (critical): these sprites will be displayed very small, over
+dark forest canopy and busy rooftop textures. Every sprite needs a BOLD,
+CONTINUOUS dark outline around its entire silhouette — clearly heavier than
+typical interior linework — and simplified, chunky geometry: large clear
+shapes, strong value contrast between the sprite and its own outline, no
+fine spindly details, no thin protruding parts that vanish when shrunk.
+
+VARIETY: the five sprites in a row must be five DIFFERENT designs — vary
+the squad poses and arrangements, the tank silhouettes and stowage, the gun
+proportions and carriage details — while keeping the same scale, heading,
+camera, and style, so any one could be chosen as THE sprite for that type.
+
+Style: painterly 16-bit military strategy-game sprites matching the
+reference images' muted, naturalistic register — soft painted shading
+inside the bold outlines, chunky readable silhouettes. All sprites share
+one consistent scale: each tank is roughly 300 pixels long, and a standing
+soldier's height is about half a tank's length.
+
+TEAM COLOUR KEY (critical): paint every team-identification area in ONE
+single medium cobalt blue (#3B5FC0) — the soldiers' tunics and helmets, the
+tanks' hull and turret armour panels, and the field guns' carriage, wheel
+hubs, and shield. Shading inside these areas must stay the SAME cobalt blue
+hue, only lighter or darker — never drifting toward teal, cyan, or purple.
+Everything that is NOT a team area keeps natural materials: gunmetal grey
+barrels, tracks, and running gear; brown wooden grips and stocks; khaki
+webbing, packs, and trousers; natural skin tones. No national insignia of
+any kind — no stars, crosses, roundels, flags, or markings.

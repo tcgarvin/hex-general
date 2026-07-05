@@ -530,50 +530,114 @@ isolation.
   the deterministic post-chain byte-replays (`roadfinish.py build --verify`, wired
   into `selftest.py`; regenerate the sources with `export-sources`).
 
-### Unit sprites & facing
+### Unit art (painterly sprites)
 
-The next active art workstream — the *other half* of Phase 8's art (tilesets
-above). Today `Board.tsx` `UnitMarker` is a placeholder: a solid faction-coloured
-shape per type (circle=infantry / rounded-square=armor / triangle=artillery),
-black stroke, raw HP number centred on it. This replaces it with the real
-AI-generated unit sprite set (decision 7), adds directional facing, on-board
-health, and a reserved status-icon slot. Because Phase 9 planning overlays and the
-shipped Phase 10 replay both render through `UnitMarker` (incl. `posOverride` /
-`alpha` for slides and fades), this is a swap behind a stable component — do it
-right and both phases inherit it.
+Replace the vector unit markers (`UnitMarker` in `Board.tsx`: tinted
+circle/square/triangle + centred HP digit) with painterly sprites in the
+concept-art register. Design ratified with the user 2026-07-05:
+
+- **Register: WWII, no national insignia** — infantry = a small 2–3 soldier
+  squad, armor = one mid-century medium tank, artillery = a towed field gun
+  (crew optional; offer both in candidates). Team colour does the faction work.
+  The concept art's units are illustrative-only for *content*, but its mood/
+  palette register applies.
+- **Team colour: two-layer sprite (base + tint mask)** — must scale to **32+
+  player colours** (user requirement), which rules out baked per-player files
+  and whole-sprite multiply tint. Generate each unit once with its team areas
+  (tunics/helmets, hull panels, gun carriage — the areas the concept art
+  team-tints) painted in a keyable colour; the foundry classifies those pixels
+  by hue (the hills/river HSV machinery) and emits a neutral **base** PNG plus
+  a luminance-preserving **mask** PNG that Pixi tints with `playerColor` at
+  render time. Metal, wood, and skin stay natural in the base.
+- **HP: 10-segment pip bar** (SPEC max HP 10) replaces the centred digit —
+  the concept art's pip-row look. Exact geometry decided at integration; must
+  stay legible at ~50px board-scale hexes.
+- **Perspective/facing:** the standing "a LITTLE 3/4 perspective" ruling
+  (woods trees, bridge decks) applies; strictly top-down was already rejected
+  as unreadable. Units have no gameplay facing — one generated facing
+  (west), optional render-time L↔R mirror for variety. No rotation.
+- **Asset class 5 — free-standing sprites** (new foundry class, easiest of
+  the five: no seams, no edge anchoring, no cut-off risk). White-background
+  candidate sheet via NBP (`gen.py`) → segment by connected components +
+  un-matte + contrast-compress toward the concept register (the
+  `vignette.py`/tree-sprite treatment) → mask cut + gates (footprint band,
+  luminance band, mask-coverage sanity) in a new manifest-driven
+  `scripts/tile-foundry/unit.py` with `--verify` byte-reproduction, wired
+  into `selftest.py`. Provenance under `art/foundry/units/`.
+- **Sizing:** ~75–95px footprint on a 128×128 transparent canvas (the vector
+  marker is ~62% of hex width today), soft ground-shadow disc like the woods
+  trees, strong silhouette — terrain was deliberately made to recede so units
+  pop.
+- **Integration (code):** sprites live outside the terrain glob (e.g.
+  `frontend/src/board/units/` assets + a small loader beside `tiles.ts`);
+  `UnitMarker`/`RecruitGhost` render base sprite + tinted mask sprite + pip
+  bar; slide/fade replay animation and order badges unchanged. No API or
+  scenario change.
+- **Ratification:** per the CLAUDE.md hard gate — montage + board-scale
+  strips over plains/woods/hills/city, published as a claude.ai Artifact;
+  the user picks. Slices: **U1** candidate sheets + picks (art),
+  **U2** `unit.py` foundry pipeline (base/mask split + gates), **U3**
+  renderer integration (two-layer sprites + pip bar).
+
+**✅ Shipped 2026-07-05 (U1+U2+U3).** Four NBP candidate rounds → user picks:
+armor = v3-r1 tank, artillery = v3-r2 gun+two-crew, infantry = v4 5-man wedge
+at 0.9× footprint (90/90/81px bbox on the 128 canvas — infantry is drawn at
+**footprint parity** with the tank, NOT realistic soldier scale, which fixed
+both "reads small" and pixelation). `scripts/tile-foundry/unit.py`
+(manifest-driven, `build --verify` byte-clean, selftest-wired) splits each
+crop into `frontend/src/board/units/{type}_{base,mask}.png`; `units.ts` +
+`UnitMarker`/`RecruitGhost` render base + owner-tinted mask + a 10-pip HP
+bar, vector markers kept as the pre-load fallback. Verified on the live
+local board (both armies, tint clean, pips legible). Rulings that transfer:
+- **Style refs containing units override prompt facing AND camera** — use
+  terrain-only concept crops when the prompt must control pose/heading.
+- **NBP's native unit facing is east** (persists even with terrain-only
+  refs); don't fight it — generate east, mirror deterministically in the
+  foundry (sprites carry no text/insignia, so mirroring is safe).
+- **High camera angle only partially takes** (tanks best, infantry worst);
+  strict side-profile heading + slightly raised camera is reliably
+  achievable and was the accepted register.
+- **+1px baked near-black rim** (validated at 50px board scale) is the
+  woods/city legibility fix and a deterministic pipeline knob — don't rely
+  on NBP outlines alone. **Ground shadows dropped** (read poorly off-plains).
+- Per-row variety must be demanded explicitly or NBP returns five clones.
+
+### Unit facing & HUD slots (remaining)
+
+Planned in parallel with the shipped slice above (2026-07-05) and reconciled at
+merge: the sprite set, two-layer team colour, and 10-pip HP bar shipped there —
+what survives of this plan is **facing** plus the HUD-layout follow-ups. Because
+Phase 9 planning overlays and the shipped Phase 10 replay both render through
+`UnitMarker` (incl. `posOverride` / `alpha` for slides and fades), these land
+behind that stable component and both phases inherit them.
 
 **Rulings (settled):**
 
 - **Facing: left/right, mirror-based, driven by last movement.** One sprite per
-  type, drawn facing a canonical direction and **horizontally mirrored** to face
-  the other way — the same L↔R mirror trick the tileset uses, no rotation. A unit
-  faces the way it last moved: reduce its final move step to a net horizontal sign
-  (rightward → face right, leftward → face left; a purely vertical step keeps the
-  prior facing). This is **persisted engine state**, not a client guess — see U0.
+  type, mirrored horizontally to face the other way — no rotation. (The shipped
+  sprites face **west**; NBP generates east and the foundry mirrors, so either
+  canonical facing is a pipeline flag away.) A unit faces the way it last moved:
+  reduce its final move step to a net horizontal sign (rightward → face right,
+  leftward → face left; a purely vertical step keeps the prior facing). This is
+  **persisted engine state**, not a client guess — see U0. *Supersedes the
+  shipped slice's "no gameplay facing, optional mirror for variety."*
 - **No damage overlay / cracks / marks** — *revises decision 7's "damage is an
-  overlay."* v0.1 conveys damage only via the on-board health indicator (U3) and
-  the side panel. **Later, possibly:** distinct *whole* sprites for low-HP / routed
+  overlay."* v0.1 conveys damage only via the on-board pip bar and the side
+  panel. **Later, possibly:** distinct *whole* sprites for low-HP / routed
   states (an alternate sprite, not a scorch decal) — out of scope now.
-- **Faction colour via Pixi tint** stays (decision 7); the exact method is an open
-  call below.
 - **No 8-way / per-direction art.** The game has no facing *mechanic* beyond this
   cosmetic L/R; movement is pulses. One sprite + mirror per type is the whole set.
 
-**Open art-direction calls (settle at slice start — user's pick per CLAUDE.md):**
+**Open calls (settle at slice start):**
 
-- **Faction-colour method:** full-sprite tint vs neutral sprite on a
-  faction-coloured base-plate/ring vs hybrid. Full-tint fights legibility (needs
-  near-grayscale, tint-clean art); a base-plate keeps the sprite fully rendered and
-  puts colour in a shape we control. This choice drives what U1 generates.
-- **On-board health display:** segmented bar (10 ticks) / continuous bar / ring /
-  number; shown always vs only when `hp < max`. (Leaning: a bar above the sprite,
-  shown only when damaged, so a healthy army stays visually quiet.)
+- **Pip-bar visibility:** shown always vs only when `hp < max`. (Leaning: only
+  when damaged, so a healthy army stays visually quiet.)
 - **HUD anchor layout:** define fixed slots around the sprite — health above,
   status-icon stack in a corner (empty in v0.1 but reserved), order badge
-  (rest/hold), selection ring, faction base-plate — so nothing collides and future
-  statuses (veteran/exhaustion, none yet) drop in without a re-layout.
-- **Zoom LOD:** the zoom threshold below which health/status collapse to just the
-  sprite (+ base-plate), so a zoomed-out board isn't noise.
+  (rest/hold), selection ring — so nothing collides and future statuses
+  (veteran/exhaustion, none yet) drop in without a re-layout.
+- **Zoom LOD:** the zoom threshold below which health/status collapse to just
+  the sprite, so a zoomed-out board isn't noise.
 
 **Slices:**
 
@@ -586,27 +650,16 @@ right and both phases inherit it.
   public), and requires a frontend schema regen (`npm run gen:api`). Pure-engine +
   boundary rules unchanged. Tests: facing follows movement; a vertical-only move
   preserves the prior facing.
-- **U1 — unit concept register + sprite generation.** Commission a unit art
-  register the way terrain got one (concept art + `ART_PIPELINE.md`): fixed style
-  matching the painterly tiles, fixed canvas fitting one hex, **strong per-type
-  silhouettes** (must beat today's shape-coding at min zoom), drawn facing
-  canonical-right for the mirror, and tint-clean per the chosen faction method.
-  Generate infantry / armor / artillery. Ratify via an Artifact montage (the
-  hex-art sign-off rule).
-- **U2 — render swap + facing + faction colour.** Replace `UnitMarker`'s `Graphics`
-  with the sprite (`Sprite` + tint, or sprite-over-plate), flip `scale.x` by the
-  unit's facing, apply the owner's faction colour. Recruit-ghost and replay
-  slide/fade paths keep working (they already flow through `UnitMarker` +
-  pos/alpha overrides). Drive enemy facing from the view payload.
-- **U3 — on-board health + reserved HUD slots.** Add the health indicator (chosen
-  style) above the sprite, shown per the chosen rule; define and **reserve** the
-  status-icon slot (empty in v0.1); lay out selection ring / order badge / health /
-  status on a fixed anchor scheme that survives zoom (LOD-hide below the threshold).
-  Visible enemies show health too.
+- **U1 — frontend: apply facing.** Flip `UnitMarker`'s sprite `scale.x` by the
+  unit's facing (own and visible-enemy alike, from the view payload).
+  Recruit-ghost and replay slide/fade paths keep working.
+- **U2 — HUD slots + LOD.** Settle the open calls above; lay out selection ring /
+  order badge / health / reserved status slot on a fixed anchor scheme that
+  survives zoom (LOD-hide below the threshold). Visible enemies show health too.
 
-**Demonstrable:** real unit sprites on the board — each facing the way it last
-moved, tinted to its owner, showing a health indicator when damaged, with room
-reserved for future status icons — in planning and replay alike.
+**Demonstrable:** each unit faces the way it last moved, health/status HUD sits
+on fixed anchors with room for future status icons — in planning and replay
+alike.
 
 ## Phase 9 — Frontend: planning UI
 
