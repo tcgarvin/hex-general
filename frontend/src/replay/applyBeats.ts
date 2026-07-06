@@ -141,6 +141,9 @@ function applyOneEvent(
         coord,
         // The unit_recruited event carries no HP; a unit enters play at full HP.
         hp: UNIT_STATS[type].maxHp,
+        // Nor does it carry facing (cosmetic). The authoritative post-turn
+        // GameView supplies the server-computed facing; default to "right" here.
+        facing: "right",
       };
       return { units: [...units, newUnit], settlements, players };
     }

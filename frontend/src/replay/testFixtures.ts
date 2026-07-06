@@ -10,6 +10,7 @@ type Unit = components["schemas"]["Unit"];
 type Settlement = components["schemas"]["Settlement"];
 type Player = components["schemas"]["Player"];
 type UnitType = components["schemas"]["UnitType"];
+type Facing = components["schemas"]["Facing"];
 type Axial = components["schemas"]["Axial"];
 
 // A terse event fixture: a real event's `kind` plus only the fields the reducer
@@ -33,9 +34,16 @@ export function unit(
   id: number,
   owner: string,
   c: Axial,
-  opts: { type?: UnitType; hp?: number } = {},
+  opts: { type?: UnitType; hp?: number; facing?: Facing } = {},
 ): Unit {
-  return { id, owner, coord: c, type: opts.type ?? "infantry", hp: opts.hp ?? 10 };
+  return {
+    id,
+    owner,
+    coord: c,
+    type: opts.type ?? "infantry",
+    hp: opts.hp ?? 10,
+    facing: opts.facing ?? "right",
+  };
 }
 
 export function settlement(c: Axial, controlledBy: string | null = null): Settlement {
