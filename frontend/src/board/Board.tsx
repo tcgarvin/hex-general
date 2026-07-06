@@ -67,6 +67,12 @@ import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
 import { roadTileRefs } from "./roadTiles";
 import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
+import {
+  drawPipBar,
+  hudVisibleAtZoom,
+  ORDER_BADGE_Y,
+  showsHealth,
+} from "./unitHud";
 import { loadUnitTextures, type LoadedUnits } from "./units";
 
 extend({ Container, Graphics, Sprite, Text });
@@ -1196,6 +1202,10 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     selectedUnitId === null ? undefined : planning?.stagedByUnit[selectedUnitId];
   const selectedOrderLabel = orderLabelOf(selectedStaged, enemyHexKeys);
 
+  // Zoom LOD (unitHud.ts): below the threshold the per-unit HUD (health bar,
+  // order badge, reserved status slot) hides and units collapse to sprites.
+  const hudVisible = view !== null && hudVisibleAtZoom(view.zoom);
+
   return (
     <div
       ref={wrapperRef}
@@ -1294,6 +1304,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 key={u.id}
                 unit={u}
                 tex={unitTex}
+                hud={hudVisible}
                 posOverride={replayAnim?.slideOverrides.get(u.id)}
                 alpha={replayAnim?.fadingOut.get(u.id) ?? 1}
               />
@@ -1305,10 +1316,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   key={`recruit-${unit.id}`}
                   unit={unit}
                   tex={unitTex}
+                  hud={hudVisible}
                   alpha={alpha}
                 />
               ))}
             {planning !== undefined &&
+              hudVisible &&
               units.map((u) => {
                 const order = planning.stagedByUnit[u.id];
                 if (order === undefined || (order.kind !== "rest" && order.kind !== "hold"))
@@ -1399,48 +1412,25 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   );
 }
 
-// SPEC §5.2: every unit type has 10 max HP, so the pip bar always has 10 slots.
-const MAX_HP = 10;
-// Pip-bar geometry in world px, sized to sit under the sprite inside the hex
-// (flat-to-flat half-height is √3/2·HEX_SIZE ≈ 27.7).
-const PIP_BAR_WIDTH = 36;
-const PIP_BAR_HEIGHT = 5;
-const PIP_BAR_Y = 21;
-
-/**
- * Draw the 10-slot HP bar: a dark backing chip with `hp` segments filled in
- * the owner's colour. Lost HP reads as empty backing, like the concept art's
- * pip rows.
- */
-function drawPipBar(g: Graphics, hp: number, color: number): void {
-  g.clear();
-  const left = -PIP_BAR_WIDTH / 2;
-  const top = PIP_BAR_Y - PIP_BAR_HEIGHT / 2;
-  g.roundRect(left, top, PIP_BAR_WIDTH, PIP_BAR_HEIGHT, 1.5);
-  g.fill({ color: 0x14140f, alpha: 0.85 });
-  const pad = 1;
-  const gap = 1;
-  const pipWidth = (PIP_BAR_WIDTH - 2 * pad - (MAX_HP - 1) * gap) / MAX_HP;
-  for (let i = 0; i < hp; i++) {
-    g.rect(left + pad + i * (pipWidth + gap), top + pad, pipWidth, PIP_BAR_HEIGHT - 2 * pad);
-  }
-  g.fill({ color });
-}
-
 /**
  * A single unit: two-layer painterly sprite (neutral base + owner-tinted team
- * mask, see `units.ts`) with a 10-pip HP bar. Until the sprite textures load,
- * falls back to the original vector marker (shape encodes type) + hp text,
- * mirroring the terrain tiles' flat-colour fallback.
+ * mask, see `units.ts`) with its HUD on the fixed slots from `unitHud.ts` —
+ * a 10-pip HP bar above (damaged units only), rest/hold badge below (rendered
+ * by the board), reserved status stack top-right. `hud` is the zoom-LOD gate:
+ * false collapses the unit to just its sprite. Until the sprite textures
+ * load, falls back to the original vector marker (shape encodes type) + hp
+ * text, mirroring the terrain tiles' flat-colour fallback.
  */
 function UnitMarker({
   unit,
   tex,
+  hud,
   posOverride,
   alpha = 1,
 }: {
   unit: Unit;
   tex: LoadedUnits | null;
+  hud: boolean;
   posOverride?: { x: number; y: number; facing?: Facing };
   alpha?: number;
 }) {
@@ -1477,13 +1467,15 @@ function UnitMarker({
     return (
       <pixiContainer x={x} y={y} alpha={alpha}>
         <pixiGraphics draw={drawFallback} />
-        <pixiText
-          text={String(unit.hp)}
-          style={hpStyle}
-          anchor={0.5}
-          x={0}
-          y={2}
-        />
+        {hud && (
+          <pixiText
+            text={String(unit.hp)}
+            style={hpStyle}
+            anchor={0.5}
+            x={0}
+            y={2}
+          />
+        )}
       </pixiContainer>
     );
   }
@@ -1495,7 +1487,7 @@ function UnitMarker({
     <pixiContainer x={x} y={y} alpha={alpha}>
       <pixiSprite texture={pair.base} anchor={0.5} scale={{ x: sx, y: s }} />
       <pixiSprite texture={pair.mask} anchor={0.5} scale={{ x: sx, y: s }} tint={color} />
-      <pixiGraphics draw={drawPips} />
+      {hud && showsHealth(unit.hp) && <pixiGraphics draw={drawPips} />}
     </pixiContainer>
   );
 }
@@ -1555,7 +1547,10 @@ function RecruitGhost({
   );
 }
 
-/** A small text badge above a unit with a staged rest/hold order. */
+/**
+ * A small text badge on a unit with a staged rest/hold order, in the
+ * below-sprite slot (`unitHud.ts` — the health slot took the space above).
+ */
 function OrderBadge({ unit, label }: { unit: Unit; label: "rest" | "hold" }) {
   const { x, y } = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
   return (
@@ -1564,7 +1559,7 @@ function OrderBadge({ unit, label }: { unit: Unit; label: "rest" | "hold" }) {
       style={orderBadgeStyle}
       anchor={0.5}
       x={x}
-      y={y - HEX_SIZE * 0.95}
+      y={y + ORDER_BADGE_Y}
     />
   );
 }
