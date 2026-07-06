@@ -9,6 +9,7 @@
 
 import type { components } from "@/lib/api/schema";
 import type { ReplayEvent } from "@/lib/api/types";
+import { defaultFacing, facingAfterStep } from "@/planning/facing";
 import { UNIT_STATS } from "@/planning/rules";
 
 import type { Beat } from "./beats";
@@ -66,7 +67,15 @@ function applyOneEvent(
   switch (e.kind) {
     case "unit_moved": {
       const { unit_id, dest } = e;
-      return { units: units.map((u) => (u.id === unit_id ? { ...u, coord: dest } : u)), settlements, players };
+      return {
+        units: units.map((u) =>
+          u.id === unit_id
+            ? { ...u, coord: dest, facing: facingAfterStep(u.facing, u.coord, dest) }
+            : u,
+        ),
+        settlements,
+        players,
+      };
     }
 
     case "barrage_resolved": {
@@ -94,9 +103,14 @@ function applyOneEvent(
         }
       }
       // The surviving entrant now occupies the contested hex (null/absent when
-      // nobody entered — opposing survivors remained or all entrants died).
+      // nobody entered — opposing survivors remained or all entrants died). Its
+      // entering step sets facing like any completed move (U0 rule).
       if (entrant_id != null) {
-        newUnits = newUnits.map((u) => (u.id === entrant_id ? { ...u, coord } : u));
+        newUnits = newUnits.map((u) =>
+          u.id === entrant_id
+            ? { ...u, coord, facing: facingAfterStep(u.facing, u.coord, coord) }
+            : u,
+        );
       }
       return { units: newUnits, settlements, players };
     }
@@ -141,6 +155,9 @@ function applyOneEvent(
         coord,
         // The unit_recruited event carries no HP; a unit enters play at full HP.
         hp: UNIT_STATS[type].maxHp,
+        // Nor facing — recreate the engine default (face the nearest enemy,
+        // computed against the board before this unit is added, as the engine does).
+        facing: defaultFacing(coord, owner, units),
       };
       return { units: [...units, newUnit], settlements, players };
     }

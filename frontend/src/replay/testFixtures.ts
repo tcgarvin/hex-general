@@ -11,6 +11,7 @@ type Settlement = components["schemas"]["Settlement"];
 type Player = components["schemas"]["Player"];
 type UnitType = components["schemas"]["UnitType"];
 type Axial = components["schemas"]["Axial"];
+type Facing = components["schemas"]["Facing"];
 
 // A terse event fixture: a real event's `kind` plus only the fields the reducer
 // under test reads (the engine emits more, but the beat reducers ignore them).
@@ -33,9 +34,16 @@ export function unit(
   id: number,
   owner: string,
   c: Axial,
-  opts: { type?: UnitType; hp?: number } = {},
+  opts: { type?: UnitType; hp?: number; facing?: Facing } = {},
 ): Unit {
-  return { id, owner, coord: c, type: opts.type ?? "infantry", hp: opts.hp ?? 10 };
+  return {
+    id,
+    owner,
+    coord: c,
+    type: opts.type ?? "infantry",
+    hp: opts.hp ?? 10,
+    facing: opts.facing ?? "right",
+  };
 }
 
 export function settlement(c: Axial, controlledBy: string | null = null): Settlement {

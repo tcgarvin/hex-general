@@ -10,6 +10,7 @@ import { Container, Graphics, Sprite, Text, TextStyle } from "pixi.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
+import { defaultFacing } from "@/planning/facing";
 import { reachableContinuations } from "@/planning/reach";
 import type { Planning } from "@/planning/usePlanning";
 import type { PlanAdvisory, UnitWarning } from "@/planning/warnings";
@@ -70,6 +71,7 @@ import { loadUnitTextures, type LoadedUnits } from "./units";
 
 extend({ Container, Graphics, Sprite, Text });
 
+type Facing = components["schemas"]["Facing"];
 type GameState = components["schemas"]["GameState"];
 type Hex = components["schemas"]["Hex"];
 type Terrain = components["schemas"]["Terrain"];
@@ -213,12 +215,14 @@ function clampViewAxis(
  *
  * The board always renders `state` (the pre-beat snapshot during animation, the
  * post-beat snapshot after). Overlays are drawn on top:
- *   - `slideOverrides`: pixel positions for units currently mid-slide
+ *   - `slideOverrides`: pixel positions for units currently mid-slide, plus the
+ *     facing of the step being animated (the settled post-beat facing, applied
+ *     from slide start so a unit faces its direction of travel)
  *   - `fadingOut`: alpha 1→0 for units destroyed this beat (still in `state.units`)
  *   - `fadingIn`: alpha 0→1 for units recruited this beat (not in `state.units`)
  */
 export interface ReplayAnimOverrides {
-  slideOverrides: ReadonlyMap<number, { x: number; y: number }>;
+  slideOverrides: ReadonlyMap<number, { x: number; y: number; facing: Facing }>;
   fadingOut: ReadonlyMap<number, number>;
   fadingIn: ReadonlyMap<number, { unit: Unit; alpha: number }>;
 }
@@ -1318,6 +1322,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   coord={r.coord}
                   type={r.type}
                   owner={yourSlot}
+                  facing={defaultFacing(r.coord, yourSlot, units)}
                   tex={unitTex}
                 />
               ))}
@@ -1436,11 +1441,12 @@ function UnitMarker({
 }: {
   unit: Unit;
   tex: LoadedUnits | null;
-  posOverride?: { x: number; y: number };
+  posOverride?: { x: number; y: number; facing?: Facing };
   alpha?: number;
 }) {
   const computed = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
   const { x, y } = posOverride ?? computed;
+  const facing = posOverride?.facing ?? unit.facing;
   const color = playerColor(unit.owner);
 
   const drawFallback = useCallback(
@@ -1481,36 +1487,35 @@ function UnitMarker({
       </pixiContainer>
     );
   }
+  // The sprite art natively faces west (units.ts), so `right` mirrors scale.x.
+  // Only the two sprite layers flip — the pip bar stays screen-oriented.
+  const s = (HEX_SIZE * 2) / pair.base.width;
+  const sx = facing === "right" ? -s : s;
   return (
     <pixiContainer x={x} y={y} alpha={alpha}>
-      <pixiSprite
-        texture={pair.base}
-        anchor={0.5}
-        width={HEX_SIZE * 2}
-        height={HEX_SIZE * 2}
-      />
-      <pixiSprite
-        texture={pair.mask}
-        anchor={0.5}
-        width={HEX_SIZE * 2}
-        height={HEX_SIZE * 2}
-        tint={color}
-      />
+      <pixiSprite texture={pair.base} anchor={0.5} scale={{ x: sx, y: s }} />
+      <pixiSprite texture={pair.mask} anchor={0.5} scale={{ x: sx, y: s }} tint={color} />
       <pixiGraphics draw={drawPips} />
     </pixiContainer>
   );
 }
 
-/** A translucent preview of a staged recruit, sitting on its (empty) city hex. */
+/**
+ * A translucent preview of a staged recruit, sitting on its (empty) city hex.
+ * `facing` is the caller's prediction of the engine default (face the nearest
+ * enemy) so the ghost previews how the recruit will actually stand.
+ */
 function RecruitGhost({
   coord,
   type,
   owner,
+  facing,
   tex,
 }: {
   coord: Axial;
   type: UnitType;
   owner: string;
+  facing: Facing;
   tex: LoadedUnits | null;
 }) {
   const { x, y } = axialToPixel(coord.q, coord.r, HEX_SIZE);
@@ -1532,25 +1537,17 @@ function RecruitGhost({
     [type, color],
   );
   const pair = tex?.[type] ?? null;
+  // Same west-native mirror rule as UnitMarker.
+  const s = pair === null ? 1 : (HEX_SIZE * 2) / pair.base.width;
+  const sx = facing === "right" ? -s : s;
   return (
     <pixiContainer x={x} y={y}>
       {pair === null ? (
         <pixiGraphics draw={draw} />
       ) : (
         <pixiContainer alpha={0.55}>
-          <pixiSprite
-            texture={pair.base}
-            anchor={0.5}
-            width={HEX_SIZE * 2}
-            height={HEX_SIZE * 2}
-          />
-          <pixiSprite
-            texture={pair.mask}
-            anchor={0.5}
-            width={HEX_SIZE * 2}
-            height={HEX_SIZE * 2}
-            tint={color}
-          />
+          <pixiSprite texture={pair.base} anchor={0.5} scale={{ x: sx, y: s }} />
+          <pixiSprite texture={pair.mask} anchor={0.5} scale={{ x: sx, y: s }} tint={color} />
         </pixiContainer>
       )}
       <pixiText text="+" style={recruitGhostStyle} anchor={0.5} x={0} y={2} />

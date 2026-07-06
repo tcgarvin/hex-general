@@ -655,9 +655,16 @@ behind that stable component and both phases inherit them.
   sign, so the final completed step wins and blocked/Rest/Hold/idle preserve it
   for free; recruits and turn-0 scenario units face the nearest enemy
   (`default_facing`, tie-break lowest id). Schema regenerated.*
-- **U1 — frontend: apply facing.** Flip `UnitMarker`'s sprite `scale.x` by the
+- ✅ **U1 — frontend: apply facing** *(shipped 2026-07-06)*. Flip `UnitMarker`'s sprite `scale.x` by the
   unit's facing (own and visible-enemy alike, from the view payload).
   Recruit-ghost and replay slide/fade paths keep working.
+  *Shipped as specced, plus the replay pieces the slice implied: the sprite pair
+  mirrors when `facing == right` (art is west-native; pip bar stays
+  screen-oriented); `planning/facing.ts` mirrors the engine's q-sign step rule and
+  `default_facing` so `applyBeats` reconstructs facing per beat (moves, combat
+  entrant, recruits — this also fixed the U0 schema regen having broken `tsc`);
+  mid-slide units face their direction of travel via a `slideOverrides` facing;
+  the recruit ghost previews the engine default facing.*
 - **U2 — HUD slots + LOD.** Settle the open calls above; lay out selection ring /
   order badge / health / reserved status slot on a fixed anchor scheme that
   survives zoom (LOD-hide below the threshold). Visible enemies show health too.
