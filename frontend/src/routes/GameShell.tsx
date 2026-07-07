@@ -215,6 +215,13 @@ function Dashboard() {
           // swap to the replay branch only once the bundle is ready (non-null);
           // during the load-hold we keep the planning chrome (forced read-only)
           // so the dock never blanks between modes.
+          //
+          // TODO(replay-snap): the load-hold shows `view.state` (the turn's END
+          // state), then the replay branch opens at the pre-turn state
+          // (displayBeat -1). At the swap the units visibly snap back from their
+          // resolved hexes to their starting hexes before the animation plays.
+          // Smooth this later — e.g. hold the replay's pre-turn state during the
+          // load-hold instead of the live end state, or cross-fade the swap.
           <div className="absolute inset-0">
             {replayBundle !== null ? (
               <Board
