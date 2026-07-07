@@ -10,11 +10,13 @@ import { Container, Graphics, Sprite, Text, TextStyle } from "pixi.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
+import { defaultFacing } from "@/planning/facing";
 import { reachableContinuations } from "@/planning/reach";
 import type { Planning } from "@/planning/usePlanning";
 import type { PlanAdvisory, UnitWarning } from "@/planning/warnings";
 import type { LogBeat } from "@/replay/replayLog";
 
+import { moveArrowOutlines, type ArrowDims } from "./arrows";
 import {
   AXIAL_DIRECTIONS,
   axialEqual,
@@ -66,10 +68,17 @@ import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
 import { roadTileRefs } from "./roadTiles";
 import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
+import {
+  drawPipBar,
+  hudVisibleAtZoom,
+  ORDER_BADGE_Y,
+  showsHealth,
+} from "./unitHud";
 import { loadUnitTextures, type LoadedUnits } from "./units";
 
 extend({ Container, Graphics, Sprite, Text });
 
+type Facing = components["schemas"]["Facing"];
 type GameState = components["schemas"]["GameState"];
 type Hex = components["schemas"]["Hex"];
 type Terrain = components["schemas"]["Terrain"];
@@ -121,6 +130,49 @@ const PATH_BLOCKED_COLOR = 0xff5252;
 const PATH_BLOCKED_STAGED_COLOR = 0xb83434;
 // Advisory overlay (SPEC §16.1): friendly traffic jam marker.
 const TRAFFIC_COLOR = 0xffa726;
+
+// Staged orders draw as tapered ribbon arrows ABOVE the unit sprites — narrow
+// at the ordered unit, widening into a round-cornered head at the destination
+// (the corner rounding comes from the round-join edge stroke). A translucent
+// white casing rims the whole arrow so it stays legible over sprites and
+// bright terrain. Dimensions are world px; the selected unit's arrow is
+// heavier than other staged ones.
+const ARROW_DIMS: ArrowDims = {
+  startOffset: 22,
+  tailHalf: 2,
+  headBaseHalf: 7,
+  headLen: 22,
+  headHalf: 14,
+  headNose: 4,
+};
+const ARROW_DIMS_STAGED: ArrowDims = {
+  startOffset: 22,
+  tailHalf: 1.5,
+  headBaseHalf: 5,
+  headLen: 18,
+  headHalf: 11,
+  headNose: 3,
+};
+// Hover preview: a slim un-tapered arrow for the segment a click would append.
+const ARROW_DIMS_PREVIEW: ArrowDims = {
+  startOffset: 4,
+  tailHalf: 2.2,
+  headBaseHalf: 2.2,
+  headLen: 12,
+  headHalf: 7,
+  headNose: 2,
+};
+// Round-join stroke drawn around each ribbon fill in its own colour: it exists
+// to round the polygon's corners, and widens the arrow by half its width.
+const ARROW_EDGE = 3;
+const ARROW_CASING = 0xffffff;
+const ARROW_CASING_ALPHA = 0.55;
+const ARROW_CASING_ALPHA_STAGED = 0.3;
+// How far the casing rim extends past the colored edge stroke.
+const ARROW_CASING_RIM = 2.5;
+// Movement-pulse badge (a numbered disc on each hex the path enters).
+const PULSE_BADGE_RADIUS = 9;
+const PULSE_BADGE_FILL = 0x14141a;
 // Fog of war (SPEC §9): hexes outside the viewer's vision are veiled with this
 // translucent dark wash so lit hexes read at full brightness against them.
 const FOG_COLOR = 0x05060a;
@@ -149,6 +201,21 @@ const orderBadgeStyle = new TextStyle({
   fontWeight: "bold",
   fill: 0xffe066,
   stroke: { color: 0x000000, width: 6 },
+});
+
+// Movement-pulse numerals inside the path badges ("night coin": dark disc,
+// gold numeral). The grey variant marks pulses past the expected ZOC stop.
+const pulseBadgeStyle = new TextStyle({
+  fontFamily: "monospace",
+  fontSize: 13,
+  fontWeight: "bold",
+  fill: 0xffe066,
+});
+const pulseBadgeBlockedStyle = new TextStyle({
+  fontFamily: "monospace",
+  fontSize: 13,
+  fontWeight: "bold",
+  fill: 0x8f8f96,
 });
 
 // The "+" marking a staged recruit's ghost preview on its city hex.
@@ -213,12 +280,14 @@ function clampViewAxis(
  *
  * The board always renders `state` (the pre-beat snapshot during animation, the
  * post-beat snapshot after). Overlays are drawn on top:
- *   - `slideOverrides`: pixel positions for units currently mid-slide
+ *   - `slideOverrides`: pixel positions for units currently mid-slide, plus the
+ *     facing of the step being animated (the settled post-beat facing, applied
+ *     from slide start so a unit faces its direction of travel)
  *   - `fadingOut`: alpha 1→0 for units destroyed this beat (still in `state.units`)
  *   - `fadingIn`: alpha 0→1 for units recruited this beat (not in `state.units`)
  */
 export interface ReplayAnimOverrides {
-  slideOverrides: ReadonlyMap<number, { x: number; y: number }>;
+  slideOverrides: ReadonlyMap<number, { x: number; y: number; facing: Facing }>;
   fadingOut: ReadonlyMap<number, number>;
   fadingIn: ReadonlyMap<number, { unit: Unit; alpha: number }>;
 }
@@ -747,11 +816,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         setHoverKey((prev) => (prev === null ? prev : null));
         return;
       }
-      // Over the map: in move mode with a unit selected, track the hovered hex so
-      // the board can preview the route a click would commit (no preview while
-      // aiming a barrage, or once orders are locked).
-      if (planning === undefined || locked || selectedUnitId === null || mode !== "move" || view === null)
-        return;
+      // Over the map: track the hovered hex while planning is interactive. With
+      // a unit selected (move mode only — not while aiming a barrage) it feeds
+      // the route preview; with nothing selected it lets hovering a unit reveal
+      // that unit's pulse badges. Locked plans track nothing.
+      if (planning === undefined || locked || view === null) return;
+      if (selectedUnitId !== null && mode !== "move") return;
       const world = screenToWorld(e.clientX, e.clientY, view);
       const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
       const key = hexKey(ax.q, ax.r);
@@ -1049,9 +1119,9 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [advisory, hexByKey],
   );
 
-  // Planning layer: the selected unit's movement-range outline, every staged
-  // path (selected emphasized, others still clearly drawn so pending orders stay
-  // visible), the hovered route preview, and a ring on the selected unit.
+  // Planning layer drawn UNDER the unit sprites: the selected unit's
+  // movement/barrage range outlines and the selection rings. The staged order
+  // arrows and hover preview draw in `drawOrders`, above the sprites.
   const drawPlanning = useCallback(
     (g: Graphics) => {
       g.clear();
@@ -1079,97 +1149,6 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         g.stroke({ width: 3, color: BARRAGE_RANGE, alpha: 0.6 });
       }
 
-      // staged orders: draw each unit's plan so pending orders read at a glance
-      const unitById = new Map(units.map((u) => [u.id, u] as const));
-      for (const [idStr, order] of Object.entries(planning.stagedByUnit)) {
-        const unit = unitById.get(Number(idStr));
-        if (unit === undefined) continue;
-        const active = Number(idStr) === planning.selectedUnitId;
-        const origin = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
-
-        if (order.kind === "move") {
-          if (order.path.length === 0) continue;
-          const color = active ? PATH_COLOR : PATH_STAGED_COLOR;
-          const blockedColor = active ? PATH_BLOCKED_COLOR : PATH_BLOCKED_STAGED_COLOR;
-          const width = active ? 6 : 5;
-          const alpha = active ? 1 : 0.9;
-
-          // Where enemy contact is expected to impede progress (SPEC §8.4): the unit
-          // halts *before* this hex, so it and the rest of the path churn red. Absent
-          // a block, `stopIndex` is the path length and the whole path stays yellow.
-          const stop = advisory?.zocStopByUnit.get(Number(idStr));
-          const stopIndex =
-            stop === undefined
-              ? order.path.length
-              : order.path.findIndex((p) => axialEqual(p, stop));
-
-          // Reachable run: origin → the last hex the unit can actually occupy.
-          const points = [unit.coord, ...order.path];
-          g.moveTo(origin.x, origin.y);
-          for (let i = 1; i <= stopIndex; i++) {
-            const p = axialToPixel(points[i].q, points[i].r, HEX_SIZE);
-            g.lineTo(p.x, p.y);
-          }
-          g.stroke({ width, color, alpha });
-
-          // Blocked run: from that last reachable hex through the unreachable tail.
-          if (stopIndex < order.path.length) {
-            const from = axialToPixel(points[stopIndex].q, points[stopIndex].r, HEX_SIZE);
-            g.moveTo(from.x, from.y);
-            for (let i = stopIndex + 1; i < points.length; i++) {
-              const p = axialToPixel(points[i].q, points[i].r, HEX_SIZE);
-              g.lineTo(p.x, p.y);
-            }
-            g.stroke({ width, color: blockedColor, alpha });
-          }
-
-          // a node at each waypoint (destination larger); red from the stop onward
-          order.path.forEach((step, i) => {
-            const p = axialToPixel(step.q, step.r, HEX_SIZE);
-            g.circle(p.x, p.y, i === order.path.length - 1 ? 8 : 5);
-            g.fill({ color: i >= stopIndex ? blockedColor : color });
-          });
-        } else if (order.kind === "barrage") {
-          // a line from the gun to its target + a reticle on the target hex
-          const t = axialToPixel(order.target.q, order.target.r, HEX_SIZE);
-          g.moveTo(origin.x, origin.y);
-          g.lineTo(t.x, t.y);
-          g.stroke({ width: 4, color: BARRAGE_COLOR, alpha: active ? 1 : 0.85 });
-          g.circle(t.x, t.y, 12);
-          g.stroke({ width: 4, color: BARRAGE_COLOR });
-          g.moveTo(t.x - 18, t.y);
-          g.lineTo(t.x + 18, t.y);
-          g.moveTo(t.x, t.y - 18);
-          g.lineTo(t.x, t.y + 18);
-          g.stroke({ width: 3, color: BARRAGE_COLOR });
-        }
-        // rest/hold carry no board geometry — they render as a text badge below.
-      }
-
-      // hovered route preview: the segment a click would append, from the
-      // selected unit's current path end through the previewed hexes
-      if (selectedUnit !== null && previewPath !== null) {
-        const segment = previewPath.slice(selectedPath.length);
-        if (segment.length > 0) {
-          const from =
-            selectedPath.length > 0
-              ? selectedPath[selectedPath.length - 1]
-              : selectedUnit.coord;
-          const start = axialToPixel(from.q, from.r, HEX_SIZE);
-          g.moveTo(start.x, start.y);
-          for (const step of segment) {
-            const p = axialToPixel(step.q, step.r, HEX_SIZE);
-            g.lineTo(p.x, p.y);
-          }
-          g.stroke({ width: 4, color: PREVIEW_COLOR, alpha: 0.85 });
-
-          const dest = segment[segment.length - 1];
-          const dp = axialToPixel(dest.q, dest.r, HEX_SIZE);
-          g.circle(dp.x, dp.y, 8);
-          g.fill({ color: PREVIEW_COLOR, alpha: 0.85 });
-        }
-      }
-
       // ring on the selected unit
       if (selectedUnit !== null) {
         const { x, y } = axialToPixel(selectedUnit.coord.q, selectedUnit.coord.r, HEX_SIZE);
@@ -1184,13 +1163,172 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         g.stroke({ width: 5, color: 0xffffff });
       }
     },
-    [planning, advisory, continuations, hexByKey, units, selectedUnit, selectedPath, previewPath],
+    [planning, continuations, hexByKey, selectedUnit],
   );
+
+  // Order layer drawn ABOVE the unit sprites: every staged move as a tapered
+  // ribbon arrow (selected heavier), staged barrages, and the hover route
+  // preview — all rimmed with a translucent white casing for legibility over
+  // sprites and bright terrain.
+  const drawOrders = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      if (planning === undefined) return;
+
+      const unitById = new Map(units.map((u) => [u.id, u] as const));
+
+      // One ribbon: translucent white casing (fill + round-join stroke — the
+      // colored ribbon covers all but the outer rim, so the rim composites at
+      // exactly the casing alpha), then the colored pieces on top.
+      const ribbon = (
+        centers: { x: number; y: number }[],
+        stopSteps: number,
+        dims: ArrowDims,
+        color: number,
+        blockedColor: number,
+        casingAlpha: number,
+      ) => {
+        const { casing, reachable, blocked } = moveArrowOutlines(centers, stopSteps, dims);
+        if (casing.length === 0) return;
+        g.poly(casing);
+        g.fill({ color: ARROW_CASING, alpha: casingAlpha });
+        g.stroke({
+          width: ARROW_EDGE + 2 * ARROW_CASING_RIM,
+          color: ARROW_CASING,
+          alpha: casingAlpha,
+          join: "round",
+          cap: "round",
+        });
+        if (blocked !== null) {
+          g.poly(blocked);
+          g.fill({ color: blockedColor });
+          g.stroke({ width: ARROW_EDGE, color: blockedColor, join: "round", cap: "round" });
+        }
+        if (reachable !== null) {
+          g.poly(reachable);
+          g.fill({ color });
+          g.stroke({ width: ARROW_EDGE, color, join: "round", cap: "round" });
+        }
+      };
+
+      for (const [idStr, order] of Object.entries(planning.stagedByUnit)) {
+        const unit = unitById.get(Number(idStr));
+        if (unit === undefined) continue;
+        const active = Number(idStr) === planning.selectedUnitId;
+        const origin = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
+
+        if (order.kind === "move") {
+          if (order.path.length === 0) continue;
+          // Where enemy contact is expected to impede progress (SPEC §8.4): the
+          // unit halts *before* this hex, so the ribbon churns red from there.
+          // Absent a block, `stopSteps` is the path length (all gold).
+          const stop = advisory?.zocStopByUnit.get(Number(idStr));
+          const stopSteps =
+            stop === undefined
+              ? order.path.length
+              : order.path.findIndex((p) => axialEqual(p, stop));
+          const centers = [unit.coord, ...order.path].map((c) =>
+            axialToPixel(c.q, c.r, HEX_SIZE),
+          );
+          ribbon(
+            centers,
+            stopSteps,
+            active ? ARROW_DIMS : ARROW_DIMS_STAGED,
+            active ? PATH_COLOR : PATH_STAGED_COLOR,
+            active ? PATH_BLOCKED_COLOR : PATH_BLOCKED_STAGED_COLOR,
+            active ? ARROW_CASING_ALPHA : ARROW_CASING_ALPHA_STAGED,
+          );
+        } else if (order.kind === "barrage") {
+          // a cased line from the gun to its target + a reticle on the target
+          const t = axialToPixel(order.target.q, order.target.r, HEX_SIZE);
+          const d = Math.hypot(t.x - origin.x, t.y - origin.y);
+          const sx = origin.x + ((t.x - origin.x) / d) * ARROW_DIMS.startOffset;
+          const sy = origin.y + ((t.y - origin.y) / d) * ARROW_DIMS.startOffset;
+          const casingAlpha = active ? ARROW_CASING_ALPHA : ARROW_CASING_ALPHA_STAGED;
+          g.moveTo(sx, sy).lineTo(t.x, t.y);
+          g.stroke({
+            width: 4 + 2 * ARROW_CASING_RIM,
+            color: ARROW_CASING,
+            alpha: casingAlpha,
+            cap: "round",
+          });
+          g.moveTo(sx, sy).lineTo(t.x, t.y);
+          g.stroke({ width: 4, color: BARRAGE_COLOR, alpha: active ? 1 : 0.85, cap: "round" });
+          g.circle(t.x, t.y, 12);
+          g.stroke({ width: 4, color: BARRAGE_COLOR });
+          g.moveTo(t.x - 18, t.y).lineTo(t.x + 18, t.y);
+          g.moveTo(t.x, t.y - 18).lineTo(t.x, t.y + 18);
+          g.stroke({ width: 3, color: BARRAGE_COLOR });
+        }
+        // rest/hold carry no board geometry — they render as a text badge below.
+      }
+
+      // hovered route preview: the segment a click would append, from the
+      // selected unit's current path end through the previewed hexes
+      if (selectedUnit !== null && previewPath !== null) {
+        const segment = previewPath.slice(selectedPath.length);
+        if (segment.length > 0) {
+          const from =
+            selectedPath.length > 0
+              ? selectedPath[selectedPath.length - 1]
+              : selectedUnit.coord;
+          const centers = [from, ...segment].map((c) => axialToPixel(c.q, c.r, HEX_SIZE));
+          // Off a bare unit the preview lifts clear of the sprite like a real
+          // arrow; extending a committed path it hugs the path's end instead.
+          const dims =
+            selectedPath.length > 0
+              ? ARROW_DIMS_PREVIEW
+              : { ...ARROW_DIMS_PREVIEW, startOffset: ARROW_DIMS.startOffset };
+          const { casing } = moveArrowOutlines(centers, segment.length, dims);
+          if (casing.length > 0) {
+            g.poly(casing);
+            g.fill({ color: ARROW_CASING, alpha: 0.3 });
+            g.stroke({
+              width: ARROW_EDGE + 2 * ARROW_CASING_RIM,
+              color: ARROW_CASING,
+              alpha: 0.3,
+              join: "round",
+              cap: "round",
+            });
+            g.poly(casing);
+            g.fill({ color: PREVIEW_COLOR });
+            g.stroke({ width: ARROW_EDGE, color: PREVIEW_COLOR, join: "round", cap: "round" });
+          }
+        }
+      }
+    },
+    [planning, advisory, units, selectedUnit, selectedPath, previewPath],
+  );
+
+  // Pulse badges ride the arrow of exactly one unit — the selected one, or,
+  // with nothing selected, the unit under the cursor. Never all arrows at
+  // once: crossing paths would land clashing numbers on shared hexes.
+  const pulseBadges = useMemo<{ coord: Axial; n: number; blocked: boolean }[]>(() => {
+    if (planning === undefined) return [];
+    let unitId = planning.selectedUnitId;
+    // Hover tracking stops once locked (onPointerMove), so a hoverKey from just
+    // before the lock is stale — ignore it rather than freezing badges on.
+    if (unitId === null && hoverKey !== null && !locked) {
+      const hovered = units.find((u) => hexKey(u.coord.q, u.coord.r) === hoverKey);
+      unitId = hovered?.id ?? null;
+    }
+    if (unitId === null) return [];
+    const order = planning.stagedByUnit[unitId];
+    if (order === undefined || order.kind !== "move" || order.path.length === 0) return [];
+    const stop = advisory?.zocStopByUnit.get(unitId);
+    const stopSteps =
+      stop === undefined ? order.path.length : order.path.findIndex((p) => axialEqual(p, stop));
+    return order.path.map((coord, i) => ({ coord, n: i + 1, blocked: i >= stopSteps }));
+  }, [planning, hoverKey, locked, units, advisory]);
 
   // The selected unit's staged order + its §5.2 display label, for the detail panel.
   const selectedStaged =
     selectedUnitId === null ? undefined : planning?.stagedByUnit[selectedUnitId];
   const selectedOrderLabel = orderLabelOf(selectedStaged, enemyHexKeys);
+
+  // Zoom LOD (unitHud.ts): below the threshold the per-unit HUD (health bar,
+  // order badge, reserved status slot) hides and units collapse to sprites.
+  const hudVisible = view !== null && hudVisibleAtZoom(view.zoom);
 
   return (
     <div
@@ -1290,6 +1428,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 key={u.id}
                 unit={u}
                 tex={unitTex}
+                hud={hudVisible}
                 posOverride={replayAnim?.slideOverrides.get(u.id)}
                 alpha={replayAnim?.fadingOut.get(u.id) ?? 1}
               />
@@ -1301,10 +1440,16 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   key={`recruit-${unit.id}`}
                   unit={unit}
                   tex={unitTex}
+                  hud={hudVisible}
                   alpha={alpha}
                 />
               ))}
+            <pixiGraphics draw={drawOrders} />
+            {pulseBadges.map(({ coord, n, blocked }) => (
+              <PulseBadge key={`pulse-${n}`} coord={coord} n={n} blocked={blocked} />
+            ))}
             {planning !== undefined &&
+              hudVisible &&
               units.map((u) => {
                 const order = planning.stagedByUnit[u.id];
                 if (order === undefined || (order.kind !== "rest" && order.kind !== "hold"))
@@ -1318,6 +1463,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   coord={r.coord}
                   type={r.type}
                   owner={yourSlot}
+                  facing={defaultFacing(r.coord, yourSlot, units)}
                   tex={unitTex}
                 />
               ))}
@@ -1394,53 +1540,31 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   );
 }
 
-// SPEC §5.2: every unit type has 10 max HP, so the pip bar always has 10 slots.
-const MAX_HP = 10;
-// Pip-bar geometry in world px, sized to sit under the sprite inside the hex
-// (flat-to-flat half-height is √3/2·HEX_SIZE ≈ 27.7).
-const PIP_BAR_WIDTH = 36;
-const PIP_BAR_HEIGHT = 5;
-const PIP_BAR_Y = 21;
-
-/**
- * Draw the 10-slot HP bar: a dark backing chip with `hp` segments filled in
- * the owner's colour. Lost HP reads as empty backing, like the concept art's
- * pip rows.
- */
-function drawPipBar(g: Graphics, hp: number, color: number): void {
-  g.clear();
-  const left = -PIP_BAR_WIDTH / 2;
-  const top = PIP_BAR_Y - PIP_BAR_HEIGHT / 2;
-  g.roundRect(left, top, PIP_BAR_WIDTH, PIP_BAR_HEIGHT, 1.5);
-  g.fill({ color: 0x14140f, alpha: 0.85 });
-  const pad = 1;
-  const gap = 1;
-  const pipWidth = (PIP_BAR_WIDTH - 2 * pad - (MAX_HP - 1) * gap) / MAX_HP;
-  for (let i = 0; i < hp; i++) {
-    g.rect(left + pad + i * (pipWidth + gap), top + pad, pipWidth, PIP_BAR_HEIGHT - 2 * pad);
-  }
-  g.fill({ color });
-}
-
 /**
  * A single unit: two-layer painterly sprite (neutral base + owner-tinted team
- * mask, see `units.ts`) with a 10-pip HP bar. Until the sprite textures load,
- * falls back to the original vector marker (shape encodes type) + hp text,
- * mirroring the terrain tiles' flat-colour fallback.
+ * mask, see `units.ts`) with its HUD on the fixed slots from `unitHud.ts` —
+ * a 10-pip HP bar above (damaged units only), rest/hold badge below (rendered
+ * by the board), reserved status stack top-right. `hud` is the zoom-LOD gate:
+ * false collapses the unit to just its sprite. Until the sprite textures
+ * load, falls back to the original vector marker (shape encodes type) + hp
+ * text, mirroring the terrain tiles' flat-colour fallback.
  */
 function UnitMarker({
   unit,
   tex,
+  hud,
   posOverride,
   alpha = 1,
 }: {
   unit: Unit;
   tex: LoadedUnits | null;
-  posOverride?: { x: number; y: number };
+  hud: boolean;
+  posOverride?: { x: number; y: number; facing?: Facing };
   alpha?: number;
 }) {
   const computed = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
   const { x, y } = posOverride ?? computed;
+  const facing = posOverride?.facing ?? unit.facing;
   const color = playerColor(unit.owner);
 
   const drawFallback = useCallback(
@@ -1471,46 +1595,47 @@ function UnitMarker({
     return (
       <pixiContainer x={x} y={y} alpha={alpha}>
         <pixiGraphics draw={drawFallback} />
-        <pixiText
-          text={String(unit.hp)}
-          style={hpStyle}
-          anchor={0.5}
-          x={0}
-          y={2}
-        />
+        {hud && (
+          <pixiText
+            text={String(unit.hp)}
+            style={hpStyle}
+            anchor={0.5}
+            x={0}
+            y={2}
+          />
+        )}
       </pixiContainer>
     );
   }
+  // The sprite art natively faces west (units.ts), so `right` mirrors scale.x.
+  // Only the two sprite layers flip — the pip bar stays screen-oriented.
+  const s = (HEX_SIZE * 2) / pair.base.width;
+  const sx = facing === "right" ? -s : s;
   return (
     <pixiContainer x={x} y={y} alpha={alpha}>
-      <pixiSprite
-        texture={pair.base}
-        anchor={0.5}
-        width={HEX_SIZE * 2}
-        height={HEX_SIZE * 2}
-      />
-      <pixiSprite
-        texture={pair.mask}
-        anchor={0.5}
-        width={HEX_SIZE * 2}
-        height={HEX_SIZE * 2}
-        tint={color}
-      />
-      <pixiGraphics draw={drawPips} />
+      <pixiSprite texture={pair.base} anchor={0.5} scale={{ x: sx, y: s }} />
+      <pixiSprite texture={pair.mask} anchor={0.5} scale={{ x: sx, y: s }} tint={color} />
+      {hud && showsHealth(unit.hp) && <pixiGraphics draw={drawPips} />}
     </pixiContainer>
   );
 }
 
-/** A translucent preview of a staged recruit, sitting on its (empty) city hex. */
+/**
+ * A translucent preview of a staged recruit, sitting on its (empty) city hex.
+ * `facing` is the caller's prediction of the engine default (face the nearest
+ * enemy) so the ghost previews how the recruit will actually stand.
+ */
 function RecruitGhost({
   coord,
   type,
   owner,
+  facing,
   tex,
 }: {
   coord: Axial;
   type: UnitType;
   owner: string;
+  facing: Facing;
   tex: LoadedUnits | null;
 }) {
   const { x, y } = axialToPixel(coord.q, coord.r, HEX_SIZE);
@@ -1532,25 +1657,17 @@ function RecruitGhost({
     [type, color],
   );
   const pair = tex?.[type] ?? null;
+  // Same west-native mirror rule as UnitMarker.
+  const s = pair === null ? 1 : (HEX_SIZE * 2) / pair.base.width;
+  const sx = facing === "right" ? -s : s;
   return (
     <pixiContainer x={x} y={y}>
       {pair === null ? (
         <pixiGraphics draw={draw} />
       ) : (
         <pixiContainer alpha={0.55}>
-          <pixiSprite
-            texture={pair.base}
-            anchor={0.5}
-            width={HEX_SIZE * 2}
-            height={HEX_SIZE * 2}
-          />
-          <pixiSprite
-            texture={pair.mask}
-            anchor={0.5}
-            width={HEX_SIZE * 2}
-            height={HEX_SIZE * 2}
-            tint={color}
-          />
+          <pixiSprite texture={pair.base} anchor={0.5} scale={{ x: sx, y: s }} />
+          <pixiSprite texture={pair.mask} anchor={0.5} scale={{ x: sx, y: s }} tint={color} />
         </pixiContainer>
       )}
       <pixiText text="+" style={recruitGhostStyle} anchor={0.5} x={0} y={2} />
@@ -1558,7 +1675,38 @@ function RecruitGhost({
   );
 }
 
-/** A small text badge above a unit with a staged rest/hold order. */
+/**
+ * A movement-pulse badge on one hex of a staged path: a dark disc with the
+ * 1-based pulse number the unit arrives on (SPEC §12 — pulse k is the k-th
+ * path step). Pulses past the expected ZOC stop grey out.
+ */
+function PulseBadge({ coord, n, blocked }: { coord: Axial; n: number; blocked: boolean }) {
+  const { x, y } = axialToPixel(coord.q, coord.r, HEX_SIZE);
+  const drawDisc = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      g.circle(0, 0, PULSE_BADGE_RADIUS);
+      g.fill({ color: PULSE_BADGE_FILL, alpha: 0.92 });
+      g.stroke({ width: 1.6, color: 0xffffff, alpha: blocked ? 0.35 : 0.7 });
+    },
+    [blocked],
+  );
+  return (
+    <pixiContainer x={x} y={y}>
+      <pixiGraphics draw={drawDisc} />
+      <pixiText
+        text={String(n)}
+        style={blocked ? pulseBadgeBlockedStyle : pulseBadgeStyle}
+        anchor={0.5}
+      />
+    </pixiContainer>
+  );
+}
+
+/**
+ * A small text badge on a unit with a staged rest/hold order, in the
+ * below-sprite slot (`unitHud.ts` — the health slot took the space above).
+ */
 function OrderBadge({ unit, label }: { unit: Unit; label: "rest" | "hold" }) {
   const { x, y } = axialToPixel(unit.coord.q, unit.coord.r, HEX_SIZE);
   return (
@@ -1567,7 +1715,7 @@ function OrderBadge({ unit, label }: { unit: Unit; label: "rest" | "hold" }) {
       style={orderBadgeStyle}
       anchor={0.5}
       x={x}
-      y={y - HEX_SIZE * 0.95}
+      y={y + ORDER_BADGE_Y}
     />
   );
 }

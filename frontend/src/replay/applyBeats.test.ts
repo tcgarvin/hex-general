@@ -84,6 +84,56 @@ describe("applyBeatEvents — movement", () => {
   });
 });
 
+describe("applyBeatEvents — facing (U0 mirror)", () => {
+  it("faces a unit rightward / leftward from a horizontal step", () => {
+    const state = gameState({
+      units: [unit(1, "p1", coord(0, 0), { facing: "left" }), unit(2, "p1", coord(5, 0), { facing: "right" })],
+    });
+    const next = applyBeatEvents(state, events([
+      { kind: "unit_moved", unit_id: 1, dest: { q: 1, r: 0 } },
+      { kind: "unit_moved", unit_id: 2, dest: { q: 4, r: 0 } },
+    ]));
+    expect(next.units?.find((u) => u.id === 1)?.facing).toBe("right");
+    expect(next.units?.find((u) => u.id === 2)?.facing).toBe("left");
+  });
+
+  it("preserves facing on a purely vertical step (same q)", () => {
+    const state = gameState({ units: [unit(1, "p1", coord(2, 2), { facing: "left" })] });
+    const next = applyBeatEvents(state, events([
+      { kind: "unit_moved", unit_id: 1, dest: { q: 2, r: 3 } },
+    ]));
+    expect(next.units?.[0].facing).toBe("left");
+  });
+
+  it("sets the combat entrant's facing from its entering step", () => {
+    const contested = coord(2, 0);
+    const state = gameState({
+      units: [unit(1, "p1", coord(1, 0), { facing: "left" }), unit(2, "p2", contested)],
+    });
+    const next = applyBeatEvents(state, events([
+      {
+        kind: "combat_resolved",
+        coord: contested,
+        participants: [
+          { unit_id: 1, hp_after: 8, destroyed: false },
+          { unit_id: 2, hp_after: 0, destroyed: true },
+        ],
+        entrant_id: 1,
+      },
+    ]));
+    expect(next.units?.find((u) => u.id === 1)?.facing).toBe("right");
+  });
+
+  it("gives a recruit the engine default facing (nearest enemy)", () => {
+    // Enemy sits to the recruit's left → the recruit faces left.
+    const state = gameState({ units: [unit(1, "p2", coord(0, 0))] });
+    const next = applyBeatEvents(state, events([
+      { kind: "unit_recruited", unit_id: 2, unit_type: "infantry", owner: "p1", coord: { q: 3, r: 0 } },
+    ]));
+    expect(next.units?.find((u) => u.id === 2)?.facing).toBe("left");
+  });
+});
+
 describe("applyBeatEvents — barrage", () => {
   it("applies damage from a non-destroying hit", () => {
     const state = gameState({ units: [unit(1, "p2", coord(0, 0), { hp: 10 })] });

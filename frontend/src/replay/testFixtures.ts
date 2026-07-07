@@ -10,8 +10,8 @@ type Unit = components["schemas"]["Unit"];
 type Settlement = components["schemas"]["Settlement"];
 type Player = components["schemas"]["Player"];
 type UnitType = components["schemas"]["UnitType"];
-type Facing = components["schemas"]["Facing"];
 type Axial = components["schemas"]["Axial"];
+type Facing = components["schemas"]["Facing"];
 
 // A terse event fixture: a real event's `kind` plus only the fields the reducer
 // under test reads (the engine emits more, but the beat reducers ignore them).

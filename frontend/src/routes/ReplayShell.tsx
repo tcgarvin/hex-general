@@ -10,6 +10,7 @@ import { useGame } from "@/game/useGame";
 import type { components } from "@/lib/api/schema";
 import type { GameState, GameView, ReplayEvent } from "@/lib/api/types";
 import { economyFor } from "@/planning/economy";
+import { DEFAULT_FACING, facingAfterStep } from "@/planning/facing";
 import { applyBeats } from "@/replay/applyBeats";
 import { buildReplayLog, nameLookup, type UnitRef } from "@/replay/replayLog";
 import { useBeats } from "@/replay/useBeats";
@@ -115,9 +116,14 @@ const ANIM_DURATION_MS: Record<1 | 2, number> = { 1: 500, 2: 250 };
 const easeInOutCubic = (t: number): number =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
+type Facing = components["schemas"]["Facing"];
+
 interface AnimData {
-  /** World-pixel start and end for each sliding unit. */
-  slides: Map<number, { fromPx: { x: number; y: number }; toPx: { x: number; y: number } }>;
+  /** World-pixel start and end for each sliding unit, plus the step's facing. */
+  slides: Map<
+    number,
+    { fromPx: { x: number; y: number }; toPx: { x: number; y: number }; facing: Facing }
+  >;
   /** Unit IDs of destroyed units that should fade out to 0. */
   fadingOutIds: Set<number>;
   /** Recruited units that should fade in from 0. */
@@ -129,7 +135,10 @@ function extractAnimData(
   preBeatUnitsById: ReadonlyMap<number, Unit>,
   postBeatUnitsById: ReadonlyMap<number, Unit>,
 ): AnimData {
-  const slides = new Map<number, { fromPx: { x: number; y: number }; toPx: { x: number; y: number } }>();
+  const slides = new Map<
+    number,
+    { fromPx: { x: number; y: number }; toPx: { x: number; y: number }; facing: Facing }
+  >();
   const fadingOutIds = new Set<number>();
   const fadingInUnits = new Map<number, Unit>();
 
@@ -141,7 +150,10 @@ function extractAnimData(
         const fromPx = axialToPixel(origin.q, origin.r, HEX_SIZE);
         const toPx = axialToPixel(dest.q, dest.r, HEX_SIZE);
         if (fromPx.x !== toPx.x || fromPx.y !== toPx.y) {
-          slides.set(unit_id, { fromPx, toPx });
+          // Face the direction of travel for the whole slide (the settled
+          // post-beat state carries the same facing, so nothing snaps after).
+          const prior = preBeatUnitsById.get(unit_id)?.facing ?? DEFAULT_FACING;
+          slides.set(unit_id, { fromPx, toPx, facing: facingAfterStep(prior, origin, dest) });
         }
       }
     } else if (e.kind === "barrage_resolved") {
@@ -174,11 +186,12 @@ function extractAnimData(
 function interpolateAnim(data: AnimData, progress: number): ReplayAnimOverrides {
   const eased = easeInOutCubic(progress);
 
-  const slideOverrides = new Map<number, { x: number; y: number }>();
-  for (const [id, { fromPx, toPx }] of data.slides) {
+  const slideOverrides = new Map<number, { x: number; y: number; facing: Facing }>();
+  for (const [id, { fromPx, toPx, facing }] of data.slides) {
     slideOverrides.set(id, {
       x: fromPx.x + (toPx.x - fromPx.x) * eased,
       y: fromPx.y + (toPx.y - fromPx.y) * eased,
+      facing,
     });
   }
 
