@@ -1,6 +1,16 @@
 # Concept art
 
-## What this is
+## `ui-concept-a.png` — ratified UI chrome direction (2026-07-07)
+
+Concept for the **UI chrome** — panels, buttons, type, decoration — in the
+ratified "Field HQ" register (dark wood, brass fittings, parchment, canvas).
+The layout follows `docs/UI-SPEC.md`; the materials and component treatments
+are specified in [`../UI-STYLE.md`](../UI-STYLE.md). Like `concept1.png`, it
+directs *feel*, not pixels — and its warm/sepia cast over the **map** is
+explicitly not ratified (chrome only; the board keeps the naturalistic
+tileset). Prompt provenance: `art/foundry/ui/ui-concept-a.prompt.txt`.
+
+## What `concept1.png` is
 
 `concept1.png` is concept art for the **map, hex terrain art, and general
 look/feel** of the game. It captures the *feel* of the experience: the mood,

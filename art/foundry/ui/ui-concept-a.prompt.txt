@@ -1,0 +1,17 @@
+Concept art for the user interface of a turn-based hex wargame, full game screen, landscape 16:10.
+
+LAYOUT (must follow):
+- A thin opaque status bar across the very top (~5% of height): game title crest on the left, then "TURN 7 / 24", "PLANNING", "MUSTER 12/20 (+5)", "ORDERS 14/18", a small amber warning chip "3 IDLE", and an account button at the far right.
+- The center is dominated by a painterly hex-grid war map (match the reference image's terrain style: warm green plains, dark woods, winding river, small towns). Keep the map big and readable — the UI chrome must not squeeze it.
+- Docked panel on the left edge (~18% width): a unit roster list in aligned monospaced rows, e.g. "! INF (08,31) — 10/10", with tabs "UNITS / CONTROL" at its top.
+- Docked panel strip across the bottom (~18% height): on the left a framed unit portrait of a tank with stat readouts (HP pips, Move, Atk, Def); center a row of five large chunky order buttons labeled MOVE, BARRAGE, REST, HOLD, CLEAR with simple military icons; right a small square minimap and a large LOCK ORDERS button.
+
+MATERIAL LANGUAGE — "Field Headquarters map table", mid-20th-century:
+- Panels are dark-stained oak and walnut wood with visible grain, framed by polished brass edge trim and brass corner brackets fastened with slotted screws.
+- Panel faces have inset panels of worn olive canvas and saddle-leather, with stitched edges.
+- Buttons are chunky rectangular brass-and-bakelite pushbuttons with deep bevels that look physically depressible; one button (MOVE) shown pressed-in and lit.
+- Labels are engraved brass nameplates and cream stencil lettering; numbers on ivory instrument faces.
+- Small details: brass rivets, a leather strap, a folded field-map corner, subtle lamplight warmth from above.
+- Text: condensed sans-serif for labels, typewriter monospace for numbers. Warm off-white text, amber warning accents, saturated military blue vs brick red faction colors.
+
+Style: crisp painted game-UI concept art, coherent lighting, believable materials, no photograph, no watermark, all text legible and spelled exactly as given.
