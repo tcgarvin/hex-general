@@ -9,7 +9,6 @@ import { GameShell } from "@/routes/GameShell";
 import { Join } from "@/routes/Join";
 import { JoinForm } from "@/routes/JoinForm";
 import { Login } from "@/routes/Login";
-import { ReplayShell } from "@/routes/ReplayShell";
 import { Stats } from "@/routes/Stats";
 
 /**
@@ -17,6 +16,10 @@ import { Stats } from "@/routes/Stats";
  * and stats page, then the authenticated pages. The dispatcher / account / join
  * pages share the site header (ChromeLayout); the full-bleed game shell carries
  * its own header. Both headers host the same account menu (with the dev switcher).
+ *
+ * The game screen is a single route: replay is a `?turn=N` mode of the game
+ * shell (not a separate route), so the planning⇄replay cycle never remounts the
+ * board — see GameShell.
  */
 export function App() {
   return (
@@ -32,7 +35,6 @@ export function App() {
           <Route path="/join/:id" element={<Join />} />
         </Route>
         <Route path="/game/:id" element={<GameShell />} />
-        <Route path="/game/:id/replay/:turn" element={<ReplayShell />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

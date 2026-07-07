@@ -1,112 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
 
-import { Board } from "@/board/Board";
 import type { ReplayAnimOverrides, ReplayControlsProps } from "@/board/Board";
 import { axialToPixel, HEX_SIZE } from "@/board/hex";
-import { ErrorBanner, Loading } from "@/components/ui";
-import { GameProvider } from "@/game/GameProvider";
-import { useGame } from "@/game/useGame";
 import type { components } from "@/lib/api/schema";
 import type { GameState, GameView, ReplayEvent } from "@/lib/api/types";
-import { economyFor } from "@/planning/economy";
 import { DEFAULT_FACING, facingAfterStep } from "@/planning/facing";
-import { applyBeats } from "@/replay/applyBeats";
-import { buildReplayLog, nameLookup, type UnitRef } from "@/replay/replayLog";
-import { useBeats } from "@/replay/useBeats";
-import { usePlayback } from "@/replay/usePlayback";
-import { useReplay } from "@/replay/useReplay";
+
+import { applyBeats } from "./applyBeats";
+import { buildReplayLog, nameLookup, type UnitRef } from "./replayLog";
+import type { ReplayData } from "./useReplay";
+import { useBeats } from "./useBeats";
+import { usePlayback } from "./usePlayback";
 
 type Unit = components["schemas"]["Unit"];
-
-import { GameHeader } from "./GameHeader";
-
-export function ReplayShell() {
-  const { id, turn: turnStr } = useParams<{ id: string; turn: string }>();
-  if (id === undefined || turnStr === undefined) {
-    return <Navigate to="/" replace />;
-  }
-  const turn = parseInt(turnStr, 10);
-  if (isNaN(turn) || turn < 1) {
-    return <Navigate to="/" replace />;
-  }
-  return (
-    <GameProvider gameId={id}>
-      <ReplayView gameId={id} turn={turn} />
-    </GameProvider>
-  );
-}
-
-function ReplayView({ gameId, turn }: { gameId: string; turn: number }) {
-  const { view, refresh } = useGame();
-  const { data, loading, error } = useReplay(gameId, turn);
-
-  const economy = useMemo(
-    () =>
-      data
-        ? economyFor(data.replay.state_after, view.your_slot)
-        : economyFor(view.state, view.your_slot),
-    [data, view.state, view.your_slot],
-  );
-
-  if (loading) {
-    return (
-      <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
-        <GameHeader
-          turn={turn}
-          turnLimit={view.state.config.victory.turn_limit}
-          phase="Replay"
-          economy={economy}
-          tally={null}
-          warnings={0}
-          view={view}
-          onChanged={refresh}
-        />
-        <main className="flex flex-1 items-center justify-center">
-          <Loading label={`Loading replay for turn ${turn}…`} />
-        </main>
-      </div>
-    );
-  }
-
-  if (error !== null || data === null) {
-    return (
-      <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
-        <GameHeader
-          turn={turn}
-          turnLimit={view.state.config.victory.turn_limit}
-          phase="Replay"
-          economy={economy}
-          tally={null}
-          warnings={0}
-          view={view}
-          onChanged={refresh}
-        />
-        <main className="flex flex-1 flex-col items-center justify-center gap-4">
-          <ErrorBanner message={error ?? "Failed to load replay."} />
-          <Link
-            to={`/game/${gameId}`}
-            className="text-sm text-indigo-400 hover:underline"
-          >
-            ← Back to game
-          </Link>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <ReplayBoard
-      gameId={gameId}
-      turn={turn}
-      preTurnState={data.stateBefore}
-      postTurnState={data.replay.state_after}
-      events={data.replay.events}
-      view={view}
-      onRefresh={refresh}
-    />
-  );
-}
+type Facing = components["schemas"]["Facing"];
 
 // --- animation constants ---
 
@@ -115,8 +22,6 @@ const ANIM_DURATION_MS: Record<1 | 2, number> = { 1: 500, 2: 250 };
 
 const easeInOutCubic = (t: number): number =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-type Facing = components["schemas"]["Facing"];
 
 interface AnimData {
   /** World-pixel start and end for each sliding unit, plus the step's facing. */
@@ -208,35 +113,47 @@ function interpolateAnim(data: AnimData, progress: number): ReplayAnimOverrides 
   return { slideOverrides, fadingOut, fadingIn };
 }
 
-// --- main replay board ---
+// --- hook ---
 
-interface ReplayBoardProps {
-  gameId: string;
-  turn: number;
-  /** State at the start of this turn; null for turn 1 (no previous turn data). */
-  preTurnState: GameState | null;
-  postTurnState: GameState;
-  events: ReplayEvent[];
-  view: GameView;
-  onRefresh: () => void;
+/** The board-facing props a replay drives: the state to draw, the live
+ * animation overlay, the transport controls, and the event log. */
+export interface ReplayBoardBundle {
+  boardState: GameState;
+  replayAnim: ReplayAnimOverrides | undefined;
+  replayControls: ReplayControlsProps;
+  replayLog: { logBeats: ReturnType<typeof buildReplayLog>; onJumpToBeat: (i: number) => void };
 }
 
-function ReplayBoard({
-  gameId,
-  turn,
-  preTurnState,
-  postTurnState,
-  events,
-  view,
-  onRefresh,
-}: ReplayBoardProps) {
-  const navigate = useNavigate();
+/** Stable empty event list so the beat engine's memo/reset don't churn while
+ * planning (no replay data). */
+const NO_EVENTS: ReplayEvent[] = [];
+
+/**
+ * Drives a turn replay against the persistent board. Called unconditionally by
+ * the unified game surface so hook order stays stable across the planning⇄replay
+ * cycle; returns `null` while there is no replay data (planning mode), in which
+ * case the beat engine idles over an empty event list.
+ *
+ * `turn` is the reset key for the transport (see `usePlayback`); `onStartPlanning`
+ * is what the "Start planning" control invokes to leave replay mode.
+ */
+export function useReplayBoard(
+  replayData: ReplayData | null,
+  turn: number,
+  view: GameView,
+  onStartPlanning: () => void,
+): ReplayBoardBundle | null {
+  const events = replayData?.replay.events ?? NO_EVENTS;
+  // State at the start of this turn; null for turn 1 (no previous turn data).
+  const preTurnState = replayData?.stateBefore ?? null;
+  const postTurnState = replayData?.replay.state_after ?? null;
 
   const { beats, currentBeat, advance, rewind, jumpTo } = useBeats(events);
   const { playing, speed, play, pause, toggleSpeed } = usePlayback({
     advance,
     currentBeat,
     beatCount: beats.length,
+    turn,
   });
 
   // --- per-beat state and animation ---
@@ -335,7 +252,8 @@ function ReplayBoard({
   }, [currentBeat, beats, preTurnState, cancelAnim]);
 
   // Board state: pre-beat state while animating, settled post-beat state otherwise.
-  const boardState = useMemo((): GameState => {
+  const boardState = useMemo((): GameState | null => {
+    if (postTurnState === null) return null;
     if (preTurnState === null) return postTurnState;
     return applyBeats(preTurnState, beats, displayBeat);
   }, [preTurnState, postTurnState, beats, displayBeat]);
@@ -356,21 +274,16 @@ function ReplayBoard({
     onForward: advance,
     onSkip: () => jumpTo(beats.length - 1),
     onToggleSpeed: toggleSpeed,
-    onStartPlanning: () => void navigate(`/game/${gameId}`),
+    onStartPlanning,
     gameOver,
   };
-
-  const economy = useMemo(
-    () => economyFor(postTurnState, view.your_slot),
-    [postTurnState, view.your_slot],
-  );
 
   // Event-log model (UI-SPEC §13.3): name units by id from the union of the pre-
   // and post-turn states (post wins, so it covers units recruited this turn).
   const logBeats = useMemo(() => {
     const unitsById = new Map<number, UnitRef>();
     for (const u of preTurnState?.units ?? []) unitsById.set(u.id, { owner: u.owner, type: u.type });
-    for (const u of postTurnState.units ?? []) unitsById.set(u.id, { owner: u.owner, type: u.type });
+    for (const u of postTurnState?.units ?? []) unitsById.set(u.id, { owner: u.owner, type: u.type });
     return buildReplayLog(beats, nameLookup(unitsById));
   }, [beats, preTurnState, postTurnState]);
 
@@ -382,29 +295,7 @@ function ReplayBoard({
     [pause, jumpTo],
   );
 
-  return (
-    <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
-      <GameHeader
-        turn={turn}
-        turnLimit={postTurnState.config.victory.turn_limit}
-        phase="Replay"
-        economy={economy}
-        tally={null}
-        warnings={0}
-        view={view}
-        onChanged={onRefresh}
-      />
-      <main className="relative flex-1 overflow-hidden">
-        <div className="absolute inset-0">
-          <Board
-            state={boardState}
-            yourSlot={view.your_slot}
-            replayControls={replayControls}
-            replayAnim={replayAnim}
-            replayLog={{ logBeats, onJumpToBeat }}
-          />
-        </div>
-      </main>
-    </div>
-  );
+  if (replayData === null || boardState === null) return null;
+
+  return { boardState, replayAnim, replayControls, replayLog: { logBeats, onJumpToBeat } };
 }

@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router";
+import { useCallback, useMemo, useEffect, useRef, useState } from "react";
+import { Navigate, useParams, useSearchParams } from "react-router";
 
 import { Board } from "@/board/Board";
 import { Button } from "@/components/ui";
@@ -11,6 +11,8 @@ import { type GameView } from "@/lib/api/types";
 import { economyFor } from "@/planning/economy";
 import { usePlanning } from "@/planning/usePlanning";
 import { orderTally, planAdvisory } from "@/planning/warnings";
+import { useReplay } from "@/replay/useReplay";
+import { useReplayBoard } from "@/replay/useReplayBoard";
 
 import { GameHeader, type Phase } from "./GameHeader";
 
@@ -42,10 +44,19 @@ function phaseOf(view: GameView): Phase {
 
 function Dashboard() {
   const { view, refresh } = useGame();
-  const navigate = useNavigate();
 
-  // Auto-navigate to the replay route when the poll detects a turn advance.
-  // prevTurnRef starts null so the first-load case never triggers navigation.
+  // Replay is a *mode* of this one surface, not a separate route: the `?turn=N`
+  // search param selects it (null ⇒ planning). Keeping it in the URL makes the
+  // state back/refresh-friendly and gives the "Watch last replay" menu link a
+  // target — all without unmounting the board (and its Pixi canvas) beneath it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const turnParam = searchParams.get("turn");
+  const parsedTurn = turnParam !== null ? parseInt(turnParam, 10) : NaN;
+  const replayTurn = Number.isNaN(parsedTurn) || parsedTurn < 1 ? null : parsedTurn;
+  const inReplay = replayTurn !== null;
+
+  // Enter replay in place when the poll detects a turn advance (set the param
+  // instead of navigating). prevTurnRef starts null so first load never fires.
   //
   // Safe against dropping a mid-planning player's staged orders: a turn only
   // advances after the engine resolves, which the server does only once *every*
@@ -54,14 +65,42 @@ function Dashboard() {
   // the planning surface is read-only — and there are no unlocked staged orders
   // to lose. This relies on "turn advances ⇒ you locked"; a future async turn
   // timer that auto-resolves un-locked players (SPEC §17, out of scope for v0.1)
-  // would break that and must guard this navigation on the locked state.
+  // would break that and must guard this transition on the locked state.
   const prevTurnRef = useRef<number | null>(null);
   useEffect(() => {
-    if (prevTurnRef.current !== null && view.turn > prevTurnRef.current) {
-      void navigate(`/game/${view.game_id}/replay/${prevTurnRef.current}`);
+    if (
+      prevTurnRef.current !== null &&
+      view.turn > prevTurnRef.current &&
+      !inReplay // don't yank a manually-opened replay
+    ) {
+      const completed = prevTurnRef.current;
+      setSearchParams(
+        (prev) => {
+          prev.set("turn", String(completed));
+          return prev;
+        },
+        { replace: true },
+      );
     }
     prevTurnRef.current = view.turn;
-  }, [view.turn, view.game_id, navigate]);
+  }, [view.turn, inReplay, setSearchParams]);
+
+  const startPlanning = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        prev.delete("turn");
+        return prev;
+      },
+      { replace: true },
+    );
+    refresh();
+  }, [setSearchParams, refresh]);
+
+  // Replay data + board bundle. Both hooks run unconditionally (stable hook
+  // order); they idle when `replayTurn` is null. `replayBundle` is null while
+  // planning or while the replay is still loading.
+  const { data: replayData } = useReplay(view.game_id, replayTurn);
+  const replayBundle = useReplayBoard(replayData, replayTurn ?? -1, view, startPlanning);
 
   const planning = usePlanning(view.state, view.your_slot, view.turn);
   // The planning surface (roster + bottom dock) is shown for the whole of your
@@ -86,9 +125,15 @@ function Dashboard() {
         }
       : undefined;
 
+  // In replay the header reflects the replayed turn's *end* economy (its
+  // state_after) — not the live planning state, which may be a later turn when a
+  // past replay is opened from the menu. Falls back to the live state until the
+  // replay loads.
+  const economySource =
+    inReplay && replayData !== null ? replayData.replay.state_after : view.state;
   const economy = useMemo(
-    () => economyFor(view.state, view.your_slot),
-    [view.state, view.your_slot],
+    () => economyFor(economySource, view.your_slot),
+    [economySource, view.your_slot],
   );
   const ownUnits = useMemo(
     () => (view.state.units ?? []).filter((u) => u.owner === view.your_slot),
@@ -132,12 +177,12 @@ function Dashboard() {
   return (
     <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
       <GameHeader
-        turn={view.turn}
+        turn={inReplay ? replayTurn : view.turn}
         turnLimit={view.state.config.victory.turn_limit}
-        phase={phaseOf(view)}
+        phase={inReplay ? "Replay" : phaseOf(view)}
         economy={economy}
-        tally={active ? tally : null}
-        warnings={advisory?.count ?? 0}
+        tally={inReplay ? null : active ? tally : null}
+        warnings={inReplay ? 0 : (advisory?.count ?? 0)}
         view={view}
         onChanged={refresh}
       />
@@ -146,8 +191,21 @@ function Dashboard() {
         {view.status === "lobby" ? (
           <Lobby view={view} />
         ) : (
-          <>
-            <div className="absolute inset-0">
+          // One persistent Board across the whole planning⇄replay cycle: the
+          // element stays at this position so its Pixi canvas, textures and
+          // camera never tear down — only these props swap between modes. While
+          // a replay is still loading (`inReplay` but no bundle yet) the board
+          // holds the live state rather than blanking.
+          <div className="absolute inset-0">
+            {inReplay ? (
+              <Board
+                state={replayBundle?.boardState ?? view.state}
+                yourSlot={view.your_slot}
+                replayControls={replayBundle?.replayControls}
+                replayAnim={replayBundle?.replayAnim}
+                replayLog={replayBundle?.replayLog}
+              />
+            ) : (
               <Board
                 state={view.state}
                 yourSlot={view.your_slot}
@@ -170,8 +228,8 @@ function Dashboard() {
                 }
                 gameOver={gameOver}
               />
-            </div>
-          </>
+            )}
+          </div>
         )}
       </main>
     </div>

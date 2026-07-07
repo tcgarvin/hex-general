@@ -10,24 +10,45 @@ export interface ReplayData {
   stateBefore: GameState | null;
 }
 
-export function useReplay(gameId: string, turn: number) {
+/**
+ * Fetches a turn's replay (and the previous turn's end state). `turn` is
+ * `number | null` because the unified game surface calls this unconditionally to
+ * keep hook order stable: `null` means "not in replay mode" — no fetch, and the
+ * data is cleared so a stale replay never leaks into the next one.
+ */
+export function useReplay(gameId: string, turn: number | null) {
   const [data, setData] = useState<ReplayData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(turn !== null);
   const [error, setError] = useState<string | null>(null);
 
+  // Clear the previous turn's result synchronously the moment `turn` changes, so
+  // a stale replay never flashes while the next one loads (or after leaving
+  // replay mode). React docs' "adjusting state when a prop changes" pattern; the
+  // effect below owns only the async fetch.
+  const [prevTurn, setPrevTurn] = useState(turn);
+  if (prevTurn !== turn) {
+    setPrevTurn(turn);
+    setData(null);
+    setError(null);
+    setLoading(turn !== null);
+  }
+
   useEffect(() => {
+    if (turn === null) return;
+
     let cancelled = false;
+    const requestedTurn = turn;
 
     async function fetch() {
       const replayRequest = api.GET("/games/{game_id}/turns/{turn}", {
-        params: { path: { game_id: gameId, turn } },
+        params: { path: { game_id: gameId, turn: requestedTurn } },
       });
       // State at the start of the turn is the previous turn's state_after; turn 1
       // has no predecessor. Fetch both concurrently to avoid a serial round-trip.
       const prevRequest =
-        turn > 1
+        requestedTurn > 1
           ? api.GET("/games/{game_id}/turns/{turn}", {
-              params: { path: { game_id: gameId, turn: turn - 1 } },
+              params: { path: { game_id: gameId, turn: requestedTurn - 1 } },
             })
           : null;
 

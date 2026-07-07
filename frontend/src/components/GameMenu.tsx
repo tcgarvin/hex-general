@@ -54,7 +54,7 @@ export function GameMenu({
 
             {lastResolvedTurn >= 1 && (
               <Link
-                to={`/game/${view.game_id}/replay/${lastResolvedTurn}`}
+                to={`/game/${view.game_id}?turn=${lastResolvedTurn}`}
                 onClick={() => setOpen(false)}
                 className="self-start text-xs font-medium text-indigo-400 hover:text-indigo-300"
               >
