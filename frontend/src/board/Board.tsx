@@ -46,6 +46,8 @@ import {
   TERRAIN_FILL,
 } from "./palette";
 import { GameOverPanel, type GameOutcome } from "./panels/GameOverPanel";
+import type { InspectedSettlement } from "./panels/inspector";
+import { InspectorPanel } from "./panels/InspectorPanel";
 import { LockPanel } from "./panels/LockPanel";
 import { RecruitPanel } from "./panels/RecruitPanel";
 import {
@@ -478,6 +480,10 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
 
   // --- planning overlays (only when a controller is supplied) ---
   const [hoverKey, setHoverKey] = useState<string | null>(null);
+  // The hovered hex for the top-right inspector (UI-SPEC §7). Tracked separately
+  // from `hoverKey`, which the route preview gates off outside editable move
+  // mode — the inspector stays live in every planning state, locked included.
+  const [inspectKey, setInspectKey] = useState<string | null>(null);
   // AI-generated terrain tile textures; null until loaded (flat colours until then).
   // Each terrain holds one or more interchangeable variants (see `tiles.ts`).
   const [terrainTex, setTerrainTex] = useState<LoadedTiles | null>(null);
@@ -732,6 +738,15 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [showPanels, layout],
   );
 
+  /** Whether a canvas point is over the top-right hex inspector (planning only —
+   *  the rect is empty in replay). It floats over the map's corner, so pointer
+   *  input there must not pan, hover, or click the hexes beneath it. */
+  const overInspector = useCallback(
+    (sx: number, sy: number): boolean =>
+      showPanels && layout !== null && pointInRect(sx, sy, layout.inspector),
+    [showPanels, layout],
+  );
+
   /** Whether a canvas point is over the bottom dock (controls/lock or replay log). */
   const overBottom = useCallback(
     (sx: number, sy: number): boolean =>
@@ -784,6 +799,13 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         rosterPressRef.current = false;
         return;
       }
+      if (overInspector(sx, sy)) {
+        // Press over the inspector: inert (it has no buttons), but it must not
+        // fall through to a pan of the map beneath it.
+        rosterPressRef.current = false;
+        bottomPressRef.current = false;
+        return;
+      }
       rosterPressRef.current = false;
       bottomPressRef.current = false;
       cancelGlide(); // a manual grab takes over from any in-flight reveal
@@ -796,7 +818,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         moved: false,
       };
     },
-    [view, localPoint, overRoster, overBottom, cancelGlide],
+    [view, localPoint, overRoster, overBottom, overInspector, cancelGlide],
   );
 
   const onPointerMove = useCallback(
@@ -817,27 +839,35 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         const idx = rosterRowAt(sy - layout.roster.y, rows.length);
         setRosterHover((prev) => (prev === idx ? prev : idx));
         setHoverKey(null);
+        setInspectKey(null);
         return;
       }
       setRosterHover((prev) => (prev === null ? prev : null));
-      // Over the bottom dock: no map preview (and no roster row highlight).
-      if (overBottom(sx, sy)) {
+      // Over the bottom dock or the inspector itself: no map hover of any kind.
+      if (overBottom(sx, sy) || overInspector(sx, sy)) {
         setHoverKey((prev) => (prev === null ? prev : null));
+        setInspectKey((prev) => (prev === null ? prev : null));
         return;
       }
-      // Over the map: track the hovered hex while planning is interactive. With
-      // a unit selected (move mode only — not while aiming a barrage) it feeds
-      // the route preview; with nothing selected it lets hovering a unit reveal
-      // that unit's pulse badges. Locked plans track nothing.
-      if (planning === undefined || locked || view === null) return;
-      if (selectedUnitId !== null && mode !== "move") return;
+      if (planning === undefined || view === null) return;
       const world = screenToWorld(e.clientX, e.clientY, view);
       const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
       const key = hexKey(ax.q, ax.r);
-      const next = hexByKey.has(key) ? key : null;
+      const onMap = hexByKey.has(key);
+      // Inspector hover (UI-SPEC §7): tracked in every planning state — the
+      // locked, read-only board still describes the hex under the cursor.
+      const nextInspect = onMap ? key : null;
+      setInspectKey((prev) => (prev === nextInspect ? prev : nextInspect));
+      // Route-preview hover: only while planning is interactive. With a unit
+      // selected (move mode only — not while aiming a barrage) it feeds the
+      // route preview; with nothing selected it lets hovering a unit reveal
+      // that unit's pulse badges. Locked plans track nothing.
+      if (locked) return;
+      if (selectedUnitId !== null && mode !== "move") return;
+      const next = onMap ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, locked, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, layout, rows.length, clampView],
+    [planning, locked, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, overInspector, layout, rows.length, clampView],
   );
 
   const onPointerUp = useCallback(
@@ -972,6 +1002,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     rosterPressRef.current = false;
     bottomPressRef.current = false;
     setHoverKey(null);
+    setInspectKey(null);
     setRosterHover(null);
   }, []);
 
@@ -989,7 +1020,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         setLogScroll((s) => Math.max(0, Math.min(limit, s + e.deltaY)));
         return;
       }
-      if (overRoster(sx, sy) || overBottom(sx, sy)) return; // panels don't zoom the map
+      if (overRoster(sx, sy) || overBottom(sx, sy) || overInspector(sx, sy)) return; // panels don't zoom the map
       cancelGlide(); // a manual zoom takes over from any in-flight reveal
       setView((v) => {
         if (v === null) return v;
@@ -1001,7 +1032,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         return clampView({ zoom, x: sx - worldX * zoom, y: sy - worldY * zoom });
       });
     },
-    [localPoint, overRoster, overBottom, cancelGlide, clampView, replayLog, logMeasure, layout],
+    [localPoint, overRoster, overBottom, overInspector, cancelGlide, clampView, replayLog, logMeasure, layout],
   );
 
   // --- draw callbacks ---
@@ -1335,6 +1366,33 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     selectedUnitId === null ? undefined : planning?.stagedByUnit[selectedUnitId];
   const selectedOrderLabel = orderLabelOf(selectedStaged, enemyHexKeys);
 
+  // The hex the top-right inspector describes (UI-SPEC §7): the hovered hex,
+  // falling back to the selected recruit city's, then the selected unit's;
+  // null renders the hover hint instead.
+  const inspectHex = useMemo<Hex | null>(() => {
+    if (planning === undefined) return null;
+    if (inspectKey !== null) return hexByKey.get(inspectKey) ?? null;
+    if (selectedCity !== null) {
+      return hexByKey.get(hexKey(selectedCity.q, selectedCity.r)) ?? null;
+    }
+    if (selectedUnit !== null) {
+      return hexByKey.get(hexKey(selectedUnit.coord.q, selectedUnit.coord.r)) ?? null;
+    }
+    return null;
+  }, [planning, inspectKey, selectedCity, selectedUnit, hexByKey]);
+  const inspectSettlement = useMemo<InspectedSettlement | null>(() => {
+    if (inspectHex === null) return null;
+    const key = hexKey(inspectHex.coord.q, inspectHex.coord.r);
+    if (!settlementOwner.has(key)) return null;
+    return { owner: settlementOwner.get(key) ?? null };
+  }, [inspectHex, settlementOwner]);
+  // `units` is already fog-filtered server-side, so any occupant found here is
+  // visible to the viewer (UI-SPEC §9: known-unit info only within vision).
+  const inspectUnit = useMemo<Unit | null>(() => {
+    if (inspectHex === null) return null;
+    return units.find((u) => axialEqual(u.coord, inspectHex.coord)) ?? null;
+  }, [inspectHex, units]);
+
   // Zoom LOD (unitHud.ts): below the threshold the per-unit HUD (health bar,
   // order badge, reserved status slot) hides and units collapse to sprites.
   const hudVisible = view !== null && hudVisibleAtZoom(view.zoom);
@@ -1428,6 +1486,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           {showPanels && layout !== null && (
             <>
               <RosterPanel rect={layout.roster} rows={rows} hoverIndex={rosterHover} />
+              {planning !== undefined && (
+                <InspectorPanel
+                  rect={layout.inspector}
+                  hex={inspectHex}
+                  settlement={inspectSettlement}
+                  unit={inspectUnit}
+                />
+              )}
               {replayControls !== undefined ? (
                 <ReplayControlPanel rect={layout.selectedUnit} {...replayControls} />
               ) : selectedCity !== null && planning !== undefined ? (

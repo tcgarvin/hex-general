@@ -25,6 +25,11 @@ export const LOCK_WIDTH = 176;
  *  the event log fills the rest of the strip to its right (UI-SPEC §13.3). */
 export const REPLAY_CONTROLS_WIDTH = 560;
 
+/** Size of the top-right terrain / hex inspector (UI-SPEC §7). Sized for its
+ *  tallest content: a city's economy block plus road, control, and unit lines. */
+export const INSPECTOR_WIDTH = 208;
+export const INSPECTOR_HEIGHT = 148;
+
 export interface SurfaceLayout {
   /** Rectangle the map pans/zooms within (everything not covered by a panel). */
   map: Rect;
@@ -37,6 +42,10 @@ export interface SurfaceLayout {
   lock: Rect;
   /** Bottom-right event-log panel during replay (UI-SPEC §13.3). Empty otherwise. */
   replayLog: Rect;
+  /** Top-right terrain / hex inspector (UI-SPEC §7), planning only. Unlike the
+   *  docked panels it floats over the map's corner (the map rect is unchanged),
+   *  so pointer input over it must be treated as panel, not map. */
+  inspector: Rect;
 }
 
 /** An empty rectangle, used when a panel is hidden (e.g. outside planning). */
@@ -70,6 +79,12 @@ export function surfaceLayout(width: number, height: number): SurfaceLayout {
       height: bottomHeight,
     },
     replayLog: EMPTY_RECT,
+    inspector: {
+      x: Math.max(rosterWidth, width - INSPECTOR_WIDTH),
+      y: 0,
+      width: Math.min(INSPECTOR_WIDTH, Math.max(0, width - rosterWidth)),
+      height: Math.min(INSPECTOR_HEIGHT, Math.max(0, bottomY)),
+    },
     map: {
       x: rosterWidth,
       y: 0,
@@ -87,6 +102,7 @@ export function fullMapLayout(width: number, height: number): SurfaceLayout {
     selectedUnit: EMPTY_RECT,
     lock: EMPTY_RECT,
     replayLog: EMPTY_RECT,
+    inspector: EMPTY_RECT,
   };
 }
 
@@ -105,6 +121,7 @@ export function replayLayout(width: number, height: number): SurfaceLayout {
     roster: { x: 0, y: 0, width: rosterWidth, height: bottomY },
     selectedUnit: { x: 0, y: bottomY, width: controlsWidth, height: bottomHeight },
     lock: EMPTY_RECT,
+    inspector: EMPTY_RECT,
     replayLog: {
       x: controlsWidth,
       y: bottomY,
