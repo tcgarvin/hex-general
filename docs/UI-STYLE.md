@@ -69,9 +69,9 @@ React header and auth screens use the same families.
 
 | Role | Use | Ratified pick |
 | --- | --- | --- |
-| Display | panel titles, LOCK ORDERS, banners, brand | *pending specimen review* (candidates: Staatliches, Allerta Stencil, Special Elite) |
-| Label (condensed sans) | buttons, tabs, header status chips | *pending* (Barlow Semi Condensed, Oswald, Archivo Narrow) |
-| Data (monospace) | roster rows, coords, HP, stats, event log | *pending* (IBM Plex Mono, JetBrains Mono, Space Mono) |
+| Display | panel titles, LOCK ORDERS, banners, brand | **Allerta Stencil** (ratified 2026-07-07) |
+| Label (condensed sans) | buttons, tabs, header status chips | **Archivo Narrow** (ratified 2026-07-07) |
+| Data (monospace) | roster rows, coords, HP, stats, event log | *pending* — typewriter register requested; Courier Prime recommended (true fixed-advance; Special Elite disqualified — not monospace, columns drift) |
 
 Conventions regardless of pick: labels are UPPERCASE with slight
 letter-spacing; data columns use tabular figures; no font renders below ~11px
@@ -79,17 +79,22 @@ in the Pixi panels.
 
 ## 4. Component treatments
 
-- **Panels** — 9-slice wood frame with brass corner brackets baked in;
-  parchment or canvas face fill (tileable texture, low contrast). Panel titles
-  sit on an engraved brass nameplate strip.
+- **Panels** — 9-slice wood frame with brass **L-shaped corner brackets**
+  (round-1 candidate 1 construction, ratified 2026-07-07); parchment or canvas
+  face fill (tileable texture, low contrast). Panel titles sit on an engraved
+  brass nameplate strip.
 - **Tabs** — folder tabs; active = parchment face + ink text, inactive = dark
   canvas + ivory text (concept's UNITS/CONTROL treatment).
-- **Buttons** — chunky brass/bakelite, five states: up · hover (faint warm rim
-  glow) · pressed (face sinks ~2px, bevel inverts, label shifts down) ·
-  disabled (desaturated) · active-lit (pressed + amber lamp, marks the current
-  order mode). Three sizes: order button (icon over label), square icon
-  button, and the wide **LOCK ORDERS** commit button with a brass safety-guard
-  flavor and LOCKED / FIX ORDERS states.
+- **Buttons** — **squared, clunky, machine-press**: flat brushed-brass faces
+  with crisp machined chamfers on screwed dark-wood backplates — explicitly
+  *not* rounded ergonomic keycaps (user direction, 2026-07-07). Icon engraved
+  on the brass face; stencil label engraved on/next to the backplate. Five
+  states: up · hover (warm rim glow) · pressed (face sinks ~2px, chamfer
+  inverts, shadow collapses) · disabled (desaturated) · active-lit (pressed +
+  amber lamp, marks the current order mode). Three sizes: order button, square
+  icon button, and the wide **LOCK ORDERS** commit button (engraved stencil
+  lettering, brass safety-guard flavor) with LOCKED / FIX ORDERS states.
+  Final construction pick pending (round-2 candidates under review).
 - **Icons** — single-color tintable glyph sheet (orders, NATO-flavored unit
   types, status, replay transport, economy) — dark ink on parchment, ivory on
   dark faces, amber/red for warnings.
