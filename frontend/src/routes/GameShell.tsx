@@ -99,8 +99,26 @@ function Dashboard() {
   // Replay data + board bundle. Both hooks run unconditionally (stable hook
   // order); they idle when `replayTurn` is null. `replayBundle` is null while
   // planning or while the replay is still loading.
-  const { data: replayData } = useReplay(view.game_id, replayTurn);
+  const { data: replayData, error: replayError } = useReplay(view.game_id, replayTurn);
   const replayBundle = useReplayBoard(replayData, replayTurn ?? -1, view, startPlanning);
+
+  // If a replay can't load, don't strand the user in the chrome-less load-hold —
+  // drop back to planning for the (already-advanced) live turn.
+  useEffect(() => {
+    if (replayTurn !== null && replayError !== null) {
+      startPlanning();
+    }
+  }, [replayTurn, replayError, startPlanning]);
+
+  // The board only *presents* replay once its bundle has loaded. During the brief
+  // fetch after a turn advances, `inReplay` is already true but the bundle is
+  // null: showing the replay branch then would drop the whole dock (Board draws
+  // no panels when both `planning` and `replayControls` are undefined), so the
+  // roster/dock would vanish and pop back a beat later. Instead we hold the
+  // (read-only) planning chrome until the replay is ready, then swap in one step.
+  // (A non-null bundle only ever exists in replay mode, so it doubles as the
+  // "replay ready" flag and narrows `replayBundle` for the render branch.)
+  const replayLoading = inReplay && replayBundle === null;
 
   const planning = usePlanning(view.state, view.your_slot, view.turn);
   // The planning surface (roster + bottom dock) is shown for the whole of your
@@ -193,17 +211,18 @@ function Dashboard() {
         ) : (
           // One persistent Board across the whole planning⇄replay cycle: the
           // element stays at this position so its Pixi canvas, textures and
-          // camera never tear down — only these props swap between modes. While
-          // a replay is still loading (`inReplay` but no bundle yet) the board
-          // holds the live state rather than blanking.
+          // camera never tear down — only these props swap between modes. We
+          // swap to the replay branch only once the bundle is ready (non-null);
+          // during the load-hold we keep the planning chrome (forced read-only)
+          // so the dock never blanks between modes.
           <div className="absolute inset-0">
-            {inReplay ? (
+            {replayBundle !== null ? (
               <Board
-                state={replayBundle?.boardState ?? view.state}
+                state={replayBundle.boardState}
                 yourSlot={view.your_slot}
-                replayControls={replayBundle?.replayControls}
-                replayAnim={replayBundle?.replayAnim}
-                replayLog={replayBundle?.replayLog}
+                replayControls={replayBundle.replayControls}
+                replayAnim={replayBundle.replayAnim}
+                replayLog={replayBundle.replayLog}
               />
             ) : (
               <Board
@@ -211,10 +230,12 @@ function Dashboard() {
                 yourSlot={view.your_slot}
                 visible={view.visible}
                 planning={active ? planning : undefined}
-                locked={locked}
+                // While a just-resolved turn's replay is still loading, hold the
+                // panels but read-only (the turn is over — no editing, no lock).
+                locked={locked || replayLoading}
                 advisory={advisory ?? undefined}
                 lock={
-                  active
+                  active && !replayLoading
                     ? {
                         ordered: tally.ordered,
                         total: tally.total,
