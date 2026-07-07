@@ -71,7 +71,7 @@ React header and auth screens use the same families.
 | --- | --- | --- |
 | Display | panel titles, LOCK ORDERS, banners, brand | **Allerta Stencil** (ratified 2026-07-07) |
 | Label (condensed sans) | buttons, tabs, header status chips | **Archivo Narrow** (ratified 2026-07-07) |
-| Data (monospace) | roster rows, coords, HP, stats, event log | *pending* — typewriter register requested; Courier Prime recommended (true fixed-advance; Special Elite disqualified — not monospace, columns drift) |
+| Data (typewriter) | roster rows, coords, HP, stats, event log | **Special Elite** (ratified 2026-07-07). **Not fixed-advance** — accepted deliberately. Consequence: data columns must be aligned by *layout* (each column its own Text at a fixed x), never by space-padding one string. |
 
 Conventions regardless of pick: labels are UPPERCASE with slight
 letter-spacing; data columns use tabular figures; no font renders below ~11px
@@ -94,7 +94,9 @@ in the Pixi panels.
   amber lamp, marks the current order mode). Three sizes: order button, square
   icon button, and the wide **LOCK ORDERS** commit button (engraved stencil
   lettering, brass safety-guard flavor) with LOCKED / FIX ORDERS states.
-  Final construction pick pending (round-2 candidates under review).
+  Ratified construction (2026-07-07, round-2 candidate 2): **octagonal
+  machined chamfer on the brass face, label engraved into the wood backplate
+  directly beneath the face** — icon + label are one physical unit.
 - **Icons** — single-color tintable glyph sheet (orders, NATO-flavored unit
   types, status, replay transport, economy) — dark ink on parchment, ivory on
   dark faces, amber/red for warnings.
