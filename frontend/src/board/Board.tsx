@@ -63,10 +63,10 @@ import { ReplayLogPanel } from "./panels/ReplayLogPanel";
 import { beatIndexAtY, maxScroll, measureReplayLog } from "./panels/replayLogLayout";
 import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
-import { SelectedUnitPanel } from "./panels/SelectedUnitPanel";
+import { SelectedUnitPanel, type PortraitTile } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
-import { roadTileRefs } from "./roadTiles";
+import { roadTileRefs, type RoadTileRef } from "./roadTiles";
 import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
 import {
   drawPipBar,
@@ -523,6 +523,15 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   // preview rather than a wrong one.
   const previewPath =
     hoverKey !== null ? (continuations?.get(hoverKey) ?? null) : null;
+
+  // The selected unit's own hex tile, for the dock portrait's terrain backdrop
+  // (null until tiles load — the portrait keeps its plain backdrop).
+  const selectedUnitTile = useMemo<PortraitTile | null>(() => {
+    if (selectedUnit === null || terrainTex === null) return null;
+    const h = hexByKey.get(hexKey(selectedUnit.coord.q, selectedUnit.coord.r));
+    if (h === undefined) return null;
+    return hexTileRef(h, terrainTex, riverCourse, roadTiles);
+  }, [selectedUnit, terrainTex, hexByKey, riverCourse, roadTiles]);
 
   // Load the terrain tile textures once; the board renders flat colours until they
   // arrive. A load failure leaves `terrainTex` null (flat-colour fallback) and is
@@ -1352,61 +1361,10 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             {terrainTex !== null &&
               hexes.map((h) => {
                 const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
-                // River/bridge tiles are chosen by edge mask (so the water/deck
-                // connects across shared edges) and may be L↔R mirrored; an
-                // oriented shape with several variants picks one by coord hash
-                // like the cosmetic terrains. Tiles span two generations (64px
-                // legacy, 128px painterly), so scale by the texture's own size
-                // to land at HEX_SIZE*2 world px. Shapes not yet handled fall
-                // back to the generic "00" tile.
-                if (h.terrain === "river" || h.terrain === "bridge") {
-                  const oriented = orientedRiverTile(
-                    riverCourse.get(hexKey(h.coord.q, h.coord.r)) ?? [],
-                  );
-                  const name = oriented ? `${h.terrain}/${oriented.name}` : `${h.terrain}/00`;
-                  const variants =
-                    terrainTex.byOriented[name] ?? terrainTex.byOriented[`${h.terrain}/00`];
-                  const tex = variants[variantIndex(h.coord.q, h.coord.r, variants.length)];
-                  const s = (HEX_SIZE * 2) / tex.width;
-                  return (
-                    <pixiSprite
-                      key={hexKey(h.coord.q, h.coord.r)}
-                      texture={tex}
-                      x={x}
-                      y={y}
-                      anchor={0.5}
-                      scale={{ x: oriented?.mirror ? -s : s, y: s }}
-                    />
-                  );
-                }
-                // Road hexes with baked road-on-terrain art (T5) render it in
-                // place of the base terrain tile, mirrored like river tiles; a
-                // missing texture (settlements, forks, unbaked terrains) falls
-                // through to the base tile + the vector road overlay.
-                const roadRef = h.road
-                  ? roadTiles.get(hexKey(h.coord.q, h.coord.r))
-                  : undefined;
-                const roadVariants =
-                  roadRef === undefined
-                    ? undefined
-                    : terrainTex.byOriented[roadRef.lookup];
-                if (roadRef !== undefined && roadVariants !== undefined) {
-                  const tex =
-                    roadVariants[variantIndex(h.coord.q, h.coord.r, roadVariants.length)];
-                  const s = (HEX_SIZE * 2) / tex.width;
-                  return (
-                    <pixiSprite
-                      key={hexKey(h.coord.q, h.coord.r)}
-                      texture={tex}
-                      x={x}
-                      y={y}
-                      anchor={0.5}
-                      scale={{ x: roadRef.mirror ? -s : s, y: s }}
-                    />
-                  );
-                }
-                const variants = terrainTex.byTerrain[h.terrain];
-                const tex = variants[variantIndex(h.coord.q, h.coord.r, variants.length)];
+                // Tiles span two generations (64px legacy, 128px painterly), so
+                // scale by the texture's own size to land at HEX_SIZE*2 world px.
+                const { tex, mirror } = hexTileRef(h, terrainTex, riverCourse, roadTiles);
+                const s = (HEX_SIZE * 2) / tex.width;
                 return (
                   <pixiSprite
                     key={hexKey(h.coord.q, h.coord.r)}
@@ -1414,8 +1372,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                     x={x}
                     y={y}
                     anchor={0.5}
-                    width={HEX_SIZE * 2}
-                    height={HEX_SIZE * 2}
+                    scale={{ x: mirror ? -s : s, y: s }}
                   />
                 );
               })}
@@ -1488,6 +1445,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 <SelectedUnitPanel
                   rect={layout.selectedUnit}
                   unit={planning?.selectedUnit ?? null}
+                  tex={unitTex}
+                  tile={selectedUnitTile}
                   staged={selectedStaged}
                   mode={mode}
                   orderLabel={selectedOrderLabel}
@@ -1538,6 +1497,45 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       )}
     </div>
   );
+}
+
+/**
+ * The texture + mirror the board draws for a hex, in branch priority order:
+ * river/bridge oriented art (chosen by edge mask so the water/deck connects
+ * across shared edges, possibly L↔R mirrored, unhandled shapes falling back to
+ * the generic "00" tile), baked road-on-terrain art (T5 — a missing texture
+ * falls through to the base tile + vector road overlay), then the coord-hashed
+ * cosmetic variant of the base terrain. Shared by the map render loop and the
+ * dock portrait so the portrait backdrop always matches the board.
+ */
+function hexTileRef(
+  h: Hex,
+  terrainTex: LoadedTiles,
+  riverCourse: Map<string, number[]>,
+  roadTiles: Map<string, RoadTileRef>,
+): PortraitTile {
+  if (h.terrain === "river" || h.terrain === "bridge") {
+    const oriented = orientedRiverTile(
+      riverCourse.get(hexKey(h.coord.q, h.coord.r)) ?? [],
+    );
+    const name = oriented ? `${h.terrain}/${oriented.name}` : `${h.terrain}/00`;
+    const variants =
+      terrainTex.byOriented[name] ?? terrainTex.byOriented[`${h.terrain}/00`];
+    const tex = variants[variantIndex(h.coord.q, h.coord.r, variants.length)];
+    return { tex, mirror: oriented?.mirror ?? false };
+  }
+  const roadRef = h.road ? roadTiles.get(hexKey(h.coord.q, h.coord.r)) : undefined;
+  const roadVariants =
+    roadRef === undefined ? undefined : terrainTex.byOriented[roadRef.lookup];
+  if (roadRef !== undefined && roadVariants !== undefined) {
+    const tex = roadVariants[variantIndex(h.coord.q, h.coord.r, roadVariants.length)];
+    return { tex, mirror: roadRef.mirror };
+  }
+  const variants = terrainTex.byTerrain[h.terrain];
+  return {
+    tex: variants[variantIndex(h.coord.q, h.coord.r, variants.length)],
+    mirror: false,
+  };
 }
 
 /**

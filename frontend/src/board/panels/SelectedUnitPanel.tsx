@@ -1,14 +1,17 @@
 // The bottom-left selected-unit panel (UI-SPEC §6 detail + §8 order palette),
-// drawn into the Pixi scene graph. The most old-school panel: a unit icon on the
-// left, stats on the right (5 HP pips + the exact value, the §5.3 stat table, and
-// the current-order line), with the type-gated order palette beneath. Button
-// geometry + hit-testing live in ./selectedUnit; this file is just the drawing.
+// drawn into the Pixi scene graph. The most old-school panel: a square portrait
+// on the left (the unit's painterly sprite standing on its own hex's terrain
+// tile, framed in the owner's colour), stats on the right (5 HP pips + the
+// exact value, the §5.3 stat table, and the current-order line), with the
+// type-gated order palette beneath. Button geometry + hit-testing live in
+// ./selectedUnit; this file is just the drawing.
 
-import type { Graphics } from "pixi.js";
+import type { Graphics, Texture } from "pixi.js";
 import { TextStyle } from "pixi.js";
 
 import type { Rect } from "@/board/layout";
 import { playerColor } from "@/board/palette";
+import type { LoadedUnits } from "@/board/units";
 import type { components } from "@/lib/api/schema";
 import { UNIT_STATS } from "@/planning/rules";
 import type { OrderMode, StagedOrder } from "@/planning/usePlanning";
@@ -16,17 +19,29 @@ import { sortWarnings, type UnitWarning } from "@/planning/warnings";
 
 import {
   BTN_H,
+  CONTENT_X,
   orderLineText,
   paletteButtonRect,
   paletteButtons,
+  PORTRAIT_SIZE,
+  PORTRAIT_X,
+  PORTRAIT_Y,
   type PaletteAction,
 } from "./selectedUnit";
 
 type Unit = components["schemas"]["Unit"];
 
+/** The terrain tile the portrait stands the unit on (the board's pick for the
+ *  unit's hex — texture + the oriented-art mirror flag). */
+export interface PortraitTile {
+  readonly tex: Texture;
+  readonly mirror: boolean;
+}
+
 // --- palette (UI-SPEC §14: charcoal panel, steel borders, warm off-white text) ---
 const PANEL_FILL = 0x14161c;
 const PANEL_BORDER = 0x3a3f4b;
+const PORTRAIT_FILL = 0x0e1015;
 const TEXT_PRIMARY = 0xe8e4dc;
 const TEXT_SECONDARY = 0x9aa0a6;
 const PIP_FILLED = 0x8fb7ff;
@@ -40,10 +55,7 @@ const WARN_ERROR = 0xff6b6b;
 const WARN_INFO = 0xf5b342;
 
 // --- detail-block geometry ---
-const ICON_CX = 30;
-const ICON_CY = 44;
-const ICON_R = 20;
-const TEXT_X = 64;
+const TEXT_X = CONTENT_X;
 const PIP_W = 16;
 const PIP_H = 12;
 const PIP_GAP = 4;
@@ -65,7 +77,7 @@ const STYLE_WARN_ERROR = style(11, WARN_ERROR);
 const STYLE_WARN_INFO = style(11, WARN_INFO);
 
 /** Left edge of the right-hand advisory column, kept clear of the stat columns. */
-const WARN_X = 300;
+const WARN_X = 380;
 const WARN_Y = 30;
 const WARN_LINE = 18;
 
@@ -73,6 +85,10 @@ export interface SelectedUnitPanelProps {
   rect: Rect;
   /** The selected unit, or null when nothing is selected. */
   unit: Unit | null;
+  /** Two-layer unit sprites (null until loaded → vector-marker fallback). */
+  tex: LoadedUnits | null;
+  /** The unit's hex tile for the portrait backdrop (null until tiles load). */
+  tile: PortraitTile | null;
   /** The selected unit's staged order, if any. */
   staged: StagedOrder | undefined;
   /** Interaction mode (drives the Move/Barrage active state). */
@@ -101,33 +117,38 @@ function isActive(action: PaletteAction, staged: StagedOrder | undefined, mode: 
   }
 }
 
-/** Draw the unit's type marker (matches the board UnitMarker shapes). */
-function drawIcon(g: Graphics, unit: Unit): void {
+/** Pre-sprite vector fallback: the unit's type marker, centered in the portrait
+ *  box (matches the board's UnitMarker fallback shapes). */
+function drawFallbackIcon(g: Graphics, unit: Unit): void {
   const color = playerColor(unit.owner);
-  const cx = ICON_CX;
-  const cy = ICON_CY;
-  const r = ICON_R;
+  const cx = PORTRAIT_X + PORTRAIT_SIZE / 2;
+  const cy = PORTRAIT_Y + PORTRAIT_SIZE / 2;
+  const r = 34;
   if (unit.type === "infantry") {
     g.circle(cx, cy, r);
   } else if (unit.type === "armor") {
-    g.roundRect(cx - r, cy - r, r * 2, r * 2, 4);
+    g.roundRect(cx - r, cy - r, r * 2, r * 2, 6);
   } else {
     g.poly([cx, cy - r, cx + r, cy + r * 0.8, cx - r, cy + r * 0.8]);
   }
   g.fill({ color });
-  g.stroke({ width: 1.5, color: 0x000000 });
+  g.stroke({ width: 2, color: 0x000000 });
 }
 
 /** Docked bottom-left selected-unit detail + order palette. */
 export function SelectedUnitPanel({
   rect,
   unit,
+  tex,
+  tile,
   staged,
   mode,
   orderLabel,
   warnings,
   locked,
 }: SelectedUnitPanelProps) {
+  const pair = unit === null ? null : (tex?.[unit.type] ?? null);
+
   const drawChrome = (g: Graphics) => {
     g.clear();
     g.rect(0, 0, rect.width, rect.height).fill({ color: PANEL_FILL });
@@ -138,7 +159,11 @@ export function SelectedUnitPanel({
 
     if (unit === null) return;
 
-    drawIcon(g, unit);
+    // portrait backdrop (the sprites + frame render on top of this graphics)
+    g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).fill({
+      color: PORTRAIT_FILL,
+    });
+    if (pair === null) drawFallbackIcon(g, unit);
 
     // HP pips: each pip = 2 HP, filled by floor(hp / 2) (UI-SPEC §6).
     const filled = Math.floor(unit.hp / 2);
@@ -164,6 +189,16 @@ export function SelectedUnitPanel({
     });
   };
 
+  // Owner-coloured frame, drawn over the portrait art so its edge stays crisp.
+  const drawFrame = (g: Graphics) => {
+    g.clear();
+    if (unit === null) return;
+    g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).stroke({
+      width: 2,
+      color: playerColor(unit.owner),
+    });
+  };
+
   if (unit === null) {
     return (
       <pixiContainer x={rect.x} y={rect.y}>
@@ -186,9 +221,47 @@ export function SelectedUnitPanel({
   const showWarnings = rect.width >= WARN_X + 200;
   const shownWarnings = showWarnings ? sortWarnings(warnings).slice(0, 3) : [];
 
+  // Portrait sprites: the hex tile and the unit both fill the box, so the
+  // portrait reads as a max-zoom view of that hex. Same west-native mirror
+  // rule as the board's UnitMarker; oriented tiles keep their board mirror.
+  const portraitCx = PORTRAIT_X + PORTRAIT_SIZE / 2;
+  const portraitCy = PORTRAIT_Y + PORTRAIT_SIZE / 2;
+  const tileScale = tile === null ? 1 : PORTRAIT_SIZE / tile.tex.width;
+  const unitScale = pair === null ? 1 : PORTRAIT_SIZE / pair.base.width;
+  const unitSx = unit.facing === "right" ? -unitScale : unitScale;
+
   return (
     <pixiContainer x={rect.x} y={rect.y}>
       <pixiGraphics draw={drawChrome} />
+      {tile !== null && (
+        <pixiSprite
+          texture={tile.tex}
+          anchor={0.5}
+          x={portraitCx}
+          y={portraitCy}
+          scale={{ x: tile.mirror ? -tileScale : tileScale, y: tileScale }}
+        />
+      )}
+      {pair !== null && (
+        <>
+          <pixiSprite
+            texture={pair.base}
+            anchor={0.5}
+            x={portraitCx}
+            y={portraitCy}
+            scale={{ x: unitSx, y: unitScale }}
+          />
+          <pixiSprite
+            texture={pair.mask}
+            anchor={0.5}
+            x={portraitCx}
+            y={portraitCy}
+            scale={{ x: unitSx, y: unitScale }}
+            tint={playerColor(unit.owner)}
+          />
+        </>
+      )}
+      <pixiGraphics draw={drawFrame} />
       <pixiText text={unit.type.toUpperCase()} style={STYLE_TYPE} x={TEXT_X} y={8} />
       <pixiText
         text={`(${unit.coord.q},${unit.coord.r})`}
@@ -219,7 +292,7 @@ export function SelectedUnitPanel({
       <pixiText
         text={`Order: ${orderLineText(staged, orderLabel)}`}
         style={STYLE_ORDER}
-        x={PANEL_PAD_RIGHT}
+        x={TEXT_X}
         y={84}
       />
       {buttons.map((b, i) => {

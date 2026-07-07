@@ -19,6 +19,13 @@ export interface PaletteButton {
 
 // --- panel geometry (local to the selected-unit rect) ---
 export const PANEL_PAD = 12;
+/** Square portrait box on the panel's left (UI-SPEC §6 "portrait/icon left"),
+ *  inset `PANEL_PAD` from the strip edges: 140px strip − 2×12 = 116px square. */
+export const PORTRAIT_X = PANEL_PAD;
+export const PORTRAIT_Y = PANEL_PAD;
+export const PORTRAIT_SIZE = 116;
+/** Left edge of the text + palette column, clear of the portrait. */
+export const CONTENT_X = PORTRAIT_X + PORTRAIT_SIZE + 16;
 export const BTN_W = 58;
 export const BTN_H = 26;
 export const BTN_GAP = 6;
@@ -45,7 +52,7 @@ export function paletteButtons(unit: Unit): PaletteButton[] {
 /** The panel-local rectangle of the i-th palette button. */
 export function paletteButtonRect(index: number): Rect {
   return {
-    x: PANEL_PAD + index * (BTN_W + BTN_GAP),
+    x: CONTENT_X + index * (BTN_W + BTN_GAP),
     y: BTN_Y,
     width: BTN_W,
     height: BTN_H,
@@ -60,7 +67,7 @@ export function paletteButtonAt(
 ): PaletteAction | null {
   if (localY < BTN_Y || localY >= BTN_Y + BTN_H) return null;
   const buttons = paletteButtons(unit);
-  const offset = localX - PANEL_PAD;
+  const offset = localX - CONTENT_X;
   if (offset < 0) return null;
   const stride = BTN_W + BTN_GAP;
   const index = Math.floor(offset / stride);
