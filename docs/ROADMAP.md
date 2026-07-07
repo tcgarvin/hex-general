@@ -295,7 +295,7 @@ deploy) create/join one game and each sees its `GameView` (turn, slots, lock sta
 refresh live as the other acts — no board yet — and a dev can run the whole loop on
 a laptop via `supabase start`.
 
-## Phase 8 — Frontend: map & state rendering (PixiJS pixel-art)
+## Phase 8 — Frontend: map & state rendering (PixiJS pixel-art) ✅ done
 
 **Goal:** §16, read-only.
 
@@ -680,49 +680,55 @@ behind that stable component and both phases inherit them.
 on fixed anchors with room for future status icons — in planning and replay
 alike.
 
-## Phase 9 — Frontend: planning UI
+## Phase 9 — Frontend: planning UI ✅ done
 
 **Goal:** §16.1.
 
-- Select unit → show movement range → assign exact path; assign Barrage/Rest/Hold;
-  recruit at controlled cities; review-all + lock → `POST /games/{id}/orders`.
-- Advisory predictions: predicted pulses, own-unit traffic-conflict warnings,
-  plain-language enemy-ZOC warnings ("may attack, hold, or withdraw; cannot move
-  along the enemy line") and illegal ZOC-to-ZOC flags (§16.1).
-- Overlays (range halo, path, ZOC) as Pixi graphics layers above the tiles.
+- ✅ Select unit → show movement range → assign exact path (hover-to-route,
+  persistent paths); assign Barrage/Rest/Hold from the order palette; recruit at
+  controlled cities; review-all + lock → `POST /games/{id}/orders`
+  (`frontend/src/planning/usePlanning.ts` + the bottom Pixi dock: selected-unit
+  detail, order palette, lock control).
+- ✅ Advisory predictions (`planning/warnings.ts`, mirrors the engine's ZOC/jam
+  rules): own-unit traffic-conflict warnings, plain-language enemy-ZOC warnings
+  and illegal ZOC-to-ZOC flags, surfaced in the panels and as a header count.
+- ✅ Overlays (range outline, tapered-ribbon path arrows + pulse badges, barrage
+  targeting) as Pixi graphics layers above the tiles.
+- ✅ Beyond the plan: the planning chrome stays docked read-only after locking;
+  resign + presence live in a header "Game" menu; Twin Rivers' economy tuned so
+  recruitment is exercisable.
 
 **Demonstrable:** plan a real turn end-to-end in the browser and lock it in.
 
-## Phase 10 — Frontend: replay
+## Phase 10 — Frontend: replay ✅ done
 
 **Goal:** §16.2–16.3, UI-SPEC §13. Auto-playing, beat-structured replay of the
 resolved event log, with fog filtering and a scrollable plain-language event log.
 See UI-SPEC §13 for the full design; slices below map the work.
 
-### Slice 1 — API + data plumbing
+### Slice 1 — API + data plumbing ✅ done
 
 - ✅ Already done in Phase 5: `GET /games/{id}/turns/{turn}` returns the
   fog-filtered event log and post-turn state. No new backend work needed.
-- Frontend: a `useReplay(gameId, turn)` hook that fetches the turn data and
+- ✅ Frontend: a `useReplay(gameId, turn)` hook that fetches the turn data and
   exposes the ordered `Event[]` list and the pre-turn + post-turn `GameState`
   snapshots.
-- Auto-navigate from `GameShell` to `/game/{id}/replay/{turn}` when the poll
-  detects a newly resolved turn (turn number advanced + turns row present).
-- "Watch last replay" item in the Game menu.
+- ✅ Auto-enter replay when the poll detects a newly resolved turn. *(Originally
+  a navigation to `/game/{id}/replay/{turn}`; replay is now an in-place `?turn=N`
+  mode of the one game route — see Slice 5.)*
+- ✅ "Watch last replay" item in the Game menu.
 
-### Slice 2 — Beat engine + playback controls
+### Slice 2 — Beat engine + playback controls ✅ done
 
-- A `useBeats(events)` hook that groups the raw `Event[]` into ordered beats
+- ✅ A `useBeats(events)` hook that groups the raw `Event[]` into ordered beats
   (UI-SPEC §13.1): Barrage, Pulse 1…N, Capture, Repair, Economy, Recruitment.
   Empty beats are skipped. Exposes `beats`, `currentBeat`, `advance`, `rewind`,
   `jumpTo`.
-- Playback controller: auto-play at 1× / 2× with configurable beat durations.
+- ✅ Playback controller: auto-play at 1× / 2× with configurable beat durations.
   Manages the play/pause/speed state. The beat engine is pure (no Pixi) and unit-testable.
-- Bottom panel control strip: `|◄ ◄ ▶/⏸ ►|`, speed toggle, beat label, Skip button
+- ✅ Bottom panel control strip: `|◄ ◄ ▶/⏸ ►|`, speed toggle, beat label, Skip button
   (UI-SPEC §13.2). Replaces the order palette / lock control during replay.
-- Header phase label shows `REPLAY`; muster/orders fields are hidden.
-- No map animation yet — the board snaps to the post-turn state for now (Slice 3
-  adds the animations).
+- ✅ Header phase label shows `REPLAY`; muster/orders fields are hidden.
 
 **Demonstrable:** navigate to the replay route, step through beats with controls,
 see the board snap to each beat's end state.
@@ -786,25 +792,41 @@ earlier board state.
 - ✅ Fog-filtered: the log renders whatever events the API returns, which are
   already fog-filtered server-side (no extra client work needed).
 
-### Slice 5 — Replay exit + Game menu integration
+### Slice 5 — Replay exit + Game menu integration ✅ done
 
-- After the final beat, "Start Planning" button appears (bottom-right); if the game
-  ended, "See Results" leads to the game-over state (UI-SPEC §13.6).
-- "Watch last replay" in the Game menu navigates to the replay route for the most
-  recently resolved turn.
-- End-to-end smoke test: two dev profiles play a turn from lock → poll detects
-  resolution → replay auto-launches → steps through → "Start Planning" → planning
-  screen for the next turn.
+- ✅ After the final beat, "Start Planning" button appears (bottom-right); if the game
+  ended, "See Results" leads to the game-over state (UI-SPEC §13.6)
+  (`board/panels/ReplayControlPanel.tsx`).
+- ✅ "Watch last replay" in the Game menu opens the replay for the most recently
+  resolved turn.
+- ✅ **Seamless in-place planning⇄replay** *(beyond the plan, 2026-07-06/07)*:
+  replay is a `?turn=N` search-param mode of the one game route, not a separate
+  route — a single `GameProvider` and one persistent Pixi `Board` survive the
+  whole planning→turn-end→watch→planning cycle (no remount, no canvas/texture/
+  camera teardown). During the brief replay fetch the planning chrome holds,
+  read-only, rendering the held **pre-turn snapshot** so units sit at their
+  start-of-turn hexes and the replay opens with no snap-back
+  (closed `TODO(replay-snap)`, 2026-07-07).
+- ✅ End-to-end flow exercised: play a turn from lock → poll detects resolution →
+  replay auto-launches → steps through → "Start Planning" → planning screen for
+  the next turn.
 
-**Milestone — first full playable match in two browsers.**
+**Milestone — first full playable match in two browsers ✅** *(also playable solo
+vs the bot: the AI opponent workstream — [`AI_SPEC.md`](./AI_SPEC.md) §10
+Phases 0–4, evaluation/scripted/search policies + vs-bot service integration and
+frontend hub — shipped in parallel with Phases 8–10).*
 
-## Phase 11 — Tuning, scenario polish, success criteria
+## Phase 11 — Tuning, scenario polish, success criteria ← current
 
 **Goal:** §18 / §13.2.
 
-- Playtest, tune the prototype stat tables, optionally trial HP scaling (§13.2),
-  author a scenario that produces §18's situations (road feints, woods
-  uncertainty, bridge chokepoints).
+- Playtest (two browsers, or solo vs the bot), tune the prototype stat tables,
+  optionally trial HP scaling (§13.2), author a scenario that produces §18's
+  situations (road feints, woods uncertainty, bridge chokepoints).
+- Candidate follow-ups feeding this phase: camera-pan-on-click in the replay log
+  (deferred from P10 Slice 4); AI weight tuning (AI_SPEC Phase 5) only if bot
+  play quality disappoints; parked art (fans-a river forks, four steep-relief
+  hills road shapes) only if a new scenario demands it.
 
 ---
 

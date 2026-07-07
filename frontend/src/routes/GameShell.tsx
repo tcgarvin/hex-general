@@ -66,24 +66,34 @@ function Dashboard() {
   // to lose. This relies on "turn advances ⇒ you locked"; a future async turn
   // timer that auto-resolves un-locked players (SPEC §17, out of scope for v0.1)
   // would break that and must guard this transition on the locked state.
+  //
+  // The advance also snapshots the *pre-advance* view: at that instant
+  // `view.state` already holds the resolved END state, while the previous poll's
+  // view is exactly the state the replay will open at (start of the completed
+  // turn). Holding that snapshot lets the load-hold below render the pre-turn
+  // board, so units don't jump forward and then snap back when the replay opens.
+  // The snapshot's `turn` field keys which replay it belongs to.
   const prevTurnRef = useRef<number | null>(null);
+  const lastViewRef = useRef<GameView>(view);
+  const [preTurnView, setPreTurnView] = useState<GameView | null>(null);
   useEffect(() => {
-    if (
-      prevTurnRef.current !== null &&
-      view.turn > prevTurnRef.current &&
-      !inReplay // don't yank a manually-opened replay
-    ) {
-      const completed = prevTurnRef.current;
-      setSearchParams(
-        (prev) => {
-          prev.set("turn", String(completed));
-          return prev;
-        },
-        { replace: true },
-      );
+    if (prevTurnRef.current !== null && view.turn > prevTurnRef.current) {
+      setPreTurnView(lastViewRef.current);
+      if (!inReplay) {
+        // don't yank a manually-opened replay
+        const completed = prevTurnRef.current;
+        setSearchParams(
+          (prev) => {
+            prev.set("turn", String(completed));
+            return prev;
+          },
+          { replace: true },
+        );
+      }
     }
     prevTurnRef.current = view.turn;
-  }, [view.turn, inReplay, setSearchParams]);
+    lastViewRef.current = view;
+  }, [view, inReplay, setSearchParams]);
 
   const startPlanning = useCallback(() => {
     setSearchParams(
@@ -119,6 +129,20 @@ function Dashboard() {
   // (A non-null bundle only ever exists in replay mode, so it doubles as the
   // "replay ready" flag and narrows `replayBundle` for the render branch.)
   const replayLoading = inReplay && replayBundle === null;
+
+  // What the load-hold board shows. The live `view.state` is the completed
+  // turn's END state, but the replay opens at its START — rendering live state
+  // during the hold made units jump forward and visibly snap back at the swap.
+  // So when the pre-advance snapshot matches the loading replay's turn, hold
+  // that instead: units stay at their start-of-turn hexes and the replay opens
+  // seamlessly. The turn guard keeps a stale snapshot out of a manually-opened
+  // older replay (those still hold on the live state — an accepted context
+  // switch, not the mid-flow glitch this fixes). Interaction is safe: the hold
+  // renders with `locked`, which makes the board inert to clicks.
+  const holdView =
+    replayLoading && preTurnView !== null && preTurnView.turn === replayTurn
+      ? preTurnView
+      : view;
 
   const planning = usePlanning(view.state, view.your_slot, view.turn);
   // The planning surface (roster + bottom dock) is shown for the whole of your
@@ -214,14 +238,8 @@ function Dashboard() {
           // camera never tear down — only these props swap between modes. We
           // swap to the replay branch only once the bundle is ready (non-null);
           // during the load-hold we keep the planning chrome (forced read-only)
-          // so the dock never blanks between modes.
-          //
-          // TODO(replay-snap): the load-hold shows `view.state` (the turn's END
-          // state), then the replay branch opens at the pre-turn state
-          // (displayBeat -1). At the swap the units visibly snap back from their
-          // resolved hexes to their starting hexes before the animation plays.
-          // Smooth this later — e.g. hold the replay's pre-turn state during the
-          // load-hold instead of the live end state, or cross-fade the swap.
+          // — rendered from `holdView`, the pre-turn snapshot when available —
+          // so the dock never blanks and units don't snap at the swap.
           <div className="absolute inset-0">
             {replayBundle !== null ? (
               <Board
@@ -233,9 +251,9 @@ function Dashboard() {
               />
             ) : (
               <Board
-                state={view.state}
+                state={holdView.state}
                 yourSlot={view.your_slot}
-                visible={view.visible}
+                visible={holdView.visible}
                 planning={active ? planning : undefined}
                 // While a just-resolved turn's replay is still loading, hold the
                 // panels but read-only (the turn is over — no editing, no lock).
