@@ -1,12 +1,15 @@
 // The bottom-left selected-unit panel (UI-SPEC §6 detail + §8 order palette),
 // drawn into the Pixi scene graph in the ratified Field-HQ register
-// (docs/UI-STYLE.md): worn-canvas dock strip, the unit portrait in a
-// brass-lipped inset well, the type on an engraved nameplate, typewriter data
-// text, and the sprite-built order palette (blank brass faces + composited
-// icon/label, one art state per interaction state). Button geometry +
-// hit-testing live in ./selectedUnit; this file is just the drawing. Until
-// the chrome sprites arrive it falls back to the flat placeholder look at the
-// same geometry, mirroring the terrain/unit texture fallbacks.
+// (docs/UI-STYLE.md): a wood-framed parchment card inset into the worn-canvas
+// dock strip carries the unit's identity — portrait in a brass-lipped well,
+// type on an engraved nameplate, round HP pips in a recessed capsule, and
+// ruled MOVE/ATK/DEF stat columns in ink — while the sprite-built order
+// palette (blank brass faces + composited icon/label, one art state per
+// interaction state) and the order/advisory text sit on the canvas to the
+// card's right. Button geometry + hit-testing live in ./selectedUnit; this
+// file is just the drawing. Until the chrome sprites arrive it falls back to
+// a flat placeholder look at the same geometry, mirroring the terrain/unit
+// texture fallbacks.
 
 import type { Graphics, Texture } from "pixi.js";
 import { TextStyle } from "pixi.js";
@@ -26,7 +29,15 @@ import {
   BTN_LABEL_DY,
   BTN_W,
   BTN_X0,
+  CARD_H,
+  CARD_W,
+  CARD_X,
+  CARD_Y,
   CONTENT_X,
+  FACE_H,
+  FACE_W,
+  FACE_X,
+  FACE_Y,
   orderLineText,
   paletteButtonRect,
   paletteButtons,
@@ -51,19 +62,27 @@ export interface PortraitTile {
 // --- fallback palette (pre-chrome placeholder, UI-SPEC §14) ---
 const PANEL_FILL = 0x14161c;
 const PANEL_BORDER = 0x3a3f4b;
-const PORTRAIT_FILL = 0x0e1015;
 
-// --- detail-block geometry ---
+// --- detail-block geometry (inside the card face) ---
 const TEXT_X = CONTENT_X;
-const PLATE_Y = 6;
-const PLATE_W = 180;
-const PLATE_H = 26;
-const PIP_W = 16;
-const PIP_H = 12;
-const PIP_GAP = 4;
-const PIP_Y = 44;
-const STAT_Y1 = 62;
-const STAT_Y2 = 78;
+const PLATE_Y = 18;
+const PLATE_W = 140;
+const PLATE_H = 24;
+/** HP row: round pips in a recessed capsule, HP fraction beside it. */
+const PIP_R = 4.5;
+const PIP_PITCH = 13;
+const PIP_CAP_W = 74;
+const PIP_CAP_H = 14;
+const PIP_Y = 50;
+/** MOVE/ATK/DEF columns (label over value, thin ink rules between). */
+const COL_W = 50;
+const COL_LABEL_Y = 71;
+const COL_VALUE_Y = 84;
+const COL_RULE_Y0 = 73;
+const COL_RULE_Y1 = 100;
+/** Secondary stat line (range/vision/upkeep) along the face bottom. */
+const STAT2_Y = 106;
+/** The order line sits on the canvas strip, under the palette. */
 const ORDER_Y = 118;
 /** Right padding for the coord line. */
 const PANEL_PAD_RIGHT = 12;
@@ -72,10 +91,17 @@ const style = (family: string, size: number, fill: number, weight: "normal" | "b
   new TextStyle({ fontFamily: family, fontSize: size, fill, fontWeight: weight });
 
 const STYLE_TYPE = style(FONT_DISPLAY, 14, THEME.ink900);
-const STYLE_TYPE_FALLBACK = style(FONT_DISPLAY, 14, THEME.ivory100);
 const STYLE_COORD = style(FONT_DATA, 11, THEME.ivory400);
-const STYLE_HP = style(FONT_DATA, 11, THEME.ivory100);
-const STYLE_STAT = style(FONT_DATA, 11, THEME.ivory400);
+const STYLE_HP = style(FONT_DATA, 12, THEME.ink900);
+const STYLE_COL_LABEL = new TextStyle({
+  fontFamily: FONT_LABEL,
+  fontSize: 10,
+  fill: THEME.ink900,
+  fontWeight: "bold",
+  letterSpacing: 1,
+});
+const STYLE_COL_VALUE = style(FONT_DATA, 13, THEME.ink900);
+const STYLE_STAT2 = style(FONT_DATA, 10, THEME.canvas800);
 const STYLE_ORDER = style(FONT_DATA, 11, THEME.ivory100);
 const STYLE_PLACEHOLDER = style(FONT_LABEL, 13, THEME.ivory400);
 const STYLE_BTN = new TextStyle({
@@ -100,11 +126,15 @@ const WARN_X = BTN_X0 + 5 * (BTN_W + BTN_GAP) + 12;
 const WARN_Y = 30;
 const WARN_LINE = 18;
 
-// NineSlice insets: the well's leather+lip border and the nameplate's
-// screw-capped ends, in emitted-texture pixels (scripts/ui-kit-prep.py).
+// NineSlice insets: the well's leather+lip border, the nameplate's
+// screw-capped ends, and the card frame's bracketed corners, in
+// emitted-texture pixels (scripts/ui-kit-prep.py).
 const WELL_SLICE = 22;
 const PLATE_SLICE_X = 24;
 const PLATE_SLICE_Y = 12;
+const FRAME_SLICE = 22;
+/** Parchment tiles at 2x (hidpi-crisp), matching the emit convention. */
+const PARCHMENT_TILE_SCALE = 0.5;
 /** The brass face's center within the button sprite (fraction of its size). */
 const BTN_FACE_CX = 0.5;
 const BTN_FACE_CY = 0.44;
@@ -259,33 +289,43 @@ export function SelectedUnitPanel({
     if (unit === null) return;
 
     if (chrome === null) {
-      // Placeholder portrait backdrop + well outline.
-      g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).fill({
-        color: PORTRAIT_FILL,
-      });
-    } else {
-      // Dark backdrop inside the well's lip (behind the portrait art).
-      g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).fill({
-        color: THEME.ink900,
-      });
+      // Placeholder card: flat parchment fill + wood keyline at the frame's
+      // footprint, so the ink text reads before the sprites arrive.
+      g.roundRect(CARD_X, CARD_Y, CARD_W, CARD_H, 6).fill({ color: THEME.parchment200 });
+      g.roundRect(CARD_X, CARD_Y, CARD_W, CARD_H, 6).stroke({ width: 3, color: THEME.wood700 });
+      g.rect(TEXT_X, PLATE_Y, PLATE_W, PLATE_H).stroke({ width: 1, color: THEME.brass600 });
     }
+
+    // Dark backdrop inside the well's lip (behind the portrait art).
+    g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).fill({
+      color: THEME.ink900,
+    });
     if (pair === null) drawFallbackIcon(g, unit);
 
-    // HP pips: each pip = 2 HP, filled by floor(hp / 2) (UI-SPEC §6).
+    // HP pips: round dots in a recessed capsule; each dot = 2 HP, filled by
+    // floor(hp / 2) (UI-SPEC §6).
+    g.roundRect(TEXT_X, PIP_Y, PIP_CAP_W, PIP_CAP_H, PIP_CAP_H / 2).fill({
+      color: THEME.ink900,
+      alpha: 0.8,
+    });
     const filled = Math.floor(unit.hp / 2);
+    const pipCy = PIP_Y + PIP_CAP_H / 2;
     for (let i = 0; i < 5; i++) {
-      const x = TEXT_X + i * (PIP_W + PIP_GAP);
+      const cx = TEXT_X + 9 + i * PIP_PITCH;
       if (i < filled) {
-        g.rect(x, PIP_Y, PIP_W, PIP_H).fill({ color: THEME.brass400 });
+        g.circle(cx, pipCy, PIP_R).fill({ color: THEME.brass400 });
       } else {
-        g.rect(x, PIP_Y, PIP_W, PIP_H).fill({ color: THEME.ink900, alpha: 0.5 });
-        g.rect(x, PIP_Y, PIP_W, PIP_H).stroke({ width: 1, color: THEME.wood500 });
+        g.circle(cx, pipCy, PIP_R).stroke({ width: 1, color: THEME.wood500, alpha: 0.7 });
       }
     }
 
-    // Fallback-only: plain button plates + nameplate strip.
+    // Thin ink rules between the MOVE/ATK/DEF columns.
+    g.moveTo(TEXT_X + COL_W, COL_RULE_Y0).lineTo(TEXT_X + COL_W, COL_RULE_Y1);
+    g.moveTo(TEXT_X + 2 * COL_W, COL_RULE_Y0).lineTo(TEXT_X + 2 * COL_W, COL_RULE_Y1);
+    g.stroke({ width: 1, color: THEME.ink900, alpha: 0.3 });
+
+    // Fallback-only: plain button plates.
     if (chrome === null) {
-      g.rect(TEXT_X, PLATE_Y, PLATE_W, PLATE_H).stroke({ width: 1, color: PANEL_BORDER });
       const buttons = paletteButtons(unit);
       buttons.forEach((b, i) => {
         const r = paletteButtonRect(i);
@@ -351,6 +391,11 @@ export function SelectedUnitPanel({
   }
 
   const stats = UNIT_STATS[unit.type];
+  const statColumns = [
+    { label: "MOVE", value: stats.move },
+    { label: "ATK", value: stats.attack },
+    { label: "DEF", value: stats.defense },
+  ];
   const buttons = paletteButtons(unit);
   // The advisory column sits right of the palette; hide it on a panel too
   // narrow to fit it without overlapping.
@@ -369,6 +414,29 @@ export function SelectedUnitPanel({
   return (
     <pixiContainer x={rect.x} y={rect.y}>
       {ground}
+      {chrome !== null && (
+        <>
+          <pixiTilingSprite
+            texture={chrome.parchment}
+            x={FACE_X}
+            y={FACE_Y}
+            width={FACE_W}
+            height={FACE_H}
+            tileScale={{ x: PARCHMENT_TILE_SCALE, y: PARCHMENT_TILE_SCALE }}
+          />
+          <pixiNineSliceSprite
+            texture={chrome.frameDock}
+            x={CARD_X}
+            y={CARD_Y}
+            width={CARD_W}
+            height={CARD_H}
+            leftWidth={FRAME_SLICE}
+            rightWidth={FRAME_SLICE}
+            topHeight={FRAME_SLICE}
+            bottomHeight={FRAME_SLICE}
+          />
+        </>
+      )}
       <pixiGraphics draw={drawDetail} />
       {chrome !== null && (
         <pixiNineSliceSprite
@@ -427,7 +495,7 @@ export function SelectedUnitPanel({
       )}
       <pixiText
         text={unit.type.toUpperCase()}
-        style={chrome === null ? STYLE_TYPE_FALLBACK : STYLE_TYPE}
+        style={STYLE_TYPE}
         anchor={{ x: 0.5, y: 0.5 }}
         x={TEXT_X + PLATE_W / 2}
         y={PLATE_Y + PLATE_H / 2}
@@ -443,25 +511,39 @@ export function SelectedUnitPanel({
         text={`${unit.hp}/10`}
         style={STYLE_HP}
         anchor={{ x: 0, y: 0.5 }}
-        x={TEXT_X + 5 * (PIP_W + PIP_GAP) + 6}
-        y={PIP_Y + PIP_H / 2}
+        x={TEXT_X + PIP_CAP_W + 8}
+        y={PIP_Y + PIP_CAP_H / 2}
       />
+      {statColumns.map((c, i) => (
+        <pixiText
+          key={c.label}
+          text={c.label}
+          style={STYLE_COL_LABEL}
+          anchor={{ x: 0.5, y: 0 }}
+          x={TEXT_X + COL_W / 2 + i * COL_W}
+          y={COL_LABEL_Y}
+        />
+      ))}
+      {statColumns.map((c, i) => (
+        <pixiText
+          key={c.label}
+          text={String(c.value)}
+          style={STYLE_COL_VALUE}
+          anchor={{ x: 0.5, y: 0 }}
+          x={TEXT_X + COL_W / 2 + i * COL_W}
+          y={COL_VALUE_Y}
+        />
+      ))}
       <pixiText
-        text={`Move ${stats.move}  Atk ${stats.attack}  Def ${stats.defense}`}
-        style={STYLE_STAT}
+        text={`RNG ${stats.range}  VIS ${stats.vision}  UPK ${stats.upkeep}`}
+        style={STYLE_STAT2}
         x={TEXT_X}
-        y={STAT_Y1}
-      />
-      <pixiText
-        text={`Rng ${stats.range}  Vis ${stats.vision}  Upk ${stats.upkeep}`}
-        style={STYLE_STAT}
-        x={TEXT_X}
-        y={STAT_Y2}
+        y={STAT2_Y}
       />
       <pixiText
         text={`Order: ${orderLineText(staged, orderLabel)}`}
         style={STYLE_ORDER}
-        x={TEXT_X}
+        x={BTN_X0}
         y={ORDER_Y}
       />
       {chrome !== null &&

@@ -26,6 +26,11 @@ export interface LoadedChrome {
   readonly plate: Texture;
   /** Tileable worn-canvas panel fill. */
   readonly canvas: Texture;
+  /** Tileable parchment panel-face fill. */
+  readonly parchment: Texture;
+  /** Thin wood-and-brass card frame for the dock's inset card (NineSlice;
+   *  center is hollowed so the parchment fill tiles beneath it). */
+  readonly frameDock: Texture;
 }
 
 function url(name: string): string {
@@ -41,15 +46,18 @@ function url(name: string): string {
  * the terrain/unit texture loaders (degrade whole, never mixed).
  */
 export async function loadChromeTextures(): Promise<LoadedChrome> {
-  const [up, hover, pressed, disabled, active, well, plate, canvas] = await Promise.all([
-    Assets.load<Texture>(url("btn-up")),
-    Assets.load<Texture>(url("btn-hover")),
-    Assets.load<Texture>(url("btn-pressed")),
-    Assets.load<Texture>(url("btn-disabled")),
-    Assets.load<Texture>(url("btn-active")),
-    Assets.load<Texture>(url("well")),
-    Assets.load<Texture>(url("plate")),
-    Assets.load<Texture>(url("canvas")),
-  ]);
-  return { btn: { up, hover, pressed, disabled, active }, well, plate, canvas };
+  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, frameDock] =
+    await Promise.all([
+      Assets.load<Texture>(url("btn-up")),
+      Assets.load<Texture>(url("btn-hover")),
+      Assets.load<Texture>(url("btn-pressed")),
+      Assets.load<Texture>(url("btn-disabled")),
+      Assets.load<Texture>(url("btn-active")),
+      Assets.load<Texture>(url("well")),
+      Assets.load<Texture>(url("plate")),
+      Assets.load<Texture>(url("canvas")),
+      Assets.load<Texture>(url("parchment")),
+      Assets.load<Texture>(url("frame-dock")),
+    ]);
+  return { btn: { up, hover, pressed, disabled, active }, well, plate, canvas, parchment, frameDock };
 }

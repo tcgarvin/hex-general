@@ -6,13 +6,22 @@ import type { components } from "@/lib/api/schema";
 import {
   BTN_H,
   BTN_W,
+  BTN_X0,
+  CARD_FRAME,
+  CARD_H,
+  CARD_W,
+  CARD_X,
+  CARD_Y,
+  CONTENT_W,
   CONTENT_X,
   paletteButtonAt,
   paletteButtonRect,
   paletteButtons,
   PORTRAIT_SIZE,
   PORTRAIT_X,
-  PORTRAIT_Y,
+  WELL_SIZE,
+  WELL_X,
+  WELL_Y,
 } from "./selectedUnit";
 
 type Unit = components["schemas"]["Unit"];
@@ -26,37 +35,49 @@ const unit = (type: Unit["type"]): Unit => ({
   facing: "left",
 });
 
-describe("portrait geometry", () => {
-  it("fits the square portrait inside the bottom strip with its margins", () => {
-    expect(PORTRAIT_Y + PORTRAIT_SIZE + PORTRAIT_Y).toBe(BOTTOM_HEIGHT);
+describe("card geometry", () => {
+  it("fits the card inside the bottom strip", () => {
+    expect(CARD_Y + CARD_H).toBeLessThanOrEqual(BOTTOM_HEIGHT);
   });
 
-  it("keeps the text/palette column clear of the portrait box", () => {
+  it("keeps the portrait well inside the card's parchment face", () => {
+    expect(WELL_X).toBeGreaterThanOrEqual(CARD_X + CARD_FRAME);
+    expect(WELL_Y).toBeGreaterThanOrEqual(CARD_Y + CARD_FRAME);
+    expect(WELL_Y + WELL_SIZE).toBeLessThanOrEqual(CARD_Y + CARD_H - CARD_FRAME);
+  });
+
+  it("keeps the text column clear of the well and inside the face", () => {
     expect(CONTENT_X).toBeGreaterThan(PORTRAIT_X + PORTRAIT_SIZE);
+    expect(CONTENT_X + CONTENT_W).toBeLessThanOrEqual(CARD_X + CARD_W - CARD_FRAME);
+  });
+
+  it("keeps the palette on the strip, clear of the card", () => {
+    expect(BTN_X0).toBeGreaterThan(CARD_X + CARD_W);
   });
 });
 
 describe("paletteButtonRect / paletteButtonAt", () => {
-  it("lays buttons out from CONTENT_X and hit-tests them round-trip", () => {
+  it("lays buttons out from BTN_X0 and hit-tests them round-trip", () => {
     const inf = unit("infantry");
     paletteButtons(inf).forEach((b, i) => {
       const r = paletteButtonRect(i);
-      expect(r.x).toBeGreaterThanOrEqual(CONTENT_X);
+      expect(r.x).toBeGreaterThanOrEqual(BTN_X0);
       expect(
         paletteButtonAt(r.x + r.width / 2, r.y + r.height / 2, inf),
       ).toBe(b.action);
     });
   });
 
-  it("does not hit buttons over the portrait box or in gaps", () => {
+  it("does not hit buttons over the card or in gaps", () => {
     const inf = unit("infantry");
     const midY = paletteButtonRect(0).y + BTN_H / 2;
-    // Over the portrait (left of the palette).
+    // Over the card (left of the palette).
     expect(paletteButtonAt(PORTRAIT_X + 10, midY, inf)).toBeNull();
+    expect(paletteButtonAt(CONTENT_X + 10, midY, inf)).toBeNull();
     // In the gap between the first two buttons.
-    expect(paletteButtonAt(CONTENT_X + BTN_W + 2, midY, inf)).toBeNull();
+    expect(paletteButtonAt(BTN_X0 + BTN_W + 2, midY, inf)).toBeNull();
     // Above the button row.
-    expect(paletteButtonAt(CONTENT_X + 10, midY - BTN_H, inf)).toBeNull();
+    expect(paletteButtonAt(BTN_X0 + 10, midY - BTN_H, inf)).toBeNull();
   });
 
   it("gates the Barrage button to artillery", () => {

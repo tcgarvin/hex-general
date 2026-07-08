@@ -56,9 +56,12 @@ components land.
 | Factions | — | keep engine blue `#4f8cff` / red `#ff5d5d` (board consistency) |
 
 Two panel-face modes, both in the concept: **parchment faces** (roster list,
-inspector — dark ink text) and **dark canvas/leather faces** (dock, minimap
-surround — ivory text). Use parchment where the player reads dense data;
-canvas/leather where controls sit.
+inspector — dark ink text) and **dark canvas/leather faces** (dock strip,
+minimap surround — ivory text). Use parchment where the player reads dense
+data; canvas/leather where controls sit. The two combine on the dock: the
+selected unit's identity block is a wood-framed **parchment card inset into
+the canvas strip** (ratified 2026-07-07), with the order palette and advisory
+text on the canvas beside it.
 
 ## 3. Typography (three roles)
 

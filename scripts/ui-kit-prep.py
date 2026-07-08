@@ -14,16 +14,25 @@ import argparse
 from pathlib import Path
 from typing import NamedTuple
 
-from PIL import Image
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 REPO = Path(__file__).resolve().parent.parent
 CUT_DIR = REPO / "art" / "foundry" / "ui" / "cut"
 DEFAULT_OUT_DIR = REPO / "frontend" / "src" / "board" / "panels" / "chrome"
 
+# Feather width (source px) for a hollowed center's alpha edge, so the baked
+# face fades into whatever tiles beneath it instead of ending on a hard seam.
+HOLLOW_FEATHER = 12
+
 
 class Emit(NamedTuple):
     source: str  # filename under CUT_DIR (without .png)
     scale: float
+    # Inset (source px) of a rectangle to punch transparent out of the center.
+    # For frames rendered as a NineSlice over a tiling face fill: the frame
+    # keeps its rails/brackets plus a feathered ring of its baked face, and the
+    # fill shows through the middle. 0 = solid emit.
+    hollow: int = 0
 
 
 # On-screen targets (1x): order buttons ~64px, the portrait well ~130px,
@@ -50,6 +59,11 @@ EMITS: dict[str, Emit] = {
     "parchment": Emit("tex-parchment", 1.00),
     "wood": Emit("tex-wood", 1.00),
     "frame": Emit("panel-frame", 0.50),
+    # The selected-unit dock's inset card (docs/UI-STYLE.md §4): the same
+    # ratified frame, emitted thin enough that its ~94px source rail lands at
+    # ~12px inside the 140px bottom strip, center hollowed (inset past the
+    # ~140px bracket elbows) so tiled parchment provides the face.
+    "frame-dock": Emit("panel-frame", 0.13, hollow=160),
     "tab-active": Emit("tab-active", 0.50),
     "tab-inactive": Emit("tab-inactive", 0.50),
 }
@@ -73,6 +87,14 @@ def main(argv: list[str] | None = None) -> int:
     for name, emit in EMITS.items():
         src = CUT_DIR / f"{emit.source}.png"
         img = Image.open(src).convert("RGBA")
+        if emit.hollow > 0:
+            mask = Image.new("L", img.size, 255)
+            ImageDraw.Draw(mask).rectangle(
+                (emit.hollow, emit.hollow, img.width - emit.hollow, img.height - emit.hollow),
+                fill=0,
+            )
+            mask = mask.filter(ImageFilter.GaussianBlur(HOLLOW_FEATHER))
+            img.putalpha(ImageChops.multiply(img.getchannel("A"), mask))
         if emit.scale != 1.0:
             size = (
                 max(1, round(img.width * emit.scale)),

@@ -18,29 +18,44 @@ export interface PaletteButton {
 }
 
 // --- panel geometry (local to the selected-unit rect) ---
-// Field-HQ pilot layout (docs/UI-STYLE.md): brass-lipped portrait well on the
-// left, nameplate + stats column beside it, the sprite-button palette to the
-// right of the stats, and the order line along the bottom.
-export const PANEL_PAD = 8;
+// Field-HQ card-on-strip layout (docs/UI-STYLE.md §4): a framed parchment
+// card inset into the worn-canvas strip holds the unit's identity (portrait
+// well, nameplate, HP, stat columns); the sprite-button order palette and the
+// order/advisory text sit on the canvas to the card's right.
+/** Outer box of the parchment card (frame rails included). */
+export const CARD_X = 6;
+export const CARD_Y = 3;
+export const CARD_W = 306;
+export const CARD_H = 134;
+/** Rendered thickness of the card frame's wood rail (the frame-dock emit's
+ *  ~94px source rail at scale 0.13 — scripts/ui-kit-prep.py). */
+export const CARD_FRAME = 12;
+/** The parchment face inside the frame rails. */
+export const FACE_X = CARD_X + CARD_FRAME;
+export const FACE_Y = CARD_Y + CARD_FRAME;
+export const FACE_W = CARD_W - 2 * CARD_FRAME;
+export const FACE_H = CARD_H - 2 * CARD_FRAME;
 /** Outer box of the portrait inset well (the portrait art sits inside its
- *  brass lip): 140px strip − 2×8 = 124px square. */
-export const WELL_X = PANEL_PAD;
-export const WELL_Y = PANEL_PAD;
-export const WELL_SIZE = 124;
+ *  brass lip), left side of the card face. */
+export const WELL_X = FACE_X + 4;
+export const WELL_Y = FACE_Y + 2;
+export const WELL_SIZE = 106;
 /** The well texture's border thickness (leather surround + brass lip) at the
  *  emitted scale — the portrait box is the well minus this on each side. */
 export const WELL_BORDER = 19;
 export const PORTRAIT_X = WELL_X + WELL_BORDER;
 export const PORTRAIT_Y = WELL_Y + WELL_BORDER;
 export const PORTRAIT_SIZE = WELL_SIZE - 2 * WELL_BORDER;
-/** Left edge of the text column, clear of the well. */
-export const CONTENT_X = WELL_X + WELL_SIZE + 14;
+/** Left edge of the card's text column, clear of the well. */
+export const CONTENT_X = WELL_X + WELL_SIZE + 12;
+/** Width of the card's text column (nameplate, HP row, stat columns). */
+export const CONTENT_W = 150;
 /** Button sprite footprint (143×155 texture at ~0.39, plate hit-box). */
 export const BTN_W = 56;
 export const BTN_H = 61;
 export const BTN_GAP = 6;
-/** The palette row sits right of the stats column, labels beneath. */
-export const BTN_X0 = CONTENT_X + 206;
+/** The palette row sits on the canvas strip, right of the card. */
+export const BTN_X0 = CARD_X + CARD_W + 18;
 export const BTN_Y = 20;
 /** Baseline offset of a button's label under its sprite. */
 export const BTN_LABEL_DY = BTN_H + 10;
