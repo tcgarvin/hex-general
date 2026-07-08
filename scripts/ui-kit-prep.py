@@ -74,6 +74,10 @@ EMITS: dict[str, Emit] = {
     # ~12px inside the 140px bottom strip, center hollowed (inset past the
     # ~140px bracket elbows) so tiled parchment provides the face.
     "frame-dock": Emit("panel-frame", 0.13, hollow=160),
+    # The roster's outer frame (docs/UI-STYLE.md §4): same ratified frame at a
+    # chunkier ~19px rail, hollowed past the bracket elbows — the surviving
+    # ring of baked parchment reads as the page liner against the tiled face.
+    "frame-roster": Emit("panel-frame", 0.20, hollow=160),
     "tab-active": Emit("tab-active", 0.50),
     "tab-inactive": Emit("tab-inactive", 0.50),
 }

@@ -35,6 +35,9 @@ export interface LoadedChrome {
   readonly wood: Texture;
   /** Active folder tab: parchment face in a brass rim (NineSlice). */
   readonly tabActive: Texture;
+  /** Wood-and-brass outer frame for the roster panel (NineSlice; hollow
+   *  center so the canvas ground tiles beneath the rails). */
+  readonly frameRoster: Texture;
 }
 
 function url(name: string): string {
@@ -50,7 +53,7 @@ function url(name: string): string {
  * the terrain/unit texture loaders (degrade whole, never mixed).
  */
 export async function loadChromeTextures(): Promise<LoadedChrome> {
-  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, frameDock, wood, tabActive] =
+  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, frameDock, wood, tabActive, frameRoster] =
     await Promise.all([
       Assets.load<Texture>(url("btn-up")),
       Assets.load<Texture>(url("btn-hover")),
@@ -64,6 +67,7 @@ export async function loadChromeTextures(): Promise<LoadedChrome> {
       Assets.load<Texture>(url("frame-dock")),
       Assets.load<Texture>(url("wood")),
       Assets.load<Texture>(url("tab-active")),
+      Assets.load<Texture>(url("frame-roster")),
     ]);
   return {
     btn: { up, hover, pressed, disabled, active },
@@ -74,5 +78,6 @@ export async function loadChromeTextures(): Promise<LoadedChrome> {
     frameDock,
     wood,
     tabActive,
+    frameRoster,
   };
 }

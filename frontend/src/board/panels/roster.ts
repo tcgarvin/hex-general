@@ -8,9 +8,10 @@ import type { PlanningController, StagedOrder } from "@/planning/usePlanning";
 
 type Unit = components["schemas"]["Unit"];
 
-/** Row geometry shared by the renderer and hit-testing. The tab strip is tall
- *  enough for the Field-HQ folder-tab art (UI-STYLE §4). */
-export const TAB_HEIGHT = 34;
+/** Row geometry shared by the renderer and hit-testing. TAB_HEIGHT is where
+ *  the row list starts: below the frame's top rail, the folder tab, and the
+ *  parchment sheet's top padding (UI-STYLE §4 construction). */
+export const TAB_HEIGHT = 66;
 export const ROW_HEIGHT = 20;
 
 export const TYPE_LABEL: Record<Unit["type"], string> = {

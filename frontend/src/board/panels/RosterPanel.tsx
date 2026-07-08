@@ -1,13 +1,15 @@
 // The roster panel renderer (UI-SPEC §5): docked Pixi chrome on the left edge,
 // dense rows of type · (q,r) · order · HP, with unordered units sorted to the
 // top so "who still needs orders?" is impossible to miss. Drawn in the ratified
-// Field-HQ register (docs/UI-STYLE.md): a parchment data face under a dark-wood
-// tab strip carrying the UNITS folder tab, ink Special Elite columns aligned by
-// layout (each column its own Text at a fixed x — the data font is not
-// fixed-advance), and a brass seam along the map edge. Until the chrome sprites
-// arrive it falls back to flat fills at the same geometry, mirroring the dock.
-// Row derivation and hit-testing live in ./roster; this file is just the
-// scene-graph drawing.
+// Field-HQ register (docs/UI-STYLE.md §4): a wood frame with brass corner
+// brackets around a parchment page, with a recessed canvas slot along the top
+// that the UNITS folder tab rises out of — the slot's lower edge breaks under
+// the tab and a parchment patch hides the tab's bottom rim, so tab and page
+// read as one continuous piece of paper. Rows are ink Special Elite columns
+// aligned by fixed-x layout (the data font is not fixed-advance). Until the
+// chrome sprites arrive it falls back to flat fills at the same geometry,
+// mirroring the dock. Row derivation and hit-testing live in ./roster; this
+// file is just the scene-graph drawing.
 
 import type { Graphics } from "pixi.js";
 import { TextStyle } from "pixi.js";
@@ -18,22 +20,32 @@ import { FONT_DATA, FONT_LABEL, THEME } from "@/theme/theme";
 import type { LoadedChrome } from "./chrome";
 import { ROW_HEIGHT, TAB_HEIGHT, type RosterRow } from "./roster";
 
-// --- column geometry ---
-const COL_MARKER = 8;
-const COL_TYPE = 18;
-const COL_COORD = 56;
-const COL_LABEL = 118;
-const PAD_RIGHT = 12;
-
-// --- tab-strip geometry (folder tab inset in the wood band) ---
-const TAB_X = 8;
-const TAB_W = 84;
-const TAB_PAD_TOP = 5;
+// --- construction geometry (frame → page → tab slot → columns) ---
+/** NineSlice inset covering the outer frame's rails + bracket elbows. */
+const FRAME_SLICE = 34;
+/** Recessed canvas slot the folder tab rises from (inside the frame rail). */
+const WELL_X = 22;
+const WELL_Y = 26;
+const WELL_H = 30;
+/** Folder tab: overlaps the slot's lower edge; its bottom rim is hidden by a
+ *  parchment patch so the tab face flows into the page face. */
+const TAB_X = 34;
+const TAB_W = 92;
+const TAB_Y = 28;
+const TAB_H = 36;
+/** How far past the tab's sides the slot-edge gap and rim patch extend. */
+const TAB_MARGIN = 2;
 /** NineSlice inset covering the tab art's brass rim + rounded shoulders. */
 const TAB_SLICE = 26;
 /** Texture fills emit as 1x mirrored quads (seamless) — tile them unscaled. */
 const FACE_TILE_SCALE = 1.0;
-const WOOD_TILE_SCALE = 1.0;
+
+// --- column geometry ---
+const COL_MARKER = 36;
+const COL_TYPE = 46;
+const COL_COORD = 84;
+const COL_LABEL = 140;
+const PAD_RIGHT = 32;
 
 const style = (family: string, size: number, fill: number) =>
   new TextStyle({ fontFamily: family, fontSize: size, fill });
@@ -78,18 +90,35 @@ export interface RosterPanelProps {
 
 /** Docked left-edge roster, drawn into the Pixi scene graph. */
 export function RosterPanel({ rect, rows, hoverIndex, chrome }: RosterPanelProps) {
-  // Flat fills under the ink text until the sprites arrive (and the seams /
-  // washes that ride on top of them once they have).
-  const drawChrome = (g: Graphics) => {
+  const wellW = rect.width - 2 * WELL_X;
+  const wellBottom = WELL_Y + WELL_H;
+
+  // Flat fills under the ink text until the sprites arrive.
+  const drawGroundFallback = (g: Graphics) => {
     g.clear();
-    if (chrome === null) {
-      g.rect(0, 0, rect.width, rect.height).fill({ color: THEME.parchment200 });
-      g.rect(0, 0, rect.width, TAB_HEIGHT).fill({ color: THEME.wood900 });
-    }
-    // Ink shadow where the face meets the tab strip, then the brass seam
-    // along the map edge (same weight as the dock's).
-    g.rect(0, TAB_HEIGHT, rect.width, 3).fill({ color: THEME.ink900, alpha: 0.18 });
-    g.rect(rect.width - 2, 0, 2, rect.height).fill({ color: THEME.brass600, alpha: 0.7 });
+    if (chrome !== null) return;
+    g.rect(0, 0, rect.width, rect.height).fill({ color: THEME.parchment200 });
+    g.rect(0, 0, rect.width, rect.height).stroke({ width: 8, color: THEME.wood900 });
+    g.rect(WELL_X, WELL_Y, wellW, WELL_H).fill({ color: THEME.canvas800 });
+    g.rect(TAB_X, TAB_Y, TAB_W, wellBottom - TAB_Y).fill({ color: THEME.parchment200 });
+  };
+
+  // The recessed slot: darkening wash over the canvas tiling, an inner-shadow
+  // band along its top, and an ink edge that breaks under the tab so the tab
+  // face flows out of the slot into the page.
+  const drawWell = (g: Graphics) => {
+    g.clear();
+    if (chrome === null) return;
+    g.rect(WELL_X, WELL_Y, wellW, WELL_H).fill({ color: THEME.ink900, alpha: 0.28 });
+    g.rect(WELL_X, WELL_Y, wellW, 3).fill({ color: THEME.ink900, alpha: 0.3 });
+    const edge = { width: 1, color: THEME.ink900, alpha: 0.5 } as const;
+    g.moveTo(WELL_X, WELL_Y).lineTo(WELL_X + wellW, WELL_Y).stroke(edge);
+    g.moveTo(WELL_X, WELL_Y).lineTo(WELL_X, wellBottom).stroke(edge);
+    g.moveTo(WELL_X + wellW, WELL_Y).lineTo(WELL_X + wellW, wellBottom).stroke(edge);
+    g.moveTo(WELL_X, wellBottom).lineTo(TAB_X - TAB_MARGIN, wellBottom).stroke(edge);
+    g.moveTo(TAB_X + TAB_W + TAB_MARGIN, wellBottom)
+      .lineTo(WELL_X + wellW, wellBottom)
+      .stroke(edge);
   };
 
   const drawRowDecor = (g: Graphics) => {
@@ -97,10 +126,19 @@ export function RosterPanel({ rect, rows, hoverIndex, chrome }: RosterPanelProps
     rows.forEach((row, i) => {
       const y = TAB_HEIGHT + i * ROW_HEIGHT;
       if (row.selected) {
-        g.rect(1, y, rect.width - 3, ROW_HEIGHT).fill({ color: THEME.brass400, alpha: 0.35 });
-        g.rect(1, y, rect.width - 3, ROW_HEIGHT).stroke({ width: 1, color: THEME.brass600 });
+        g.rect(WELL_X + 2, y, wellW - 4, ROW_HEIGHT).fill({
+          color: THEME.brass400,
+          alpha: 0.35,
+        });
+        g.rect(WELL_X + 2, y, wellW - 4, ROW_HEIGHT).stroke({
+          width: 1,
+          color: THEME.brass600,
+        });
       } else if (i === hoverIndex) {
-        g.rect(1, y, rect.width - 3, ROW_HEIGHT).fill({ color: THEME.ink900, alpha: 0.07 });
+        g.rect(WELL_X + 2, y, wellW - 4, ROW_HEIGHT).fill({
+          color: THEME.ink900,
+          alpha: 0.07,
+        });
       }
       if (row.warning || row.idle) {
         const cy = y + ROW_HEIGHT / 2;
@@ -119,39 +157,54 @@ export function RosterPanel({ rect, rows, hoverIndex, chrome }: RosterPanelProps
   return (
     <pixiContainer x={rect.x} y={rect.y}>
       {chrome !== null && (
+        <pixiTilingSprite
+          texture={chrome.parchment}
+          width={rect.width}
+          height={rect.height}
+          tileScale={{ x: FACE_TILE_SCALE, y: FACE_TILE_SCALE }}
+        />
+      )}
+      <pixiGraphics draw={drawGroundFallback} />
+      {chrome !== null && (
+        <pixiTilingSprite
+          texture={chrome.canvas}
+          x={WELL_X}
+          y={WELL_Y}
+          width={wellW}
+          height={WELL_H}
+          tileScale={{ x: 0.55, y: 0.55 }}
+        />
+      )}
+      <pixiGraphics draw={drawWell} />
+      {chrome !== null && (
         <>
-          <pixiTilingSprite
-            texture={chrome.parchment}
-            width={rect.width}
-            height={rect.height}
-            tileScale={{ x: FACE_TILE_SCALE, y: FACE_TILE_SCALE }}
-          />
-          <pixiTilingSprite
-            texture={chrome.wood}
-            width={rect.width}
-            height={TAB_HEIGHT}
-            tileScale={{ x: WOOD_TILE_SCALE, y: WOOD_TILE_SCALE }}
-          />
           <pixiNineSliceSprite
             texture={chrome.tabActive}
             x={TAB_X}
-            y={TAB_PAD_TOP}
+            y={TAB_Y}
             width={TAB_W}
-            height={TAB_HEIGHT - TAB_PAD_TOP}
+            height={TAB_H}
             leftWidth={TAB_SLICE}
             rightWidth={TAB_SLICE}
             topHeight={TAB_SLICE}
             bottomHeight={TAB_SLICE}
           />
+          <pixiTilingSprite
+            texture={chrome.parchment}
+            x={TAB_X - TAB_MARGIN}
+            y={wellBottom + 1}
+            width={TAB_W + 2 * TAB_MARGIN}
+            height={TAB_Y + TAB_H - wellBottom + 2}
+            tileScale={{ x: FACE_TILE_SCALE, y: FACE_TILE_SCALE }}
+          />
         </>
       )}
-      <pixiGraphics draw={drawChrome} />
       <pixiText
         text="UNITS"
         style={STYLE_TAB}
         anchor={{ x: 0.5, y: 0.5 }}
         x={TAB_X + TAB_W / 2}
-        y={TAB_PAD_TOP + (TAB_HEIGHT - TAB_PAD_TOP) / 2}
+        y={TAB_Y + (wellBottom - TAB_Y) / 2}
       />
       <pixiGraphics draw={drawRowDecor} />
       {rows.map((row, i) => (
@@ -162,6 +215,17 @@ export function RosterPanel({ rect, rows, hoverIndex, chrome }: RosterPanelProps
           rectWidth={rect.width}
         />
       ))}
+      {chrome !== null && (
+        <pixiNineSliceSprite
+          texture={chrome.frameRoster}
+          width={rect.width}
+          height={rect.height}
+          leftWidth={FRAME_SLICE}
+          rightWidth={FRAME_SLICE}
+          topHeight={FRAME_SLICE}
+          bottomHeight={FRAME_SLICE}
+        />
+      )}
     </pixiContainer>
   );
 }
