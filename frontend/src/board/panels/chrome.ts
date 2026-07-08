@@ -17,9 +17,16 @@ const CHROME_MODULES = import.meta.glob<string>("./chrome/*.png", {
 export const BUTTON_STATES = ["up", "hover", "pressed", "disabled", "active"] as const;
 export type ButtonState = (typeof BUTTON_STATES)[number];
 
+/** States with dedicated wide commit-plate art (LOCK ORDERS, UI-STYLE §4).
+ *  No hover art in the kit; locked reuses pressed (the plate stays sunk in). */
+export const COMMIT_STATES = ["up", "pressed", "disabled"] as const;
+export type CommitState = (typeof COMMIT_STATES)[number];
+
 export interface LoadedChrome {
   /** Order-button plate per interaction state (blank face; icon/label composited). */
   readonly btn: Record<ButtonState, Texture>;
+  /** Wide LOCK ORDERS commit plate per state (blank face; label composited). */
+  readonly commit: Record<CommitState, Texture>;
   /** Brass-lipped inset well framing the unit portrait (NineSlice). */
   readonly well: Texture;
   /** Engraved brass nameplate strip behind panel/unit titles (NineSlice). */
@@ -60,13 +67,16 @@ function url(name: string): string {
  * the terrain/unit texture loaders (degrade whole, never mixed).
  */
 export async function loadChromeTextures(): Promise<LoadedChrome> {
-  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, wood, leather, tabActive, sheet, sheetTall, stitchLeatherTall, frameLeather] =
+  const [up, hover, pressed, disabled, active, commitUp, commitPressed, commitDisabled, well, plate, canvas, parchment, wood, leather, tabActive, sheet, sheetTall, stitchLeatherTall, frameLeather] =
     await Promise.all([
       Assets.load<Texture>(url("btn-up")),
       Assets.load<Texture>(url("btn-hover")),
       Assets.load<Texture>(url("btn-pressed")),
       Assets.load<Texture>(url("btn-disabled")),
       Assets.load<Texture>(url("btn-active")),
+      Assets.load<Texture>(url("commit-up")),
+      Assets.load<Texture>(url("commit-pressed")),
+      Assets.load<Texture>(url("commit-disabled")),
       Assets.load<Texture>(url("well")),
       Assets.load<Texture>(url("plate")),
       Assets.load<Texture>(url("canvas")),
@@ -81,6 +91,7 @@ export async function loadChromeTextures(): Promise<LoadedChrome> {
     ]);
   return {
     btn: { up, hover, pressed, disabled, active },
+    commit: { up: commitUp, pressed: commitPressed, disabled: commitDisabled },
     well,
     plate,
     canvas,

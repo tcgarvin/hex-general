@@ -1572,6 +1572,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
               {lock !== undefined && (
                 <LockPanel
                   rect={layout.lock}
+                  chrome={chromeTex}
                   ordered={lock.ordered}
                   total={lock.total}
                   idle={lock.idle}
