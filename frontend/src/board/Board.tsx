@@ -1524,7 +1524,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           </pixiContainer>
           {showPanels && layout !== null && (
             <>
-              <RosterPanel rect={layout.roster} rows={rows} hoverIndex={rosterHover} />
+              <RosterPanel
+                rect={layout.roster}
+                rows={rows}
+                hoverIndex={rosterHover}
+                chrome={chromeTex}
+              />
               {planning !== undefined && (
                 <InspectorPanel
                   rect={layout.inspector}

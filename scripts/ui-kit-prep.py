@@ -33,6 +33,10 @@ class Emit(NamedTuple):
     # keeps its rails/brackets plus a feathered ring of its baked face, and the
     # fill shows through the middle. 0 = solid emit.
     hollow: int = 0
+    # Mirror-tile the emit into a 2x2 flip-book so a TilingSprite repeats it
+    # seamlessly — the raw cuts have vignetted edges that read as grid seams on
+    # any panel taller/wider than one period (the roster showed them).
+    mirror: bool = False
 
 
 # On-screen targets (1x): order buttons ~64px, the portrait well ~130px,
@@ -55,9 +59,15 @@ EMITS: dict[str, Emit] = {
     # emit scale is what sets the on-screen border weight.
     "well": Emit("inset-well", 0.25),
     "plate": Emit("nameplate", 0.25),
+    # Parchment/wood emit at half scale *then* mirror: same pixel count (and
+    # file size) as a plain 2x emit, seamless, rendered at tileScale 1.0. A 1x
+    # density is fine for these low-contrast fills; 2x-and-mirrored would
+    # quadruple the bundle for no visible gain. Canvas stays a plain emit — its
+    # diagonal weave turns into herringbone chevrons when mirrored, and the
+    # 140px dock strip is shorter than one tile period so seams never show.
     "canvas": Emit("tex-canvas", 1.00),
-    "parchment": Emit("tex-parchment", 1.00),
-    "wood": Emit("tex-wood", 1.00),
+    "parchment": Emit("tex-parchment", 0.50, mirror=True),
+    "wood": Emit("tex-wood", 0.50, mirror=True),
     "frame": Emit("panel-frame", 0.50),
     # The selected-unit dock's inset card (docs/UI-STYLE.md §4): the same
     # ratified frame, emitted thin enough that its ~94px source rail lands at
@@ -101,6 +111,13 @@ def main(argv: list[str] | None = None) -> int:
                 max(1, round(img.height * emit.scale)),
             )
             img = img.resize(size, Image.LANCZOS)
+        if emit.mirror:
+            quad = Image.new("RGBA", (img.width * 2, img.height * 2))
+            quad.paste(img, (0, 0))
+            quad.paste(img.transpose(Image.FLIP_LEFT_RIGHT), (img.width, 0))
+            quad.paste(img.transpose(Image.FLIP_TOP_BOTTOM), (0, img.height))
+            quad.paste(img.transpose(Image.ROTATE_180), (img.width, img.height))
+            img = quad
         out = args.out_dir / f"{name}.png"
         img.save(out, optimize=True)
         print(f"{name:<18}{emit.source:<22}x{emit.scale:<6}{img.size}")

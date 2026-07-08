@@ -31,6 +31,10 @@ export interface LoadedChrome {
   /** Thin wood-and-brass card frame for the dock's inset card (NineSlice;
    *  center is hollowed so the parchment fill tiles beneath it). */
   readonly frameDock: Texture;
+  /** Tileable dark wood fill (header bar, tab strips). */
+  readonly wood: Texture;
+  /** Active folder tab: parchment face in a brass rim (NineSlice). */
+  readonly tabActive: Texture;
 }
 
 function url(name: string): string {
@@ -41,12 +45,12 @@ function url(name: string): string {
 }
 
 /**
- * Load the chrome sprite set for the selected-unit dock pilot. Rejects if any
+ * Load the chrome sprite set for the Field-HQ panels. Rejects if any
  * sprite fails: callers keep the flat placeholder chrome and log, mirroring
  * the terrain/unit texture loaders (degrade whole, never mixed).
  */
 export async function loadChromeTextures(): Promise<LoadedChrome> {
-  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, frameDock] =
+  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, frameDock, wood, tabActive] =
     await Promise.all([
       Assets.load<Texture>(url("btn-up")),
       Assets.load<Texture>(url("btn-hover")),
@@ -58,6 +62,17 @@ export async function loadChromeTextures(): Promise<LoadedChrome> {
       Assets.load<Texture>(url("canvas")),
       Assets.load<Texture>(url("parchment")),
       Assets.load<Texture>(url("frame-dock")),
+      Assets.load<Texture>(url("wood")),
+      Assets.load<Texture>(url("tab-active")),
     ]);
-  return { btn: { up, hover, pressed, disabled, active }, well, plate, canvas, parchment, frameDock };
+  return {
+    btn: { up, hover, pressed, disabled, active },
+    well,
+    plate,
+    canvas,
+    parchment,
+    frameDock,
+    wood,
+    tabActive,
+  };
 }

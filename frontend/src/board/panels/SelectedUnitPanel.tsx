@@ -133,8 +133,8 @@ const WELL_SLICE = 22;
 const PLATE_SLICE_X = 24;
 const PLATE_SLICE_Y = 12;
 const FRAME_SLICE = 22;
-/** Parchment tiles at 2x (hidpi-crisp), matching the emit convention. */
-const PARCHMENT_TILE_SCALE = 0.5;
+/** Texture fills emit as 1x mirrored quads (seamless) — tile them unscaled. */
+const PARCHMENT_TILE_SCALE = 1.0;
 /** The brass face's center within the button sprite (fraction of its size). */
 const BTN_FACE_CX = 0.5;
 const BTN_FACE_CY = 0.44;
