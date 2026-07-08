@@ -7,7 +7,6 @@ import {
   BTN_H,
   BTN_W,
   BTN_X0,
-  CARD_FRAME,
   CARD_H,
   CARD_W,
   CARD_X,
@@ -19,6 +18,7 @@ import {
   paletteButtons,
   PORTRAIT_SIZE,
   PORTRAIT_X,
+  SHEET_EDGE,
   WELL_SIZE,
   WELL_X,
   WELL_Y,
@@ -40,15 +40,15 @@ describe("card geometry", () => {
     expect(CARD_Y + CARD_H).toBeLessThanOrEqual(BOTTOM_HEIGHT);
   });
 
-  it("keeps the portrait well inside the card's parchment face", () => {
-    expect(WELL_X).toBeGreaterThanOrEqual(CARD_X + CARD_FRAME);
-    expect(WELL_Y).toBeGreaterThanOrEqual(CARD_Y + CARD_FRAME);
-    expect(WELL_Y + WELL_SIZE).toBeLessThanOrEqual(CARD_Y + CARD_H - CARD_FRAME);
+  it("keeps the portrait well inside the sheet's parchment face", () => {
+    expect(WELL_X).toBeGreaterThanOrEqual(CARD_X + SHEET_EDGE);
+    expect(WELL_Y).toBeGreaterThanOrEqual(CARD_Y + SHEET_EDGE);
+    expect(WELL_Y + WELL_SIZE).toBeLessThanOrEqual(CARD_Y + CARD_H - SHEET_EDGE);
   });
 
   it("keeps the text column clear of the well and inside the face", () => {
     expect(CONTENT_X).toBeGreaterThan(PORTRAIT_X + PORTRAIT_SIZE);
-    expect(CONTENT_X + CONTENT_W).toBeLessThanOrEqual(CARD_X + CARD_W - CARD_FRAME);
+    expect(CONTENT_X + CONTENT_W).toBeLessThanOrEqual(CARD_X + CARD_W - SHEET_EDGE);
   });
 
   it("keeps the palette on the strip, clear of the card", () => {

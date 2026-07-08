@@ -1,15 +1,15 @@
 // The bottom-left selected-unit panel (UI-SPEC §6 detail + §8 order palette),
 // drawn into the Pixi scene graph in the ratified Field-HQ register
-// (docs/UI-STYLE.md): a wood-framed parchment card inset into the worn-canvas
-// dock strip carries the unit's identity — portrait in a brass-lipped well,
-// type on an engraved nameplate, round HP pips in a recessed capsule, and
-// ruled MOVE/ATK/DEF stat columns in ink — while the sprite-built order
-// palette (blank brass faces + composited icon/label, one art state per
-// interaction state) and the order/advisory text sit on the canvas to the
-// card's right. Button geometry + hit-testing live in ./selectedUnit; this
-// file is just the drawing. Until the chrome sprites arrive it falls back to
-// a flat placeholder look at the same geometry, mirroring the terrain/unit
-// texture fallbacks.
+// (docs/UI-STYLE.md): a frameless raw-edged parchment sheet lying on the
+// dock's dark wood strip carries the unit's identity — portrait in a
+// brass-lipped well, type on an engraved nameplate, round HP pips in a
+// recessed capsule, and ruled MOVE/ATK/DEF stat columns in ink — while the
+// sprite-built order palette (blank brass faces + composited icon/label, one
+// art state per interaction state) and the order/advisory text sit on the
+// wood to the sheet's right. Button geometry + hit-testing live in
+// ./selectedUnit; this file is just the drawing. Until the chrome sprites
+// arrive it falls back to a flat placeholder look at the same geometry,
+// mirroring the terrain/unit texture fallbacks.
 
 import type { Graphics, Texture } from "pixi.js";
 import { TextStyle } from "pixi.js";
@@ -127,12 +127,18 @@ const WARN_Y = 30;
 const WARN_LINE = 18;
 
 // NineSlice insets: the well's leather+lip border, the nameplate's
-// screw-capped ends, and the card frame's bracketed corners, in
+// screw-capped ends, and the parchment sheet's rough edge band, in
 // emitted-texture pixels (scripts/ui-kit-prep.py).
 const WELL_SLICE = 22;
 const PLATE_SLICE_X = 24;
 const PLATE_SLICE_Y = 12;
-const FRAME_SLICE = 22;
+const SHEET_SLICE = 16;
+/** Paper shadow under the sheet: two stacked offset rects fake a soft cast
+ *  shadow (Pixi Graphics has no blur). */
+const SHADOW_OFFSETS: readonly { dx: number; dy: number; alpha: number }[] = [
+  { dx: 3, dy: 5, alpha: 0.18 },
+  { dx: 1, dy: 2, alpha: 0.22 },
+];
 /** Texture fills emit as 1x mirrored quads (seamless) — tile them unscaled. */
 const PARCHMENT_TILE_SCALE = 1.0;
 /** The brass face's center within the button sprite (fraction of its size). */
@@ -267,8 +273,8 @@ export function SelectedUnitPanel({
 }: SelectedUnitPanelProps) {
   const pair = unit === null ? null : (tex?.[unit.type] ?? null);
 
-  // Ground layer: worn canvas + a darkening wash (chrome), or the flat
-  // placeholder fill until the sprites arrive.
+  // Ground layer: dark wood + a light wash (chrome), or the flat placeholder
+  // fill until the sprites arrive.
   const drawGround = (g: Graphics) => {
     g.clear();
     if (chrome === null) {
@@ -278,10 +284,23 @@ export function SelectedUnitPanel({
       g.stroke({ width: 1, color: PANEL_BORDER });
       return;
     }
-    // Wash over the canvas tiling: deepens the field so text and brass read.
-    g.rect(0, 0, rect.width, rect.height).fill({ color: THEME.ink900, alpha: 0.3 });
+    // Wash over the wood tiling: deepens the field so text and brass read.
+    g.rect(0, 0, rect.width, rect.height).fill({ color: THEME.ink900, alpha: 0.18 });
     // Brass seam along the map edge.
     g.rect(0, 0, rect.width, 2).fill({ color: THEME.brass600, alpha: 0.7 });
+  };
+
+  // Cast shadow under the parchment sheet, so it reads as paper lying on the
+  // wood rather than a fill painted onto it.
+  const drawSheetShadow = (g: Graphics) => {
+    g.clear();
+    if (chrome === null || unit === null) return;
+    for (const { dx, dy, alpha } of SHADOW_OFFSETS) {
+      g.roundRect(CARD_X + dx, CARD_Y + dy, CARD_W, CARD_H, 8).fill({
+        color: THEME.ink900,
+        alpha,
+      });
+    }
   };
 
   const drawDetail = (g: Graphics) => {
@@ -365,10 +384,10 @@ export function SelectedUnitPanel({
     <>
       {chrome !== null && (
         <pixiTilingSprite
-          texture={chrome.canvas}
+          texture={chrome.wood}
           width={rect.width}
           height={rect.height}
-          tileScale={{ x: 0.55, y: 0.55 }}
+          tileScale={{ x: 1.0, y: 1.0 }}
         />
       )}
       <pixiGraphics draw={drawGround} />
@@ -414,6 +433,7 @@ export function SelectedUnitPanel({
   return (
     <pixiContainer x={rect.x} y={rect.y}>
       {ground}
+      <pixiGraphics draw={drawSheetShadow} />
       {chrome !== null && (
         <>
           <pixiTilingSprite
@@ -425,15 +445,15 @@ export function SelectedUnitPanel({
             tileScale={{ x: PARCHMENT_TILE_SCALE, y: PARCHMENT_TILE_SCALE }}
           />
           <pixiNineSliceSprite
-            texture={chrome.frameDock}
+            texture={chrome.sheet}
             x={CARD_X}
             y={CARD_Y}
             width={CARD_W}
             height={CARD_H}
-            leftWidth={FRAME_SLICE}
-            rightWidth={FRAME_SLICE}
-            topHeight={FRAME_SLICE}
-            bottomHeight={FRAME_SLICE}
+            leftWidth={SHEET_SLICE}
+            rightWidth={SHEET_SLICE}
+            topHeight={SHEET_SLICE}
+            bottomHeight={SHEET_SLICE}
           />
         </>
       )}

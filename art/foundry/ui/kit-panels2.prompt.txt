@@ -1,0 +1,12 @@
+Game UI asset kit sheet, flat orthographic front view, items laid out in a clean grid on a solid flat neutral gray background (#7f7f7f), generous spacing between items, no scene, no perspective, no drop shadows onto the background.
+
+STYLE (match the reference image's UI chrome): mid-20th-century field-headquarters furniture — dark-stained oak and walnut wood with visible grain, polished brass edge trim, inset panels of worn olive canvas and saddle leather with stitched edges, aged parchment paper. Crisp painted game-UI style, coherent soft top-down lighting, believable materials.
+
+ITEMS (label each with a small plain caption beneath it):
+1. LEATHER PANEL — a large rectangular panel of dark saddle leather, slightly worn and creased, with a single line of heavy waxed-thread stitching running parallel to the edge all the way around, a finger-width in from the edge. No wood rails, no brass — just the stitched leather panel. Border and stitching must be uniform along each edge so it can be 9-sliced.
+2. CANVAS PANEL — the same stitched-border panel construction in worn dark olive-drab canvas instead of leather.
+3. PARCHMENT SHEET — a rectangular sheet of aged parchment paper lying flat, edges slightly irregular and rough-cut with subtle darkened aging along them, face mostly clean and empty. No frame, no tape, no pins. Edge treatment must be uniform along each edge so it can be 9-sliced.
+4. PARCHMENT SHEET WORN — a second parchment sheet, more heavily aged: deeper edge darkening and fine creases near the edges, face still clean enough to write on. Edge treatment uniform along each edge so it can be 9-sliced.
+5. TEXTURE SWATCH — one square seamless texture swatch of the dark saddle leather, no stitching, full-bleed.
+
+No text anywhere except the small captions. No watermark.

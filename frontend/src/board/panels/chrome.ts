@@ -28,16 +28,23 @@ export interface LoadedChrome {
   readonly canvas: Texture;
   /** Tileable parchment panel-face fill. */
   readonly parchment: Texture;
-  /** Thin wood-and-brass card frame for the dock's inset card (NineSlice;
-   *  center is hollowed so the parchment fill tiles beneath it). */
-  readonly frameDock: Texture;
-  /** Tileable dark wood fill (header bar, tab strips). */
+  /** Tileable dark wood fill (dock strip ground, header bar). */
   readonly wood: Texture;
+  /** Tileable dark saddle-leather fill (roster panel ground). */
+  readonly leather: Texture;
   /** Active folder tab: parchment face in a brass rim (NineSlice). */
   readonly tabActive: Texture;
-  /** Wood-and-brass outer frame for the roster panel (NineSlice; hollow
-   *  center so the canvas ground tiles beneath the rails). */
-  readonly frameRoster: Texture;
+  /** Raw-edged aged parchment sheet (NineSlice; hollow center so the
+   *  parchment fill tiles beneath). Landscape grain — the dock card. */
+  readonly sheet: Texture;
+  /** The same sheet rotated to portrait grain — the roster page. */
+  readonly sheetTall: Texture;
+  /** Stitched saddle-leather panel border, portrait grain (NineSlice; hollow
+   *  center so the leather fill tiles beneath) — the roster ground's seam. */
+  readonly stitchLeatherTall: Texture;
+  /** Wood-and-brass outer frame for the roster panel (NineSlice; hollowed
+   *  tight to the rail so it sits directly on the leather ground). */
+  readonly frameLeather: Texture;
 }
 
 function url(name: string): string {
@@ -53,7 +60,7 @@ function url(name: string): string {
  * the terrain/unit texture loaders (degrade whole, never mixed).
  */
 export async function loadChromeTextures(): Promise<LoadedChrome> {
-  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, frameDock, wood, tabActive, frameRoster] =
+  const [up, hover, pressed, disabled, active, well, plate, canvas, parchment, wood, leather, tabActive, sheet, sheetTall, stitchLeatherTall, frameLeather] =
     await Promise.all([
       Assets.load<Texture>(url("btn-up")),
       Assets.load<Texture>(url("btn-hover")),
@@ -64,10 +71,13 @@ export async function loadChromeTextures(): Promise<LoadedChrome> {
       Assets.load<Texture>(url("plate")),
       Assets.load<Texture>(url("canvas")),
       Assets.load<Texture>(url("parchment")),
-      Assets.load<Texture>(url("frame-dock")),
       Assets.load<Texture>(url("wood")),
+      Assets.load<Texture>(url("leather")),
       Assets.load<Texture>(url("tab-active")),
-      Assets.load<Texture>(url("frame-roster")),
+      Assets.load<Texture>(url("sheet")),
+      Assets.load<Texture>(url("sheet-tall")),
+      Assets.load<Texture>(url("stitch-leather-tall")),
+      Assets.load<Texture>(url("frame-leather")),
     ]);
   return {
     btn: { up, hover, pressed, disabled, active },
@@ -75,9 +85,12 @@ export async function loadChromeTextures(): Promise<LoadedChrome> {
     plate,
     canvas,
     parchment,
-    frameDock,
     wood,
+    leather,
     tabActive,
-    frameRoster,
+    sheet,
+    sheetTall,
+    stitchLeatherTall,
+    frameLeather,
   };
 }

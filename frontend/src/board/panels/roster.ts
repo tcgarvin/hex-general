@@ -10,8 +10,8 @@ type Unit = components["schemas"]["Unit"];
 
 /** Row geometry shared by the renderer and hit-testing. TAB_HEIGHT is where
  *  the row list starts: below the frame's top rail, the folder tab, and the
- *  parchment sheet's top padding (UI-STYLE §4 construction). */
-export const TAB_HEIGHT = 66;
+ *  parchment page's rough top edge (UI-STYLE §4 construction). */
+export const TAB_HEIGHT = 80;
 export const ROW_HEIGHT = 20;
 
 export const TYPE_LABEL: Record<Unit["type"], string> = {

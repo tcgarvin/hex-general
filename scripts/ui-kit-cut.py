@@ -63,6 +63,7 @@ class Crop(NamedTuple):
 # swatches use an *inward* margin instead, since they are full-bleed squares
 # with no frame to pad outward from.
 PANELS = "kit-panels.png"
+PANELS2 = "kit-panels2.png"
 BUTTONS = "kit-buttons.png"
 BLANK = "kit-buttons-blank.png"
 
@@ -76,6 +77,14 @@ MANIFEST: dict[str, Crop] = {
     "tex-wood": Crop(PANELS, (336, 1515, 739, 1885)),
     "tex-canvas": Crop(PANELS, (822, 1516, 1225, 1890)),
     "tex-parchment": Crop(PANELS, (1307, 1515, 1711, 1886)),
+    # kit-panels2.png — stitched leather/canvas panel grounds and raw-edged
+    # parchment sheets (frameless dock card + roster page), plus a seamless
+    # leather fill swatch.
+    "stitch-leather": Crop(PANELS2, (78, 76, 991, 656)),
+    "stitch-canvas": Crop(PANELS2, (1058, 76, 1970, 656)),
+    "sheet": Crop(PANELS2, (154, 765, 915, 1317)),
+    "sheet-worn": Crop(PANELS2, (1133, 765, 1895, 1318)),
+    "tex-leather": Crop(PANELS2, (788, 1439, 1260, 1911)),
     # kit-buttons.png
     "btn-move": Crop(BUTTONS, (95, 183, 453, 612)),
     "btn-barrage": Crop(BUTTONS, (469, 183, 828, 612)),
@@ -108,7 +117,7 @@ MANIFEST: dict[str, Crop] = {
 
 # These crops are full-bleed texture squares: no frame, no background to
 # strip. They keep an opaque alpha channel.
-TEXTURE_NAMES = {"tex-wood", "tex-canvas", "tex-parchment"}
+TEXTURE_NAMES = {"tex-wood", "tex-canvas", "tex-parchment", "tex-leather"}
 
 CHECKER = ((48, 48, 54), (66, 66, 74))
 MONTAGE_BG = (30, 30, 36, 255)

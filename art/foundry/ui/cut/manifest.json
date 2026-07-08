@@ -112,6 +112,76 @@
     ]
   },
   {
+    "name": "stitch-leather",
+    "source": "kit-panels2.png",
+    "box": [
+      78,
+      76,
+      991,
+      656
+    ],
+    "output_size": [
+      913,
+      580
+    ]
+  },
+  {
+    "name": "stitch-canvas",
+    "source": "kit-panels2.png",
+    "box": [
+      1058,
+      76,
+      1970,
+      656
+    ],
+    "output_size": [
+      912,
+      580
+    ]
+  },
+  {
+    "name": "sheet",
+    "source": "kit-panels2.png",
+    "box": [
+      154,
+      765,
+      915,
+      1317
+    ],
+    "output_size": [
+      761,
+      552
+    ]
+  },
+  {
+    "name": "sheet-worn",
+    "source": "kit-panels2.png",
+    "box": [
+      1133,
+      765,
+      1895,
+      1318
+    ],
+    "output_size": [
+      762,
+      553
+    ]
+  },
+  {
+    "name": "tex-leather",
+    "source": "kit-panels2.png",
+    "box": [
+      788,
+      1439,
+      1260,
+      1911
+    ],
+    "output_size": [
+      472,
+      472
+    ]
+  },
+  {
     "name": "btn-move",
     "source": "kit-buttons.png",
     "box": [

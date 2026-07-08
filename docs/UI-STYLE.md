@@ -56,12 +56,15 @@ components land.
 | Factions | — | keep engine blue `#4f8cff` / red `#ff5d5d` (board consistency) |
 
 Two panel-face modes, both in the concept: **parchment faces** (roster list,
-inspector — dark ink text) and **dark canvas/leather faces** (dock strip,
+inspector — dark ink text) and **dark wood/leather grounds** (dock strip,
 minimap surround — ivory text). Use parchment where the player reads dense
-data; canvas/leather where controls sit. The two combine on the dock: the
-selected unit's identity block is a wood-framed **parchment card inset into
-the canvas strip** (ratified 2026-07-07), with the order palette and advisory
-text on the canvas beside it.
+data; wood/leather where controls sit. The two combine on the dock (revised
+2026-07-07, superseding the framed-card construction): the selected unit's
+identity block is a **frameless raw-edged parchment sheet lying on the dock's
+dark wood**, with the order palette and advisory text directly on the wood
+beside it. The roster is the concept's full sandwich: wood-and-brass frame →
+**stitched saddle-leather ground** → raw-edged parchment page with the UNITS
+folder tab.
 
 ## 3. Typography (three roles)
 

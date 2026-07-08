@@ -18,23 +18,23 @@ export interface PaletteButton {
 }
 
 // --- panel geometry (local to the selected-unit rect) ---
-// Field-HQ card-on-strip layout (docs/UI-STYLE.md §4): a framed parchment
-// card inset into the worn-canvas strip holds the unit's identity (portrait
-// well, nameplate, HP, stat columns); the sprite-button order palette and the
-// order/advisory text sit on the canvas to the card's right.
-/** Outer box of the parchment card (frame rails included). */
+// Field-HQ sheet-on-wood layout (docs/UI-STYLE.md §4): a frameless raw-edged
+// parchment sheet lying on the dock's dark wood holds the unit's identity
+// (portrait well, nameplate, HP, stat columns); the sprite-button order
+// palette and the order/advisory text sit on the wood to the sheet's right.
+/** Outer box of the parchment sheet (its rough edge band included). */
 export const CARD_X = 6;
-export const CARD_Y = 3;
+export const CARD_Y = 4;
 export const CARD_W = 306;
-export const CARD_H = 134;
-/** Rendered thickness of the card frame's wood rail (the frame-dock emit's
- *  ~94px source rail at scale 0.13 — scripts/ui-kit-prep.py). */
-export const CARD_FRAME = 12;
-/** The parchment face inside the frame rails. */
-export const FACE_X = CARD_X + CARD_FRAME;
-export const FACE_Y = CARD_Y + CARD_FRAME;
-export const FACE_W = CARD_W - 2 * CARD_FRAME;
-export const FACE_H = CARD_H - 2 * CARD_FRAME;
+export const CARD_H = 132;
+/** Rendered width of the sheet's rough aged-edge band (the sheet emit's
+ *  ~22px source band at scale 0.55 — scripts/ui-kit-prep.py). */
+export const SHEET_EDGE = 12;
+/** The clean parchment face inside the sheet's edge band. */
+export const FACE_X = CARD_X + SHEET_EDGE;
+export const FACE_Y = CARD_Y + SHEET_EDGE;
+export const FACE_W = CARD_W - 2 * SHEET_EDGE;
+export const FACE_H = CARD_H - 2 * SHEET_EDGE;
 /** Outer box of the portrait inset well (the portrait art sits inside its
  *  brass lip), left side of the card face. */
 export const WELL_X = FACE_X + 4;

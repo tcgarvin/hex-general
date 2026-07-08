@@ -13,9 +13,9 @@ export interface Rect {
 }
 
 /** Width of the left-docked roster panel (UI-SPEC §5). Sized for the Field-HQ
- *  construction: wood frame rails + canvas gutter around the parchment sheet
- *  still need to fit the five row columns (UI-STYLE §4). */
-export const ROSTER_WIDTH = 260;
+ *  construction: wood frame rails + stitched-leather gutter around the
+ *  parchment page still need to fit the five row columns (UI-STYLE §4). */
+export const ROSTER_WIDTH = 300;
 
 /** Height of the bottom-docked strip holding the selected-unit + lock panels. */
 export const BOTTOM_HEIGHT = 140;
