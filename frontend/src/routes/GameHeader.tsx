@@ -44,17 +44,22 @@ export function GameHeader({
   const idle = tally?.idleUnitIds.length ?? 0;
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-5 border-b border-zinc-800 bg-zinc-950 px-4 text-sm">
-      <Link to="/" className="font-semibold tracking-tight text-zinc-100">
+    <header className="fhq-wood flex h-12 shrink-0 items-center gap-5 border-b-2 border-brass-600/70 px-4 text-sm">
+      <Link
+        to="/"
+        className="font-display text-base uppercase tracking-wide text-ivory-100"
+      >
         hex-general
       </Link>
 
       <Stat label="Turn">
-        {turn}
-        {turnLimit > 0 && <span className="text-zinc-500"> / {turnLimit}</span>}
+        <span className="font-data">
+          {turn}
+          {turnLimit > 0 && <span className="text-ivory-400"> / {turnLimit}</span>}
+        </span>
       </Stat>
 
-      <span className="font-mono text-xs font-semibold uppercase tracking-wider text-indigo-300">
+      <span className="font-label text-xs font-semibold uppercase tracking-wider text-brass-400">
         {phase}
       </span>
 
@@ -63,32 +68,32 @@ export function GameHeader({
       )}
 
       <Stat label="Muster">
-        <span className="font-mono">
+        <span className="font-data">
           {economy.bank}
-          <span className="text-zinc-500">/{economy.cap}</span>
+          <span className="text-ivory-400">/{economy.cap}</span>
         </span>{" "}
-        <span className={economy.net >= 0 ? "text-emerald-400" : "text-red-400"}>
+        <span className={economy.net >= 0 ? "text-valid" : "text-invalid"}>
           ({net})
         </span>
       </Stat>
 
       {tally !== null && (
         <Stat label="Orders">
-          <span className="font-mono">
+          <span className="font-data">
             {tally.ordered}
-            <span className="text-zinc-500">/{tally.total}</span>
+            <span className="text-ivory-400">/{tally.total}</span>
           </span>
         </Stat>
       )}
 
       {idle > 0 && (
-        <span className="rounded bg-amber-500/15 px-2 py-0.5 font-mono text-xs font-semibold text-amber-300">
+        <span className="rounded-sm border border-warn/50 bg-ink-900/60 px-2 py-0.5 font-label text-xs font-semibold tracking-wide text-warn">
           ⚠ {idle} IDLE
         </span>
       )}
 
       {warnings > 0 && (
-        <span className="rounded bg-red-500/15 px-2 py-0.5 font-mono text-xs font-semibold text-red-300">
+        <span className="rounded-sm border border-invalid/60 bg-ink-900/60 px-2 py-0.5 font-label text-xs font-semibold tracking-wide text-red-400">
           ⚠ {warnings} {warnings === 1 ? "WARNING" : "WARNINGS"}
         </span>
       )}
@@ -101,11 +106,11 @@ export function GameHeader({
   );
 }
 
-/** A labelled inline stat: small grey caption + value, kept on one line. */
+/** A labelled inline stat: small stencil-toned caption + value, on one line. */
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <span className="flex items-baseline gap-1.5 whitespace-nowrap text-zinc-200">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+    <span className="flex items-baseline gap-1.5 whitespace-nowrap text-ivory-100">
+      <span className="font-label text-[10px] font-semibold uppercase tracking-wider text-ivory-400">
         {label}
       </span>
       <span>{children}</span>

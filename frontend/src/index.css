@@ -1,7 +1,30 @@
 @import "tailwindcss";
 
-/* Dark, terminal-ish baseline — the playtest tool's polish budget goes to replay
-   clarity and observability, not chrome (FRONTEND.md). */
+/* Field-HQ palette + type tokens (docs/UI-STYLE.md §2–3) for the React DOM
+   surfaces. Keep the color values in lockstep with src/theme/theme.ts — that
+   file is the same palette as 0xRRGGBB ints for the Pixi chrome. */
+@theme {
+  --color-wood-900: #321f14;
+  --color-wood-700: #3d2d1b;
+  --color-wood-500: #665036;
+  --color-brass-600: #a1793e;
+  --color-brass-400: #d9b060;
+  --color-parchment-200: #e4cda2;
+  --color-parchment-400: #aa9675;
+  --color-canvas-800: #4c2e21;
+  --color-canvas-600: #7f5c37;
+  --color-ink-900: #2b2118;
+  --color-ivory-100: #f0e6d2;
+  --color-ivory-400: #a89880;
+  --color-warn: #f5b342;
+  --color-invalid: #c03b2e;
+  --color-valid: #7fa65a;
+
+  --font-display: "Allerta Stencil", "Arial Black", sans-serif;
+  --font-label: "Archivo Narrow", "Arial Narrow", sans-serif;
+  --font-data: "Special Elite", "Courier New", monospace;
+}
+
 :root {
   color-scheme: dark;
 }
@@ -11,4 +34,24 @@ body {
   font-family:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
+}
+
+/* Field-HQ wood surface (UI-STYLE §4 "DOM surfaces"): the same ratified kit
+   texture the Pixi dock tiles, deepened by the dock's ink wash so text and
+   brass read. Pair with a brass border for the seam along the map edge. */
+.fhq-wood {
+  background-color: var(--color-wood-900);
+  background-image:
+    linear-gradient(rgb(43 33 24 / 0.18), rgb(43 33 24 / 0.18)),
+    url("./board/panels/chrome/wood.png");
+  background-repeat: repeat;
+}
+
+/* Heavier wash for floating menus, where small text sits directly on the grain. */
+.fhq-wood-deep {
+  background-color: var(--color-wood-900);
+  background-image:
+    linear-gradient(rgb(43 33 24 / 0.45), rgb(43 33 24 / 0.45)),
+    url("./board/panels/chrome/wood.png");
+  background-repeat: repeat;
 }

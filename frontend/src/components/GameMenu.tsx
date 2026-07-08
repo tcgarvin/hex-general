@@ -34,10 +34,10 @@ export function GameMenu({
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+        className="flex items-center gap-1.5 rounded-sm border border-brass-600/50 bg-ink-900/30 px-3 py-1.5 font-label text-sm font-medium text-ivory-100 hover:bg-ink-900/60"
       >
         <span>Game</span>
-        <span className="text-zinc-500">▾</span>
+        <span className="text-brass-400">▾</span>
       </button>
       {open && (
         <>
@@ -47,7 +47,7 @@ export function GameMenu({
             tabIndex={-1}
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 z-20 mt-1 flex w-72 flex-col gap-3 rounded-md border border-zinc-700 bg-zinc-900 p-3 text-sm shadow-lg">
+          <div className="fhq-wood-deep absolute right-0 z-20 mt-1 flex w-72 flex-col gap-3 rounded-sm border border-brass-600/50 p-3 text-sm shadow-lg shadow-black/50">
             {over && <Outcome view={view} />}
 
             <Slots view={view} />
@@ -56,7 +56,7 @@ export function GameMenu({
               <Link
                 to={`/game/${view.game_id}?turn=${lastResolvedTurn}`}
                 onClick={() => setOpen(false)}
-                className="self-start text-xs font-medium text-indigo-400 hover:text-indigo-300"
+                className="self-start text-xs font-medium text-brass-400 hover:text-parchment-200"
               >
                 Watch last replay (turn {lastResolvedTurn})
               </Link>
@@ -79,7 +79,7 @@ function Outcome({ view }: { view: GameView }) {
         ? "You win!"
         : "You lose.";
   return (
-    <p className="rounded-md border border-indigo-700 bg-indigo-950/40 px-3 py-2 text-indigo-100">
+    <p className="rounded-sm border border-brass-600/60 bg-ink-900/50 px-3 py-2 font-label text-ivory-100">
       Game over — {result} ({view.victory.reason.replace("_", " ")})
     </p>
   );
@@ -93,14 +93,19 @@ function Slots({ view }: { view: GameView }) {
         const present = view.slots_present.includes(slot);
         const locked = view.locked[slot] === true;
         return (
-          <div key={slot} className="rounded-md border border-zinc-800 p-2 text-xs">
+          <div
+            key={slot}
+            className="rounded-sm border border-wood-500/40 bg-ink-900/30 p-2 text-xs"
+          >
             <div className="flex items-center justify-between">
-              <span className="font-medium capitalize">{slot}</span>
+              <span className="font-medium capitalize text-ivory-100">{slot}</span>
               {slot === view.your_slot && (
-                <span className="text-[10px] text-indigo-400">you</span>
+                <span className="font-label text-[10px] uppercase text-brass-400">
+                  you
+                </span>
               )}
             </div>
-            <p className="mt-0.5 text-zinc-400">
+            <p className="mt-0.5 text-ivory-400">
               {present ? (locked ? "locked in" : "planning") : "open slot"}
             </p>
           </div>
@@ -149,7 +154,7 @@ function ResignControl({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-red-900 bg-red-950/30 p-2 text-xs text-red-300">
+    <div className="flex flex-col gap-2 rounded-sm border border-invalid/60 bg-ink-900/50 p-2 text-xs text-red-300">
       <span>Confirm forfeit? This ends the game.</span>
       <div className="flex items-center gap-2">
         <button

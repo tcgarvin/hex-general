@@ -87,10 +87,10 @@ export function AccountMenu() {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex max-w-[12rem] items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+        className="flex max-w-[12rem] items-center gap-1.5 rounded-sm border border-brass-600/50 bg-ink-900/30 px-3 py-1.5 font-label text-sm font-medium text-ivory-100 hover:bg-ink-900/60"
       >
         <span className="truncate">{user?.email ?? "Account"}</span>
-        <span className="text-zinc-500">▾</span>
+        <span className="text-brass-400">▾</span>
       </button>
       {open && (
         <>
@@ -100,11 +100,11 @@ export function AccountMenu() {
             tabIndex={-1}
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 z-20 mt-1 flex w-64 flex-col rounded-md border border-zinc-700 bg-zinc-900 py-1 text-sm shadow-lg">
-            <div className="truncate px-3 py-1.5 text-xs text-zinc-500">
+          <div className="fhq-wood-deep absolute right-0 z-20 mt-1 flex w-64 flex-col rounded-sm border border-brass-600/50 py-1 text-sm shadow-lg shadow-black/50">
+            <div className="truncate px-3 py-1.5 text-xs text-ivory-400">
               {user?.email ?? "Signed in"}
               {isDev && (
-                <span className="ml-2 rounded bg-indigo-950 px-1.5 py-0.5 text-indigo-300">
+                <span className="ml-2 rounded-sm border border-brass-600/50 px-1.5 py-0.5 font-label uppercase text-brass-400">
                   dev
                 </span>
               )}
@@ -112,15 +112,15 @@ export function AccountMenu() {
 
             <Link
               to="/account"
-              className="px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800"
+              className="px-3 py-1.5 text-left text-ivory-100 hover:bg-ink-900/60"
               onClick={() => setOpen(false)}
             >
               Account
             </Link>
 
             {isDev && profiles.length > 0 && (
-              <div className="mt-1 border-t border-zinc-800 pt-1">
-                <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+              <div className="mt-1 border-t border-wood-500/40 pt-1">
+                <div className="px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-wider text-warn">
                   Act as user
                 </div>
                 {profiles.map((profile) => {
@@ -135,15 +135,15 @@ export function AccountMenu() {
                       className={
                         "flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left transition-colors " +
                         (active
-                          ? "text-amber-200"
-                          : "text-zinc-200 hover:bg-zinc-800")
+                          ? "text-warn"
+                          : "text-ivory-100 hover:bg-ink-900/60")
                       }
                     >
                       <span className="truncate">
                         {profile.email || profile.user_id}
                         {profile.is_self ? " (you)" : ""}
                       </span>
-                      {active && <span className="text-amber-400">●</span>}
+                      {active && <span className="text-warn">●</span>}
                     </button>
                   );
                 })}
@@ -153,7 +153,7 @@ export function AccountMenu() {
                       clearImpersonatedUserId();
                       window.location.assign("/");
                     }}
-                    className="w-full truncate px-3 py-1.5 text-left text-zinc-400 hover:bg-zinc-800"
+                    className="w-full truncate px-3 py-1.5 text-left text-ivory-400 hover:bg-ink-900/60"
                   >
                     Stop impersonating {offListId}
                   </button>
@@ -161,9 +161,9 @@ export function AccountMenu() {
               </div>
             )}
 
-            <div className="mt-1 border-t border-zinc-800 pt-1">
+            <div className="mt-1 border-t border-wood-500/40 pt-1">
               <button
-                className="w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800"
+                className="w-full px-3 py-1.5 text-left text-ivory-100 hover:bg-ink-900/60"
                 onClick={() => {
                   setOpen(false);
                   void signOut();
