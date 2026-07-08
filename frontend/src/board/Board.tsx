@@ -6,7 +6,7 @@
 // Phase 8 Slice 2 swaps Graphics for the AI-generated sprite set.
 
 import { Application, extend } from "@pixi/react";
-import { Container, Graphics, Sprite, Text, TextStyle } from "pixi.js";
+import { Container, Graphics, NineSliceSprite, Sprite, Text, TextStyle, TilingSprite } from "pixi.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
@@ -45,6 +45,7 @@ import {
   playerColor,
   TERRAIN_FILL,
 } from "./palette";
+import { loadChromeTextures, type LoadedChrome } from "./panels/chrome";
 import { GameOverPanel, type GameOutcome } from "./panels/GameOverPanel";
 import type { InspectedSettlement } from "./panels/inspector";
 import { InspectorPanel } from "./panels/InspectorPanel";
@@ -78,7 +79,7 @@ import {
 } from "./unitHud";
 import { loadUnitTextures, type LoadedUnits } from "./units";
 
-extend({ Container, Graphics, Sprite, Text });
+extend({ Container, Graphics, NineSliceSprite, Sprite, Text, TilingSprite });
 
 type Facing = components["schemas"]["Facing"];
 type GameState = components["schemas"]["GameState"];
@@ -489,6 +490,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   const [terrainTex, setTerrainTex] = useState<LoadedTiles | null>(null);
   // Two-layer unit sprites; null until loaded (vector markers until then).
   const [unitTex, setUnitTex] = useState<LoadedUnits | null>(null);
+  const [chromeTex, setChromeTex] = useState<LoadedChrome | null>(null);
+  // Palette button feedback (UI-STYLE §4): which button the pointer is over,
+  // and which one is held down. Purely visual — actions still fire on the
+  // pointer-up path below.
+  const [paletteHover, setPaletteHover] = useState<PaletteAction | null>(null);
+  const [palettePressed, setPalettePressed] = useState<PaletteAction | null>(null);
 
   const selectedUnitId = planning?.selectedUnitId ?? null;
   const selectedCity = planning?.selectedCity ?? null;
@@ -558,6 +565,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       },
       (err) => {
         console.error("Failed to load unit sprite textures", err);
+      },
+    );
+    loadChromeTextures().then(
+      (tex) => {
+        if (active) setChromeTex(tex);
+      },
+      (err) => {
+        console.error("Failed to load UI chrome textures", err);
       },
     );
     return () => {
@@ -758,6 +773,23 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [showPanels, layout],
   );
 
+  /** The palette button under a canvas point, when the palette is live (a unit
+   *  selected, planning interactive, not replay) — feeds hover/pressed art. */
+  const paletteActionAt = useCallback(
+    (sx: number, sy: number): PaletteAction | null => {
+      if (layout === null || planning === undefined || locked) return null;
+      if (replayControls !== undefined) return null;
+      if (planning.selectedCity !== null || planning.selectedUnit === null) return null;
+      if (!pointInRect(sx, sy, layout.selectedUnit)) return null;
+      return paletteButtonAt(
+        sx - layout.selectedUnit.x,
+        sy - layout.selectedUnit.y,
+        planning.selectedUnit,
+      );
+    },
+    [layout, planning, locked, replayControls],
+  );
+
   /** Run a palette button's action against the selected unit (UI-SPEC §8). */
   const runPaletteAction = useCallback(
     (action: PaletteAction, unitId: number) => {
@@ -795,8 +827,10 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       }
       if (overBottom(sx, sy)) {
         // Press over the bottom dock: handled on pointer-up, no pan/capture.
+        // The held palette button (if any) shows its pressed art meanwhile.
         bottomPressRef.current = true;
         rosterPressRef.current = false;
+        setPalettePressed(paletteActionAt(sx, sy));
         return;
       }
       if (overInspector(sx, sy)) {
@@ -818,7 +852,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         moved: false,
       };
     },
-    [view, localPoint, overRoster, overBottom, overInspector, cancelGlide],
+    [view, localPoint, overRoster, overBottom, overInspector, cancelGlide, paletteActionAt],
   );
 
   const onPointerMove = useCallback(
@@ -843,12 +877,16 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         return;
       }
       setRosterHover((prev) => (prev === null ? prev : null));
-      // Over the bottom dock or the inspector itself: no map hover of any kind.
+      // Over the bottom dock or the inspector itself: no map hover of any kind
+      // (but the palette tracks its own button hover for the chrome art).
       if (overBottom(sx, sy) || overInspector(sx, sy)) {
+        const action = paletteActionAt(sx, sy);
+        setPaletteHover((prev) => (prev === action ? prev : action));
         setHoverKey((prev) => (prev === null ? prev : null));
         setInspectKey((prev) => (prev === null ? prev : null));
         return;
       }
+      setPaletteHover((prev) => (prev === null ? prev : null));
       if (planning === undefined || view === null) return;
       const world = screenToWorld(e.clientX, e.clientY, view);
       const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
@@ -867,11 +905,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       const next = onMap ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, locked, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, overInspector, layout, rows.length, clampView],
+    [planning, locked, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, overInspector, layout, rows.length, clampView, paletteActionAt],
   );
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent) => {
+      setPalettePressed(null);
       // A press that started on the roster: select the clicked row's unit + jump.
       if (rosterPressRef.current) {
         rosterPressRef.current = false;
@@ -1513,6 +1552,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   unit={planning?.selectedUnit ?? null}
                   tex={unitTex}
                   tile={selectedUnitTile}
+                  chrome={chromeTex}
                   staged={selectedStaged}
                   mode={mode}
                   orderLabel={selectedOrderLabel}
@@ -1520,6 +1560,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                     selectedUnitId === null ? EMPTY_WARNINGS : (advisory?.byUnit.get(selectedUnitId) ?? EMPTY_WARNINGS)
                   }
                   locked={locked}
+                  hoverAction={paletteHover}
+                  pressedAction={palettePressed}
                 />
               )}
               {lock !== undefined && (

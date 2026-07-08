@@ -18,19 +18,32 @@ export interface PaletteButton {
 }
 
 // --- panel geometry (local to the selected-unit rect) ---
-export const PANEL_PAD = 12;
-/** Square portrait box on the panel's left (UI-SPEC §6 "portrait/icon left"),
- *  inset `PANEL_PAD` from the strip edges: 140px strip − 2×12 = 116px square. */
-export const PORTRAIT_X = PANEL_PAD;
-export const PORTRAIT_Y = PANEL_PAD;
-export const PORTRAIT_SIZE = 116;
-/** Left edge of the text + palette column, clear of the portrait. */
-export const CONTENT_X = PORTRAIT_X + PORTRAIT_SIZE + 16;
-export const BTN_W = 58;
-export const BTN_H = 26;
+// Field-HQ pilot layout (docs/UI-STYLE.md): brass-lipped portrait well on the
+// left, nameplate + stats column beside it, the sprite-button palette to the
+// right of the stats, and the order line along the bottom.
+export const PANEL_PAD = 8;
+/** Outer box of the portrait inset well (the portrait art sits inside its
+ *  brass lip): 140px strip − 2×8 = 124px square. */
+export const WELL_X = PANEL_PAD;
+export const WELL_Y = PANEL_PAD;
+export const WELL_SIZE = 124;
+/** The well texture's border thickness (leather surround + brass lip) at the
+ *  emitted scale — the portrait box is the well minus this on each side. */
+export const WELL_BORDER = 19;
+export const PORTRAIT_X = WELL_X + WELL_BORDER;
+export const PORTRAIT_Y = WELL_Y + WELL_BORDER;
+export const PORTRAIT_SIZE = WELL_SIZE - 2 * WELL_BORDER;
+/** Left edge of the text column, clear of the well. */
+export const CONTENT_X = WELL_X + WELL_SIZE + 14;
+/** Button sprite footprint (143×155 texture at ~0.39, plate hit-box). */
+export const BTN_W = 56;
+export const BTN_H = 61;
 export const BTN_GAP = 6;
-/** Top of the palette button row within the panel. */
-export const BTN_Y = 104;
+/** The palette row sits right of the stats column, labels beneath. */
+export const BTN_X0 = CONTENT_X + 206;
+export const BTN_Y = 20;
+/** Baseline offset of a button's label under its sprite. */
+export const BTN_LABEL_DY = BTN_H + 10;
 
 /**
  * The palette buttons for the selected unit, in display order (UI-SPEC §8).
@@ -52,7 +65,7 @@ export function paletteButtons(unit: Unit): PaletteButton[] {
 /** The panel-local rectangle of the i-th palette button. */
 export function paletteButtonRect(index: number): Rect {
   return {
-    x: CONTENT_X + index * (BTN_W + BTN_GAP),
+    x: BTN_X0 + index * (BTN_W + BTN_GAP),
     y: BTN_Y,
     width: BTN_W,
     height: BTN_H,
@@ -67,7 +80,7 @@ export function paletteButtonAt(
 ): PaletteAction | null {
   if (localY < BTN_Y || localY >= BTN_Y + BTN_H) return null;
   const buttons = paletteButtons(unit);
-  const offset = localX - CONTENT_X;
+  const offset = localX - BTN_X0;
   if (offset < 0) return null;
   const stride = BTN_W + BTN_GAP;
   const index = Math.floor(offset / stride);

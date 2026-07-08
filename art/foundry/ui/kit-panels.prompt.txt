@@ -1,0 +1,12 @@
+Game UI asset kit sheet, flat orthographic front view, items laid out in a clean grid on a solid flat neutral gray background (#7f7f7f), generous spacing between items, no scene, no perspective, no drop shadows onto the background.
+
+STYLE (match the reference image's UI chrome): mid-20th-century field-headquarters furniture — dark-stained oak and walnut wood with visible grain, polished brass edge trim, brass corner brackets fastened with slotted screws, inset panels of worn olive canvas and saddle leather with stitched edges, aged parchment paper insets. Crisp painted game-UI style, coherent soft top-down lighting, believable materials.
+
+ITEMS (label each with a small plain caption beneath it):
+1. PANEL FRAME — a large rectangular panel (about half the sheet) with dark wood border rails and brass corner brackets, its center filled with empty aged parchment. Border construction must be uniform along each edge so it can be 9-sliced.
+2. INSET WELL — a smaller rectangular recessed bezel frame (for a portrait or minimap), brass inner lip, dark leather surround, empty dark center.
+3. TABS — two folder-style tabs side by side: one active (parchment face) and one inactive (dark olive canvas face), both blank.
+4. NAMEPLATE — a horizontal engraved brass nameplate with screw heads at each end, blank face.
+5. TEXTURE SWATCHES — three square seamless texture swatches in a row: dark wood grain, worn olive canvas, aged parchment.
+
+No text anywhere except the small captions. No watermark.

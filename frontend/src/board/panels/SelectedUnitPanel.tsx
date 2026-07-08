@@ -1,10 +1,12 @@
 // The bottom-left selected-unit panel (UI-SPEC §6 detail + §8 order palette),
-// drawn into the Pixi scene graph. The most old-school panel: a square portrait
-// on the left (the unit's painterly sprite standing on its own hex's terrain
-// tile, framed in the owner's colour), stats on the right (5 HP pips + the
-// exact value, the §5.3 stat table, and the current-order line), with the
-// type-gated order palette beneath. Button geometry + hit-testing live in
-// ./selectedUnit; this file is just the drawing.
+// drawn into the Pixi scene graph in the ratified Field-HQ register
+// (docs/UI-STYLE.md): worn-canvas dock strip, the unit portrait in a
+// brass-lipped inset well, the type on an engraved nameplate, typewriter data
+// text, and the sprite-built order palette (blank brass faces + composited
+// icon/label, one art state per interaction state). Button geometry +
+// hit-testing live in ./selectedUnit; this file is just the drawing. Until
+// the chrome sprites arrive it falls back to the flat placeholder look at the
+// same geometry, mirroring the terrain/unit texture fallbacks.
 
 import type { Graphics, Texture } from "pixi.js";
 import { TextStyle } from "pixi.js";
@@ -16,9 +18,14 @@ import type { components } from "@/lib/api/schema";
 import { UNIT_STATS } from "@/planning/rules";
 import type { OrderMode, StagedOrder } from "@/planning/usePlanning";
 import { sortWarnings, type UnitWarning } from "@/planning/warnings";
+import { FONT_DATA, FONT_DISPLAY, FONT_LABEL, THEME } from "@/theme/theme";
 
+import type { ButtonState, LoadedChrome } from "./chrome";
 import {
-  BTN_H,
+  BTN_GAP,
+  BTN_LABEL_DY,
+  BTN_W,
+  BTN_X0,
   CONTENT_X,
   orderLineText,
   paletteButtonRect,
@@ -26,6 +33,9 @@ import {
   PORTRAIT_SIZE,
   PORTRAIT_X,
   PORTRAIT_Y,
+  WELL_SIZE,
+  WELL_X,
+  WELL_Y,
   type PaletteAction,
 } from "./selectedUnit";
 
@@ -38,48 +48,66 @@ export interface PortraitTile {
   readonly mirror: boolean;
 }
 
-// --- palette (UI-SPEC §14: charcoal panel, steel borders, warm off-white text) ---
+// --- fallback palette (pre-chrome placeholder, UI-SPEC §14) ---
 const PANEL_FILL = 0x14161c;
 const PANEL_BORDER = 0x3a3f4b;
 const PORTRAIT_FILL = 0x0e1015;
-const TEXT_PRIMARY = 0xe8e4dc;
-const TEXT_SECONDARY = 0x9aa0a6;
-const PIP_FILLED = 0x8fb7ff;
-const PIP_EMPTY = 0x2b2f38;
-const BTN_FILL = 0x1e222c;
-const BTN_FILL_ACTIVE = 0x2f3d63;
-const BTN_BORDER_ACTIVE = 0x8fb7ff;
-const BTN_TEXT = 0xe8e4dc;
-const BTN_TEXT_DISABLED = 0x565b65;
-const WARN_ERROR = 0xff6b6b;
-const WARN_INFO = 0xf5b342;
 
 // --- detail-block geometry ---
 const TEXT_X = CONTENT_X;
+const PLATE_Y = 6;
+const PLATE_W = 180;
+const PLATE_H = 26;
 const PIP_W = 16;
 const PIP_H = 12;
 const PIP_GAP = 4;
-/** Right padding for the coord + order line. */
+const PIP_Y = 44;
+const STAT_Y1 = 62;
+const STAT_Y2 = 78;
+const ORDER_Y = 118;
+/** Right padding for the coord line. */
 const PANEL_PAD_RIGHT = 12;
 
-const style = (size: number, fill: number, weight: "normal" | "bold" = "normal") =>
-  new TextStyle({ fontFamily: "monospace", fontSize: size, fill, fontWeight: weight });
+const style = (family: string, size: number, fill: number, weight: "normal" | "bold" = "normal") =>
+  new TextStyle({ fontFamily: family, fontSize: size, fill, fontWeight: weight });
 
-const STYLE_TYPE = style(14, TEXT_PRIMARY, "bold");
-const STYLE_COORD = style(12, TEXT_SECONDARY);
-const STYLE_HP = style(11, TEXT_PRIMARY);
-const STYLE_STAT = style(11, TEXT_SECONDARY);
-const STYLE_ORDER = style(11, TEXT_PRIMARY);
-const STYLE_PLACEHOLDER = style(13, TEXT_SECONDARY);
-const STYLE_BTN = style(11, BTN_TEXT, "bold");
-const STYLE_BTN_DISABLED = style(11, BTN_TEXT_DISABLED, "bold");
-const STYLE_WARN_ERROR = style(11, WARN_ERROR);
-const STYLE_WARN_INFO = style(11, WARN_INFO);
+const STYLE_TYPE = style(FONT_DISPLAY, 14, THEME.ink900);
+const STYLE_TYPE_FALLBACK = style(FONT_DISPLAY, 14, THEME.ivory100);
+const STYLE_COORD = style(FONT_DATA, 11, THEME.ivory400);
+const STYLE_HP = style(FONT_DATA, 11, THEME.ivory100);
+const STYLE_STAT = style(FONT_DATA, 11, THEME.ivory400);
+const STYLE_ORDER = style(FONT_DATA, 11, THEME.ivory100);
+const STYLE_PLACEHOLDER = style(FONT_LABEL, 13, THEME.ivory400);
+const STYLE_BTN = new TextStyle({
+  fontFamily: FONT_LABEL,
+  fontSize: 11,
+  fill: THEME.ivory100,
+  fontWeight: "bold",
+  letterSpacing: 1,
+});
+const STYLE_BTN_DISABLED = new TextStyle({
+  fontFamily: FONT_LABEL,
+  fontSize: 11,
+  fill: THEME.ivory400,
+  fontWeight: "bold",
+  letterSpacing: 1,
+});
+const STYLE_WARN_ERROR = style(FONT_LABEL, 11, THEME.invalid);
+const STYLE_WARN_INFO = style(FONT_LABEL, 11, THEME.warning);
 
-/** Left edge of the right-hand advisory column, kept clear of the stat columns. */
-const WARN_X = 380;
+/** Left edge of the right-hand advisory column, clear of the palette row. */
+const WARN_X = BTN_X0 + 5 * (BTN_W + BTN_GAP) + 12;
 const WARN_Y = 30;
 const WARN_LINE = 18;
+
+// NineSlice insets: the well's leather+lip border and the nameplate's
+// screw-capped ends, in emitted-texture pixels (scripts/ui-kit-prep.py).
+const WELL_SLICE = 22;
+const PLATE_SLICE_X = 24;
+const PLATE_SLICE_Y = 12;
+/** The brass face's center within the button sprite (fraction of its size). */
+const BTN_FACE_CX = 0.5;
+const BTN_FACE_CY = 0.44;
 
 export interface SelectedUnitPanelProps {
   rect: Rect;
@@ -89,6 +117,8 @@ export interface SelectedUnitPanelProps {
   tex: LoadedUnits | null;
   /** The unit's hex tile for the portrait backdrop (null until tiles load). */
   tile: PortraitTile | null;
+  /** Field-HQ chrome sprites (null until loaded → flat placeholder look). */
+  chrome: LoadedChrome | null;
   /** The selected unit's staged order, if any. */
   staged: StagedOrder | undefined;
   /** Interaction mode (drives the Move/Barrage active state). */
@@ -99,6 +129,10 @@ export interface SelectedUnitPanelProps {
   warnings: readonly UnitWarning[];
   /** Orders are locked: the palette is shown greyed-out and inert (review only). */
   locked: boolean;
+  /** Palette button under the pointer (visual hover state only). */
+  hoverAction: PaletteAction | null;
+  /** Palette button currently held down (visual pressed state only). */
+  pressedAction: PaletteAction | null;
 }
 
 /** Whether a palette button reads as the active mode/order (UI-SPEC §8). */
@@ -117,13 +151,64 @@ function isActive(action: PaletteAction, staged: StagedOrder | undefined, mode: 
   }
 }
 
+/** Resolve which art state a palette button shows (UI-STYLE §4). */
+function buttonState(
+  action: PaletteAction,
+  disabled: boolean,
+  active: boolean,
+  hoverAction: PaletteAction | null,
+  pressedAction: PaletteAction | null,
+): ButtonState {
+  if (disabled) return "disabled";
+  if (pressedAction === action) return "pressed";
+  if (active) return "active";
+  if (hoverAction === action) return "hover";
+  return "up";
+}
+
+/** Engraved order glyph on the button face: dark ink, simple stencil shapes. */
+function drawOrderIcon(g: Graphics, action: PaletteAction, cx: number, cy: number): void {
+  switch (action) {
+    case "move":
+      g.poly([cx - 8, cy - 8, cx + 1, cy - 8, cx + 9, cy, cx + 1, cy + 8, cx - 8, cy + 8, cx, cy]);
+      g.fill({ color: THEME.ink900, alpha: 0.8 });
+      break;
+    case "barrage":
+      g.circle(cx, cy, 7).stroke({ width: 3, color: THEME.ink900, alpha: 0.8 });
+      for (const [dx, dy] of [
+        [0, -1],
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+      ]) {
+        g.moveTo(cx + dx * 7, cy + dy * 7).lineTo(cx + dx * 11, cy + dy * 11);
+      }
+      g.stroke({ width: 3, color: THEME.ink900, alpha: 0.8 });
+      g.circle(cx, cy, 1.5).fill({ color: THEME.ink900, alpha: 0.8 });
+      break;
+    case "rest":
+      g.poly([cx - 10, cy + 8, cx, cy - 8, cx + 10, cy + 8, cx + 4, cy + 8, cx, cy + 1, cx - 4, cy + 8]);
+      g.fill({ color: THEME.ink900, alpha: 0.8 });
+      break;
+    case "hold":
+      g.poly([cx - 8, cy - 8, cx + 8, cy - 8, cx + 8, cy, cx, cy + 9, cx - 8, cy]);
+      g.fill({ color: THEME.ink900, alpha: 0.8 });
+      break;
+    case "clear":
+      g.moveTo(cx - 7, cy - 7).lineTo(cx + 7, cy + 7);
+      g.moveTo(cx - 7, cy + 7).lineTo(cx + 7, cy - 7);
+      g.stroke({ width: 4, color: THEME.ink900, alpha: 0.8 });
+      break;
+  }
+}
+
 /** Pre-sprite vector fallback: the unit's type marker, centered in the portrait
  *  box (matches the board's UnitMarker fallback shapes). */
 function drawFallbackIcon(g: Graphics, unit: Unit): void {
   const color = playerColor(unit.owner);
   const cx = PORTRAIT_X + PORTRAIT_SIZE / 2;
   const cy = PORTRAIT_Y + PORTRAIT_SIZE / 2;
-  const r = 34;
+  const r = 26;
   if (unit.type === "infantry") {
     g.circle(cx, cy, r);
   } else if (unit.type === "armor") {
@@ -141,55 +226,92 @@ export function SelectedUnitPanel({
   unit,
   tex,
   tile,
+  chrome,
   staged,
   mode,
   orderLabel,
   warnings,
   locked,
+  hoverAction,
+  pressedAction,
 }: SelectedUnitPanelProps) {
   const pair = unit === null ? null : (tex?.[unit.type] ?? null);
 
-  const drawChrome = (g: Graphics) => {
+  // Ground layer: worn canvas + a darkening wash (chrome), or the flat
+  // placeholder fill until the sprites arrive.
+  const drawGround = (g: Graphics) => {
     g.clear();
-    g.rect(0, 0, rect.width, rect.height).fill({ color: PANEL_FILL });
-    // top + right borders (the strip's seams against the map and the lock panel)
-    g.moveTo(0, 0).lineTo(rect.width, 0);
-    g.moveTo(rect.width, 0).lineTo(rect.width, rect.height);
-    g.stroke({ width: 1, color: PANEL_BORDER });
+    if (chrome === null) {
+      g.rect(0, 0, rect.width, rect.height).fill({ color: PANEL_FILL });
+      g.moveTo(0, 0).lineTo(rect.width, 0);
+      g.moveTo(rect.width, 0).lineTo(rect.width, rect.height);
+      g.stroke({ width: 1, color: PANEL_BORDER });
+      return;
+    }
+    // Wash over the canvas tiling: deepens the field so text and brass read.
+    g.rect(0, 0, rect.width, rect.height).fill({ color: THEME.ink900, alpha: 0.3 });
+    // Brass seam along the map edge.
+    g.rect(0, 0, rect.width, 2).fill({ color: THEME.brass600, alpha: 0.7 });
+  };
 
+  const drawDetail = (g: Graphics) => {
+    g.clear();
     if (unit === null) return;
 
-    // portrait backdrop (the sprites + frame render on top of this graphics)
-    g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).fill({
-      color: PORTRAIT_FILL,
-    });
+    if (chrome === null) {
+      // Placeholder portrait backdrop + well outline.
+      g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).fill({
+        color: PORTRAIT_FILL,
+      });
+    } else {
+      // Dark backdrop inside the well's lip (behind the portrait art).
+      g.rect(PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE).fill({
+        color: THEME.ink900,
+      });
+    }
     if (pair === null) drawFallbackIcon(g, unit);
 
     // HP pips: each pip = 2 HP, filled by floor(hp / 2) (UI-SPEC §6).
     const filled = Math.floor(unit.hp / 2);
     for (let i = 0; i < 5; i++) {
       const x = TEXT_X + i * (PIP_W + PIP_GAP);
-      g.rect(x, 30, PIP_W, PIP_H).fill({ color: i < filled ? PIP_FILLED : PIP_EMPTY });
+      if (i < filled) {
+        g.rect(x, PIP_Y, PIP_W, PIP_H).fill({ color: THEME.brass400 });
+      } else {
+        g.rect(x, PIP_Y, PIP_W, PIP_H).fill({ color: THEME.ink900, alpha: 0.5 });
+        g.rect(x, PIP_Y, PIP_W, PIP_H).stroke({ width: 1, color: THEME.wood500 });
+      }
     }
 
-    // palette buttons — all inert (greyed, no active highlight) once locked
-    const buttons = paletteButtons(unit);
-    buttons.forEach((b, i) => {
+    // Fallback-only: plain button plates + nameplate strip.
+    if (chrome === null) {
+      g.rect(TEXT_X, PLATE_Y, PLATE_W, PLATE_H).stroke({ width: 1, color: PANEL_BORDER });
+      const buttons = paletteButtons(unit);
+      buttons.forEach((b, i) => {
+        const r = paletteButtonRect(i);
+        const active = !locked && isActive(b.action, staged, mode);
+        g.rect(r.x, r.y, r.width, r.height).fill({ color: active ? 0x2f3d63 : 0x1e222c });
+        g.rect(r.x, r.y, r.width, r.height).stroke({ width: 1, color: PANEL_BORDER });
+      });
+    }
+  };
+
+  // Order glyphs over the button faces (both render paths).
+  const drawIcons = (g: Graphics) => {
+    g.clear();
+    if (unit === null) return;
+    paletteButtons(unit).forEach((b, i) => {
       const r = paletteButtonRect(i);
-      const active = !locked && isActive(b.action, staged, mode);
       const disabled = locked || (b.action === "clear" && staged === undefined);
-      g.rect(r.x, r.y, r.width, r.height).fill({
-        color: active ? BTN_FILL_ACTIVE : BTN_FILL,
-      });
-      g.rect(r.x, r.y, r.width, r.height).stroke({
-        width: active ? 1.5 : 1,
-        color: active ? BTN_BORDER_ACTIVE : PANEL_BORDER,
-        alpha: disabled ? 0.5 : 1,
-      });
+      const active = !locked && isActive(b.action, staged, mode);
+      const state = buttonState(b.action, disabled, active, hoverAction, pressedAction);
+      // The face sinks with the pressed/active art; the glyph follows it.
+      const sunk = state === "pressed" || state === "active" ? 2 : 0;
+      drawOrderIcon(g, b.action, r.x + r.width * BTN_FACE_CX, r.y + r.height * BTN_FACE_CY + sunk);
     });
   };
 
-  // Owner-coloured frame, drawn over the portrait art so its edge stays crisp.
+  // Owner-coloured keyline around the portrait, inside the well's brass lip.
   const drawFrame = (g: Graphics) => {
     g.clear();
     if (unit === null) return;
@@ -199,10 +321,24 @@ export function SelectedUnitPanel({
     });
   };
 
+  const ground = (
+    <>
+      {chrome !== null && (
+        <pixiTilingSprite
+          texture={chrome.canvas}
+          width={rect.width}
+          height={rect.height}
+          tileScale={{ x: 0.55, y: 0.55 }}
+        />
+      )}
+      <pixiGraphics draw={drawGround} />
+    </>
+  );
+
   if (unit === null) {
     return (
       <pixiContainer x={rect.x} y={rect.y}>
-        <pixiGraphics draw={drawChrome} />
+        {ground}
         <pixiText
           text="Select a unit"
           style={STYLE_PLACEHOLDER}
@@ -216,9 +352,9 @@ export function SelectedUnitPanel({
 
   const stats = UNIT_STATS[unit.type];
   const buttons = paletteButtons(unit);
-  // The advisory column sits to the right of the stats; hide it on a panel too
-  // narrow to fit it without overlapping the palette text.
-  const showWarnings = rect.width >= WARN_X + 200;
+  // The advisory column sits right of the palette; hide it on a panel too
+  // narrow to fit it without overlapping.
+  const showWarnings = rect.width >= WARN_X + 190;
   const shownWarnings = showWarnings ? sortWarnings(warnings).slice(0, 3) : [];
 
   // Portrait sprites: the hex tile and the unit both fill the box, so the
@@ -232,7 +368,21 @@ export function SelectedUnitPanel({
 
   return (
     <pixiContainer x={rect.x} y={rect.y}>
-      <pixiGraphics draw={drawChrome} />
+      {ground}
+      <pixiGraphics draw={drawDetail} />
+      {chrome !== null && (
+        <pixiNineSliceSprite
+          texture={chrome.well}
+          x={WELL_X}
+          y={WELL_Y}
+          width={WELL_SIZE}
+          height={WELL_SIZE}
+          leftWidth={WELL_SLICE}
+          rightWidth={WELL_SLICE}
+          topHeight={WELL_SLICE}
+          bottomHeight={WELL_SLICE}
+        />
+      )}
       {tile !== null && (
         <pixiSprite
           texture={tile.tex}
@@ -262,50 +412,91 @@ export function SelectedUnitPanel({
         </>
       )}
       <pixiGraphics draw={drawFrame} />
-      <pixiText text={unit.type.toUpperCase()} style={STYLE_TYPE} x={TEXT_X} y={8} />
+      {chrome !== null && (
+        <pixiNineSliceSprite
+          texture={chrome.plate}
+          x={TEXT_X}
+          y={PLATE_Y}
+          width={PLATE_W}
+          height={PLATE_H}
+          leftWidth={PLATE_SLICE_X}
+          rightWidth={PLATE_SLICE_X}
+          topHeight={PLATE_SLICE_Y}
+          bottomHeight={PLATE_SLICE_Y}
+        />
+      )}
+      <pixiText
+        text={unit.type.toUpperCase()}
+        style={chrome === null ? STYLE_TYPE_FALLBACK : STYLE_TYPE}
+        anchor={{ x: 0.5, y: 0.5 }}
+        x={TEXT_X + PLATE_W / 2}
+        y={PLATE_Y + PLATE_H / 2}
+      />
       <pixiText
         text={`(${unit.coord.q},${unit.coord.r})`}
         style={STYLE_COORD}
         anchor={{ x: 1, y: 0 }}
         x={rect.width - PANEL_PAD_RIGHT}
-        y={11}
+        y={PLATE_Y + 6}
       />
       <pixiText
         text={`${unit.hp}/10`}
         style={STYLE_HP}
         anchor={{ x: 0, y: 0.5 }}
         x={TEXT_X + 5 * (PIP_W + PIP_GAP) + 6}
-        y={30 + PIP_H / 2}
+        y={PIP_Y + PIP_H / 2}
       />
       <pixiText
-        text={`Move ${stats.move}   Atk ${stats.attack}   Def ${stats.defense}`}
+        text={`Move ${stats.move}  Atk ${stats.attack}  Def ${stats.defense}`}
         style={STYLE_STAT}
         x={TEXT_X}
-        y={50}
+        y={STAT_Y1}
       />
       <pixiText
-        text={`Range ${stats.range}  Vision ${stats.vision}  Upkeep ${stats.upkeep}`}
+        text={`Rng ${stats.range}  Vis ${stats.vision}  Upk ${stats.upkeep}`}
         style={STYLE_STAT}
         x={TEXT_X}
-        y={66}
+        y={STAT_Y2}
       />
       <pixiText
         text={`Order: ${orderLineText(staged, orderLabel)}`}
         style={STYLE_ORDER}
         x={TEXT_X}
-        y={84}
+        y={ORDER_Y}
       />
+      {chrome !== null &&
+        buttons.map((b, i) => {
+          const r = paletteButtonRect(i);
+          const disabled = locked || (b.action === "clear" && staged === undefined);
+          const active = !locked && isActive(b.action, staged, mode);
+          const state = buttonState(b.action, disabled, active, hoverAction, pressedAction);
+          return (
+            <pixiSprite
+              key={b.action}
+              texture={chrome.btn[state]}
+              x={r.x}
+              y={r.y}
+              width={r.width}
+              height={r.height}
+            />
+          );
+        })}
+      <pixiGraphics draw={drawIcons} />
       {buttons.map((b, i) => {
         const r = paletteButtonRect(i);
         const disabled = locked || (b.action === "clear" && staged === undefined);
         return (
           <pixiText
             key={b.action}
-            text={!locked && mode === "barrage" && b.action === "barrage" ? "Aiming…" : b.label}
+            text={
+              !locked && mode === "barrage" && b.action === "barrage"
+                ? "AIMING…"
+                : b.label.toUpperCase()
+            }
             style={disabled ? STYLE_BTN_DISABLED : STYLE_BTN}
             anchor={{ x: 0.5, y: 0.5 }}
             x={r.x + r.width / 2}
-            y={r.y + BTN_H / 2}
+            y={r.y + BTN_LABEL_DY}
           />
         );
       })}

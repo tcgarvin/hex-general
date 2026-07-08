@@ -1,0 +1,450 @@
+[
+  {
+    "name": "panel-frame",
+    "source": "kit-panels.png",
+    "box": [
+      109,
+      114,
+      1267,
+      952
+    ],
+    "output_size": [
+      1158,
+      838
+    ]
+  },
+  {
+    "name": "inset-well",
+    "source": "kit-panels.png",
+    "box": [
+      1362,
+      121,
+      1933,
+      946
+    ],
+    "output_size": [
+      571,
+      825
+    ]
+  },
+  {
+    "name": "tab-active",
+    "source": "kit-panels.png",
+    "box": [
+      113,
+      1061,
+      529,
+      1407
+    ],
+    "output_size": [
+      416,
+      346
+    ]
+  },
+  {
+    "name": "tab-inactive",
+    "source": "kit-panels.png",
+    "box": [
+      569,
+      1061,
+      984,
+      1407
+    ],
+    "output_size": [
+      415,
+      346
+    ]
+  },
+  {
+    "name": "nameplate",
+    "source": "kit-panels.png",
+    "box": [
+      1119,
+      1168,
+      1933,
+      1357
+    ],
+    "output_size": [
+      814,
+      189
+    ]
+  },
+  {
+    "name": "tex-wood",
+    "source": "kit-panels.png",
+    "box": [
+      336,
+      1515,
+      739,
+      1885
+    ],
+    "output_size": [
+      403,
+      370
+    ]
+  },
+  {
+    "name": "tex-canvas",
+    "source": "kit-panels.png",
+    "box": [
+      822,
+      1516,
+      1225,
+      1890
+    ],
+    "output_size": [
+      403,
+      374
+    ]
+  },
+  {
+    "name": "tex-parchment",
+    "source": "kit-panels.png",
+    "box": [
+      1307,
+      1515,
+      1711,
+      1886
+    ],
+    "output_size": [
+      404,
+      371
+    ]
+  },
+  {
+    "name": "btn-move",
+    "source": "kit-buttons.png",
+    "box": [
+      95,
+      183,
+      453,
+      612
+    ],
+    "output_size": [
+      358,
+      429
+    ]
+  },
+  {
+    "name": "btn-barrage",
+    "source": "kit-buttons.png",
+    "box": [
+      469,
+      183,
+      828,
+      612
+    ],
+    "output_size": [
+      359,
+      429
+    ]
+  },
+  {
+    "name": "btn-rest",
+    "source": "kit-buttons.png",
+    "box": [
+      845,
+      183,
+      1202,
+      612
+    ],
+    "output_size": [
+      357,
+      429
+    ]
+  },
+  {
+    "name": "btn-hold",
+    "source": "kit-buttons.png",
+    "box": [
+      1219,
+      183,
+      1578,
+      612
+    ],
+    "output_size": [
+      359,
+      429
+    ]
+  },
+  {
+    "name": "btn-clear",
+    "source": "kit-buttons.png",
+    "box": [
+      1595,
+      183,
+      1952,
+      612
+    ],
+    "output_size": [
+      357,
+      429
+    ]
+  },
+  {
+    "name": "btn-state-up",
+    "source": "kit-buttons.png",
+    "box": [
+      95,
+      821,
+      453,
+      1209
+    ],
+    "output_size": [
+      358,
+      388
+    ]
+  },
+  {
+    "name": "btn-state-hover",
+    "source": "kit-buttons.png",
+    "box": [
+      469,
+      821,
+      828,
+      1209
+    ],
+    "output_size": [
+      359,
+      388
+    ]
+  },
+  {
+    "name": "btn-state-pressed",
+    "source": "kit-buttons.png",
+    "box": [
+      845,
+      821,
+      1202,
+      1209
+    ],
+    "output_size": [
+      357,
+      388
+    ]
+  },
+  {
+    "name": "btn-state-disabled",
+    "source": "kit-buttons.png",
+    "box": [
+      1220,
+      821,
+      1577,
+      1208
+    ],
+    "output_size": [
+      357,
+      387
+    ]
+  },
+  {
+    "name": "btn-state-active",
+    "source": "kit-buttons.png",
+    "box": [
+      1594,
+      821,
+      1953,
+      1209
+    ],
+    "output_size": [
+      359,
+      388
+    ]
+  },
+  {
+    "name": "lock-guard-closed",
+    "source": "kit-buttons.png",
+    "box": [
+      95,
+      1489,
+      637,
+      1934
+    ],
+    "output_size": [
+      542,
+      445
+    ]
+  },
+  {
+    "name": "lock-guard-open",
+    "source": "kit-buttons.png",
+    "box": [
+      671,
+      1488,
+      1252,
+      1934
+    ],
+    "output_size": [
+      581,
+      446
+    ]
+  },
+  {
+    "name": "iconbtn-up",
+    "source": "kit-buttons.png",
+    "box": [
+      1297,
+      1539,
+      1615,
+      1866
+    ],
+    "output_size": [
+      318,
+      327
+    ]
+  },
+  {
+    "name": "iconbtn-pressed",
+    "source": "kit-buttons.png",
+    "box": [
+      1635,
+      1539,
+      1953,
+      1866
+    ],
+    "output_size": [
+      318,
+      327
+    ]
+  },
+  {
+    "name": "btnblank-up",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      96,
+      184,
+      453,
+      571
+    ],
+    "output_size": [
+      357,
+      387
+    ]
+  },
+  {
+    "name": "btnblank-hover",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      470,
+      184,
+      828,
+      571
+    ],
+    "output_size": [
+      358,
+      387
+    ]
+  },
+  {
+    "name": "btnblank-pressed",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      846,
+      184,
+      1203,
+      571
+    ],
+    "output_size": [
+      357,
+      387
+    ]
+  },
+  {
+    "name": "btnblank-disabled",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      1220,
+      184,
+      1578,
+      571
+    ],
+    "output_size": [
+      358,
+      387
+    ]
+  },
+  {
+    "name": "btnblank-active",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      1595,
+      184,
+      1952,
+      571
+    ],
+    "output_size": [
+      357,
+      387
+    ]
+  },
+  {
+    "name": "commit-up",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      96,
+      821,
+      689,
+      1209
+    ],
+    "output_size": [
+      593,
+      388
+    ]
+  },
+  {
+    "name": "commit-pressed",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      720,
+      821,
+      1316,
+      1209
+    ],
+    "output_size": [
+      596,
+      388
+    ]
+  },
+  {
+    "name": "commit-disabled",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      1349,
+      821,
+      1952,
+      1209
+    ],
+    "output_size": [
+      603,
+      388
+    ]
+  },
+  {
+    "name": "iconbtn2-up",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      1297,
+      1489,
+      1615,
+      1934
+    ],
+    "output_size": [
+      318,
+      445
+    ]
+  },
+  {
+    "name": "iconbtn2-pressed",
+    "source": "kit-buttons-blank.png",
+    "box": [
+      1636,
+      1489,
+      1953,
+      1934
+    ],
+    "output_size": [
+      317,
+      445
+    ]
+  }
+]

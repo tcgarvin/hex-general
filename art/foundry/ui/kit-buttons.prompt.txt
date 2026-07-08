@@ -1,0 +1,11 @@
+Game UI asset kit sheet, flat orthographic front view, items laid out in a clean grid on a solid flat neutral gray background (#7f7f7f), generous spacing between items, no scene, no perspective, no drop shadows onto the background.
+
+STYLE (match the reference image's UI chrome): mid-20th-century industrial machine hardware — SQUARED, blocky pushbuttons with FLAT brushed-brass faces and crisp 45-degree machined chamfered edges, mounted on dark-stained wood base plates with slotted screws. Heavy, clunky, industrial press-machine feel. Absolutely NOT rounded ergonomic keyboard keycaps: no pillowy bevels, no soft rounded corners, no glossy domes — corners stay sharp (at most a hairline edge break), faces stay flat brushed metal.
+
+ITEMS (label each row with a small plain caption beneath it):
+1. ORDER BUTTON ROW — five square buttons side by side, each with a simple dark military icon engraved in the center of the brushed-brass face and its stencil-lettered name engraved in dark below the icon, on the face: MOVE (right arrow), BARRAGE (artillery crosshair), REST (bivouac tent), HOLD (shield), CLEAR (X). All shown in the raised UP state.
+2. BUTTON STATES — the MOVE button repeated five times showing states left to right: UP (raised, flat face), HOVER (raised with a faint warm rim glow), PRESSED (face visibly sunk 2-3 px into the bezel, chamfer inverted, shadow collapsed), DISABLED (desaturated, dull), ACTIVE (pressed-in with a small round amber indicator lamp lit in the wood plate above the button).
+3. LOCK BUTTON — one large wide rectangular commit button, flat brushed-brass face with "LOCK ORDERS" engraved in dark stencil capitals across two lines, sharp chamfered edges, hinged brass safety-guard bar across it: shown twice, guard closed and guard open.
+4. SQUARE ICON BUTTON — a smaller square button with a magnifying-glass icon, in two states: up and pressed.
+
+Stencil lettering style throughout. No text anywhere except the button lettering described and the small row captions. No watermark.

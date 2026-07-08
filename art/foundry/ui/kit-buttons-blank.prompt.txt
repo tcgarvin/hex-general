@@ -1,0 +1,12 @@
+Game UI asset kit sheet, flat orthographic front view, items laid out in a clean grid on a solid flat neutral gray background (#7f7f7f), generous spacing between items, no scene, no perspective, no drop shadows onto the background.
+
+STYLE (match the reference image exactly — it is the ratified button construction): mid-20th-century industrial machine hardware — SQUARED blocky pushbuttons with FLAT brushed-brass faces cut with an octagonal machined chamfer (corners cut at 45 degrees), mounted on square dark-stained wood backplates with a slotted screw in each corner. Heavy, clunky, machine-press feel. NOT rounded ergonomic keycaps.
+
+CRITICAL: every face and every wood plate is COMPLETELY BLANK — no icons, no lettering, no engraving anywhere on any button. Icons and labels are composited separately in the game engine.
+
+ITEMS (label each row with a small plain caption beneath it, outside the items):
+1. ORDER BUTTON STATES — one blank square button repeated five times left to right: UP (raised, flat brushed face), HOVER (raised with a warm amber rim glow around the face), PRESSED (face visibly sunk 2-3 px into the bezel, chamfer inverted, shadow collapsed), DISABLED (desaturated, dull, washed out), ACTIVE (pressed-in with a small round amber indicator lamp lit in the wood plate above the face).
+2. WIDE COMMIT BUTTON — one large wide rectangular blank button of the same construction, shown three times: UP, PRESSED, and DISABLED (desaturated).
+3. SMALL ICON BUTTON — a smaller square blank button in two states: up and pressed.
+
+No text anywhere except the small row captions. No watermark.
