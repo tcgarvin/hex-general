@@ -61,9 +61,9 @@ import {
   ReplayControlPanel,
   type ReplayControlsProps,
 } from "./panels/ReplayControlPanel";
-import { replayButtonAt } from "./panels/replayControls";
+import { replayButtonAt, type ReplayAction } from "./panels/replayControls";
 import { ReplayLogPanel } from "./panels/ReplayLogPanel";
-import { beatIndexAtY, maxScroll, measureReplayLog } from "./panels/replayLogLayout";
+import { beatIndexAtY, logViewportHeight, maxScroll, measureReplayLog } from "./panels/replayLogLayout";
 import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel, type PortraitTile } from "./panels/SelectedUnitPanel";
@@ -405,7 +405,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     const beatChanged = logSync.beat !== currentBeat;
     if (logsChanged || beatChanged) {
       setLogSync({ beats: replayLog.logBeats, beat: currentBeat });
-      const viewportH = layout.replayLog.height;
+      const viewportH = logViewportHeight(layout.replayLog.height);
       const limit = maxScroll(logMeasure.contentHeight, viewportH);
       const block = logMeasure.beats.find((b) => b.beatIndex === currentBeat);
       if (logsChanged || block === undefined) {
@@ -496,6 +496,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   // pointer-up path below.
   const [paletteHover, setPaletteHover] = useState<PaletteAction | null>(null);
   const [palettePressed, setPalettePressed] = useState<PaletteAction | null>(null);
+  // Replay-control keycap held down (visual pressed art only, same pattern).
+  const [replayPressed, setReplayPressed] = useState<ReplayAction | null>(null);
 
   const selectedUnitId = planning?.selectedUnitId ?? null;
   const selectedCity = planning?.selectedCity ?? null;
@@ -790,6 +792,23 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [layout, planning, locked, replayControls],
   );
 
+  /** The replay-control button under a canvas point during replay — feeds
+   *  the keycaps' pressed art. */
+  const replayActionAt = useCallback(
+    (sx: number, sy: number): ReplayAction | null => {
+      if (layout === null || replayControls === undefined) return null;
+      if (!pointInRect(sx, sy, layout.selectedUnit)) return null;
+      const atEnd = replayControls.currentBeat >= replayControls.beats.length - 1;
+      return replayButtonAt(
+        sx - layout.selectedUnit.x,
+        sy - layout.selectedUnit.y,
+        layout.selectedUnit.width,
+        atEnd,
+      );
+    },
+    [layout, replayControls],
+  );
+
   /** Run a palette button's action against the selected unit (UI-SPEC §8). */
   const runPaletteAction = useCallback(
     (action: PaletteAction, unitId: number) => {
@@ -831,6 +850,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         bottomPressRef.current = true;
         rosterPressRef.current = false;
         setPalettePressed(paletteActionAt(sx, sy));
+        setReplayPressed(replayActionAt(sx, sy));
         return;
       }
       if (overInspector(sx, sy)) {
@@ -852,7 +872,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         moved: false,
       };
     },
-    [view, localPoint, overRoster, overBottom, overInspector, cancelGlide, paletteActionAt],
+    [view, localPoint, overRoster, overBottom, overInspector, cancelGlide, paletteActionAt, replayActionAt],
   );
 
   const onPointerMove = useCallback(
@@ -911,6 +931,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   const onPointerUp = useCallback(
     (e: React.PointerEvent) => {
       setPalettePressed(null);
+      setReplayPressed(null);
       // A press that started on the roster: select the clicked row's unit + jump.
       if (rosterPressRef.current) {
         rosterPressRef.current = false;
@@ -1055,7 +1076,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         layout !== null &&
         pointInRect(sx, sy, layout.replayLog)
       ) {
-        const limit = maxScroll(logMeasure.contentHeight, layout.replayLog.height);
+        const limit = maxScroll(logMeasure.contentHeight, logViewportHeight(layout.replayLog.height));
         setLogScroll((s) => Math.max(0, Math.min(limit, s + e.deltaY)));
         return;
       }
@@ -1540,7 +1561,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 />
               )}
               {replayControls !== undefined ? (
-                <ReplayControlPanel rect={layout.selectedUnit} {...replayControls} />
+                <ReplayControlPanel
+                  rect={layout.selectedUnit}
+                  chrome={chromeTex}
+                  pressedAction={replayPressed}
+                  {...replayControls}
+                />
               ) : selectedCity !== null && planning !== undefined ? (
                 <RecruitPanel
                   rect={layout.selectedUnit}
@@ -1585,6 +1611,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
               {replayLog !== undefined && logMeasure !== null && (
                 <ReplayLogPanel
                   rect={layout.replayLog}
+                  chrome={chromeTex}
                   logBeats={replayLog.logBeats}
                   measure={logMeasure}
                   currentBeat={currentBeat}
