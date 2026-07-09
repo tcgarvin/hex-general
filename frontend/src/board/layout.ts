@@ -28,9 +28,10 @@ export const LOCK_WIDTH = 176;
 export const REPLAY_CONTROLS_WIDTH = 560;
 
 /** Size of the top-right terrain / hex inspector (UI-SPEC §7). Sized for its
- *  tallest content: a city's economy block plus road, control, and unit lines. */
+ *  tallest content: a city's economy block plus road, control, and unit lines,
+ *  inside the parchment sheet's rough edge band (UI-STYLE §4). */
 export const INSPECTOR_WIDTH = 208;
-export const INSPECTOR_HEIGHT = 148;
+export const INSPECTOR_HEIGHT = 168;
 
 export interface SurfaceLayout {
   /** Rectangle the map pans/zooms within (everything not covered by a panel). */

@@ -1536,6 +1536,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   hex={inspectHex}
                   settlement={inspectSettlement}
                   unit={inspectUnit}
+                  chrome={chromeTex}
                 />
               )}
               {replayControls !== undefined ? (
