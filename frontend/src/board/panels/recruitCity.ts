@@ -9,15 +9,20 @@ import type { components } from "@/lib/api/schema";
 import { RECRUIT_COST, UNIT_TYPES } from "@/planning/rules";
 import type { StagedRecruit } from "@/planning/usePlanning";
 
+import { BTN_GAP, BTN_H, BTN_W, BTN_X0, BTN_Y } from "./selectedUnit";
+
 type UnitType = components["schemas"]["UnitType"];
 
-// --- panel geometry (local to the recruit rect; wider buttons fit "ARTILLERY 5") ---
-export const PANEL_PAD = 12;
-export const RBTN_W = 104;
-export const RBTN_H = 26;
-export const RBTN_GAP = 6;
-/** Top of the recruit button row within the panel (matches the order palette). */
-export const RBTN_Y = 104;
+// --- panel geometry (local to the recruit rect) ---
+// Field-HQ (docs/UI-STYLE.md §4): the recruit type buttons reuse the order
+// palette's sprite footprint and row position (./selectedUnit), so the dock
+// keeps one rhythm whichever palette is showing. Labels + costs render on the
+// wood beneath the brass faces.
+export const RBTN_W = BTN_W;
+export const RBTN_H = BTN_H;
+export const RBTN_GAP = BTN_GAP;
+export const RBTN_X0 = BTN_X0;
+export const RBTN_Y = BTN_Y;
 
 export interface RecruitButton {
   type: UnitType;
@@ -33,7 +38,7 @@ export function recruitButtons(): RecruitButton[] {
 /** The panel-local rectangle of the i-th recruit button. */
 export function recruitButtonRect(index: number): Rect {
   return {
-    x: PANEL_PAD + index * (RBTN_W + RBTN_GAP),
+    x: RBTN_X0 + index * (RBTN_W + RBTN_GAP),
     y: RBTN_Y,
     width: RBTN_W,
     height: RBTN_H,
@@ -44,7 +49,7 @@ export function recruitButtonRect(index: number): Rect {
 export function recruitButtonAt(localX: number, localY: number): UnitType | null {
   if (localY < RBTN_Y || localY >= RBTN_Y + RBTN_H) return null;
   const buttons = recruitButtons();
-  const offset = localX - PANEL_PAD;
+  const offset = localX - RBTN_X0;
   if (offset < 0) return null;
   const stride = RBTN_W + RBTN_GAP;
   const index = Math.floor(offset / stride);

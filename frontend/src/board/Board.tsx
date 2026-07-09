@@ -496,6 +496,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   // pointer-up path below.
   const [paletteHover, setPaletteHover] = useState<PaletteAction | null>(null);
   const [palettePressed, setPalettePressed] = useState<PaletteAction | null>(null);
+  const [recruitHover, setRecruitHover] = useState<UnitType | null>(null);
+  const [recruitPressed, setRecruitPressed] = useState<UnitType | null>(null);
   // Replay-control keycap held down (visual pressed art only, same pattern).
   const [replayPressed, setReplayPressed] = useState<ReplayAction | null>(null);
 
@@ -547,6 +549,15 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     if (h === undefined) return null;
     return hexTileRef(h, terrainTex, riverCourse, roadTiles);
   }, [selectedUnit, terrainTex, hexByKey, riverCourse, roadTiles]);
+
+  // The selected city's hex tile, for the recruit portrait's backdrop (null
+  // until tiles load — the portrait keeps its plain backdrop).
+  const selectedCityTile = useMemo<PortraitTile | null>(() => {
+    if (selectedCity === null || terrainTex === null) return null;
+    const h = hexByKey.get(hexKey(selectedCity.q, selectedCity.r));
+    if (h === undefined) return null;
+    return hexTileRef(h, terrainTex, riverCourse, roadTiles);
+  }, [selectedCity, terrainTex, hexByKey, riverCourse, roadTiles]);
 
   // Load the terrain tile textures once; the board renders flat colours until they
   // arrive. A load failure leaves `terrainTex` null (flat-colour fallback) and is
@@ -792,6 +803,19 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [layout, planning, locked, replayControls],
   );
 
+  /** The recruit type button under a canvas point, when the recruit palette is
+   *  live (a friendly city selected, planning interactive) — feeds hover/pressed art. */
+  const recruitTypeAt = useCallback(
+    (sx: number, sy: number): UnitType | null => {
+      if (layout === null || planning === undefined || locked) return null;
+      if (replayControls !== undefined) return null;
+      if (planning.selectedCity === null) return null;
+      if (!pointInRect(sx, sy, layout.selectedUnit)) return null;
+      return recruitButtonAt(sx - layout.selectedUnit.x, sy - layout.selectedUnit.y);
+    },
+    [layout, planning, locked, replayControls],
+  );
+
   /** The replay-control button under a canvas point during replay — feeds
    *  the keycaps' pressed art. */
   const replayActionAt = useCallback(
@@ -850,6 +874,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         bottomPressRef.current = true;
         rosterPressRef.current = false;
         setPalettePressed(paletteActionAt(sx, sy));
+        setRecruitPressed(recruitTypeAt(sx, sy));
         setReplayPressed(replayActionAt(sx, sy));
         return;
       }
@@ -872,7 +897,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         moved: false,
       };
     },
-    [view, localPoint, overRoster, overBottom, overInspector, cancelGlide, paletteActionAt, replayActionAt],
+    [view, localPoint, overRoster, overBottom, overInspector, cancelGlide, paletteActionAt, recruitTypeAt, replayActionAt],
   );
 
   const onPointerMove = useCallback(
@@ -902,11 +927,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       if (overBottom(sx, sy) || overInspector(sx, sy)) {
         const action = paletteActionAt(sx, sy);
         setPaletteHover((prev) => (prev === action ? prev : action));
+        const type = recruitTypeAt(sx, sy);
+        setRecruitHover((prev) => (prev === type ? prev : type));
         setHoverKey((prev) => (prev === null ? prev : null));
         setInspectKey((prev) => (prev === null ? prev : null));
         return;
       }
       setPaletteHover((prev) => (prev === null ? prev : null));
+      setRecruitHover((prev) => (prev === null ? prev : null));
       if (planning === undefined || view === null) return;
       const world = screenToWorld(e.clientX, e.clientY, view);
       const ax = pixelToAxial(world.x, world.y, HEX_SIZE);
@@ -925,12 +953,13 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       const next = onMap ? key : null;
       setHoverKey((prev) => (prev === next ? prev : next));
     },
-    [planning, locked, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, overInspector, layout, rows.length, clampView, paletteActionAt],
+    [planning, locked, selectedUnitId, mode, view, screenToWorld, hexByKey, localPoint, overRoster, overBottom, overInspector, layout, rows.length, clampView, paletteActionAt, recruitTypeAt],
   );
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent) => {
       setPalettePressed(null);
+      setRecruitPressed(null);
       setReplayPressed(null);
       // A press that started on the roster: select the clicked row's unit + jump.
       if (rosterPressRef.current) {
@@ -1572,11 +1601,17 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   rect={layout.selectedUnit}
                   city={selectedCity}
                   owner={yourSlot}
+                  tex={unitTex}
+                  tile={selectedCityTile}
+                  chrome={chromeTex}
+                  facing={defaultFacing(selectedCity, yourSlot, units)}
                   recruitBySite={planning.recruitBySite}
                   bank={bank}
                   ownUnitCount={ownUnits.length}
                   unitCap={unitCap}
                   locked={locked}
+                  hoverType={recruitHover}
+                  pressedType={recruitPressed}
                 />
               ) : (
                 <SelectedUnitPanel
@@ -1628,6 +1663,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 width: LOCK_WIDTH,
                 height: BOTTOM_HEIGHT,
               }}
+              chrome={chromeTex}
               outcome={gameOver.outcome}
               reason={gameOver.reason}
             />
