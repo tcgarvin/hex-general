@@ -27,6 +27,13 @@ export type CommitState = (typeof COMMIT_STATES)[number];
 export const ICONBTN_STATES = ["up", "pressed"] as const;
 export type IconBtnState = (typeof ICONBTN_STATES)[number];
 
+/** Transport nav glyphs composited onto the keycap faces (UI-STYLE §4 icon
+ *  sheet, ratified 2026-07-09; cut by scripts/ui-icon-cut.py). White tint-masks
+ *  — recoloured at draw time. The speed keycap keeps its "1×/2×" text glyph, so
+ *  there is no "fast" mask; the order glyphs stayed in-code vectors. */
+export const TRANSPORT_GLYPHS = ["rewind", "back", "play", "pause", "forward"] as const;
+export type TransportGlyph = (typeof TRANSPORT_GLYPHS)[number];
+
 export interface LoadedChrome {
   /** Order-button plate per interaction state (blank face; icon/label composited). */
   readonly btn: Record<ButtonState, Texture>;
@@ -34,6 +41,8 @@ export interface LoadedChrome {
   readonly commit: Record<CommitState, Texture>;
   /** Square icon keycap per state (blank face; glyph composited) — replay transport. */
   readonly iconbtn: Record<IconBtnState, Texture>;
+  /** Engraved transport nav glyphs (white tint-masks) for the keycap faces. */
+  readonly icon: Record<TransportGlyph, Texture>;
   /** Brass-lipped inset well framing the unit portrait (NineSlice). */
   readonly well: Texture;
   /** Engraved brass nameplate strip behind panel/unit titles (NineSlice). */
@@ -98,10 +107,18 @@ export async function loadChromeTextures(): Promise<LoadedChrome> {
       Assets.load<Texture>(url("stitch-leather-tall")),
       Assets.load<Texture>(url("frame-leather")),
     ]);
+  // Transport glyph tint-masks: keyed by name, loaded as a set.
+  const iconEntries = await Promise.all(
+    TRANSPORT_GLYPHS.map(
+      async (g) => [g, await Assets.load<Texture>(url(`icon-${g}`))] as const,
+    ),
+  );
+  const icon = Object.fromEntries(iconEntries) as Record<TransportGlyph, Texture>;
   return {
     btn: { up, hover, pressed, disabled, active },
     commit: { up: commitUp, pressed: commitPressed, disabled: commitDisabled },
     iconbtn: { up: iconUp, pressed: iconPressed },
+    icon,
     well,
     plate,
     canvas,

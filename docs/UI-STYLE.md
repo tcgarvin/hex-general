@@ -105,7 +105,13 @@ in the Pixi panels.
   directly beneath the face** — icon + label are one physical unit.
 - **Icons** — single-color tintable glyph sheet (orders, NATO-flavored unit
   types, status, replay transport, economy) — dark ink on parchment, ivory on
-  dark faces, amber/red for warnings.
+  dark faces, amber/red for warnings. *Ratified 2026-07-09* (sheet
+  `art/foundry/ui/kit-icons.png`, cut by `scripts/ui-icon-cut.py`): the **order
+  glyphs stayed in-code vectors** (the genned set was rejected — the existing
+  `drawOrderIcon` shapes read better); **replay-transport nav glyphs are wired**
+  as sprite tint-masks on the keycaps (the speed keycap keeps its `1×/2×` text);
+  unit-type / status / economy glyphs are cut to provenance but **unwired** —
+  emit + wire them once a real consumer exists (no icon consumer today).
 - **Wells** — portrait, minimap, and event log sit in recessed brass-lipped
   inset frames.
 - **DOM surfaces** — header/auth reuse the same 9-slice PNGs via CSS

@@ -16,7 +16,7 @@ import { beatDisplayLabel, type Beat } from "@/replay/beats";
 import { FONT_DATA, FONT_DISPLAY, FONT_LABEL, THEME } from "@/theme/theme";
 
 import type { Rect } from "../layout";
-import type { IconBtnState, LoadedChrome } from "./chrome";
+import type { IconBtnState, LoadedChrome, TransportGlyph } from "./chrome";
 import {
   ACTION_FACE_CY,
   ACTION_H,
@@ -112,6 +112,26 @@ function keycapState(
   if (pressedAction === action || latched) return "pressed";
   return "up";
 }
+
+/** The engraved glyph mask a transport keycap shows (UI-STYLE §4 icon sheet).
+ *  play_pause swaps play↔pause with the run state; speed keeps its text glyph. */
+function transportGlyph(action: TransportButton, playing: boolean): TransportGlyph | null {
+  switch (action) {
+    case "rewind":
+      return "rewind";
+    case "back":
+      return "back";
+    case "play_pause":
+      return playing ? "pause" : "play";
+    case "forward":
+      return "forward";
+    case "speed":
+      return null;
+  }
+}
+
+/** Engraved glyph size on the ~56px keycap plate. */
+const GLYPH_PX = 34;
 
 /** Engraved transport glyph on the keycap face: solid ink, stencil shapes. */
 function drawTransportGlyph(
@@ -210,11 +230,13 @@ export function ReplayControlPanel({
     g.rect(0, 0, rect.width, 2).fill({ color: THEME.brass600, alpha: 0.7 });
   };
 
-  // Engraved glyphs over the keycap faces (both render paths); the face sinks
-  // with the pressed art and the glyph follows it.
+  // Fallback vector glyphs for the pre-chrome placeholder look. With chrome
+  // loaded the engraved glyphs are sprite tint-masks (see below); this path
+  // only runs when the kit sprites are missing.
   const drawGlyphs = (g: Graphics) => {
     g.clear();
-    const color = chrome === null ? THEME.ivory100 : THEME.ink900;
+    if (chrome !== null) return;
+    const color = THEME.ivory100;
     for (const b of transport) {
       if (b.action === "speed") continue;
       const state = keycapState(b.action, b.latched, b.disabled ? null : pressedAction);
@@ -264,6 +286,29 @@ export function ReplayControlPanel({
             alpha={b.disabled ? DISABLED_ALPHA : 1}
           />
         ))}
+
+      {/* Engraved transport glyphs: white tint-masks recoloured to ink, sunk
+          with the pressed keycap face. Speed keeps its "1×/2×" text below. */}
+      {chrome !== null &&
+        transport.map((b) => {
+          const glyph = transportGlyph(b.action, playing);
+          if (glyph === null) return null;
+          const state = keycapState(b.action, b.latched, b.disabled ? null : pressedAction);
+          const sunk = state === "pressed" ? 2 : 0;
+          return (
+            <pixiSprite
+              key={`glyph-${b.action}`}
+              texture={chrome.icon[glyph]}
+              tint={THEME.ink900}
+              anchor={0.5}
+              x={b.x + BTN_W * BTN_FACE_CX}
+              y={BTN_Y + BTN_SPRITE_H * BTN_FACE_CY + sunk}
+              width={GLYPH_PX}
+              height={GLYPH_PX}
+              alpha={b.disabled ? GLYPH_ALPHA * 0.4 : GLYPH_ALPHA}
+            />
+          );
+        })}
       <pixiGraphics draw={drawGlyphs} />
 
       {/* Speed toggle: engraved 1× / 2× on the keycap face. */}

@@ -1,0 +1,15 @@
+Game UI icon glyph sheet, flat orthographic front view, glyphs laid out in a clean evenly-spaced grid on a solid flat neutral gray background (#7f7f7f), generous even spacing between glyphs, no scene, no perspective, no drop shadows onto the background, no button hardware or bezels — just the flat engraved glyph shapes themselves so they can be tinted and composited onto brass faces later.
+
+STYLE (match the reference image's UI chrome): mid-20th-century military field-HQ stencil iconography — simple, bold, machine-engraved dark ink glyphs, single solid color (near-black warm ink), heavy even stroke weight, geometric and legible at small size. Stencil/engraved feel like markings on brass instrument faces and munitions crates. Every glyph the SAME single dark ink color, flat, no gradients, no shading, no color — a monochrome tintable sheet. Each glyph fits a uniform square cell.
+
+ITEMS (label each glyph with a small plain stencil caption beneath it, arranged in labelled rows):
+
+ROW 1 — ORDER GLYPHS: MOVE (a bold right-pointing arrow), BARRAGE (an artillery burst — a small filled circle with radiating shell lines / crosshair), REST (a small bivouac tent silhouette), HOLD (a heraldic shield outline), CLEAR (a bold X).
+
+ROW 2 — REPLAY TRANSPORT: REWIND (a vertical bar with a left-pointing triangle beside it, skip-to-start), STEP-BACK (a single left-pointing triangle), PLAY (a single right-pointing triangle), PAUSE (two short vertical bars), STEP-FORWARD (a right-pointing triangle with a vertical bar beside it), FAST (a double right-pointing triangle, fast-forward).
+
+ROW 3 — UNIT TYPE MARKERS: INFANTRY (a bold circle), ARMOR (a rounded square), ARTILLERY (an upward triangle). Simple solid geometric markers, military map-symbol flavor.
+
+ROW 4 — STATUS + ECONOMY: VALID (a check mark), WARNING (an exclamation mark inside a triangle), BLOCKED (a circle with a diagonal slash), CREDITS (a small round coin/token with a center mark), RECRUIT (a bold plus sign).
+
+Uniform stencil ink weight throughout. No text anywhere except the small stencil captions under each glyph. No watermark. No background texture — flat neutral gray only.
