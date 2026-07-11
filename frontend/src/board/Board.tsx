@@ -324,7 +324,9 @@ export interface BoardProps {
   /**
    * Hexes the viewer's units currently illuminate (SPEC §9). Everything outside
    * this set is drawn dimmed as fog of war. The map is public, so this is purely a
-   * rendering hint — when omitted (e.g. replay), nothing is dimmed.
+   * rendering hint — when omitted (only the lobby), nothing is dimmed. Planning
+   * passes the server-computed set from the view payload; replay recomputes it
+   * client-side per beat (`replay/visibility.ts`).
    */
   visible?: readonly Axial[];
   /** Planning state, supplied throughout the viewer's active turn (incl. once locked). */
@@ -375,7 +377,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   const hexes = useMemo(() => state.map.hexes ?? [], [state.map.hexes]);
   const units = useMemo(() => state.units ?? [], [state.units]);
   // Fog of war: hexes the viewer can't currently see are dimmed. An undefined
-  // `visible` (e.g. replay) means "no fog" — every hex draws at full brightness.
+  // `visible` (only the lobby) means "no fog" — every hex draws at full brightness.
   const visibleKeys = useMemo<ReadonlySet<string> | null>(() => {
     if (visible === undefined) return null;
     const s = new Set<string>();

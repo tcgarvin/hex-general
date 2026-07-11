@@ -55,6 +55,53 @@ export function axialDistance(a: Axial, b: Axial): number {
   return (Math.abs(dq) + Math.abs(dq + dr) + Math.abs(dr)) / 2;
 }
 
+/**
+ * The hexes on the straight line from `a` to `b`, inclusive — mirrors the
+ * engine's `line` (`api/app/engine/hex_coords.py`) exactly, including its
+ * per-component epsilon nudge, so client-side sightlines resolve the same
+ * hexes as the server's. The nudge keeps every sample off the exact-half
+ * boundaries where Python's and JS's rounding would disagree.
+ */
+export function axialLine(a: Axial, b: Axial): Axial[] {
+  const steps = axialDistance(a, b);
+  if (steps === 0) return [{ q: a.q, r: a.r }];
+
+  // axial -> cube (x = q, z = r, y = -x - z)
+  const ax = a.q;
+  const az = a.r;
+  const ay = -ax - az;
+  const bx = b.q;
+  const bz = b.r;
+  const by = -bx - bz;
+
+  const result: Axial[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    // The three components carry distinct nudges (like the engine), so this
+    // can't reuse axialRound, which reconstructs y from q and r.
+    const x = ax + (bx - ax) * t + 1e-6;
+    const y = ay + (by - ay) * t + 1e-6;
+    const z = az + (bz - az) * t - 2e-6;
+
+    let rx = Math.round(x);
+    let ry = Math.round(y);
+    let rz = Math.round(z);
+    const dx = Math.abs(rx - x);
+    const dy = Math.abs(ry - y);
+    const dz = Math.abs(rz - z);
+    if (dx > dy && dx > dz) {
+      rx = -ry - rz;
+    } else if (dy > dz) {
+      ry = -rx - rz;
+    } else {
+      rz = -rx - ry;
+    }
+    // + 0 collapses the -0 that rounding a nudged 0 produces.
+    result.push({ q: rx + 0, r: rz + 0 });
+  }
+  return result;
+}
+
 /** Hex size (centre-to-corner radius, pixels) — shared across board and replay. */
 export const HEX_SIZE = 32;
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ReplayControlsProps } from "@/board/Board";
+import type { Axial } from "@/board/hex";
 import type { GameState, GameView, ReplayEvent } from "@/lib/api/types";
 
 import {
@@ -15,6 +16,7 @@ import { buildReplayLog, nameLookup, type UnitRef } from "./replayLog";
 import type { ReplayData } from "./useReplay";
 import { useBeats } from "./useBeats";
 import { usePlayback } from "./usePlayback";
+import { visibleHexes } from "./visibility";
 
 // --- hook ---
 
@@ -22,6 +24,8 @@ import { usePlayback } from "./usePlayback";
  * animation overlay, the transport controls, and the event log. */
 export interface ReplayBoardBundle {
   boardState: GameState;
+  /** The viewer's fog-of-war visible set for `boardState` (recomputed per beat). */
+  visible: Axial[];
   replayAnim: ReplayAnimOverrides | undefined;
   replayControls: ReplayControlsProps;
   replayLog: { logBeats: ReturnType<typeof buildReplayLog>; onJumpToBeat: (i: number) => void };
@@ -171,6 +175,16 @@ export function useReplayBoard(
     return applyBeats(preTurnState, beats, displayBeat);
   }, [preTurnState, postTurnState, beats, displayBeat]);
 
+  // Fog of war for the displayed beat (SPEC §9): recomputed from the viewer's
+  // own units and settlements in `boardState`, so the veil follows their army
+  // through the turn. Mid-beat animation keeps the pre-beat fog — the veil
+  // steps when `displayBeat` settles, like every other state change.
+  const visible = useMemo(
+    (): Axial[] | null =>
+      boardState === null ? null : visibleHexes(boardState, view.your_slot),
+    [boardState, view.your_slot],
+  );
+
   const replayAnim: ReplayAnimOverrides | undefined =
     animState !== null ? sampleTimeline(animState.timeline, animState.progress) : undefined;
 
@@ -208,7 +222,7 @@ export function useReplayBoard(
     [pause, jumpTo],
   );
 
-  if (replayData === null || boardState === null) return null;
+  if (replayData === null || boardState === null || visible === null) return null;
 
-  return { boardState, replayAnim, replayControls, replayLog: { logBeats, onJumpToBeat } };
+  return { boardState, visible, replayAnim, replayControls, replayLog: { logBeats, onJumpToBeat } };
 }

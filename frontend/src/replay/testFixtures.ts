@@ -6,6 +6,8 @@ import type { components } from "@/lib/api/schema";
 import type { ReplayEvent } from "@/lib/api/types";
 
 type GameState = components["schemas"]["GameState"];
+type Hex = components["schemas"]["Hex"];
+type Terrain = components["schemas"]["Terrain"];
 type Unit = components["schemas"]["Unit"];
 type Settlement = components["schemas"]["Settlement"];
 type Player = components["schemas"]["Player"];
@@ -50,17 +52,23 @@ export function settlement(c: Axial, controlledBy: string | null = null): Settle
   return { coord: c, controlled_by: controlledBy };
 }
 
+export function hex(c: Axial, terrain: Terrain = "plains", road = false): Hex {
+  return { coord: c, terrain, road };
+}
+
 export function player(id: string, bank = 0): Player {
   return { id, bank };
 }
 
 /**
  * Build a minimal-but-valid {@link GameState}. The replay reducers only ever
- * touch `units`/`settlements`/`players`, but the type requires `config`/`map`,
- * so we supply trivial placeholders.
+ * touch `units`/`settlements`/`players` (so those suites omit `hexes`), while
+ * the visibility mirror walks `map.hexes` too; the type requires `config`/`map`
+ * either way, so we supply trivial placeholders.
  */
 export function gameState(parts: {
   turn?: number;
+  hexes?: Hex[];
   units?: Unit[];
   settlements?: Settlement[];
   players?: Player[];
@@ -77,7 +85,7 @@ export function gameState(parts: {
         turn_limit: 30,
       },
     },
-    map: { width: 4, height: 4, hexes: [] },
+    map: { width: 4, height: 4, hexes: parts.hexes ?? [] },
     units: parts.units ?? [],
     settlements: parts.settlements ?? [],
     players: parts.players ?? [],

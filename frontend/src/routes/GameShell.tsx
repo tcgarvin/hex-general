@@ -245,6 +245,7 @@ function Dashboard() {
               <Board
                 state={replayBundle.boardState}
                 yourSlot={view.your_slot}
+                visible={replayBundle.visible}
                 replayControls={replayBundle.replayControls}
                 replayAnim={replayBundle.replayAnim}
                 replayLog={replayBundle.replayLog}
