@@ -14,6 +14,7 @@ import { defaultFacing } from "@/planning/facing";
 import { reachableContinuations } from "@/planning/reach";
 import type { Planning } from "@/planning/usePlanning";
 import type { PlanAdvisory, UnitWarning } from "@/planning/warnings";
+import type { ReplayAnimOverrides, ReplayFxFrame } from "@/replay/animFx";
 import type { LogBeat } from "@/replay/replayLog";
 
 import { moveArrowOutlines, type ArrowDims } from "./arrows";
@@ -230,6 +231,27 @@ const recruitGhostStyle = new TextStyle({
   stroke: { color: 0x000000, width: 6 },
 });
 
+// Replay damage/heal floaters ("-2" rising off a struck unit). Red mirrors the
+// blocked-path/barrage accent; green is reserved for repair ticks.
+const floaterDamageStyle = new TextStyle({
+  fontFamily: "monospace",
+  fontSize: 24,
+  fontWeight: "bold",
+  fill: 0xff5252,
+  stroke: { color: 0x000000, width: 6 },
+});
+const floaterHealStyle = new TextStyle({
+  fontFamily: "monospace",
+  fontSize: 24,
+  fontWeight: "bold",
+  fill: 0x81c784,
+  stroke: { color: 0x000000, width: 6 },
+});
+
+// Replay effect geometry (world px): the ✕ refused-edge mark and barrage shell.
+const FX_MARK_ARM = 9;
+const FX_SHELL_RADIUS = 5;
+
 interface View {
   x: number;
   y: number;
@@ -277,23 +299,11 @@ function clampViewAxis(
   return Math.min(hi, Math.max(lo, view));
 }
 
-/**
- * Per-beat animation overlays for replay (Phase 10 Slice 3). Supplied while a
- * beat is animating; `undefined` when the board is in a settled state.
- *
- * The board always renders `state` (the pre-beat snapshot during animation, the
- * post-beat snapshot after). Overlays are drawn on top:
- *   - `slideOverrides`: pixel positions for units currently mid-slide, plus the
- *     facing of the step being animated (the settled post-beat facing, applied
- *     from slide start so a unit faces its direction of travel)
- *   - `fadingOut`: alpha 1→0 for units destroyed this beat (still in `state.units`)
- *   - `fadingIn`: alpha 0→1 for units recruited this beat (not in `state.units`)
- */
-export interface ReplayAnimOverrides {
-  slideOverrides: ReadonlyMap<number, { x: number; y: number; facing: Facing }>;
-  fadingOut: ReadonlyMap<number, number>;
-  fadingIn: ReadonlyMap<number, { unit: Unit; alpha: number }>;
-}
+// Per-beat replay animation overlays: built and sampled by `@/replay/animFx`,
+// supplied while a beat is animating, `undefined` when the board is settled.
+// The board always renders `state` (the pre-beat snapshot during animation, the
+// post-beat snapshot after); overrides and effects draw on top.
+export type { ReplayAnimOverrides };
 
 /** Lock-control state + action (UI-SPEC §11), supplied throughout your turn. */
 export interface LockState {
@@ -1548,6 +1558,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   alpha={alpha}
                 />
               ))}
+            {replayAnim !== undefined && <ReplayFxLayer fx={replayAnim.fx} />}
             <pixiGraphics draw={drawOrders} />
             {pulseBadges.map(({ coord, n, blocked }) => (
               <PulseBadge key={`pulse-${n}`} coord={coord} n={n} blocked={blocked} />
@@ -1793,6 +1804,70 @@ function UnitMarker({
       <pixiSprite texture={pair.mask} anchor={0.5} scale={{ x: sx, y: s }} tint={color} />
       {hud && showsHealth(unit.hp) && <pixiGraphics draw={drawPips} />}
     </pixiContainer>
+  );
+}
+
+/**
+ * Transient replay effects for the animating beat (see `@/replay/animFx`):
+ * barrage shells + impact bursts, refused-edge ✕ marks, capture rings, and
+ * rising damage/heal floaters. Pure overlay — drawn above the unit layer, gone
+ * once the beat settles. Vector-drawn (no art assets), like the planning
+ * overlays.
+ */
+function ReplayFxLayer({ fx }: { fx: ReplayFxFrame }) {
+  const draw = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      for (const s of fx.shells) {
+        // Short trail behind the shell, then the shell body.
+        g.moveTo(s.trailX, s.trailY);
+        g.lineTo(s.x, s.y);
+        g.stroke({ width: 3, color: 0xffd54f, alpha: 0.5, cap: "round" });
+        g.circle(s.x, s.y, FX_SHELL_RADIUS);
+        g.fill({ color: 0x26262c });
+        g.stroke({ width: 1.5, color: 0xffd54f, alpha: 0.9 });
+      }
+      for (const b of fx.bursts) {
+        g.circle(b.x, b.y, b.radius * 0.6);
+        g.fill({ color: 0xffb74d, alpha: b.alpha });
+        g.circle(b.x, b.y, b.radius);
+        g.stroke({ width: 4, color: 0xfff3e0, alpha: b.alpha });
+      }
+      for (const m of fx.marks) {
+        // Dark casing first so the ✕ reads over bright terrain (arrow trick).
+        for (const pass of [
+          { width: 8, color: 0x000000, alpha: m.alpha * 0.6 },
+          { width: 4.5, color: m.color, alpha: m.alpha },
+        ]) {
+          g.moveTo(m.x - FX_MARK_ARM, m.y - FX_MARK_ARM);
+          g.lineTo(m.x + FX_MARK_ARM, m.y + FX_MARK_ARM);
+          g.moveTo(m.x - FX_MARK_ARM, m.y + FX_MARK_ARM);
+          g.lineTo(m.x + FX_MARK_ARM, m.y - FX_MARK_ARM);
+          g.stroke({ ...pass, cap: "round" });
+        }
+      }
+      for (const r of fx.rings) {
+        g.circle(r.x, r.y, r.radius);
+        g.stroke({ width: 4, color: r.color, alpha: r.alpha });
+      }
+    },
+    [fx],
+  );
+  return (
+    <>
+      <pixiGraphics draw={draw} />
+      {fx.floaters.map((f, i) => (
+        <pixiText
+          key={i}
+          text={f.text}
+          style={f.kind === "heal" ? floaterHealStyle : floaterDamageStyle}
+          anchor={0.5}
+          x={f.x}
+          y={f.y}
+          alpha={f.alpha}
+        />
+      ))}
+    </>
   );
 }
 

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/** Beat pause durations (ms) at each speed. */
-const BEAT_DURATION: Record<1 | 2, number> = { 1: 1200, 2: 600 };
+/** Dwell (ms) a beat holds after its animation finishes, at each speed. The
+ * full per-beat delay is this plus the beat's animation duration, so long
+ * beats (combat, barrage) finish playing before auto-play advances. */
+const BEAT_DWELL: Record<1 | 2, number> = { 1: 700, 2: 350 };
 
 /** Delay before auto-play starts — gives the page time to settle. */
 const START_DELAY_MS = 700;
@@ -18,9 +20,11 @@ export interface PlaybackState {
  * Playback controller for the replay beat engine. Drives auto-advancing beats
  * at 1× or 2× speed. Auto-play starts on mount after a brief settle delay.
  *
- * The caller supplies `advance` (step forward one beat), `currentBeat`, and
- * `beatCount`. Each time `advance` fires, `currentBeat` changes, which
- * re-triggers the scheduling effect — one beat per BEAT_DURATION.
+ * The caller supplies `advance` (step forward one beat), `currentBeat`,
+ * `beatCount`, and `animDurationMs` (how long the given beat's animation runs
+ * at a speed). Each time `advance` fires, `currentBeat` changes, which
+ * re-triggers the scheduling effect — each beat holds for its animation plus
+ * BEAT_DWELL before the next advance.
  *
  * `turn` is a reset key: the game surface keeps this hook mounted across the
  * whole planning⇄replay cycle, so when a new turn's replay begins we re-arm the
@@ -32,11 +36,15 @@ export function usePlayback({
   currentBeat,
   beatCount,
   turn,
+  animDurationMs,
 }: {
   advance: () => void;
   currentBeat: number;
   beatCount: number;
   turn: number;
+  /** Animation duration (ms) of the beat at `beatIndex` at `speed`; 0 for a
+   * snap beat (or the pre-turn position, index -1). */
+  animDurationMs: (beatIndex: number, speed: 1 | 2) => number;
 }): PlaybackState {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<1 | 2>(1);
@@ -63,9 +71,9 @@ export function usePlayback({
       const t = setTimeout(() => setPlaying(false), 0);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(advance, BEAT_DURATION[speed]);
+    const t = setTimeout(advance, animDurationMs(currentBeat, speed) + BEAT_DWELL[speed]);
     return () => clearTimeout(t);
-  }, [playing, currentBeat, beatCount, advance, speed]);
+  }, [playing, currentBeat, beatCount, advance, speed, animDurationMs]);
 
   const play = useCallback(() => {
     if (currentBeat < beatCount - 1) setPlaying(true);

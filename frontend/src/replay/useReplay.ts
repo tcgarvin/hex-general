@@ -6,7 +6,9 @@ import type { GameState, TurnReplay } from "@/lib/api/types";
 
 export interface ReplayData {
   replay: TurnReplay;
-  /** State at the start of the turn (state_after of turn N-1); null for turn 1. */
+  /** State at the start of the turn (state_after of turn N-1); null for turn 0
+   * (the first resolved turn — its pre-turn state is the scenario setup, which
+   * the turns API doesn't expose). */
   stateBefore: GameState | null;
 }
 
@@ -43,10 +45,11 @@ export function useReplay(gameId: string, turn: number | null) {
       const replayRequest = api.GET("/games/{game_id}/turns/{turn}", {
         params: { path: { game_id: gameId, turn: requestedTurn } },
       });
-      // State at the start of the turn is the previous turn's state_after; turn 1
-      // has no predecessor. Fetch both concurrently to avoid a serial round-trip.
+      // State at the start of the turn is the previous turn's state_after; turns
+      // are 0-indexed, so only turn 0 has no predecessor. Fetch both concurrently
+      // to avoid a serial round-trip.
       const prevRequest =
-        requestedTurn > 1
+        requestedTurn > 0
           ? api.GET("/games/{game_id}/turns/{turn}", {
               params: { path: { game_id: gameId, turn: requestedTurn - 1 } },
             })

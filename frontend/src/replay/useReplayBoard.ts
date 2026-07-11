@@ -1,117 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { ReplayAnimOverrides, ReplayControlsProps } from "@/board/Board";
-import { axialToPixel, HEX_SIZE } from "@/board/hex";
-import type { components } from "@/lib/api/schema";
+import type { ReplayControlsProps } from "@/board/Board";
 import type { GameState, GameView, ReplayEvent } from "@/lib/api/types";
-import { DEFAULT_FACING, facingAfterStep } from "@/planning/facing";
 
+import {
+  beatAnimDurationMs,
+  buildAnimTimeline,
+  sampleTimeline,
+  type AnimTimeline,
+  type ReplayAnimOverrides,
+} from "./animFx";
 import { applyBeats } from "./applyBeats";
 import { buildReplayLog, nameLookup, type UnitRef } from "./replayLog";
 import type { ReplayData } from "./useReplay";
 import { useBeats } from "./useBeats";
 import { usePlayback } from "./usePlayback";
-
-type Unit = components["schemas"]["Unit"];
-type Facing = components["schemas"]["Facing"];
-
-// --- animation constants ---
-
-/** Duration of unit slide and fade animations, by playback speed. */
-const ANIM_DURATION_MS: Record<1 | 2, number> = { 1: 500, 2: 250 };
-
-const easeInOutCubic = (t: number): number =>
-  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-interface AnimData {
-  /** World-pixel start and end for each sliding unit, plus the step's facing. */
-  slides: Map<
-    number,
-    { fromPx: { x: number; y: number }; toPx: { x: number; y: number }; facing: Facing }
-  >;
-  /** Unit IDs of destroyed units that should fade out to 0. */
-  fadingOutIds: Set<number>;
-  /** Recruited units that should fade in from 0. */
-  fadingInUnits: Map<number, Unit>;
-}
-
-function extractAnimData(
-  events: ReplayEvent[],
-  preBeatUnitsById: ReadonlyMap<number, Unit>,
-  postBeatUnitsById: ReadonlyMap<number, Unit>,
-): AnimData {
-  const slides = new Map<
-    number,
-    { fromPx: { x: number; y: number }; toPx: { x: number; y: number }; facing: Facing }
-  >();
-  const fadingOutIds = new Set<number>();
-  const fadingInUnits = new Map<number, Unit>();
-
-  for (const e of events) {
-    if (e.kind === "unit_moved") {
-      const { unit_id, origin, dest } = e;
-      // Only record the first move per unit (each unit steps once per pulse).
-      if (!slides.has(unit_id)) {
-        const fromPx = axialToPixel(origin.q, origin.r, HEX_SIZE);
-        const toPx = axialToPixel(dest.q, dest.r, HEX_SIZE);
-        if (fromPx.x !== toPx.x || fromPx.y !== toPx.y) {
-          // Face the direction of travel for the whole slide (the settled
-          // post-beat state carries the same facing, so nothing snaps after).
-          const prior = preBeatUnitsById.get(unit_id)?.facing ?? DEFAULT_FACING;
-          slides.set(unit_id, { fromPx, toPx, facing: facingAfterStep(prior, origin, dest) });
-        }
-      }
-    } else if (e.kind === "barrage_resolved") {
-      const { hit } = e;
-      if (hit != null && hit.destroyed) {
-        fadingOutIds.add(hit.unit_id);
-      }
-    } else if (e.kind === "combat_resolved") {
-      const { participants } = e;
-      for (const p of participants) {
-        if (p.destroyed) fadingOutIds.add(p.unit_id);
-      }
-    } else if (e.kind === "unit_recruited") {
-      const { unit_id } = e;
-      const unit = postBeatUnitsById.get(unit_id);
-      if (unit !== undefined) fadingInUnits.set(unit_id, unit);
-    }
-  }
-
-  // Remove fading-out units that aren't in the pre-beat state (guards against
-  // event ordering surprises).
-  for (const id of fadingOutIds) {
-    if (!preBeatUnitsById.has(id)) fadingOutIds.delete(id);
-  }
-
-  return { slides, fadingOutIds, fadingInUnits };
-}
-
-/** Compute the `ReplayAnimOverrides` for the board at the given animation progress. */
-function interpolateAnim(data: AnimData, progress: number): ReplayAnimOverrides {
-  const eased = easeInOutCubic(progress);
-
-  const slideOverrides = new Map<number, { x: number; y: number; facing: Facing }>();
-  for (const [id, { fromPx, toPx, facing }] of data.slides) {
-    slideOverrides.set(id, {
-      x: fromPx.x + (toPx.x - fromPx.x) * eased,
-      y: fromPx.y + (toPx.y - fromPx.y) * eased,
-      facing,
-    });
-  }
-
-  const fadingOut = new Map<number, number>();
-  for (const id of data.fadingOutIds) {
-    fadingOut.set(id, 1 - progress); // linear fade for destruction
-  }
-
-  const fadingIn = new Map<number, { unit: Unit; alpha: number }>();
-  for (const [id, unit] of data.fadingInUnits) {
-    fadingIn.set(id, { unit, alpha: progress });
-  }
-
-  return { slideOverrides, fadingOut, fadingIn };
-}
 
 // --- hook ---
 
@@ -149,11 +52,18 @@ export function useReplayBoard(
   const postTurnState = replayData?.replay.state_after ?? null;
 
   const { beats, currentBeat, advance, rewind, jumpTo } = useBeats(events);
+  // Auto-play holds each beat for its animation plus a dwell, so a long combat
+  // beat finishes playing before the transport moves on.
+  const animDurationMs = useCallback(
+    (beatIndex: number, speed: 1 | 2) => beatAnimDurationMs(beats[beatIndex], speed),
+    [beats],
+  );
   const { playing, speed, play, pause, toggleSpeed } = usePlayback({
     advance,
     currentBeat,
     beatCount: beats.length,
     turn,
+    animDurationMs,
   });
 
   // --- per-beat state and animation ---
@@ -163,9 +73,12 @@ export function useReplayBoard(
   // and after animation completes.
   const [displayBeat, setDisplayBeat] = useState(-1);
 
-  // Active animation: null when settled, { data, progress } while a beat plays.
-  // Stored in state (not a ref) so it can be safely read during render.
-  const [animState, setAnimState] = useState<{ data: AnimData; progress: number } | null>(null);
+  // Active animation: null when settled, { timeline, progress } while a beat
+  // plays. Stored in state (not a ref) so it can be safely read during render.
+  const [animState, setAnimState] = useState<{
+    timeline: AnimTimeline;
+    progress: number;
+  } | null>(null);
 
   const rafRef = useRef<number | null>(null);
   // The value of currentBeat as seen by the previous render.
@@ -221,20 +134,20 @@ export function useReplayBoard(
     const preBeatById = new Map((preBeatState.units ?? []).map((u) => [u.id, u]));
     const postBeatById = new Map((postBeatState.units ?? []).map((u) => [u.id, u]));
 
-    const data = extractAnimData(beat.events, preBeatById, postBeatById);
+    const timeline = buildAnimTimeline(beat, preBeatById, postBeatById);
+    const duration = beatAnimDurationMs(beat, speedRef.current);
 
     // Skip animation when there's nothing to animate.
-    if (data.slides.size === 0 && data.fadingOutIds.size === 0 && data.fadingInUnits.size === 0) {
+    if (timeline === null || duration <= 0) {
       snap();
       return;
     }
 
-    const duration = ANIM_DURATION_MS[speedRef.current];
     const start = performance.now();
 
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      setAnimState((prev) => (prev !== null ? { data: prev.data, progress: t } : null));
+      setAnimState((prev) => (prev !== null ? { timeline: prev.timeline, progress: t } : null));
       if (t < 1) {
         rafRef.current = requestAnimationFrame(step);
       } else {
@@ -244,7 +157,7 @@ export function useReplayBoard(
         rafRef.current = null;
       }
     };
-    setAnimState({ data, progress: 0 });
+    setAnimState({ timeline, progress: 0 });
     rafRef.current = requestAnimationFrame(step);
     // `beats`/`preTurnState` are stable per replay, so in practice only a
     // `currentBeat` change drives this; listing them keeps the effect correct
@@ -259,7 +172,7 @@ export function useReplayBoard(
   }, [preTurnState, postTurnState, beats, displayBeat]);
 
   const replayAnim: ReplayAnimOverrides | undefined =
-    animState !== null ? interpolateAnim(animState.data, animState.progress) : undefined;
+    animState !== null ? sampleTimeline(animState.timeline, animState.progress) : undefined;
 
   const gameOver = view.victory.reason !== "ongoing";
 
