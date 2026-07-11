@@ -17,7 +17,12 @@ import type { PlanAdvisory, UnitWarning } from "@/planning/warnings";
 import type { ReplayAnimOverrides, ReplayFxFrame } from "@/replay/animFx";
 import type { LogBeat } from "@/replay/replayLog";
 
-import { moveArrowOutlines, type ArrowDims } from "./arrows";
+import {
+  barrageArrowOutline,
+  moveArrowOutlines,
+  type ArrowDims,
+  type BarrageArrowDims,
+} from "./arrows";
 import {
   AXIAL_DIRECTIONS,
   axialEqual,
@@ -156,6 +161,26 @@ const ARROW_DIMS_STAGED: ArrowDims = {
   headLen: 18,
   headHalf: 11,
   headNose: 3,
+};
+// Barrage lob: a slim, gently arched ribbon from the gun to the target,
+// stopping at the reticle's edge (negative headNose). Un-tapered — it marks a
+// shot, not a route.
+const BARRAGE_ARROW_DIMS: BarrageArrowDims = {
+  startOffset: 22,
+  tailHalf: 2,
+  headBaseHalf: 2,
+  headLen: 14,
+  headHalf: 8,
+  headNose: -14,
+  sagFactor: 0.15,
+  sagMax: 30,
+};
+const BARRAGE_ARROW_DIMS_STAGED: BarrageArrowDims = {
+  ...BARRAGE_ARROW_DIMS,
+  tailHalf: 1.5,
+  headBaseHalf: 1.5,
+  headLen: 12,
+  headHalf: 6.5,
 };
 // Hover preview: a slim un-tapered arrow for the segment a click would append.
 const ARROW_DIMS_PREVIEW: ArrowDims = {
@@ -1380,21 +1405,29 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             active ? ARROW_CASING_ALPHA : ARROW_CASING_ALPHA_STAGED,
           );
         } else if (order.kind === "barrage") {
-          // a cased line from the gun to its target + a reticle on the target
+          // a gently arched ribbon (a lobbed shell) from the gun to the
+          // reticle's edge + a reticle on the target
           const t = axialToPixel(order.target.q, order.target.r, HEX_SIZE);
-          const d = Math.hypot(t.x - origin.x, t.y - origin.y);
-          const sx = origin.x + ((t.x - origin.x) / d) * ARROW_DIMS.startOffset;
-          const sy = origin.y + ((t.y - origin.y) / d) * ARROW_DIMS.startOffset;
           const casingAlpha = active ? ARROW_CASING_ALPHA : ARROW_CASING_ALPHA_STAGED;
-          g.moveTo(sx, sy).lineTo(t.x, t.y);
-          g.stroke({
-            width: 4 + 2 * ARROW_CASING_RIM,
-            color: ARROW_CASING,
-            alpha: casingAlpha,
-            cap: "round",
-          });
-          g.moveTo(sx, sy).lineTo(t.x, t.y);
-          g.stroke({ width: 4, color: BARRAGE_COLOR, alpha: active ? 1 : 0.85, cap: "round" });
+          const outline = barrageArrowOutline(
+            origin,
+            t,
+            active ? BARRAGE_ARROW_DIMS : BARRAGE_ARROW_DIMS_STAGED,
+          );
+          if (outline.length > 0) {
+            g.poly(outline);
+            g.fill({ color: ARROW_CASING, alpha: casingAlpha });
+            g.stroke({
+              width: ARROW_EDGE + 2 * ARROW_CASING_RIM,
+              color: ARROW_CASING,
+              alpha: casingAlpha,
+              join: "round",
+              cap: "round",
+            });
+            g.poly(outline);
+            g.fill({ color: BARRAGE_COLOR });
+            g.stroke({ width: ARROW_EDGE, color: BARRAGE_COLOR, join: "round", cap: "round" });
+          }
           g.circle(t.x, t.y, 12);
           g.stroke({ width: 4, color: BARRAGE_COLOR });
           g.moveTo(t.x - 18, t.y).lineTo(t.x + 18, t.y);

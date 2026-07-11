@@ -119,6 +119,96 @@ function stripOutline(
   return ring.flatMap((p) => [p.x, p.y]);
 }
 
+/** Point at arc length `s` along the polyline (clamped to its ends). */
+function pointAt(pts: readonly Pt[], cum: readonly number[], s: number): Pt {
+  if (s <= 0) return pts[0];
+  if (s >= cum[cum.length - 1]) return pts[pts.length - 1];
+  let i = 1;
+  while (cum[i] < s) i++;
+  const t = (s - cum[i - 1]) / (cum[i] - cum[i - 1]);
+  return add(pts[i - 1], mul(sub(pts[i], pts[i - 1]), t));
+}
+
+/** Move-arrow dims plus the arch of the barrage lob. */
+export interface BarrageArrowDims extends ArrowDims {
+  /** Mid-arc rise as a fraction of the shot distance. */
+  sagFactor: number;
+  /** Cap on the mid-arc rise, world px. */
+  sagMax: number;
+}
+
+/**
+ * Ribbon outline for a barrage: a quadratic arc from the gun to the target,
+ * bowed toward screen-up so it reads as a shell lobbed over the field (a
+ * dead-vertical shot bows west, for determinism). The sampled arc gets the
+ * same trim/taper/head treatment as move arrows, but trimmed by arc length —
+ * the move trim shifts endpoints along a segment, which assumes hex-pitch
+ * segments, not fine arc samples. A negative `headNose` parks the apex short
+ * of the target center (at the reticle edge).
+ */
+export function barrageArrowOutline(origin: Pt, target: Pt, dims: BarrageArrowDims): number[] {
+  const chord = sub(target, origin);
+  const d = len(chord);
+  if (d < 1e-6) return [];
+
+  const n = perp(norm(chord));
+  const bow = n.y < 0 || (n.y === 0 && n.x < 0) ? n : mul(n, -1);
+  const sag = Math.min(d * dims.sagFactor, dims.sagMax);
+  // A quadratic Bézier rises to half its control offset at the midpoint.
+  const ctrl = add(add(origin, mul(chord, 0.5)), mul(bow, 2 * sag));
+
+  const SAMPLES = 24;
+  const arc: Pt[] = [];
+  for (let i = 0; i <= SAMPLES; i++) {
+    const t = i / SAMPLES;
+    const a = 1 - t;
+    arc.push({
+      x: a * a * origin.x + 2 * a * t * ctrl.x + t * t * target.x,
+      y: a * a * origin.y + 2 * a * t * ctrl.y + t * t * target.y,
+    });
+  }
+
+  const cum = cumLengths(arc);
+  const total = cum[cum.length - 1];
+  let startTrim = dims.startOffset;
+  let endTrim = dims.headLen - dims.headNose - 1; // 1px overlap into the head
+  const budget = total * 0.85;
+  if (startTrim + endTrim > budget) {
+    const k = budget / (startTrim + endTrim);
+    startTrim *= k;
+    endTrim *= k;
+  }
+
+  // Shaft polyline between the trims, each vertex tagged with its arc length
+  // so the tail → head-base taper is linear in distance travelled.
+  const sEnd = total - endTrim;
+  const pts: Pt[] = [pointAt(arc, cum, startTrim)];
+  const arcLens: number[] = [startTrim];
+  for (let i = 0; i < arc.length; i++) {
+    if (cum[i] > startTrim && cum[i] < sEnd) {
+      pts.push(arc[i]);
+      arcLens.push(cum[i]);
+    }
+  }
+  pts.push(pointAt(arc, cum, sEnd));
+  arcLens.push(sEnd);
+
+  const span = sEnd - startTrim;
+  const halves = arcLens.map(
+    (s) =>
+      dims.tailHalf +
+      (dims.headBaseHalf - dims.tailHalf) * (span === 0 ? 1 : (s - startTrim) / span),
+  );
+
+  // Head: a straight triangle along the chord from the shaft end to the
+  // target — a good tangent stand-in over the last few px of a gentle arc.
+  const hd = norm(sub(target, pts[pts.length - 1]));
+  const apex = add(target, mul(hd, dims.headNose));
+  const base = add(apex, mul(hd, -dims.headLen));
+
+  return stripOutline(pts, halves, { dir: hd, base, half: dims.headHalf, apex });
+}
+
 /**
  * Ribbon-arrow outlines for a staged move. `centers` is the origin hex center
  * followed by each path hex center (so length = path length + 1); `stopSteps`

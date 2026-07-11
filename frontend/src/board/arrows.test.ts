@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { type ArrowDims, moveArrowOutlines, type Pt } from "./arrows";
+import {
+  type ArrowDims,
+  type BarrageArrowDims,
+  barrageArrowOutline,
+  moveArrowOutlines,
+  type Pt,
+} from "./arrows";
 
 const DIMS: ArrowDims = {
   startOffset: 22,
@@ -122,3 +128,58 @@ describe("moveArrowOutlines", () => {
     }
   });
 });
+
+const BARRAGE_DIMS: BarrageArrowDims = {
+  startOffset: 22,
+  tailHalf: 2,
+  headBaseHalf: 2,
+  headLen: 14,
+  headHalf: 8,
+  headNose: -14,
+  sagFactor: 0.15,
+  sagMax: 30,
+};
+
+describe("barrageArrowOutline", () => {
+  it("returns an empty outline for a degenerate shot", () => {
+    expect(barrageArrowOutline({ x: 0, y: 0 }, { x: 0, y: 0 }, BARRAGE_DIMS)).toEqual([]);
+  });
+
+  it("bows a horizontal shot toward screen-up (negative y)", () => {
+    const flat = barrageArrowOutline({ x: 0, y: 0 }, { x: 166.2, y: 0 }, BARRAGE_DIMS);
+    // sag = min(0.15 · 166.2, 30) ≈ 24.9: the mid-arc must rise well clear of
+    // the chord, and nothing may dip meaningfully below it.
+    expect(Math.min(...ys(flat))).toBeLessThan(-18);
+    expect(Math.max(...ys(flat))).toBeLessThan(BARRAGE_DIMS.headHalf + 1);
+  });
+
+  it("bows a dead-vertical shot west, deterministically", () => {
+    const up = barrageArrowOutline({ x: 0, y: 0 }, { x: 0, y: -166.2 }, BARRAGE_DIMS);
+    const down = barrageArrowOutline({ x: 0, y: 0 }, { x: 0, y: 166.2 }, BARRAGE_DIMS);
+    expect(Math.min(...xs(up))).toBeLessThan(-18);
+    expect(Math.min(...xs(down))).toBeLessThan(-18);
+  });
+
+  it("keeps the whole arrow off the gun sprite and short of the reticle", () => {
+    const origin = { x: 0, y: 0 };
+    const target = { x: 166.2, y: 0 };
+    const pts = pointsOf(barrageArrowOutline(origin, target, BARRAGE_DIMS));
+    // The apex parks |headNose| short of the target center (reticle edge)…
+    const toTarget = pts.map((p) => Math.hypot(p.x - target.x, p.y - target.y));
+    expect(Math.min(...toTarget)).toBeGreaterThan(-BARRAGE_DIMS.headNose - 1);
+    // …and the tail lifts roughly startOffset off the gun (the arc bows, so
+    // the straight-line distance is a shade under the arc-length trim).
+    const toOrigin = pts.map((p) => Math.hypot(p.x, p.y));
+    expect(Math.min(...toOrigin)).toBeGreaterThan(BARRAGE_DIMS.startOffset * 0.8);
+  });
+
+  it("survives a point-blank shot by scaling the trims down", () => {
+    const flat = barrageArrowOutline({ x: 0, y: 0 }, { x: 55.4, y: 0 }, BARRAGE_DIMS);
+    expect(flat.length).toBeGreaterThan(0);
+    // Everything stays within the shot's neighbourhood — no folded geometry
+    // flinging points past the target.
+    expect(Math.max(...xs(flat))).toBeLessThan(55.4 + 1);
+    expect(Math.min(...xs(flat))).toBeGreaterThan(0);
+  });
+});
+
