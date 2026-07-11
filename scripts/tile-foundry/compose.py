@@ -63,7 +63,7 @@ HIGHLIGHT_SOFTCLIP = 0.45  # ... 135 + (v-135)*0.45
 PLACEMENT_MARGIN = 3.0  # candidate x/y drawn from [margin, TILE - margin]
 DIST_Y_SCALE = 0.52  # "min_dist": sqrt(dx^2 + (0.52*dy)^2) >= factor*(w1+w2)
 DEFAULT_MIN_DIST_FACTOR = 0.23  # ... >= 0.23*(w1+w2)
-EDGE_INSET_BASE = 2.0  # "edge_inset": shrink 2 + 0.72*max(w,h)/2
+EDGE_INSET_BASE = 7.0  # "edge_inset": shrink 7 + 0.72*max(w,h)/2
 EDGE_INSET_FACTOR = 0.72
 MIN_TREE_WIDTH = 6
 FLOOR_DISC_RADIUS_FACTOR = 0.72  # "floor_discs": r=0.72*w at crown centre
@@ -200,6 +200,7 @@ def place_trees(
     h_min: int,
     h_max: int,
     min_dist_factor: float,
+    edge_inset_base: float = EDGE_INSET_BASE,
 ) -> tuple[list[Placement], int]:
     """Scatter up to `target_trees` non-overlapping, edge-respecting trees.
 
@@ -224,7 +225,7 @@ def place_trees(
         x, yb = rng.uniform(PLACEMENT_MARGIN, tile_px - PLACEMENT_MARGIN), rng.uniform(
             PLACEMENT_MARGIN, tile_px - PLACEMENT_MARGIN
         )
-        if not in_hex(x, yb - th / 2, EDGE_INSET_BASE + max(tw, th) / 2 * EDGE_INSET_FACTOR, s):
+        if not in_hex(x, yb - th / 2, edge_inset_base + max(tw, th) / 2 * EDGE_INSET_FACTOR, s):
             continue
         ok = True
         for px_, pyb, _pth, _pspr, ptw, _pconifer in placed:
@@ -377,6 +378,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=f"override the min-separation factor in the reference's min_dist formula (default {DEFAULT_MIN_DIST_FACTOR})",
     )
     ap.add_argument(
+        "--edge-inset-base",
+        type=float,
+        default=EDGE_INSET_BASE,
+        help=f"override the base edge inset in the reference's edge_inset formula (default {EDGE_INSET_BASE})",
+    )
+    ap.add_argument(
         "--tree-h-min", type=int, default=None, help="override compose.tree_height_px[0] (default: manifest value)"
     )
     ap.add_argument(
@@ -455,7 +462,17 @@ def main(argv: list[str] | None = None) -> int:
         base_img = Image.open(base_path).convert("RGBA")
 
         placed, n_conif = place_trees(
-            seed, tile_px, decid, conif, target_trees, max_attempts, conifer_quota, h_min, h_max, args.min_dist_factor
+            seed,
+            tile_px,
+            decid,
+            conif,
+            target_trees,
+            max_attempts,
+            conifer_quota,
+            h_min,
+            h_max,
+            args.min_dist_factor,
+            args.edge_inset_base,
         )
         tile_img = composite_tile(base_img, placed, hm_dilated)
         out_path = args.out_dir / f"{v:02d}.png"

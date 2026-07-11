@@ -54,10 +54,10 @@
    "target_trees": 110,
    "max_attempts": 60000,
    "achieved_trees": [
-    76,
-    79,
-    80,
-    76
+    62,
+    65,
+    60,
+    67
    ],
    "conifer_quota": 0.35,
    "tree_height_px": [
@@ -65,13 +65,13 @@
     22
    ],
    "min_dist": "sqrt(dx^2 + (0.52*dy)^2) >= 0.23*(w1+w2)",
-   "edge_inset": "centre of crown must satisfy in_hex with shrink 2 + 0.72*max(w,h)/2 (no tree crosses the true hex edge)",
+   "edge_inset": "centre of crown must satisfy in_hex with shrink 7 + 0.72*max(w,h)/2 (no tree crosses the true hex edge; base 7 leaves a visible grass rim so each hex reads forest-surrounded-by-grass; was 2 until 2026-07-11)",
    "draw_order": "sorted by y_base ascending (lower trees composite over higher)",
    "floor_discs": "per tree, r=0.72*w at crown centre, rgba(30,44,26,185), gaussian blur 2, clipped to dilated mask",
    "final_clip": "dilated (1px bleed) hex mask",
    "placements": "woods/placements.json (exact per-tree x, y_base, size, sprite index)"
   },
-  "ratified": "2026-07-01 via woods/review/woods-final-*.png ('sprites and layout are great' + packed density per 'can't really see much of the ground')"
+  "ratified": "2026-07-01 via woods/review/woods-final-*.png ('sprites and layout are great' + packed density per 'can't really see much of the ground'); edge inset 2->7 ratified 2026-07-11 via Artifact review ('7 looks good')"
  },
  "hills": {
   "class": "whole-hex vignette (composited hill formations via vignette.py; swatch-cut texture REJECTED 2026-07-01: relief contrast breaks seams - best swatch's largest seam-compatible clique was 2/49 cuts vs plains' 23, and flatten.py can't help because the contrast IS the ridges, not illumination)",
