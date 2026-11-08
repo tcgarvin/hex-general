@@ -115,21 +115,19 @@ The user's "pack them like troops on a train" idea, as two movement states:
 - A **headless world simulator** (bots only, turns as fast as compute allows) is
   both the bot test bench and the tool for tuning map size and density.
 
-## 10. Proposed sequence
+## 10. Sequence (slices)
 
-Each step keeps the current game playable and answers one question.
+**No 2-player detour (decided, 2026-11-08):** build and test against the world
+itself, not the Twin Rivers 2-player game.
 
-1. **Columns + auto-deploy + multi-turn travel** in the existing 2-player game.
-   *Does packed transit kill traffic-jam play without killing tactics?*
-2. **Sites + unit unlocks on a bigger map** (~80×80, 4 bots + human).
-   *Does a map with reasons create more interesting play than "march at them"?*
-3. **Headless world sim:** extend `ai/arena.py` to N bots, timed turns, and metrics
-   (jams, front width, engagement rate, time-to-contact).
-   *What size and density feel right?*
-4. **Scale architecture:** chunked state instead of one JSONB row; per-turn
-   resolution split into independent contact clusters (same pure engine);
-   scheduled turns (Cloud Scheduler); province ↔ hex zoom in the renderer.
-5. **Unrest/PvE, NPC cities, factions + chat, LLM commanders, season arc.**
+1. **Open world** — [`WORLD_SPEC.md`](./WORLD_SPEC.md): N-slot world, generated map,
+   two-a-day clock, columns + auto-deploy, multi-turn travel, growing command cap,
+   world bots + headless world sim, frontend world view.
+2. **Sites + unit unlocks** (resource sites, tank-factory-style unlocks).
+3. **Unrest / marauders** (rear-area PvE).
+4. **Factions, diplomacy, chat, NPC governments, LLM commanders, season arc.**
+5. **Scale-out** when measurements demand it: chunked state, per-turn resolution
+   split into independent contact clusters.
 
 ## 11. Open questions
 
