@@ -524,7 +524,21 @@ bots isn't a world of clones.
 The engagement size is the mean deployed units per side in each cluster of front units
 (units within two hexes joined), per turn.
 
-### 12.4 Known gaps (first measurements, 12-slot worlds, 60 turns)
+### 12.4 Measurements and known gaps
+
+20 seeds of 12-slot worlds, 60 turns (2026-11-09): travel ends in arrival or contact
+20/20, jams only near contact 20/20, resolution under 5 s 20/20; every bot at 3
+settlements by turn 20 only 4/20; every neighbour pair fought by turn 30 0/20 (strict:
+counted from combat, so a quiet border or an early elimination fails it); median
+engagement of 3 a side 0/20.
+
+100 bots on the 200-slot world (seed 1, 60 turns, 7 min on one core): resolution 0.8 s
+median and 2.5 s worst, bot planning 27 ms mean and 1.2 s worst. Every bot held 3
+settlements by turn 20, and none was eliminated. Holdings at turn 60 ran 1–41
+(median 18). Half-filled worlds have room to expand; the crowded 12-slot test worlds
+don't.
+
+Gaps:
 
 - Fights stay small: the median engagement is about one unit per side. Bots spread across
   many objectives instead of massing on a front. Concentration (fronts, reserves,
