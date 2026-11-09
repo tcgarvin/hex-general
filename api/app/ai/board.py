@@ -15,8 +15,8 @@ standard: it trusts its already-validated `GameState` and indexes directly.
 
 from __future__ import annotations
 
-from app.engine.hex_coords import Axial, distance
-from app.engine.models import GameState, Hex, PlayerId, Settlement, Unit
+from app.engine.hex_coords import Axial, distance, neighbors
+from app.engine.models import GameState, Hex, PlayerId, Posture, Settlement, Unit
 from app.engine.stats import TERRAIN_STATS, UNIT_STATS, Terrain
 
 
@@ -26,8 +26,15 @@ class BoardIndex:
     def __init__(self, view: GameState, slot: PlayerId) -> None:
         self.view = view
         self.slot = slot
-        self.hex_by_coord: dict[Axial, Hex] = {h.coord: h for h in view.map.hexes}
-        self.unit_by_coord: dict[Axial, Unit] = {u.coord: u for u in view.units}
+        # The map's own cached index: a world map is ~10^5 hexes, too many to
+        # re-index on every plan() (WORLD_SPEC §10).
+        self.hex_by_coord: dict[Axial, Hex] = view.map.index
+        # Deployed units win a shared hex: packed columns stack under them
+        # (WORLD_SPEC §4.2), and the deployed unit is the one that blocks/fights.
+        self.unit_by_coord: dict[Axial, Unit] = {
+            u.coord: u
+            for u in sorted(view.units, key=lambda u: u.posture is Posture.DEPLOYED)
+        }
         self.unit_by_id: dict[int, Unit] = {u.id: u for u in view.units}
         self.settlement_by_coord: dict[Axial, Settlement] = {
             s.coord: s for s in view.settlements
@@ -86,9 +93,15 @@ class BoardIndex:
         return [u for u in self.own_units if distance(u.coord, coord) <= radius]
 
     def adjacent_enemy(self, coord: Axial, owner: PlayerId) -> bool:
-        """Whether any neighbour of ``coord`` holds an enemy of ``owner`` (ZOC)."""
-        for other in self.view.units:
-            if other.owner != owner and distance(other.coord, coord) == 1:
+        """Whether any neighbour of ``coord`` holds a deployed enemy of ``owner``
+        (ZOC; packed columns exert none, WORLD_SPEC §4.2)."""
+        for near in neighbors(coord):
+            other = self.unit_by_coord.get(near)
+            if (
+                other is not None
+                and other.owner != owner
+                and other.posture is Posture.DEPLOYED
+            ):
                 return True
         return False
 
