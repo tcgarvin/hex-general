@@ -473,3 +473,63 @@ Cross-turn memory of last-seen enemies; predictive opponent models; multi-turn
 lookahead; deep RL self-play behind the same `Policy` seam (would need a fast
 engine re-implementation); difficulty levels (trivially: sim budget / weight
 noise); frontend vs-bot UX; bot-vs-bot balance dashboards.
+
+---
+
+## 12. World addendum (WORLD_SPEC §8, 2026-11-09)
+
+World bots live in `app/ai/world.py`; the world simulator in `app/world/sim.py`.
+The v0.1 policies above are unchanged and still play 2-player games.
+
+### 12.1 Two layers, one seam
+
+A world bot's turn is split where the later LLM commander plugs in (VISION §9):
+
+- **Strategist** (`Strategist` protocol): reads the fog-redacted view, returns
+  `StrategistArgs`: a `stance` (expand, attack, defend), an optional `focus` hex, a
+  `reserve_share` kept home as garrisons, and an `aggression` weight.
+  `ScriptedStrategist` is the slice-1 stand-in. It defends when a holding is threatened
+  and the bot is cautious, expands while neutral land is within its `reach`, and
+  otherwise attacks the hostile-held settlement nearest its holdings.
+- **Tactical layer** (`plan_world_turn(view, slot, args)`): writes a legal `BotPlan`.
+  An LLM strategist replaces only the first layer.
+
+Each bot has a seeded `Personality` (aggression, reach, garrison share), so a world of
+bots isn't a world of clones.
+
+### 12.2 Tactical layer
+
+- **Objectives** are settlements: neutral and hostile-held ones to capture, and own ones
+  near a visible hostile to defend. Scores are value ÷ (1 + distance ÷ 4), shaped by
+  stance, aggression and focus. Each target has a capacity (one captor for a neutral
+  town, two for a city, four for a held settlement).
+- **Groups:** a held settlement is attacked only if at least two units can be assigned;
+  otherwise the target is dropped and matching reruns.
+- **Strategic units** (no visible hostile within 6) travel to objectives more than
+  6 hexes away. A column keeps its standing order while the destination is still wanted.
+  Columns bound for a held settlement stop 5 hexes short and deploy there clean, rather
+  than marching into the garrison's contact range and deploying disordered. Settlement
+  control is public, so this is fog-honest.
+- **Tactical units** (a hostile within 6) reuse the v0.1 candidates (§4.5). Moves claim
+  the hexes they enter per pulse and their final hex, so a bot never jams itself.
+- Columns within 6 of a hostile deploy on purpose. Wounded units go to rest in the
+  nearest own settlement.
+- Recruitment reuses §4.6, against `GameState.unit_cap_for` (the holdings-based command
+  cap).
+
+### 12.3 Simulator and gates
+
+`uv run python -m app.world.sim --slots 12 --seed 1 --turns 60 [--json out]`, or
+`--seeds 20` for the WORLD_SPEC §9 gate tally. Every plan is validated before it resolves.
+The engagement size is the mean deployed units per side in each cluster of front units
+(units within two hexes joined), per turn.
+
+### 12.4 Known gaps (first measurements, 12-slot worlds, 60 turns)
+
+- Fights stay small: the median engagement is about one unit per side. Bots spread across
+  many objectives instead of massing on a front. Concentration (fronts, reserves,
+  rotation) is the next bot work.
+- Some bots snowball while their neighbours are eliminated by turn 15–50. The start
+  economy is tight: four units cost 6 upkeep against the capital's 3 income, so a bot
+  must take two towns to afford anything.
+- No scouting, so columns still meet hidden enemies; disorder is the price.

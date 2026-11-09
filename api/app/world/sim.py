@@ -327,6 +327,41 @@ def _gates(report: SimReport) -> dict[str, bool]:
     }
 
 
+def _batch(
+    slots: int, seeds: int, turns: int, players: int | None, out: Path | None
+) -> None:
+    """Run seeds 1..``seeds`` and tally gate passes (WORLD_SPEC §9)."""
+    passes: Counter[str] = Counter()
+    gate_names: list[str] = []
+    summary: list[dict[str, object]] = []
+    for seed in range(1, seeds + 1):
+        report = run_sim(slots, seed, turns, players)
+        passes.update(name for name, ok in report.gates.items() if ok)
+        gate_names = sorted(report.gates)
+        last = report.turn_stats[-1]
+        summary.append(
+            {
+                "seed": seed,
+                "gates": report.gates,
+                "eliminated": len(report.eliminated),
+                "settlements_end": sorted(last.settlements.values(), reverse=True),
+                "travel_ended": report.travel_ended,
+                "engagement_median": (
+                    statistics.median(report.engagement_sizes)
+                    if report.engagement_sizes
+                    else 0
+                ),
+                "think_ms_p95": report.think_ms_p95,
+                "resolve_ms_max": report.resolve_ms_max,
+            }
+        )
+        print(f"seed {seed}: {sum(report.gates.values())}/{len(report.gates)} gates")
+    for name in gate_names:
+        print(f"{name:34s} {passes[name]}/{seeds}")
+    if out is not None:
+        out.write_text(json.dumps(summary, indent=1))
+
+
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -335,7 +370,16 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--turns", type=int, default=60)
     parser.add_argument("--json", type=Path, default=None)
+    parser.add_argument(
+        "--seeds",
+        type=int,
+        default=None,
+        help="run seeds 1..N and print how many pass each gate (§9: over 20 seeds)",
+    )
     args = parser.parse_args()
+    if args.seeds is not None:
+        _batch(args.slots, args.seeds, args.turns, args.players, args.json)
+        return
     started = time.perf_counter()
     report = run_sim(args.slots, args.seed, args.turns, args.players)
     elapsed = time.perf_counter() - started
