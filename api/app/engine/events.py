@@ -275,6 +275,34 @@ class OrderMooted(BaseModel):
     reason: OrderMootedReason
 
 
+class TravelEndReason(StrEnum):
+    """Why a standing travel order ended (WORLD_SPEC §5)."""
+
+    ARRIVED = "arrived"  # the unit entered the last hex of its route
+    CONTACT = "contact"  # it met the enemy: auto-deployed, stuck, or pack interrupted
+    ENGAGED = "engaged"  # it began the turn in hostile ZOC and could not pack
+    REPLACED = "replaced"  # its owner gave the unit a fresh order
+    DESTROYED = "destroyed"  # the unit died
+
+
+class TravelEnded(BaseModel):
+    """A unit's standing travel order is finished, for ``reason``.
+
+    Private to the owner, like the order itself: other players see the column
+    move and deploy, never where it was headed. ``coord`` is where the unit
+    stands (or fell) when the order ended.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["travel_ended"] = "travel_ended"
+    unit_id: UnitId
+    owner: PlayerId
+    coord: Axial
+    destination: Axial
+    reason: TravelEndReason
+
+
 class SettlementCaptured(BaseModel):
     """An infantry/armor unit captured a town or city (SPEC §14.1, §11.3 Phase 3).
 
@@ -391,7 +419,8 @@ Event = Annotated[
     | UnitPacked
     | UnitDeployed
     | ColumnStuck
-    | ColumnHeld,
+    | ColumnHeld
+    | TravelEnded,
     Field(discriminator="kind"),
 ]
 """Tagged union of all execution events, discriminated on ``kind``."""

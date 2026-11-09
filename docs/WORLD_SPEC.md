@@ -152,24 +152,36 @@ This changes SPEC §8.2, where two friendly units trying to swap hexes jam.
 
 ```
 TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
-              on_arrival: "deploy" | "column" }
+              on_arrival: "deployed" | "column" }
 ```
 
 - **Valid for** a column, or a deployed unit that is not starting in hostile ZOC
-  (it packs first, §4.4). Deployed units keep using v0.1 exact-path Move orders for
-  tactical maneuver. No multi-turn orders for deployed units.
-- **Routing:** deterministic A* over the *static* map, using column step costs, with
-  a fixed tie-break. Routes ignore units entirely: they are fog-honest (terrain is
-  public) and identical for every observer. Reachability is checked when the order
-  is validated, at the API boundary.
-- **Standing:** the order is stored in world state (`standing_orders`, keyed by unit)
-  and continues every turn until one of these happens:
-  - arrival;
-  - contact auto-deploy (event `TravelHalted{reason}`);
-  - an explicit deploy;
-  - it is replaced by a fresh order.
-- The planner shows the route and an **ETA in turns** (given clean roads).
+  (it packs first, §4.4; an engaged unit's order ends with reason `engaged`).
+  Deployed units keep using v0.1 exact-path Move orders for tactical maneuver.
+- **Routing** (`app/engine/routing.py`): deterministic A* over the *static* map,
+  using column step costs, with a fixed tie-break. Each waypoint leg is planned
+  separately. Routes ignore units entirely: they are fog-honest (terrain is public)
+  and identical for every observer. Reachability is checked when the order is
+  validated, at the API boundary.
+- **Standing** (`app/engine/travel.py`): the route is computed once, when the order is
+  issued, and stored in `GameState.standing_orders` (keyed by unit). Each turn the
+  unit has no fresh order, the engine marches it along the rest of the route. The
+  order ends, with a `TravelEnded{reason}` event, on:
+  - `arrived`: the unit entered the last hex (and deploys clean unless `on_arrival`
+    is `column`);
+  - `contact`: auto-deploy, a column stuck without room, or packing interrupted;
+  - `engaged`: it began the turn in hostile ZOC and could not pack;
+  - `replaced`: a fresh order of any kind (Hold or Deploy stop a column; a new
+    Travel reroutes);
+  - `destroyed`.
+- **Private intent:** fog redaction drops other players' standing orders, and
+  `TravelEnded` is visible only to the owner. Others see the column move.
+- The planner shows the route and an **ETA in turns** (`travel_eta`, given clean
+  roads; it counts the packing turn and the credit a turn can't spend).
 - Friendly columns never jam each other, because they stack.
+- Perf: a cross-world route on a roadless 350² map takes ~1 s; a typical
+  50–150-hex route, 0.02–0.3 s. Validation and the engine each route once. Bots
+  issuing many long orders per turn may need a shared distance field (W4).
 
 ## 6. World generator
 
@@ -307,7 +319,7 @@ The real gate is the user playing a live world on the real clock for a week.
 | --- | --- | --- |
 | **W0** Engine generalization ✅ | indexed lookups, shared static map, `hostile()`, perf baseline (`app.world.bench`). The static/dynamic *storage* split and N-slot turn flow moved to W5, where persistence changes | v0.1 suite green; 350² / 1,500 units resolves in 0.05 s, one player's fog in 0.006 s |
 | **W1** Columns ✅ | posture, March/Deploy orders, pack/deploy, column movement + stacking, auto-deploy + placement, disorder, barrage vs stacks, §4.7 friendly swaps and rotations | `tests/engine/test_columns.py` |
-| **W2** Travel | `TravelOrder`, routing, standing orders in state, validation, `TravelHalted` | pytest; multi-turn arrival/halt cases |
+| **W2** Travel ✅ | `TravelOrder`, routing, standing orders in state, validation, `TravelEnded` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim | §8–9 | §9 acceptance gates |
 | **W5** Persistence + clock | schema, scheduled resolve, dev manual clock | live world ticks on schedule |

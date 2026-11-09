@@ -110,6 +110,16 @@ describe("eventLines", () => {
     ]);
   });
 
+  it("renders a travel order ending on arrival and on contact", () => {
+    const base = { kind: "travel_ended", unit_id: 1, owner: "blue", coord: { q: 4, r: 0 } } as const;
+    expect(linesFor({ ...base, destination: { q: 4, r: 0 }, reason: "arrived" })).toEqual([
+      "Blue Armor arrived at (4,0).",
+    ]);
+    expect(linesFor({ ...base, destination: { q: 9, r: 0 }, reason: "contact" })).toEqual([
+      "Blue Armor halted its travel on meeting the enemy (bound for (9,0)).",
+    ]);
+  });
+
   it("renders a non-ZOC block with its reason", () => {
     expect(
       linesFor({

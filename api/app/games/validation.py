@@ -17,6 +17,8 @@ opponent's simultaneous orders:
   * one order per unit;
   * move and march paths are contiguous, on-map, and avoid impassable terrain
     (SPEC §3.4);
+  * travel destinations and waypoints are on-map and passable, and a column
+    route to them exists (WORLD_SPEC §5);
   * orders fit the unit's posture: Move and Barrage need a deployed unit, Deploy
     needs a packed column (WORLD_SPEC §4);
   * barrage is by an artillery unit at an on-map hex within range (SPEC §7.2);
@@ -45,8 +47,10 @@ from app.engine.models import (
     PlayerId,
     Posture,
     Recruitment,
+    TravelOrder,
     Unit,
 )
+from app.engine.routing import find_route
 from app.engine.stats import TERRAIN_STATS, UNIT_STATS, Terrain, UnitType
 
 
@@ -93,6 +97,8 @@ def validate_submission(
             _validate_path(order, unit, hexes_by_coord)
         elif isinstance(order, BarrageOrder):
             _validate_barrage(order, unit, hexes_by_coord)
+        elif isinstance(order, TravelOrder):
+            _validate_travel(order, unit, state)
 
     _validate_recruitments(state, slot, recruitments, hexes_by_coord)
 
@@ -117,6 +123,32 @@ def _validate_path(
                 f"unit {order.unit_id} path step {step} is impassable terrain"
             )
         prev = step
+
+
+def _validate_travel(order: TravelOrder, unit: Unit, state: GameState) -> None:
+    """Waypoints and destination must be passable, and the route must exist.
+
+    Routing ignores units (WORLD_SPEC §5), so reachability here is a fact about
+    the static map and the engine's own routing will agree with it.
+    """
+    if order.destination == unit.coord:
+        raise OrderValidationError(
+            f"unit {order.unit_id} is already at its travel destination"
+        )
+    for stop in (*order.via, order.destination):
+        hex_ = state.map.index.get(stop)
+        if hex_ is None:
+            raise OrderValidationError(
+                f"unit {order.unit_id} travel waypoint {stop} is off-map"
+            )
+        if not TERRAIN_STATS[hex_.terrain].passable:
+            raise OrderValidationError(
+                f"unit {order.unit_id} travel waypoint {stop} is impassable terrain"
+            )
+    if not find_route(state.map, unit.coord, order.destination, order.via):
+        raise OrderValidationError(
+            f"unit {order.unit_id} has no route to {order.destination}"
+        )
 
 
 def _validate_barrage(

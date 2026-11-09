@@ -650,6 +650,13 @@
             "title": "Settlements",
             "type": "array"
           },
+          "standing_orders": {
+            "items": {
+              "$ref": "#/components/schemas/StandingTravel"
+            },
+            "title": "Standing Orders",
+            "type": "array"
+          },
           "turn": {
             "minimum": 0.0,
             "title": "Turn",
@@ -1221,6 +1228,37 @@
         "title": "SettlementCaptured",
         "type": "object"
       },
+      "StandingTravel": {
+        "description": "A travel order still in progress, carried from turn to turn (WORLD_SPEC \u00a75).\n\n``route`` is the hexes the unit has yet to enter, in order, fixed when the\norder was issued (routes are planned over the static map, so they never need\nrecomputing). Each turn the unit has no fresh order, the engine marches it\nalong ``route``; the order ends on arrival, contact, an explicit order, or the\nunit's destruction. ``on_arrival`` is the posture to finish in.",
+        "properties": {
+          "destination": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "on_arrival": {
+            "$ref": "#/components/schemas/Posture",
+            "default": "deployed"
+          },
+          "route": {
+            "items": {
+              "$ref": "#/components/schemas/Axial"
+            },
+            "minItems": 1,
+            "title": "Route",
+            "type": "array"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "destination",
+          "route"
+        ],
+        "title": "StandingTravel",
+        "type": "object"
+      },
       "SubmitOrdersRequest": {
         "additionalProperties": false,
         "description": "Body for ``POST /games/{id}/orders``: a player's full plan for the turn.\n\nBoth lists default to empty: a player may legitimately submit no orders (every\nunit holds) and no recruits. FastAPI parses ``orders`` into the discriminated\n`Order` union, so unknown order shapes are rejected as 422 at the wire.",
@@ -1234,7 +1272,8 @@
                   "hold": "#/components/schemas/HoldOrder",
                   "march": "#/components/schemas/MarchOrder",
                   "move": "#/components/schemas/MoveOrder",
-                  "rest": "#/components/schemas/RestOrder"
+                  "rest": "#/components/schemas/RestOrder",
+                  "travel": "#/components/schemas/TravelOrder"
                 },
                 "propertyName": "kind"
               },
@@ -1256,6 +1295,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/DeployOrder"
+                },
+                {
+                  "$ref": "#/components/schemas/TravelOrder"
                 }
               ]
             },
@@ -1349,6 +1391,92 @@
         "title": "TrafficJam",
         "type": "object"
       },
+      "TravelEndReason": {
+        "description": "Why a standing travel order ended (WORLD_SPEC \u00a75).",
+        "enum": [
+          "arrived",
+          "contact",
+          "engaged",
+          "replaced",
+          "destroyed"
+        ],
+        "title": "TravelEndReason",
+        "type": "string"
+      },
+      "TravelEnded": {
+        "additionalProperties": false,
+        "description": "A unit's standing travel order is finished, for ``reason``.\n\nPrivate to the owner, like the order itself: other players see the column\nmove and deploy, never where it was headed. ``coord`` is where the unit\nstands (or fell) when the order ended.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "travel_ended",
+            "default": "travel_ended",
+            "title": "Kind",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/TravelEndReason"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "owner",
+          "coord",
+          "destination",
+          "reason"
+        ],
+        "title": "TravelEnded",
+        "type": "object"
+      },
+      "TravelOrder": {
+        "description": "Go to a destination as a column, over as many turns as it takes (WORLD_SPEC \u00a75).\n\nThe engine plans the route (cheapest column path over the static map,\nthrough the optional ``via`` waypoints in order), packs the unit if it is\ndeployed, and keeps it marching every turn it has no fresh order. It finishes\nin the ``on_arrival`` posture. Contact ends the order early: the column\ndeploys where it meets the enemy.",
+        "properties": {
+          "destination": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "travel",
+            "default": "travel",
+            "title": "Kind",
+            "type": "string"
+          },
+          "on_arrival": {
+            "$ref": "#/components/schemas/Posture",
+            "default": "deployed"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "via": {
+            "items": {
+              "$ref": "#/components/schemas/Axial"
+            },
+            "maxItems": 4,
+            "title": "Via",
+            "type": "array"
+          }
+        },
+        "required": [
+          "unit_id",
+          "destination"
+        ],
+        "title": "TravelOrder",
+        "type": "object"
+      },
       "TurnReplay": {
         "description": "A resolved turn's replay: the event log, resulting state, victory snapshot.",
         "properties": {
@@ -1366,6 +1494,7 @@
                   "recruitment_voided": "#/components/schemas/RecruitmentVoided",
                   "settlement_captured": "#/components/schemas/SettlementCaptured",
                   "traffic_jam": "#/components/schemas/TrafficJam",
+                  "travel_ended": "#/components/schemas/TravelEnded",
                   "unit_deployed": "#/components/schemas/UnitDeployed",
                   "unit_moved": "#/components/schemas/UnitMoved",
                   "unit_packed": "#/components/schemas/UnitPacked",
@@ -1419,6 +1548,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/ColumnHeld"
+                },
+                {
+                  "$ref": "#/components/schemas/TravelEnded"
                 }
               ]
             },

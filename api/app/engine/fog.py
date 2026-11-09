@@ -37,6 +37,7 @@ from app.engine.events import (
     SettlementCaptured,
     TrafficJam,
     UnitDeployed,
+    TravelEnded,
     UnitMoved,
     UnitPacked,
     UnitRecruited,
@@ -56,7 +57,9 @@ def redact_state(state: GameState, viewer: PlayerId) -> GameState:
     """
     visible = visible_hexes(state, viewer)
     units = [u for u in state.units if u.owner == viewer or u.coord in visible]
-    return state.model_copy(update={"units": units})
+    own = {u.id for u in state.units if u.owner == viewer}
+    standing = [o for o in state.standing_orders if o.unit_id in own]
+    return state.model_copy(update={"units": units, "standing_orders": standing})
 
 
 def filter_events(
@@ -125,6 +128,9 @@ def _event_scope(
     if isinstance(event, OrderMooted):
         # Private bookkeeping for the dead unit's owner, like economy. The event
         # carries its own owner because the unit no longer exists post-turn.
+        return {event.owner}, set()
+    if isinstance(event, TravelEnded):
+        # The order is private intent: only its owner learns that it ended.
         return {event.owner}, set()
     if isinstance(event, RecruitmentVoided):
         # Private to the requester, with NO location: a voided recruit changes

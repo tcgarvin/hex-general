@@ -6,7 +6,8 @@ single replay for the turn:
 
   1. **Barrage** (§11.3 Phase 1) — pre-movement artillery fire.
   2. **Movement + combat** (§11.3 Phase 2) — movement pulses with interleaved
-     combat.
+     combat. Standing travel orders (WORLD_SPEC §5) march as part of it: they
+     are expanded into March orders first and settled (trimmed or ended) after.
   3. **Capture** (§11.3 Phase 3, §14) — settlements flip to occupying infantry/armor.
   4. **Repair** (§11.3 Phase 4, §7.3) — undamaged resting units recover HP.
   5. **Economy** (§11.3 Phase 5, §6.2–6.4) — income and upkeep update each bank.
@@ -31,6 +32,7 @@ from app.engine.models import BarrageOrder, GameState, Order, Recruitment
 from app.engine.movement import resolve_movement
 from app.engine.recruitment import resolve_recruitment
 from app.engine.repair import resolve_repair
+from app.engine.travel import begin_travel, settle_travel
 
 
 def resolve_execution(
@@ -59,6 +61,10 @@ def resolve_execution(
     (see ``resolve_recruitment``).
     """
     recruitments = recruitments if recruitments is not None else []
+    # Travel (WORLD_SPEC §5): fresh Travel orders become standing ones, and every
+    # standing order with no fresh order to replace it marches this turn.
+    travel = begin_travel(state, orders)
+    orders = travel.orders
     pre_hp = {u.id: u.hp for u in state.units}
     # Disorder lasts through the end of the turn after the one it was earned in
     # (WORLD_SPEC §4.5): clear it now only for units that began this turn with it.
@@ -100,6 +106,11 @@ def resolve_execution(
         after_barrage, live_orders, barraged=barraged
     )
 
+    standing, travel_events = settle_travel(
+        travel, after_movement, barrage_events + movement_events
+    )
+    after_movement = after_movement.model_copy(update={"standing_orders": standing})
+
     # A resting unit that lost HP during barrage/movement does not repair (§7.3).
     damaged = {u.id for u in after_movement.units if u.hp < pre_hp[u.id]}
 
@@ -116,6 +127,8 @@ def resolve_execution(
         barrage_events
         + mooted_events
         + movement_events
+        + travel.events
+        + travel_events
         + capture_events
         + repair_events
         + economy_events

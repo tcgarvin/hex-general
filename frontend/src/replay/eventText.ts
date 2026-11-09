@@ -48,6 +48,14 @@ const DEPLOY_CAUSE: Record<components["schemas"]["DeployCause"], string> = {
   barraged: "under barrage",
 };
 
+const TRAVEL_END_REASON: Record<components["schemas"]["TravelEndReason"], string> = {
+  arrived: "arrived",
+  contact: "halted its travel on meeting the enemy",
+  engaged: "could not start travelling: it began the turn in enemy ZOC",
+  replaced: "took a new order instead of travelling on",
+  destroyed: "was lost while travelling",
+};
+
 const RECRUIT_VOIDED_REASON: Record<
   components["schemas"]["RecruitmentVoidedReason"],
   string
@@ -239,6 +247,17 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
         {
           indent: 0,
           text: `${nameOf(event.unit_id)} waited: the stack at ${coord(event.target)} was full.`,
+        },
+      ];
+
+    case "travel_ended":
+      return [
+        {
+          indent: 0,
+          text:
+            event.reason === "arrived"
+              ? `${nameOf(event.unit_id)} arrived at ${coord(event.destination)}.`
+              : `${nameOf(event.unit_id)} ${TRAVEL_END_REASON[event.reason]} (bound for ${coord(event.destination)}).`,
         },
       ];
 

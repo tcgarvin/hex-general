@@ -191,7 +191,8 @@ function applyOneEvent(
     }
 
     // move_blocked, traffic_jam, order_mooted, recruitment_voided, column_stuck,
-    // column_held: no board-state change — recorded only for the replay log.
+    // column_held, travel_ended: no board-state change — recorded only for the
+    // replay log.
     default:
       return unchanged;
   }

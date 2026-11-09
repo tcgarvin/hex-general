@@ -677,6 +677,8 @@ export interface components {
             resigned?: string[];
             /** Settlements */
             settlements?: components["schemas"]["Settlement"][];
+            /** Standing Orders */
+            standing_orders?: components["schemas"]["StandingTravel"][];
             /** Turn */
             turn: number;
             /** Units */
@@ -1020,6 +1022,25 @@ export interface components {
             unit_id: number;
         };
         /**
+         * StandingTravel
+         * @description A travel order still in progress, carried from turn to turn (WORLD_SPEC §5).
+         *
+         *     ``route`` is the hexes the unit has yet to enter, in order, fixed when the
+         *     order was issued (routes are planned over the static map, so they never need
+         *     recomputing). Each turn the unit has no fresh order, the engine marches it
+         *     along ``route``; the order ends on arrival, contact, an explicit order, or the
+         *     unit's destruction. ``on_arrival`` is the posture to finish in.
+         */
+        StandingTravel: {
+            destination: components["schemas"]["Axial"];
+            /** @default deployed */
+            on_arrival: components["schemas"]["Posture"];
+            /** Route */
+            route: components["schemas"]["Axial"][];
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
          * SubmitOrdersRequest
          * @description Body for ``POST /games/{id}/orders``: a player's full plan for the turn.
          *
@@ -1029,7 +1050,7 @@ export interface components {
          */
         SubmitOrdersRequest: {
             /** Orders */
-            orders?: (components["schemas"]["MoveOrder"] | components["schemas"]["BarrageOrder"] | components["schemas"]["RestOrder"] | components["schemas"]["HoldOrder"] | components["schemas"]["MarchOrder"] | components["schemas"]["DeployOrder"])[];
+            orders?: (components["schemas"]["MoveOrder"] | components["schemas"]["BarrageOrder"] | components["schemas"]["RestOrder"] | components["schemas"]["HoldOrder"] | components["schemas"]["MarchOrder"] | components["schemas"]["DeployOrder"] | components["schemas"]["TravelOrder"])[];
             /** Recruitments */
             recruitments?: components["schemas"]["Recruitment"][];
         };
@@ -1079,12 +1100,64 @@ export interface components {
             unit_ids: number[];
         };
         /**
+         * TravelEndReason
+         * @description Why a standing travel order ended (WORLD_SPEC §5).
+         * @enum {string}
+         */
+        TravelEndReason: "arrived" | "contact" | "engaged" | "replaced" | "destroyed";
+        /**
+         * TravelEnded
+         * @description A unit's standing travel order is finished, for ``reason``.
+         *
+         *     Private to the owner, like the order itself: other players see the column
+         *     move and deploy, never where it was headed. ``coord`` is where the unit
+         *     stands (or fell) when the order ended.
+         */
+        TravelEnded: {
+            coord: components["schemas"]["Axial"];
+            destination: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "travel_ended";
+            /** Owner */
+            owner: string;
+            reason: components["schemas"]["TravelEndReason"];
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
+         * TravelOrder
+         * @description Go to a destination as a column, over as many turns as it takes (WORLD_SPEC §5).
+         *
+         *     The engine plans the route (cheapest column path over the static map,
+         *     through the optional ``via`` waypoints in order), packs the unit if it is
+         *     deployed, and keeps it marching every turn it has no fresh order. It finishes
+         *     in the ``on_arrival`` posture. Contact ends the order early: the column
+         *     deploys where it meets the enemy.
+         */
+        TravelOrder: {
+            destination: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "travel";
+            /** @default deployed */
+            on_arrival: components["schemas"]["Posture"];
+            /** Unit Id */
+            unit_id: number;
+            /** Via */
+            via?: components["schemas"]["Axial"][];
+        };
+        /**
          * TurnReplay
          * @description A resolved turn's replay: the event log, resulting state, victory snapshot.
          */
         TurnReplay: {
             /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"])[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"])[];
             state_after: components["schemas"]["GameState"];
             /** Turn */
             turn: number;

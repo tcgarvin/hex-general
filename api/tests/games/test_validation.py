@@ -8,7 +8,15 @@ from __future__ import annotations
 
 import pytest
 
-from app.engine.models import DeployOrder, GameState, MarchOrder, Posture
+from pydantic import ValidationError
+
+from app.engine.models import (
+    DeployOrder,
+    GameState,
+    MarchOrder,
+    Posture,
+    TravelOrder,
+)
 from app.games.validation import OrderValidationError, validate_submission
 from engine.helpers import ax, barrage, build, hold, move, recruit
 
@@ -164,3 +172,44 @@ def test_deploy_needs_a_column() -> None:
 def test_column_may_deploy_or_hold() -> None:
     validate_submission(_with_column(1), "blue", [DeployOrder(unit_id=1)], [])
     validate_submission(_with_column(1), "blue", [hold(1)], [])
+
+
+# --- Travel (WORLD_SPEC §5) -------------------------------------------------
+
+
+def test_travel_to_a_reachable_hex_passes() -> None:
+    order = TravelOrder(unit_id=1, destination=ax(4, 1), via=[ax(3, 2)])
+    validate_submission(_state(), "blue", [order], [])
+
+
+def test_travel_destination_must_be_passable() -> None:
+    order = TravelOrder(unit_id=1, destination=ax(2, 1))  # the river
+    with pytest.raises(OrderValidationError, match="impassable"):
+        validate_submission(_state(), "blue", [order], [])
+
+
+def test_travel_waypoint_must_be_on_map() -> None:
+    order = TravelOrder(unit_id=1, destination=ax(4, 1), via=[ax(9, 9)])
+    with pytest.raises(OrderValidationError, match="off-map"):
+        validate_submission(_state(), "blue", [order], [])
+
+
+def test_travel_to_own_hex_is_rejected() -> None:
+    order = TravelOrder(unit_id=1, destination=ax(1, 2))
+    with pytest.raises(OrderValidationError, match="already at"):
+        validate_submission(_state(), "blue", [order], [])
+
+
+def test_travel_needs_a_route() -> None:
+    walled = build(
+        ["..~..", "..~..", "..~.."],
+        [{"type": "infantry", "owner": "blue", "q": 0, "r": 1}],
+    )
+    order = TravelOrder(unit_id=1, destination=ax(4, 1))
+    with pytest.raises(OrderValidationError, match="no route"):
+        validate_submission(walled, "blue", [order], [])
+
+
+def test_travel_allows_at_most_four_waypoints() -> None:
+    with pytest.raises(ValidationError):
+        TravelOrder(unit_id=1, destination=ax(4, 1), via=[ax(0, 1)] * 5)

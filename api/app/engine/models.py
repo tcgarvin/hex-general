@@ -24,7 +24,9 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from app.engine.hex_coords import Axial, distance
 from app.engine.stats import (
+    COLUMN_RULES,
     MUSTER_BANK_CAP,
+    TERRAIN_STATS,
     UNIT_CAP,
     Terrain,
     UnitType,
@@ -99,6 +101,7 @@ class GameMap(BaseModel):
     height: int = Field(gt=0)
     hexes: list[Hex]
     _index: dict[Axial, Hex] | None = PrivateAttr(default=None)
+    _column_costs: dict[tuple[int, int], int] | None = PrivateAttr(default=None)
 
     @property
     def index(self) -> dict[Axial, Hex]:
@@ -106,6 +109,27 @@ class GameMap(BaseModel):
         if self._index is None:
             self._index = {h.coord: h for h in self.hexes}
         return self._index
+
+    @property
+    def column_costs(self) -> dict[tuple[int, int], int]:
+        """``(q, r)`` → pulses for a column to enter that hex, passable hexes only.
+
+        A road hex costs `ColumnRules.road_step_pulses`, any other passable hex
+        `ColumnRules.offroad_step_pulses` (WORLD_SPEC §4.2). Keyed by plain tuples
+        because route search touches tens of thousands of hexes per call. Built
+        once, then cached, like `index`.
+        """
+        if self._column_costs is None:
+            self._column_costs = {
+                (h.coord.q, h.coord.r): (
+                    COLUMN_RULES.road_step_pulses
+                    if h.road
+                    else COLUMN_RULES.offroad_step_pulses
+                )
+                for h in self.hexes
+                if TERRAIN_STATS[h.terrain].passable
+            }
+        return self._column_costs
 
 
 class Settlement(BaseModel):
@@ -205,6 +229,22 @@ class GameConfig(BaseModel):
     victory: VictoryConfig
 
 
+class StandingTravel(BaseModel):
+    """A travel order still in progress, carried from turn to turn (WORLD_SPEC §5).
+
+    ``route`` is the hexes the unit has yet to enter, in order, fixed when the
+    order was issued (routes are planned over the static map, so they never need
+    recomputing). Each turn the unit has no fresh order, the engine marches it
+    along ``route``; the order ends on arrival, contact, an explicit order, or the
+    unit's destruction. ``on_arrival`` is the posture to finish in.
+    """
+
+    unit_id: UnitId
+    destination: Axial
+    route: list[Axial] = Field(min_length=1)
+    on_arrival: Posture = Posture.DEPLOYED
+
+
 class GameState(BaseModel):
     """The canonical, serializable state of one game at one turn.
 
@@ -225,6 +265,9 @@ class GameState(BaseModel):
     # Slots that have conceded (SPEC §15). Public info; a resigned player is out
     # of contention for victory (`app.engine.victory`). Empty in a fresh state.
     resigned: list[PlayerId] = Field(default_factory=list)
+    # Multi-turn travel orders in progress, one per unit, sorted by unit id
+    # (WORLD_SPEC §5). Private to each unit's owner: fog redaction drops the rest.
+    standing_orders: list[StandingTravel] = Field(default_factory=list)
     config: GameConfig
 
     def hex_at(self, coord: Axial) -> Hex | None:
@@ -252,6 +295,7 @@ class GameState(BaseModel):
                 "settlements": [s.model_copy() for s in self.settlements],
                 "players": [p.model_copy() for p in self.players],
                 "resigned": list(self.resigned),
+                "standing_orders": [o.model_copy() for o in self.standing_orders],
             }
         )
 
@@ -335,8 +379,31 @@ class DeployOrder(BaseModel):
     unit_id: UnitId
 
 
+class TravelOrder(BaseModel):
+    """Go to a destination as a column, over as many turns as it takes (WORLD_SPEC §5).
+
+    The engine plans the route (cheapest column path over the static map,
+    through the optional ``via`` waypoints in order), packs the unit if it is
+    deployed, and keeps it marching every turn it has no fresh order. It finishes
+    in the ``on_arrival`` posture. Contact ends the order early: the column
+    deploys where it meets the enemy.
+    """
+
+    kind: Literal["travel"] = "travel"
+    unit_id: UnitId
+    destination: Axial
+    via: list[Axial] = Field(default_factory=list, max_length=4)
+    on_arrival: Posture = Posture.DEPLOYED
+
+
 Order = Annotated[
-    MoveOrder | BarrageOrder | RestOrder | HoldOrder | MarchOrder | DeployOrder,
+    MoveOrder
+    | BarrageOrder
+    | RestOrder
+    | HoldOrder
+    | MarchOrder
+    | DeployOrder
+    | TravelOrder,
     Field(discriminator="kind"),
 ]
 """Tagged union of the order types, discriminated on ``kind``."""
