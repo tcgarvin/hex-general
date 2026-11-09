@@ -210,6 +210,20 @@ sizing, not balance.
 **No 2-player detour (decided, 2026-11-08):** build and test against the world
 itself, not the Twin Rivers 2-player game.
 
+**World games only (decided, 2026-11-09):** after the switch, the server runs only
+big world games. 2-player matches are retired, not kept alongside, so the world flow
+replaces lobby, invite and vs-bot rather than adding a second mode. World work stays
+local until that switch.
+
+**Before the live playtest (decided, 2026-11-09):**
+- **Fun before contact.** The pre-contact loop of expansion and economy has to be fun
+  on its own.
+- **Economy design first.** Settle the basic economy before the playtest: what sites
+  there are, how many you need to grow your power and your base, and what each changes
+  in play (§6).
+- **Bots as they are.** Improving the bots waits until the user's first round of
+  testing. The current bots are there to make the map feel full and active.
+
 1. **Open world** — [`WORLD_SPEC.md`](./WORLD_SPEC.md): N-slot world, generated map,
    two-a-day clock, columns + auto-deploy, multi-turn travel, relief swaps, growing
    command cap, world bots + headless world sim, frontend world view.
