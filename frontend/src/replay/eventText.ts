@@ -35,6 +35,17 @@ const MOVE_BLOCKED_REASON: Record<
   impassable: "the terrain is impassable",
   occupied: "the hex was already occupied",
   attack_forbidden: "it may not attack from there",
+  disordered: "it is disordered and cannot attack",
+  column_sheltered: "enemy columns hold that hex",
+  engaged_cannot_pack: "it began the turn in enemy ZOC and cannot pack",
+  pack_interrupted: "its packing was interrupted",
+};
+
+const DEPLOY_CAUSE: Record<components["schemas"]["DeployCause"], string> = {
+  ordered: "as ordered",
+  arrived: "on arrival",
+  contact: "on contact with the enemy",
+  barraged: "under barrage",
 };
 
 const RECRUIT_VOIDED_REASON: Record<
@@ -196,6 +207,39 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       // The ordered unit died in barrage before its order could apply (SPEC §11.3).
       return [
         { indent: 0, text: `${nameOf(event.unit_id)}'s order was mooted — destroyed by barrage.` },
+      ];
+
+    case "unit_packed":
+      return [{ indent: 0, text: `${nameOf(event.unit_id)} packed into a column at ${coord(event.coord)}.` }];
+
+    case "unit_deployed": {
+      const where =
+        event.dest.q === event.origin.q && event.dest.r === event.origin.r
+          ? `at ${coord(event.dest)}`
+          : `at ${coord(event.dest)} (no room at ${coord(event.origin)})`;
+      const lines: LogLine[] = [
+        { indent: 0, text: `${nameOf(event.unit_id)} deployed ${where} ${DEPLOY_CAUSE[event.cause]}.` },
+      ];
+      if (event.disordered) {
+        lines.push({ indent: 1, text: "It is disordered: weaker defense, and it cannot attack next turn." });
+      }
+      return lines;
+    }
+
+    case "column_stuck":
+      return [
+        {
+          indent: 0,
+          text: `${nameOf(event.unit_id)} could not deploy at ${coord(event.coord)} — no room — and stayed packed.`,
+        },
+      ];
+
+    case "column_held":
+      return [
+        {
+          indent: 0,
+          text: `${nameOf(event.unit_id)} waited: the stack at ${coord(event.target)} was full.`,
+        },
       ];
 
     case "recruitment_voided":

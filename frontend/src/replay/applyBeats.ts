@@ -79,14 +79,40 @@ function applyOneEvent(
     }
 
     case "barrage_resolved": {
-      const { hit } = e;
-      // `hit` is null/absent when the barrage hit an empty hex (SPEC §7.2).
-      if (hit == null) return unchanged;
-      if (hit.destroyed) {
-        return { units: units.filter((u) => u.id !== hit.unit_id), settlements, players };
-      }
+      // `hit` is null/absent when the barrage hit an empty hex (SPEC §7.2);
+      // `extra_hits` are packed columns stacked in the same hex (WORLD_SPEC §4.6).
+      const hits = [...(e.hit != null ? [e.hit] : []), ...(e.extra_hits ?? [])];
+      if (hits.length === 0) return unchanged;
+      const byId = new Map(hits.map((h) => [h.unit_id, h]));
       return {
-        units: units.map((u) => (u.id === hit.unit_id ? { ...u, hp: hit.hp_after } : u)),
+        units: units
+          .filter((u) => !byId.get(u.id)?.destroyed)
+          .map((u) => {
+            const h = byId.get(u.id);
+            return h ? { ...u, hp: h.hp_after } : u;
+          }),
+        settlements,
+        players,
+      };
+    }
+
+    case "unit_packed": {
+      const { unit_id } = e;
+      return {
+        units: units.map((u) => (u.id === unit_id ? { ...u, posture: "column" } : u)),
+        settlements,
+        players,
+      };
+    }
+
+    case "unit_deployed": {
+      const { unit_id, dest, disordered } = e;
+      return {
+        units: units.map((u) =>
+          u.id === unit_id
+            ? { ...u, coord: dest, posture: "deployed", disordered: u.disordered || disordered }
+            : u,
+        ),
         settlements,
         players,
       };
@@ -158,12 +184,14 @@ function applyOneEvent(
         // Nor facing — recreate the engine default (face the nearest enemy,
         // computed against the board before this unit is added, as the engine does).
         facing: defaultFacing(coord, owner, units),
+        posture: "deployed",
+        disordered: false,
       };
       return { units: [...units, newUnit], settlements, players };
     }
 
-    // move_blocked, traffic_jam, order_mooted, recruitment_voided: no board-state
-    // change — these are dropped/no-op intents, recorded only for the replay log.
+    // move_blocked, traffic_jam, order_mooted, recruitment_voided, column_stuck,
+    // column_held: no board-state change — recorded only for the replay log.
     default:
       return unchanged;
   }

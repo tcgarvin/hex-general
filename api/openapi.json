@@ -47,6 +47,11 @@
             "title": "Damage",
             "type": "integer"
           },
+          "defense_penalty": {
+            "default": 0,
+            "title": "Defense Penalty",
+            "type": "integer"
+          },
           "destroyed": {
             "title": "Destroyed",
             "type": "boolean"
@@ -120,6 +125,13 @@
             "title": "Artillery Id",
             "type": "integer"
           },
+          "extra_hits": {
+            "items": {
+              "$ref": "#/components/schemas/BarrageHit"
+            },
+            "title": "Extra Hits",
+            "type": "array"
+          },
           "hit": {
             "anyOf": [
               {
@@ -147,6 +159,74 @@
         "title": "BarrageResolved",
         "type": "object"
       },
+      "ColumnHeld": {
+        "additionalProperties": false,
+        "description": "A column waited this pulse because ``target`` already holds a full stack.\n\nUnlike `MoveBlocked`, the column keeps its order and tries again next pulse.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "column_held",
+            "default": "column_held",
+            "title": "Kind",
+            "type": "string"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          },
+          "target": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pulse",
+          "unit_id",
+          "coord",
+          "target"
+        ],
+        "title": "ColumnHeld",
+        "type": "object"
+      },
+      "ColumnStuck": {
+        "additionalProperties": false,
+        "description": "A column had to deploy but no hex within reach was free; it stays packed.",
+        "properties": {
+          "cause": {
+            "$ref": "#/components/schemas/DeployCause"
+          },
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "column_stuck",
+            "default": "column_stuck",
+            "title": "Kind",
+            "type": "string"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pulse",
+          "unit_id",
+          "coord",
+          "cause"
+        ],
+        "title": "ColumnStuck",
+        "type": "object"
+      },
       "CombatParticipant": {
         "additionalProperties": false,
         "description": "One unit's contribution to and outcome in a combat event (SPEC \u00a716.3).\n\nDamage is reported as totals: ``damage_dealt`` is summed across every\nopposing unit this one struck, ``damage_taken`` across every opponent that\nstruck it. For a 1v1 these are the single exchanged values in the \u00a716.3\nexample; in a dogpile each attacker's ``damage_dealt`` is its hit on the\ndefender, and the defender's ``damage_dealt`` is the sum of its full\nretaliation against every attacker (SPEC \u00a712.4).",
@@ -157,6 +237,11 @@
           },
           "damage_taken": {
             "title": "Damage Taken",
+            "type": "integer"
+          },
+          "defense_penalty": {
+            "default": 0,
+            "title": "Defense Penalty",
             "type": "integer"
           },
           "destroyed": {
@@ -284,6 +369,37 @@
           }
         },
         "title": "CreateGameRequest",
+        "type": "object"
+      },
+      "DeployCause": {
+        "description": "Why a column deployed (WORLD_SPEC \u00a74.5).",
+        "enum": [
+          "ordered",
+          "arrived",
+          "contact",
+          "barraged"
+        ],
+        "title": "DeployCause",
+        "type": "string"
+      },
+      "DeployOrder": {
+        "description": "A column unpacks where it stands, ready to fight next turn (WORLD_SPEC \u00a74.5).",
+        "properties": {
+          "kind": {
+            "const": "deploy",
+            "default": "deploy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id"
+        ],
+        "title": "DeployOrder",
         "type": "object"
       },
       "DevProfile": {
@@ -715,6 +831,40 @@
         "title": "JoinGameRequest",
         "type": "object"
       },
+      "MarchOrder": {
+        "description": "Travel as a column along an exact path (WORLD_SPEC \u00a74.4, \u00a75).\n\nA deployed unit packs first (the opening pulses of the turn) and then\nmarches; a column marches from pulse 1. Steps cost pulses (road vs off-road)\nrather than one per pulse. With ``deploy_on_arrival`` the unit deploys, clean,\nat the end of the turn in which it completes the path.",
+        "properties": {
+          "deploy_on_arrival": {
+            "default": false,
+            "title": "Deploy On Arrival",
+            "type": "boolean"
+          },
+          "kind": {
+            "const": "march",
+            "default": "march",
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "items": {
+              "$ref": "#/components/schemas/Axial"
+            },
+            "minItems": 1,
+            "title": "Path",
+            "type": "array"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_id",
+          "path"
+        ],
+        "title": "MarchOrder",
+        "type": "object"
+      },
       "MeView": {
         "description": "The authenticated caller's own identity and dev role.\n\nBacks the frontend dev profile switcher: ``is_dev`` decides whether the switcher\nis shown, and reflects the *real* account (impersonation is not applied).",
         "properties": {
@@ -779,7 +929,11 @@
           "impassable",
           "occupied",
           "zoc_locked",
-          "attack_forbidden"
+          "attack_forbidden",
+          "disordered",
+          "column_sheltered",
+          "engaged_cannot_pack",
+          "pack_interrupted"
         ],
         "title": "MoveBlockedReason",
         "type": "string"
@@ -900,6 +1054,15 @@
         ],
         "title": "PlayerCredentials",
         "type": "object"
+      },
+      "Posture": {
+        "description": "How a unit is set up (WORLD_SPEC \u00a74).\n\n``DEPLOYED`` is the v0.1 unit: one per hex, exerts and obeys ZOC, fights.\n``COLUMN`` is packed for travel: fast, stacks with friendly columns, exerts no\nZOC, cannot attack, and defends badly.",
+        "enum": [
+          "deployed",
+          "column"
+        ],
+        "title": "Posture",
+        "type": "string"
       },
       "Recruitment": {
         "additionalProperties": false,
@@ -1067,7 +1230,9 @@
               "discriminator": {
                 "mapping": {
                   "barrage": "#/components/schemas/BarrageOrder",
+                  "deploy": "#/components/schemas/DeployOrder",
                   "hold": "#/components/schemas/HoldOrder",
+                  "march": "#/components/schemas/MarchOrder",
                   "move": "#/components/schemas/MoveOrder",
                   "rest": "#/components/schemas/RestOrder"
                 },
@@ -1085,6 +1250,12 @@
                 },
                 {
                   "$ref": "#/components/schemas/HoldOrder"
+                },
+                {
+                  "$ref": "#/components/schemas/MarchOrder"
+                },
+                {
+                  "$ref": "#/components/schemas/DeployOrder"
                 }
               ]
             },
@@ -1186,6 +1357,8 @@
               "discriminator": {
                 "mapping": {
                   "barrage_resolved": "#/components/schemas/BarrageResolved",
+                  "column_held": "#/components/schemas/ColumnHeld",
+                  "column_stuck": "#/components/schemas/ColumnStuck",
                   "combat_resolved": "#/components/schemas/CombatResolved",
                   "economy_resolved": "#/components/schemas/EconomyResolved",
                   "move_blocked": "#/components/schemas/MoveBlocked",
@@ -1193,7 +1366,9 @@
                   "recruitment_voided": "#/components/schemas/RecruitmentVoided",
                   "settlement_captured": "#/components/schemas/SettlementCaptured",
                   "traffic_jam": "#/components/schemas/TrafficJam",
+                  "unit_deployed": "#/components/schemas/UnitDeployed",
                   "unit_moved": "#/components/schemas/UnitMoved",
+                  "unit_packed": "#/components/schemas/UnitPacked",
                   "unit_recruited": "#/components/schemas/UnitRecruited",
                   "unit_repaired": "#/components/schemas/UnitRepaired"
                 },
@@ -1232,6 +1407,18 @@
                 },
                 {
                   "$ref": "#/components/schemas/RecruitmentVoided"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitPacked"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitDeployed"
+                },
+                {
+                  "$ref": "#/components/schemas/ColumnStuck"
+                },
+                {
+                  "$ref": "#/components/schemas/ColumnHeld"
                 }
               ]
             },
@@ -1259,10 +1446,15 @@
         "type": "object"
       },
       "Unit": {
-        "description": "A single unit instance (SPEC \u00a75).\n\nStatic type stats (move, attack, vision, \u2026) are looked up from\n`app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives\nhere. ``hp`` is clamped to 0..10 (SPEC \u00a75.2); a unit at 0 HP is destroyed.\n\n``facing`` is cosmetic render state (see `Facing`): the left/right direction\nthe sprite faces, set by the unit's last movement. It defaults so state JSONB\npersisted before this field existed still validates (older games load with\nthe default facing).",
+        "description": "A single unit instance (SPEC \u00a75).\n\nStatic type stats (move, attack, vision, \u2026) are looked up from\n`app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives\nhere. ``hp`` is clamped to 0..10 (SPEC \u00a75.2); a unit at 0 HP is destroyed.\n\n``facing`` is cosmetic render state (see `Facing`): the left/right direction\nthe sprite faces, set by the unit's last movement. It defaults so state JSONB\npersisted before this field existed still validates (older games load with\nthe default facing).\n\n``posture`` is deployed or column (WORLD_SPEC \u00a74). ``disordered`` marks a unit\nthat auto-deployed on contact: it defends worse and cannot attack until the\nend of the next turn's execution (WORLD_SPEC \u00a74.5). Both default so older\npersisted states load as deployed, ordered units.",
         "properties": {
           "coord": {
             "$ref": "#/components/schemas/Axial"
+          },
+          "disordered": {
+            "default": false,
+            "title": "Disordered",
+            "type": "boolean"
           },
           "facing": {
             "$ref": "#/components/schemas/Facing",
@@ -1282,6 +1474,10 @@
             "title": "Owner",
             "type": "string"
           },
+          "posture": {
+            "$ref": "#/components/schemas/Posture",
+            "default": "deployed"
+          },
           "type": {
             "$ref": "#/components/schemas/UnitType"
           }
@@ -1294,6 +1490,49 @@
           "hp"
         ],
         "title": "Unit",
+        "type": "object"
+      },
+      "UnitDeployed": {
+        "additionalProperties": false,
+        "description": "A column unpacked at ``dest`` (``origin`` unless it spilled to a free hex).\n\n``disordered`` is set for unplanned deployments (contact, barrage): the unit\ndefends worse and cannot attack through the end of the next turn.",
+        "properties": {
+          "cause": {
+            "$ref": "#/components/schemas/DeployCause"
+          },
+          "dest": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "disordered": {
+            "title": "Disordered",
+            "type": "boolean"
+          },
+          "kind": {
+            "const": "unit_deployed",
+            "default": "unit_deployed",
+            "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pulse",
+          "unit_id",
+          "origin",
+          "dest",
+          "cause",
+          "disordered"
+        ],
+        "title": "UnitDeployed",
         "type": "object"
       },
       "UnitMoved": {
@@ -1328,6 +1567,36 @@
           "dest"
         ],
         "title": "UnitMoved",
+        "type": "object"
+      },
+      "UnitPacked": {
+        "additionalProperties": false,
+        "description": "A deployed unit finished packing and is a column from ``pulse`` on.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "unit_packed",
+            "default": "unit_packed",
+            "title": "Kind",
+            "type": "string"
+          },
+          "pulse": {
+            "title": "Pulse",
+            "type": "integer"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pulse",
+          "unit_id",
+          "coord"
+        ],
+        "title": "UnitPacked",
         "type": "object"
       },
       "UnitRecruited": {

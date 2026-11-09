@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-from app.engine.models import GameState
+from app.engine.models import DeployOrder, GameState, MarchOrder, Posture
 from app.games.validation import OrderValidationError, validate_submission
-from engine.helpers import barrage, build, hold, move, recruit
+from engine.helpers import ax, barrage, build, hold, move, recruit
 
 # A compact board: three cities on the top row (blue holds the outer two, red the
 # middle), a river at (2,1), and blue/red infantry plus a blue artillery below.
@@ -127,3 +127,40 @@ def test_recruit_beyond_unit_cap_rejected() -> None:
 
 def test_valid_recruit_passes() -> None:
     validate_submission(_state(), "blue", [], [recruit("blue", "infantry", 0, 0)])
+
+
+# --- Columns (WORLD_SPEC §4) ------------------------------------------------
+
+
+def _with_column(unit_id: int) -> GameState:
+    state = _state()
+    for unit in state.units:
+        if unit.id == unit_id:
+            unit.posture = Posture.COLUMN
+    return state
+
+
+def test_march_for_deployed_unit_passes() -> None:
+    order = MarchOrder(unit_id=1, path=[ax(1, 1), ax(1, 0)])
+    validate_submission(_state(), "blue", [order], [])
+
+
+def test_march_path_must_be_contiguous() -> None:
+    order = MarchOrder(unit_id=1, path=[ax(3, 3)])
+    with pytest.raises(OrderValidationError, match="not adjacent"):
+        validate_submission(_state(), "blue", [order], [])
+
+
+def test_column_cannot_take_a_move_order() -> None:
+    with pytest.raises(OrderValidationError, match="packed"):
+        validate_submission(_with_column(1), "blue", [move(1, (1, 1))], [])
+
+
+def test_deploy_needs_a_column() -> None:
+    with pytest.raises(OrderValidationError, match="not packed"):
+        validate_submission(_state(), "blue", [DeployOrder(unit_id=1)], [])
+
+
+def test_column_may_deploy_or_hold() -> None:
+    validate_submission(_with_column(1), "blue", [DeployOrder(unit_id=1)], [])
+    validate_submission(_with_column(1), "blue", [hold(1)], [])

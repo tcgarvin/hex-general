@@ -21,6 +21,8 @@ const unit = (owner: string, type: Unit["type"], hp: number): Unit => ({
   coord: { q: 15, r: 22 },
   hp,
   facing: "left",
+  posture: "deployed",
+  disordered: false,
 });
 
 describe("inspectorContent", () => {

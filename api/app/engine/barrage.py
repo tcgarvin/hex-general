@@ -19,24 +19,50 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from app.engine.combat import compute_damage
+from app.engine.combat import compute_damage, disorder_penalty
 from app.engine.events import BarrageHit, BarrageResolved, Event
 from app.engine.hex_coords import Axial, distance
-from app.engine.models import BarrageOrder, GameState, HoldOrder, Order, UnitId
+from app.engine.models import (
+    BarrageOrder,
+    GameState,
+    HoldOrder,
+    Order,
+    Posture,
+    Unit,
+    UnitId,
+)
 from app.engine.movement import EngineError
-from app.engine.stats import TERRAIN_STATS, UNIT_STATS, UnitType
+from app.engine.stats import (
+    COLUMN_RULES,
+    TERRAIN_STATS,
+    UNIT_STATS,
+    Terrain,
+    UnitType,
+)
+
+
+@dataclass(frozen=True)
+class _Strike:
+    """One unit's pre-applied damage from one barrage, with its modifiers."""
+
+    unit_id: UnitId
+    damage: int
+    terrain_bonus: int
+    hold_bonus: int
+    defense_penalty: int
 
 
 @dataclass(frozen=True)
 class _Shot:
-    """A single barrage's pre-applied result against the start-of-phase occupant."""
+    """A single barrage's strikes against the start-of-phase occupants of a hex.
+
+    ``strikes`` lists the deployed occupant first (if any), then stacked columns
+    by id; empty when the hex held nobody.
+    """
 
     artillery_id: UnitId
     target: Axial
-    occupant_id: UnitId | None
-    damage: int
-    terrain_bonus: int
-    hold_bonus: int
+    strikes: tuple[_Strike, ...]
 
 
 def resolve_barrage(
@@ -47,20 +73,25 @@ def resolve_barrage(
     ``state`` is not mutated. Non-Barrage orders are ignored here (movement and
     later phases handle them). Damage from every barrage is computed against the
     occupants present at the *start* of the phase and summed before removal, so
-    two barrages on one hex are genuinely simultaneous. Raises `EngineError` if a
-    Barrage order references an unknown unit, a non-artillery unit, or a target
+    two barrages on one hex are genuinely simultaneous. A barrage strikes every
+    unit in the hex: the deployed occupant with its terrain/Hold bonus (less any
+    disorder), and each stacked column at its column penalty with no terrain or
+    Hold bonus (WORLD_SPEC §4.6). Raises `EngineError` if a Barrage order
+    references an unknown unit, a non-artillery or packed unit, or a target
     outside the unit's range.
     """
     units = {u.id: u.model_copy() for u in state.units}
     hexes = state.map.index
-    occupant_at: dict[Axial, UnitId] = {u.coord: u.id for u in units.values()}
+    occupants_at: dict[Axial, list[Unit]] = defaultdict(list)
+    for unit in sorted(units.values(), key=_strike_order):
+        occupants_at[unit.coord].append(unit)
     hold_ids: set[UnitId] = {o.unit_id for o in orders if isinstance(o, HoldOrder)}
 
     barrages = sorted(
         (o for o in orders if isinstance(o, BarrageOrder)), key=lambda o: o.unit_id
     )
 
-    # Pass 1: validate and compute each barrage's damage vs. its start occupant.
+    # Pass 1: validate and compute each barrage's damage vs. its start occupants.
     shots: list[_Shot] = []
     total_damage: dict[UnitId, int] = defaultdict(int)
     for order in barrages:
@@ -71,6 +102,8 @@ def resolve_barrage(
             raise EngineError(
                 f"unit {artillery.id} is {artillery.type}, cannot barrage"
             )
+        if artillery.posture is Posture.COLUMN:
+            raise EngineError(f"unit {artillery.id} is packed and cannot barrage")
         if (
             distance(artillery.coord, order.target)
             > UNIT_STATS[artillery.type].attack_range
@@ -79,27 +112,13 @@ def resolve_barrage(
                 f"barrage target {order.target} is out of range for unit {artillery.id}"
             )
 
-        occupant_id = occupant_at.get(order.target)
-        if occupant_id is None:
-            shots.append(_Shot(artillery.id, order.target, None, 0, 0, 0))
-            continue
-        occupant = units[occupant_id]
-        terrain_bonus = TERRAIN_STATS[hexes[order.target].terrain].defense_bonus
-        hold_bonus = 1 if occupant_id in hold_ids else 0
-        damage = compute_damage(
-            UnitType.ARTILLERY, occupant.type, terrain_bonus + hold_bonus
+        strikes = tuple(
+            _strike(occupant, hexes[order.target].terrain, occupant.id in hold_ids)
+            for occupant in occupants_at.get(order.target, [])
         )
-        total_damage[occupant_id] += damage
-        shots.append(
-            _Shot(
-                artillery.id,
-                order.target,
-                occupant_id,
-                damage,
-                terrain_bonus,
-                hold_bonus,
-            )
-        )
+        for strike in strikes:
+            total_damage[strike.unit_id] += strike.damage
+        shots.append(_Shot(artillery.id, order.target, strikes))
 
     # Pass 2: apply summed damage simultaneously, then build events + new state.
     destroyed: set[UnitId] = set()
@@ -111,23 +130,51 @@ def resolve_barrage(
 
     events: list[Event] = []
     for shot in shots:
-        hit = None
-        if shot.occupant_id is not None:
-            occupant = units[shot.occupant_id]
-            hit = BarrageHit(
-                unit_id=occupant.id,
-                unit_type=occupant.type,
-                owner=occupant.owner,
-                terrain_bonus=shot.terrain_bonus,
-                hold_bonus=shot.hold_bonus,
-                damage=shot.damage,
-                hp_after=occupant.hp,
-                destroyed=shot.occupant_id in destroyed,
-            )
+        hits = [_hit_record(units[s.unit_id], s, destroyed) for s in shot.strikes]
         events.append(
-            BarrageResolved(artillery_id=shot.artillery_id, target=shot.target, hit=hit)
+            BarrageResolved(
+                artillery_id=shot.artillery_id,
+                target=shot.target,
+                hit=hits[0] if hits else None,
+                extra_hits=hits[1:],
+            )
         )
 
     new_state = state.fork()
     new_state.units = [units[u.id] for u in state.units if u.id not in destroyed]
     return new_state, events
+
+
+def _strike_order(unit: Unit) -> tuple[int, UnitId]:
+    """Deployed occupant first, then columns, each by id."""
+    return (0 if unit.posture is Posture.DEPLOYED else 1, unit.id)
+
+
+def _strike(occupant: Unit, terrain: Terrain, holding: bool) -> _Strike:
+    """Damage one barrage deals to one occupant of the target hex."""
+    if occupant.posture is Posture.COLUMN:
+        penalty = COLUMN_RULES.column_defense_penalty
+        damage = compute_damage(UnitType.ARTILLERY, occupant.type, -penalty)
+        return _Strike(occupant.id, damage, 0, 0, penalty)
+    terrain_bonus = TERRAIN_STATS[terrain].defense_bonus
+    hold_bonus = 1 if holding else 0
+    penalty = disorder_penalty(occupant.disordered)
+    damage = compute_damage(
+        UnitType.ARTILLERY, occupant.type, terrain_bonus + hold_bonus - penalty
+    )
+    return _Strike(occupant.id, damage, terrain_bonus, hold_bonus, penalty)
+
+
+def _hit_record(unit: Unit, strike: _Strike, destroyed: set[UnitId]) -> BarrageHit:
+    """Build the event record for one struck unit (post-damage HP)."""
+    return BarrageHit(
+        unit_id=unit.id,
+        unit_type=unit.type,
+        owner=unit.owner,
+        terrain_bonus=strike.terrain_bonus,
+        hold_bonus=strike.hold_bonus,
+        damage=strike.damage,
+        hp_after=unit.hp,
+        destroyed=unit.id in destroyed,
+        defense_penalty=strike.defense_penalty,
+    )

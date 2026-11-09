@@ -15,7 +15,7 @@ turn contributes its income immediately (SPEC §11.3 ordering).
 from __future__ import annotations
 
 from app.engine.events import Event, SettlementCaptured
-from app.engine.models import GameState
+from app.engine.models import GameState, Posture
 from app.engine.stats import UNIT_STATS
 
 
@@ -30,7 +30,8 @@ def resolve_capture(state: GameState) -> tuple[GameState, list[Event]]:
     events: list[Event] = []
 
     hexes = new_state.map.index
-    occupant_at = {u.coord: u for u in new_state.units}
+    # Only a deployed unit holds a hex; packed columns cannot capture (WORLD_SPEC §4.2).
+    occupant_at = {u.coord: u for u in new_state.units if u.posture is Posture.DEPLOYED}
 
     for settlement in new_state.settlements:
         occupant = occupant_at.get(settlement.coord)

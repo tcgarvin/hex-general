@@ -314,6 +314,11 @@ export interface components {
         BarrageHit: {
             /** Damage */
             damage: number;
+            /**
+             * Defense Penalty
+             * @default 0
+             */
+            defense_penalty: number;
             /** Destroyed */
             destroyed: boolean;
             /** Hold Bonus */
@@ -352,6 +357,8 @@ export interface components {
         BarrageResolved: {
             /** Artillery Id */
             artillery_id: number;
+            /** Extra Hits */
+            extra_hits?: components["schemas"]["BarrageHit"][];
             hit?: components["schemas"]["BarrageHit"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -359,6 +366,42 @@ export interface components {
              */
             kind: "barrage_resolved";
             target: components["schemas"]["Axial"];
+        };
+        /**
+         * ColumnHeld
+         * @description A column waited this pulse because ``target`` already holds a full stack.
+         *
+         *     Unlike `MoveBlocked`, the column keeps its order and tries again next pulse.
+         */
+        ColumnHeld: {
+            coord: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "column_held";
+            /** Pulse */
+            pulse: number;
+            target: components["schemas"]["Axial"];
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
+         * ColumnStuck
+         * @description A column had to deploy but no hex within reach was free; it stays packed.
+         */
+        ColumnStuck: {
+            cause: components["schemas"]["DeployCause"];
+            coord: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "column_stuck";
+            /** Pulse */
+            pulse: number;
+            /** Unit Id */
+            unit_id: number;
         };
         /**
          * CombatParticipant
@@ -376,6 +419,11 @@ export interface components {
             damage_dealt: number;
             /** Damage Taken */
             damage_taken: number;
+            /**
+             * Defense Penalty
+             * @default 0
+             */
+            defense_penalty: number;
             /** Destroyed */
             destroyed: boolean;
             /** Hold Bonus */
@@ -457,6 +505,25 @@ export interface components {
              * @default false
              */
             vs_bot: boolean;
+        };
+        /**
+         * DeployCause
+         * @description Why a column deployed (WORLD_SPEC §4.5).
+         * @enum {string}
+         */
+        DeployCause: "ordered" | "arrived" | "contact" | "barraged";
+        /**
+         * DeployOrder
+         * @description A column unpacks where it stands, ready to fight next turn (WORLD_SPEC §4.5).
+         */
+        DeployOrder: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "deploy";
+            /** Unit Id */
+            unit_id: number;
         };
         /**
          * DevProfile
@@ -697,6 +764,31 @@ export interface components {
             invite_token: string;
         };
         /**
+         * MarchOrder
+         * @description Travel as a column along an exact path (WORLD_SPEC §4.4, §5).
+         *
+         *     A deployed unit packs first (the opening pulses of the turn) and then
+         *     marches; a column marches from pulse 1. Steps cost pulses (road vs off-road)
+         *     rather than one per pulse. With ``deploy_on_arrival`` the unit deploys, clean,
+         *     at the end of the turn in which it completes the path.
+         */
+        MarchOrder: {
+            /**
+             * Deploy On Arrival
+             * @default false
+             */
+            deploy_on_arrival: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "march";
+            /** Path */
+            path: components["schemas"]["Axial"][];
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
          * MeView
          * @description The authenticated caller's own identity and dev role.
          *
@@ -732,7 +824,7 @@ export interface components {
          * @description Why a unit's attempted step failed and ended its movement (SPEC §11.3).
          * @enum {string}
          */
-        MoveBlockedReason: "off_map" | "impassable" | "occupied" | "zoc_locked" | "attack_forbidden";
+        MoveBlockedReason: "off_map" | "impassable" | "occupied" | "zoc_locked" | "attack_forbidden" | "disordered" | "column_sheltered" | "engaged_cannot_pack" | "pack_interrupted";
         /**
          * MoveOrder
          * @description Follow an exact planned path of adjacent hexes (SPEC §7.1).
@@ -821,6 +913,16 @@ export interface components {
             /** Status */
             status: string;
         };
+        /**
+         * Posture
+         * @description How a unit is set up (WORLD_SPEC §4).
+         *
+         *     ``DEPLOYED`` is the v0.1 unit: one per hex, exerts and obeys ZOC, fights.
+         *     ``COLUMN`` is packed for travel: fast, stacks with friendly columns, exerts no
+         *     ZOC, cannot attack, and defends badly.
+         * @enum {string}
+         */
+        Posture: "deployed" | "column";
         /**
          * Recruitment
          * @description A planning-phase request to recruit a new unit (SPEC §6.5).
@@ -927,7 +1029,7 @@ export interface components {
          */
         SubmitOrdersRequest: {
             /** Orders */
-            orders?: (components["schemas"]["MoveOrder"] | components["schemas"]["BarrageOrder"] | components["schemas"]["RestOrder"] | components["schemas"]["HoldOrder"])[];
+            orders?: (components["schemas"]["MoveOrder"] | components["schemas"]["BarrageOrder"] | components["schemas"]["RestOrder"] | components["schemas"]["HoldOrder"] | components["schemas"]["MarchOrder"] | components["schemas"]["DeployOrder"])[];
             /** Recruitments */
             recruitments?: components["schemas"]["Recruitment"][];
         };
@@ -982,7 +1084,7 @@ export interface components {
          */
         TurnReplay: {
             /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"])[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"])[];
             state_after: components["schemas"]["GameState"];
             /** Turn */
             turn: number;
@@ -1000,9 +1102,19 @@ export interface components {
          *     the sprite faces, set by the unit's last movement. It defaults so state JSONB
          *     persisted before this field existed still validates (older games load with
          *     the default facing).
+         *
+         *     ``posture`` is deployed or column (WORLD_SPEC §4). ``disordered`` marks a unit
+         *     that auto-deployed on contact: it defends worse and cannot attack until the
+         *     end of the next turn's execution (WORLD_SPEC §4.5). Both default so older
+         *     persisted states load as deployed, ordered units.
          */
         Unit: {
             coord: components["schemas"]["Axial"];
+            /**
+             * Disordered
+             * @default false
+             */
+            disordered: boolean;
             /** @default right */
             facing: components["schemas"]["Facing"];
             /** Hp */
@@ -1011,7 +1123,32 @@ export interface components {
             id: number;
             /** Owner */
             owner: string;
+            /** @default deployed */
+            posture: components["schemas"]["Posture"];
             type: components["schemas"]["UnitType"];
+        };
+        /**
+         * UnitDeployed
+         * @description A column unpacked at ``dest`` (``origin`` unless it spilled to a free hex).
+         *
+         *     ``disordered`` is set for unplanned deployments (contact, barrage): the unit
+         *     defends worse and cannot attack through the end of the next turn.
+         */
+        UnitDeployed: {
+            cause: components["schemas"]["DeployCause"];
+            dest: components["schemas"]["Axial"];
+            /** Disordered */
+            disordered: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "unit_deployed";
+            origin: components["schemas"]["Axial"];
+            /** Pulse */
+            pulse: number;
+            /** Unit Id */
+            unit_id: number;
         };
         /**
          * UnitMoved
@@ -1025,6 +1162,22 @@ export interface components {
              */
             kind: "unit_moved";
             origin: components["schemas"]["Axial"];
+            /** Pulse */
+            pulse: number;
+            /** Unit Id */
+            unit_id: number;
+        };
+        /**
+         * UnitPacked
+         * @description A deployed unit finished packing and is a column from ``pulse`` on.
+         */
+        UnitPacked: {
+            coord: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "unit_packed";
             /** Pulse */
             pulse: number;
             /** Unit Id */

@@ -40,6 +40,7 @@ from app.engine.events import (
 from app.engine.models import (
     GameState,
     PlayerId,
+    Posture,
     Recruitment,
     Unit,
     default_facing,
@@ -68,7 +69,9 @@ def resolve_recruitment(
     players = {p.id: p for p in new_state.players}
     hexes = new_state.map.index
     control_at = {s.coord: s.controlled_by for s in new_state.settlements}
-    occupied = {u.coord for u in new_state.units}
+    # A recruit deploys into its city, so only a deployed unit blocks it; packed
+    # columns may share the hex (WORLD_SPEC §4.2).
+    occupied = {u.coord for u in new_state.units if u.posture is Posture.DEPLOYED}
 
     unit_counts: dict[PlayerId, int] = defaultdict(int)
     for unit in new_state.units:

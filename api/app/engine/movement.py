@@ -41,28 +41,36 @@ from dataclasses import dataclass, field
 
 from app.engine.combat import ContestOutcome, compute_damage, resolve_contest
 from app.engine.events import (
+    ColumnHeld,
+    ColumnStuck,
     CombatParticipant,
     CombatResolved,
     CombatRole,
+    DeployCause,
     Event,
     MoveBlocked,
     MoveBlockedReason,
     TrafficJam,
+    UnitDeployed,
     UnitMoved,
+    UnitPacked,
 )
-from app.engine.hex_coords import Axial, is_adjacent, neighbors
+from app.engine.hex_coords import Axial, distance, is_adjacent, neighbors, within
 from app.engine.models import (
+    DeployOrder,
     Facing,
     GameState,
     Hex,
     HoldOrder,
+    MarchOrder,
     MoveOrder,
     Order,
     PlayerId,
+    Posture,
     Unit,
     UnitId,
 )
-from app.engine.stats import TERRAIN_STATS, UNIT_STATS, UnitType
+from app.engine.stats import COLUMN_RULES, TERRAIN_STATS, UNIT_STATS, UnitType
 
 
 class EngineError(Exception):
@@ -97,14 +105,45 @@ class _Mover:
 
 
 @dataclass
+class _Marcher:
+    """Per-unit bookkeeping for a March order (WORLD_SPEC §4.3–4.5).
+
+    A deployed marcher first packs: it stays deployed until ``ready_from``, then
+    becomes a column. Each pulse from ``ready_from`` on adds one movement credit;
+    a step costs the target hex's step price (road vs off-road) in credits.
+    """
+
+    unit_id: UnitId
+    path: list[Axial]
+    deploy_on_arrival: bool
+    ready_from: int
+    packing: bool
+    steps_taken: int = 0
+    credit: int = 0
+    stopped: bool = False
+    arrived: bool = False
+
+    @property
+    def marching(self) -> bool:
+        """Whether the column still has steps to attempt this turn."""
+        return not (self.packing or self.stopped or self.arrived)
+
+
+@dataclass
 class _PulseState:
-    """Shared mutable context threaded through one pulse's resolution helpers."""
+    """Shared mutable context threaded through one pulse's resolution helpers.
+
+    ``positions`` holds deployed units only (one per hex); packed columns live in
+    ``columns`` (a stack per hex, id-sorted) and exert no ZOC.
+    """
 
     pulse: int
     hexes: dict[Axial, Hex]
     units: dict[UnitId, Unit]
     positions: dict[Axial, UnitId]
+    columns: dict[Axial, list[UnitId]]
     movers: dict[UnitId, _Mover]
+    marchers: dict[UnitId, _Marcher]
     hold_ids: set[UnitId]
     destroyed: set[UnitId]
     events: list[Event]
@@ -113,39 +152,67 @@ class _PulseState:
 
 
 def resolve_movement(
-    state: GameState, orders: list[Order]
+    state: GameState,
+    orders: list[Order],
+    barraged: frozenset[UnitId] = frozenset(),
 ) -> tuple[GameState, list[Event]]:
     """Resolve the movement phase (with combat), returning new state + event log.
 
     ``state`` is not mutated. Non-Move orders (Barrage/Rest/Hold) and units
     without an order do not move — they hold their hex and may fight as
-    defenders. Raises `EngineError` if two orders target the same unit, an order
-    references an unknown unit, or a move path is not a contiguous chain.
+    defenders. ``barraged`` names units struck by this turn's barrage; a packed
+    survivor among them deploys, disordered, before the first pulse (WORLD_SPEC
+    §4.5). Raises `EngineError` if two orders target the same unit, an order
+    references an unknown unit, an order does not fit the unit's posture, or a
+    path is not a contiguous chain.
+
+    With no columns on the board and no March orders, resolution is exactly the
+    v0.1 pulse loop. Otherwise the turn runs the full column pulse count so packed
+    units keep checking for contact while deployed units fight in the opening
+    pulses (WORLD_SPEC §4.3).
     """
     units: dict[UnitId, Unit] = {u.id: u.model_copy() for u in state.units}
     hexes: dict[Axial, Hex] = state.map.index
 
-    movers = _build_movers(state, units, orders, hexes)
-    positions: dict[Axial, UnitId] = {u.coord: u.id for u in units.values()}
+    movers, marchers, deploy_ids = _build_movers(units, orders, hexes)
+    positions: dict[Axial, UnitId] = {
+        u.coord: u.id for u in units.values() if u.posture is Posture.DEPLOYED
+    }
+    columns: dict[Axial, list[UnitId]] = defaultdict(list)
+    for unit in sorted(units.values(), key=lambda u: u.id):
+        if unit.posture is Posture.COLUMN:
+            columns[unit.coord].append(unit.id)
     hold_ids: set[UnitId] = {o.unit_id for o in orders if isinstance(o, HoldOrder)}
     destroyed: set[UnitId] = set()
     events: list[Event] = []
 
     pulse_count = max((m.max_steps for m in movers.values()), default=0)
+    if columns or marchers:
+        pulse_count = max(pulse_count, COLUMN_RULES.pulses_per_turn)
+    ctx: _PulseState | None = None
     for pulse in range(1, pulse_count + 1):
         ctx = _PulseState(
             pulse=pulse,
             hexes=hexes,
             units=units,
             positions=positions,
+            columns=columns,
             movers=movers,
+            marchers=marchers,
             hold_ids=hold_ids,
             destroyed=destroyed,
             events=events,
             hostile=state.hostile,
             start_pos=dict(positions),
         )
+        if pulse == 1:
+            _begin_columns(ctx, barraged)
+        _column_pulse_start(ctx)
+        ctx.start_pos = dict(positions)
         _resolve_pulse(ctx)
+        _march_pulse(ctx)
+    if ctx is not None:
+        _finish_deploys(ctx, deploy_ids)
 
     new_state = state.fork()
     new_state.units = [units[u.id] for u in state.units if u.id not in destroyed]
@@ -156,23 +223,47 @@ def resolve_movement(
 
 
 def _build_movers(
-    state: GameState,
     units: dict[UnitId, Unit],
     orders: list[Order],
     hexes: dict[Axial, Hex],
-) -> dict[UnitId, _Mover]:
-    """Validate orders and build a `_Mover` for each unit that will move."""
+) -> tuple[dict[UnitId, _Mover], dict[UnitId, _Marcher], set[UnitId]]:
+    """Validate orders; build deployed movers, column marchers and deploy ids.
+
+    Posture is fixed at planning time (barrage never changes it), so an order
+    that doesn't fit the unit's posture is a caller bug: Move and Barrage need a
+    deployed unit, Deploy needs a column (WORLD_SPEC §4).
+    """
     seen: set[UnitId] = set()
     movers: dict[UnitId, _Mover] = {}
+    marchers: dict[UnitId, _Marcher] = {}
+    deploy_ids: set[UnitId] = set()
     for order in orders:
         if order.unit_id in seen:
             raise EngineError(f"unit {order.unit_id} has more than one order")
         seen.add(order.unit_id)
         if order.unit_id not in units:
             raise EngineError(f"order references unknown unit {order.unit_id}")
+        unit = units[order.unit_id]
+        if isinstance(order, DeployOrder):
+            if unit.posture is not Posture.COLUMN:
+                raise EngineError(f"unit {unit.id} is not packed and cannot deploy")
+            deploy_ids.add(unit.id)
+            continue
+        if isinstance(order, MarchOrder):
+            _validate_path(unit, order.path)
+            packing = unit.posture is Posture.DEPLOYED
+            marchers[unit.id] = _Marcher(
+                unit_id=unit.id,
+                path=list(order.path),
+                deploy_on_arrival=order.deploy_on_arrival,
+                ready_from=COLUMN_RULES.pack_pulses + 1 if packing else 1,
+                packing=packing,
+            )
+            continue
         if not isinstance(order, MoveOrder):
             continue
-        unit = units[order.unit_id]
+        if unit.posture is Posture.COLUMN:
+            raise EngineError(f"unit {unit.id} is packed; columns march, not move")
         _validate_path(unit, order.path)
         budget = _move_budget(unit, order.path, hexes)
         max_steps = min(budget, len(order.path))
@@ -183,7 +274,7 @@ def _build_movers(
                 path=list(order.path),
                 max_steps=max_steps,
             )
-    return movers
+    return movers, marchers, deploy_ids
 
 
 def _validate_path(unit: Unit, path: list[Axial]) -> None:
@@ -261,8 +352,14 @@ def _classify(
             # Attacking into an enemy hex (SPEC §12.1) — allowed even when engaged.
             if ctx.units[mover.unit_id].type is UnitType.ARTILLERY:
                 _block(ctx, mover, target, MoveBlockedReason.ATTACK_FORBIDDEN)
+            elif ctx.units[mover.unit_id].disordered:
+                _block(ctx, mover, target, MoveBlockedReason.DISORDERED)
             else:
                 attacks[target].append(mover)
+            continue
+        if occupant is None and _hostile_columns_at(ctx, target, mover.owner):
+            # Only reachable for a column stuck without room to deploy (§4.6).
+            _block(ctx, mover, target, MoveBlockedReason.COLUMN_SHELTERED)
             continue
 
         # Empty or friendly-occupied target: a move. An engaged unit may not
@@ -415,6 +512,19 @@ def _resolve_attacks(ctx: _PulseState, attacks: dict[Axial, list[_Mover]]) -> No
             and not ctx.movers[unit_id].stopped
         ):
             ctx.movers[unit_id].stopped = True
+    # An attacked unit still packing is interrupted and stays deployed (§4.4).
+    for unit_id in sorted(pinned):
+        marcher = ctx.marchers.get(unit_id)
+        if (
+            marcher is not None
+            and marcher.packing
+            and not marcher.stopped
+            and unit_id not in ctx.destroyed
+        ):
+            marcher.stopped = True
+            _emit_blocked(
+                ctx, unit_id, marcher.path[0], MoveBlockedReason.PACK_INTERRUPTED
+            )
 
 
 def _resolve_moves(
@@ -499,11 +609,17 @@ def _settle_contest(
             _kill(ctx, unit_id)
 
     continued = False
-    if outcome.entrant_id is not None:
-        continued = _complete_move(ctx, ctx.movers[outcome.entrant_id], coord)
+    entrant_id = outcome.entrant_id
+    if entrant_id is not None and _hostile_columns_at(
+        ctx, coord, ctx.units[entrant_id].owner
+    ):
+        # "All opposition destroyed" includes sheltered columns (§4.6).
+        entrant_id = None
+    if entrant_id is not None:
+        continued = _complete_move(ctx, ctx.movers[entrant_id], coord)
 
     for mover in attacker_movers:
-        if mover.unit_id != outcome.entrant_id and mover.unit_id not in ctx.destroyed:
+        if mover.unit_id != entrant_id and mover.unit_id not in ctx.destroyed:
             mover.stopped = True
     if (
         defender_id is not None
@@ -520,6 +636,7 @@ def _settle_contest(
             role=result.role,
             terrain_bonus=result.terrain_bonus,
             hold_bonus=result.hold_bonus,
+            defense_penalty=result.defense_penalty,
             damage_dealt=result.damage_dealt,
             damage_taken=result.damage_taken,
             hp_after=result.hp_after,
@@ -532,7 +649,7 @@ def _settle_contest(
             pulse=ctx.pulse,
             coord=coord,
             participants=participants,
-            entrant_id=outcome.entrant_id,
+            entrant_id=entrant_id,
             entrant_continued=continued,
         )
     )
@@ -550,10 +667,7 @@ def _complete_move(ctx: _PulseState, mover: _Mover, dest: Axial) -> bool:
     """
     unit = ctx.units[mover.unit_id]
     origin = unit.coord
-    if dest.q > origin.q:
-        unit.facing = Facing.RIGHT
-    elif dest.q < origin.q:
-        unit.facing = Facing.LEFT
+    _face(unit, dest)
     if ctx.positions.get(origin) == mover.unit_id:
         del ctx.positions[origin]
     ctx.positions[dest] = mover.unit_id
@@ -567,12 +681,17 @@ def _complete_move(ctx: _PulseState, mover: _Mover, dest: Axial) -> bool:
 
 def _kill(ctx: _PulseState, unit_id: UnitId) -> None:
     """Remove a destroyed unit from the board, stopping its mover if any."""
-    coord = ctx.units[unit_id].coord
-    if ctx.positions.get(coord) == unit_id:
+    unit = ctx.units[unit_id]
+    coord = unit.coord
+    if unit.posture is Posture.COLUMN:
+        _remove_column(ctx, unit_id, coord)
+    elif ctx.positions.get(coord) == unit_id:
         del ctx.positions[coord]
     ctx.destroyed.add(unit_id)
     if unit_id in ctx.movers:
         ctx.movers[unit_id].stopped = True
+    if unit_id in ctx.marchers:
+        ctx.marchers[unit_id].stopped = True
 
 
 def _block(
@@ -589,6 +708,257 @@ def _block(
         )
     )
     mover.stopped = True
+
+
+# --- Columns (WORLD_SPEC §4) ---------------------------------------------------
+
+
+def _begin_columns(ctx: _PulseState, barraged: frozenset[UnitId]) -> None:
+    """Start-of-turn column checks, before the first pulse.
+
+    A deployed unit that begins the turn in hostile ZOC cannot pack (it must
+    withdraw first, §4.4). A packed survivor of this turn's barrage deploys,
+    disordered (§4.5).
+    """
+    for marcher in sorted(ctx.marchers.values(), key=lambda m: m.unit_id):
+        if marcher.packing and _engaged(ctx, marcher.unit_id):
+            marcher.stopped = True
+            _emit_blocked(
+                ctx,
+                marcher.unit_id,
+                marcher.path[0],
+                MoveBlockedReason.ENGAGED_CANNOT_PACK,
+            )
+    for unit_id in sorted(barraged):
+        unit = ctx.units[unit_id]
+        if unit.posture is Posture.COLUMN:
+            _deploy(ctx, unit_id, DeployCause.BARRAGED, disordered=True)
+
+
+def _column_pulse_start(ctx: _PulseState) -> None:
+    """Finish packing that completes this pulse, then auto-deploy on contact.
+
+    A unit whose packing would complete with a hostile unit inside the deploy
+    distance stays deployed (its packing is interrupted, not disordered). Every
+    column — marching or not — with a hostile unit inside the deploy distance
+    halts and deploys, disordered (§4.5).
+    """
+    for marcher in sorted(ctx.marchers.values(), key=lambda m: m.unit_id):
+        if not marcher.packing or marcher.stopped or ctx.pulse != marcher.ready_from:
+            continue
+        unit = ctx.units[marcher.unit_id]
+        if _hostile_within(ctx, unit.coord, unit.owner, COLUMN_RULES.deploy_distance):
+            marcher.stopped = True
+            _emit_blocked(
+                ctx, unit.id, marcher.path[0], MoveBlockedReason.PACK_INTERRUPTED
+            )
+            continue
+        del ctx.positions[unit.coord]
+        _add_column(ctx, unit.id, unit.coord)
+        unit.posture = Posture.COLUMN
+        marcher.packing = False
+        ctx.events.append(
+            UnitPacked(pulse=ctx.pulse, unit_id=unit.id, coord=unit.coord)
+        )
+
+    for unit_id in sorted(uid for stack in ctx.columns.values() for uid in stack):
+        unit = ctx.units[unit_id]
+        if _hostile_within(ctx, unit.coord, unit.owner, COLUMN_RULES.deploy_distance):
+            _deploy(ctx, unit_id, DeployCause.CONTACT, disordered=True)
+
+
+def _march_pulse(ctx: _PulseState) -> None:
+    """Advance every marching column by its credit budget for this pulse.
+
+    Each column gains one credit per pulse from ``ready_from``; a step costs the
+    target's price (road or off-road). A step that would enter a hostile hex or
+    come within the deploy distance of a hostile unit halts the column, which
+    deploys disordered. A full friendly stack makes the column wait (it keeps its
+    order). Columns are processed in id order.
+    """
+    for marcher in sorted(ctx.marchers.values(), key=lambda m: m.unit_id):
+        if not marcher.marching or ctx.pulse < marcher.ready_from:
+            continue
+        unit = ctx.units[marcher.unit_id]
+        target = marcher.path[marcher.steps_taken]
+        hex_ = ctx.hexes.get(target)
+        if hex_ is None:
+            marcher.stopped = True
+            _emit_blocked(ctx, unit.id, target, MoveBlockedReason.OFF_MAP)
+            continue
+        if not TERRAIN_STATS[hex_.terrain].passable:
+            marcher.stopped = True
+            _emit_blocked(ctx, unit.id, target, MoveBlockedReason.IMPASSABLE)
+            continue
+
+        cost = (
+            COLUMN_RULES.road_step_pulses
+            if hex_.road
+            else COLUMN_RULES.offroad_step_pulses
+        )
+        marcher.credit = min(marcher.credit + 1, cost)
+        if marcher.credit < cost:
+            continue
+        if _hostile_within(ctx, target, unit.owner, COLUMN_RULES.deploy_distance):
+            _deploy(ctx, unit.id, DeployCause.CONTACT, disordered=True)
+            continue
+        if len(ctx.columns.get(target, [])) >= COLUMN_RULES.stack_cap:
+            ctx.events.append(
+                ColumnHeld(
+                    pulse=ctx.pulse, unit_id=unit.id, coord=unit.coord, target=target
+                )
+            )
+            continue
+
+        origin = unit.coord
+        _remove_column(ctx, unit.id, origin)
+        _add_column(ctx, unit.id, target)
+        _face(unit, target)
+        unit.coord = target
+        marcher.credit = 0
+        marcher.steps_taken += 1
+        if marcher.steps_taken == len(marcher.path):
+            marcher.arrived = True
+        ctx.events.append(
+            UnitMoved(pulse=ctx.pulse, unit_id=unit.id, origin=origin, dest=target)
+        )
+
+
+def _finish_deploys(ctx: _PulseState, deploy_ids: set[UnitId]) -> None:
+    """After the last pulse, deploy (clean) ordered and arrived columns."""
+    arrived = {
+        m.unit_id for m in ctx.marchers.values() if m.arrived and m.deploy_on_arrival
+    }
+    for unit_id in sorted(deploy_ids | arrived):
+        if unit_id in ctx.destroyed:
+            continue
+        if ctx.units[unit_id].posture is not Posture.COLUMN:
+            continue  # already deployed on contact this turn
+        cause = DeployCause.ORDERED if unit_id in deploy_ids else DeployCause.ARRIVED
+        _deploy(ctx, unit_id, cause, disordered=False)
+
+
+def _deploy(
+    ctx: _PulseState, unit_id: UnitId, cause: DeployCause, *, disordered: bool
+) -> None:
+    """Unpack a column where it stands, or spill to the nearest free hex.
+
+    The column keeps its own hex unless a deployed unit already holds it; then it
+    takes the nearest hex within the spill radius that is on-map, passable, free
+    of deployed units and hostile columns, and outside hostile ZOC (ties by
+    ``q``, then ``r``). With no such hex it stays packed (`ColumnStuck`). Either
+    way its march ends for the turn.
+    """
+    unit = ctx.units[unit_id]
+    if unit_id in ctx.marchers:
+        ctx.marchers[unit_id].stopped = True
+    origin = unit.coord
+    dest = origin if origin not in ctx.positions else _spill_hex(ctx, unit)
+    if dest is None:
+        ctx.events.append(
+            ColumnStuck(pulse=ctx.pulse, unit_id=unit_id, coord=origin, cause=cause)
+        )
+        return
+    _remove_column(ctx, unit_id, origin)
+    ctx.positions[dest] = unit_id
+    unit.coord = dest
+    unit.posture = Posture.DEPLOYED
+    if disordered:
+        unit.disordered = True
+    ctx.events.append(
+        UnitDeployed(
+            pulse=ctx.pulse,
+            unit_id=unit_id,
+            origin=origin,
+            dest=dest,
+            cause=cause,
+            disordered=disordered,
+        )
+    )
+
+
+def _spill_hex(ctx: _PulseState, unit: Unit) -> Axial | None:
+    """The nearest free hex a crowded column may deploy into, if any."""
+    candidates = sorted(
+        (c for c in within(unit.coord, COLUMN_RULES.spill_radius) if c != unit.coord),
+        key=lambda c: (distance(unit.coord, c), c.q, c.r),
+    )
+    for coord in candidates:
+        hex_ = ctx.hexes.get(coord)
+        if hex_ is None or not TERRAIN_STATS[hex_.terrain].passable:
+            continue
+        if coord in ctx.positions:
+            continue
+        if any(
+            ctx.hostile(ctx.units[c].owner, unit.owner)
+            for c in ctx.columns.get(coord, [])
+        ):
+            continue
+        if _has_adjacent_enemy(
+            coord, unit.owner, ctx.units, ctx.positions, ctx.hostile
+        ):
+            continue
+        return coord
+    return None
+
+
+def _hostile_within(
+    ctx: _PulseState, coord: Axial, owner: PlayerId, radius: int
+) -> bool:
+    """Whether any hostile unit, deployed or packed, is within ``radius`` of ``coord``."""
+    for near in within(coord, radius):
+        occupant = ctx.positions.get(near)
+        if occupant is not None and ctx.hostile(ctx.units[occupant].owner, owner):
+            return True
+        for column_id in ctx.columns.get(near, []):
+            if ctx.hostile(ctx.units[column_id].owner, owner):
+                return True
+    return False
+
+
+def _hostile_columns_at(ctx: _PulseState, coord: Axial, owner: PlayerId) -> bool:
+    """Whether packed columns hostile to ``owner`` occupy ``coord``."""
+    return any(
+        ctx.hostile(ctx.units[c].owner, owner) for c in ctx.columns.get(coord, [])
+    )
+
+
+def _add_column(ctx: _PulseState, unit_id: UnitId, coord: Axial) -> None:
+    """Add a column to ``coord``'s stack, keeping the stack id-sorted."""
+    stack = ctx.columns[coord]
+    stack.append(unit_id)
+    stack.sort()
+
+
+def _remove_column(ctx: _PulseState, unit_id: UnitId, coord: Axial) -> None:
+    """Remove a column from ``coord``'s stack, dropping the stack when empty."""
+    stack = ctx.columns[coord]
+    stack.remove(unit_id)
+    if not stack:
+        del ctx.columns[coord]
+
+
+def _emit_blocked(
+    ctx: _PulseState, unit_id: UnitId, target: Axial, reason: MoveBlockedReason
+) -> None:
+    """Record a failed step or pack for a unit (without touching any mover)."""
+    ctx.events.append(
+        MoveBlocked(
+            pulse=ctx.pulse,
+            unit_id=unit_id,
+            origin=ctx.units[unit_id].coord,
+            target=target,
+            reason=reason,
+        )
+    )
+
+
+def _face(unit: Unit, dest: Axial) -> None:
+    """Update cosmetic facing from the horizontal sign of a step (roadmap U0)."""
+    if dest.q > unit.coord.q:
+        unit.facing = Facing.RIGHT
+    elif dest.q < unit.coord.q:
+        unit.facing = Facing.LEFT
 
 
 # --- ZOC helpers ------------------------------------------------------------

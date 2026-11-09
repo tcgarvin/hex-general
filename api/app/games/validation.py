@@ -15,7 +15,10 @@ opponent's simultaneous orders:
     caller's own slot (this is the security boundary: a token cannot move enemy
     units);
   * one order per unit;
-  * move paths are contiguous, on-map, and avoid impassable terrain (SPEC §3.4);
+  * move and march paths are contiguous, on-map, and avoid impassable terrain
+    (SPEC §3.4);
+  * orders fit the unit's posture: Move and Barrage need a deployed unit, Deploy
+    needs a packed column (WORLD_SPEC §4);
   * barrage is by an artillery unit at an on-map hex within range (SPEC §7.2);
   * recruits target a city the caller controls, are affordable from the current
     bank, and stay under the unit cap (SPEC §6.5, §6.1).
@@ -33,11 +36,14 @@ from __future__ import annotations
 from app.engine.hex_coords import Axial, distance, is_adjacent
 from app.engine.models import (
     BarrageOrder,
+    DeployOrder,
     GameState,
     Hex,
+    MarchOrder,
     MoveOrder,
     Order,
     PlayerId,
+    Posture,
     Recruitment,
     Unit,
 )
@@ -60,7 +66,7 @@ def validate_submission(
     the whole submission is statically legal for ``slot``.
     """
     units_by_id = {u.id: u for u in state.units}
-    hexes_by_coord = {h.coord: h for h in state.map.hexes}
+    hexes_by_coord = state.map.index
 
     seen: set[int] = set()
     for order in orders:
@@ -73,16 +79,26 @@ def validate_submission(
             raise OrderValidationError(f"unit {order.unit_id} has more than one order")
         seen.add(order.unit_id)
 
-        if isinstance(order, MoveOrder):
-            _validate_move(order, unit, hexes_by_coord)
+        if isinstance(order, MoveOrder | BarrageOrder) and (
+            unit.posture is Posture.COLUMN
+        ):
+            raise OrderValidationError(
+                f"unit {order.unit_id} is packed; it can march, deploy, rest or hold"
+            )
+        if isinstance(order, DeployOrder) and unit.posture is not Posture.COLUMN:
+            raise OrderValidationError(
+                f"unit {order.unit_id} is not packed, so it cannot deploy"
+            )
+        if isinstance(order, MoveOrder | MarchOrder):
+            _validate_path(order, unit, hexes_by_coord)
         elif isinstance(order, BarrageOrder):
             _validate_barrage(order, unit, hexes_by_coord)
 
     _validate_recruitments(state, slot, recruitments, hexes_by_coord)
 
 
-def _validate_move(
-    order: MoveOrder, unit: Unit, hexes_by_coord: dict[Axial, Hex]
+def _validate_path(
+    order: MoveOrder | MarchOrder, unit: Unit, hexes_by_coord: dict[Axial, Hex]
 ) -> None:
     """Path must be a contiguous chain of on-map, passable hexes from the unit."""
     prev = unit.coord

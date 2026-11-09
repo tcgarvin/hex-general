@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Terrain(StrEnum):
@@ -158,3 +158,31 @@ SETTLEMENT_STATS: dict[Terrain, SettlementStats] = {
 UNIT_CAP = 20
 MUSTER_BANK_CAP = 20
 MAX_UNIT_HP = 10
+
+
+class ColumnRules(BaseModel):
+    """Tunable rules for packed columns in transit (WORLD_SPEC §4).
+
+    A column is a unit packed for travel: it moves on a per-pulse credit budget
+    (a step onto a road hex costs ``road_step_pulses``, any other step
+    ``offroad_step_pulses``), stacks with friendly columns up to ``stack_cap`` per
+    hex, exerts no ZOC, cannot attack, and halts and deploys when a hostile unit
+    is within ``deploy_distance`` hexes. Games with no columns never consult these.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    pulses_per_turn: int = Field(default=16, gt=0)
+    pack_pulses: int = Field(default=4, ge=0)
+    road_step_pulses: int = Field(default=1, gt=0)
+    offroad_step_pulses: int = Field(default=2, gt=0)
+    stack_cap: int = Field(default=6, gt=0)
+    # Must be >= 1: a column never ends a pulse adjacent to a hostile unit, which
+    # is what keeps columns out of melee (WORLD_SPEC §4.6).
+    deploy_distance: int = Field(default=3, ge=1)
+    spill_radius: int = Field(default=2, ge=0)
+    column_defense_penalty: int = Field(default=3, ge=0)
+    disorder_defense_penalty: int = Field(default=2, ge=0)
+
+
+COLUMN_RULES = ColumnRules()

@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from app.engine.events import CombatRole
 from app.engine.hex_coords import Axial
 from app.engine.models import Hex, Unit, UnitId
-from app.engine.stats import TERRAIN_STATS, UNIT_STATS, UnitType
+from app.engine.stats import COLUMN_RULES, TERRAIN_STATS, UNIT_STATS, UnitType
 
 # Lead-entrant type precedence: armor before infantry before artillery (SPEC §12.6).
 _TYPE_PRIORITY: dict[UnitType, int] = {
@@ -53,16 +53,22 @@ def compute_damage(
     return max(_MIN_DAMAGE, min(_MAX_DAMAGE, raw))
 
 
-def defender_modifiers(hex_: Hex, has_hold_order: bool) -> int:
-    """Terrain + Hold defensive bonus for a stationary defender (SPEC §12.10, §13.1).
+def defender_modifiers(hex_: Hex, has_hold_order: bool, disordered: bool) -> int:
+    """Net defensive modifier for a stationary defender (SPEC §12.10, §13.1).
 
-    Applied only by the contest resolver to the hex's stationary occupant — never
-    to a moving attacker.
+    Terrain + Hold bonus, minus the disorder penalty for a unit that auto-deployed
+    on contact (WORLD_SPEC §4.5). Applied only by the contest resolver to the hex's
+    stationary occupant — never to a moving attacker.
     """
     bonus = TERRAIN_STATS[hex_.terrain].defense_bonus
     if has_hold_order:
         bonus += 1
-    return bonus
+    return bonus - disorder_penalty(disordered)
+
+
+def disorder_penalty(disordered: bool) -> int:
+    """Defense lost by a disordered unit (WORLD_SPEC §4.5); 0 when in order."""
+    return COLUMN_RULES.disorder_defense_penalty if disordered else 0
 
 
 def lead_entrant(units: list[Unit]) -> UnitId:
@@ -85,6 +91,7 @@ class UnitCombatResult:
     role: CombatRole
     terrain_bonus: int
     hold_bonus: int
+    defense_penalty: int
     damage_dealt: int
     damage_taken: int
     hp_after: int
@@ -125,7 +132,9 @@ def resolve_contest(
 
     defender_mods = 0
     if defender is not None:
-        defender_mods = defender_modifiers(hexes[coord], defender.id in hold_orders)
+        defender_mods = defender_modifiers(
+            hexes[coord], defender.id in hold_orders, defender.disordered
+        )
 
     def mods_for(target: Unit) -> int:
         return defender_mods if target is defender else 0
@@ -157,6 +166,7 @@ def resolve_contest(
                 TERRAIN_STATS[hexes[coord].terrain].defense_bonus if is_defender else 0
             ),
             hold_bonus=(1 if is_defender and unit.id in hold_orders else 0),
+            defense_penalty=(disorder_penalty(unit.disordered) if is_defender else 0),
             damage_dealt=dealt[unit.id],
             damage_taken=taken[unit.id],
             hp_after=hp_after[unit.id],

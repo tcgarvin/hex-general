@@ -26,7 +26,7 @@ from __future__ import annotations
 from app.engine.barrage import resolve_barrage
 from app.engine.capture import resolve_capture
 from app.engine.economy import resolve_economy
-from app.engine.events import Event, OrderMooted, OrderMootedReason
+from app.engine.events import BarrageResolved, Event, OrderMooted, OrderMootedReason
 from app.engine.models import BarrageOrder, GameState, Order, Recruitment
 from app.engine.movement import resolve_movement
 from app.engine.recruitment import resolve_recruitment
@@ -60,6 +60,9 @@ def resolve_execution(
     """
     recruitments = recruitments if recruitments is not None else []
     pre_hp = {u.id: u.hp for u in state.units}
+    # Disorder lasts through the end of the turn after the one it was earned in
+    # (WORLD_SPEC §4.5): clear it now only for units that began this turn with it.
+    pre_disordered = {u.id for u in state.units if u.disordered}
     pre_barrage_owner = {u.id: u.owner for u in state.units}
 
     after_barrage, barrage_events = resolve_barrage(state, orders)
@@ -86,7 +89,16 @@ def resolve_execution(
                 )
             )
 
-    after_movement, movement_events = resolve_movement(after_barrage, live_orders)
+    barraged = frozenset(
+        hit.unit_id
+        for event in barrage_events
+        if isinstance(event, BarrageResolved)
+        for hit in ([event.hit] if event.hit is not None else []) + event.extra_hits
+        if not hit.destroyed
+    )
+    after_movement, movement_events = resolve_movement(
+        after_barrage, live_orders, barraged=barraged
+    )
 
     # A resting unit that lost HP during barrage/movement does not repair (§7.3).
     damaged = {u.id for u in after_movement.units if u.hp < pre_hp[u.id]}
@@ -97,6 +109,9 @@ def resolve_execution(
     after_recruit, recruit_events = resolve_recruitment(after_economy, recruitments)
 
     next_state = after_recruit.model_copy(update={"turn": after_recruit.turn + 1})
+    for unit in next_state.units:
+        if unit.id in pre_disordered:
+            unit.disordered = False
     events = (
         barrage_events
         + mooted_events

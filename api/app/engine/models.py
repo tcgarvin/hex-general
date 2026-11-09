@@ -54,6 +54,18 @@ DEFAULT_FACING: Facing = Facing.RIGHT
 """The facing used when no better signal exists (no enemies, same column)."""
 
 
+class Posture(StrEnum):
+    """How a unit is set up (WORLD_SPEC §4).
+
+    ``DEPLOYED`` is the v0.1 unit: one per hex, exerts and obeys ZOC, fights.
+    ``COLUMN`` is packed for travel: fast, stacks with friendly columns, exerts no
+    ZOC, cannot attack, and defends badly.
+    """
+
+    DEPLOYED = "deployed"
+    COLUMN = "column"
+
+
 class Hex(BaseModel):
     """A single map cell: its coordinate, base terrain, and road layer.
 
@@ -122,6 +134,11 @@ class Unit(BaseModel):
     the sprite faces, set by the unit's last movement. It defaults so state JSONB
     persisted before this field existed still validates (older games load with
     the default facing).
+
+    ``posture`` is deployed or column (WORLD_SPEC §4). ``disordered`` marks a unit
+    that auto-deployed on contact: it defends worse and cannot attack until the
+    end of the next turn's execution (WORLD_SPEC §4.5). Both default so older
+    persisted states load as deployed, ordered units.
     """
 
     id: UnitId
@@ -130,6 +147,8 @@ class Unit(BaseModel):
     coord: Axial
     hp: int = Field(ge=0, le=10)
     facing: Facing = DEFAULT_FACING
+    posture: Posture = Posture.DEPLOYED
+    disordered: bool = False
 
 
 def default_facing(coord: Axial, owner: PlayerId, units: Iterable[Unit]) -> Facing:
@@ -237,11 +256,19 @@ class GameState(BaseModel):
         )
 
     def unit_at(self, coord: Axial) -> Unit | None:
-        """Return the (at most one) unit at ``coord``, or ``None`` (SPEC §8.1)."""
+        """Return the deployed unit at ``coord``, or ``None`` (SPEC §8.1).
+
+        At most one deployed unit holds a hex; packed columns may share it
+        (WORLD_SPEC §4.2) and are listed by `units_at`.
+        """
         for unit in self.units:
-            if unit.coord == coord:
+            if unit.coord == coord and unit.posture is Posture.DEPLOYED:
                 return unit
         return None
+
+    def units_at(self, coord: Axial) -> list[Unit]:
+        """Return every unit at ``coord``: the deployed one, if any, and columns."""
+        return [u for u in self.units if u.coord == coord]
 
     def settlement_at(self, coord: Axial) -> Settlement | None:
         """Return the settlement at ``coord``, or ``None`` if none is there."""
@@ -286,11 +313,33 @@ class HoldOrder(BaseModel):
     unit_id: UnitId
 
 
+class MarchOrder(BaseModel):
+    """Travel as a column along an exact path (WORLD_SPEC §4.4, §5).
+
+    A deployed unit packs first (the opening pulses of the turn) and then
+    marches; a column marches from pulse 1. Steps cost pulses (road vs off-road)
+    rather than one per pulse. With ``deploy_on_arrival`` the unit deploys, clean,
+    at the end of the turn in which it completes the path.
+    """
+
+    kind: Literal["march"] = "march"
+    unit_id: UnitId
+    path: list[Axial] = Field(min_length=1)
+    deploy_on_arrival: bool = False
+
+
+class DeployOrder(BaseModel):
+    """A column unpacks where it stands, ready to fight next turn (WORLD_SPEC §4.5)."""
+
+    kind: Literal["deploy"] = "deploy"
+    unit_id: UnitId
+
+
 Order = Annotated[
-    MoveOrder | BarrageOrder | RestOrder | HoldOrder,
+    MoveOrder | BarrageOrder | RestOrder | HoldOrder | MarchOrder | DeployOrder,
     Field(discriminator="kind"),
 ]
-"""Tagged union of the four order types, discriminated on ``kind``."""
+"""Tagged union of the order types, discriminated on ``kind``."""
 
 
 class Recruitment(BaseModel):

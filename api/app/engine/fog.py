@@ -26,6 +26,8 @@ from __future__ import annotations
 
 from app.engine.events import (
     BarrageResolved,
+    ColumnHeld,
+    ColumnStuck,
     CombatResolved,
     EconomyResolved,
     Event,
@@ -34,7 +36,9 @@ from app.engine.events import (
     RecruitmentVoided,
     SettlementCaptured,
     TrafficJam,
+    UnitDeployed,
     UnitMoved,
+    UnitPacked,
     UnitRecruited,
     UnitRepaired,
 )
@@ -99,7 +103,16 @@ def _event_scope(
         owners = _owners(owner_of, event.artillery_id)
         if event.hit is not None:
             owners.add(event.hit.owner)
+        owners.update(hit.owner for hit in event.extra_hits)
         return owners, {event.target}
+    if isinstance(event, UnitPacked):
+        return _owners(owner_of, event.unit_id), {event.coord}
+    if isinstance(event, UnitDeployed):
+        return _owners(owner_of, event.unit_id), {event.origin, event.dest}
+    if isinstance(event, ColumnStuck):
+        return _owners(owner_of, event.unit_id), {event.coord}
+    if isinstance(event, ColumnHeld):
+        return _owners(owner_of, event.unit_id), {event.coord, event.target}
     if isinstance(event, SettlementCaptured):
         return {event.captured_by}, {event.coord}
     if isinstance(event, UnitRepaired):

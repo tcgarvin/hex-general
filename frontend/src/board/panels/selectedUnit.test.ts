@@ -33,6 +33,8 @@ const unit = (type: Unit["type"]): Unit => ({
   coord: { q: 0, r: 0 },
   hp: 10,
   facing: "left",
+  posture: "deployed",
+  disordered: false,
 });
 
 describe("card geometry", () => {

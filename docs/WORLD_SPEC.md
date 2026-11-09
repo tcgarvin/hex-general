@@ -118,12 +118,18 @@ Barrage still resolves before pulse 1.
 
 ### 4.6 Combat against columns
 
-- **Barrage** hits *every* unit in the target hex. Shelling a stacked road is brutal.
-- **Melee** into a hex: if a deployed unit is there, it is the defender and the
-  columns behind it are sheltered. If only columns are there, each column defends
-  separately; the attacker deals its damage to each of them and receives each
-  one's (reduced) return damage.
-- "All opposition destroyed" (SPEC §12.5) means every unit in the hex.
+- **Barrage** hits *every* unit in the target hex: the deployed occupant with its
+  terrain/Hold bonus (less any disorder), and each column at −3 defense with no
+  terrain or Hold bonus. Shelling a stacked road is brutal. Packed survivors deploy,
+  disordered, before the first pulse.
+- **Melee:** because X ≥ 1 and contact is checked at the start of every pulse, a
+  column is never adjacent to a hostile unit when attacks are declared; it has
+  already deployed (disordered). Melee therefore always meets a deployed defender,
+  and the disorder penalty is the ambush cost. The one exception is a column stuck
+  with no room to deploy: attacks into its hex are blocked (`column_sheltered`).
+  *(Implemented in W1; this replaces the draft's per-column melee rule.)*
+- "All opposition destroyed" (SPEC §12.5) means every unit in the hex, so an
+  attacker cannot enter a hex that still holds hostile columns.
 - Hostile columns never fight each other directly; contact auto-deploys both.
 
 ### 4.7 Relief in place and friendly swaps
@@ -296,8 +302,8 @@ The real gate is the user playing a live world on the real clock for a week.
 
 | Phase | Delivers | Gate |
 | --- | --- | --- |
-| **W0** Engine generalization | static/dynamic split, indexed lookups, `hostile()`, N-player turn flow, perf baseline | v0.1 suite green; perf numbers recorded |
-| **W1** Columns | posture, pack/deploy, column movement + stacking, auto-deploy + placement, disorder, column combat | pytest rule coverage for §4 |
+| **W0** Engine generalization ✅ | indexed lookups, shared static map, `hostile()`, perf baseline (`app.world.bench`). The static/dynamic *storage* split and N-slot turn flow moved to W5, where persistence changes | v0.1 suite green; 350² / 1,500 units resolves in 0.05 s, one player's fog in 0.006 s |
+| **W1** Columns ✅ | posture, March/Deploy orders, pack/deploy, column movement + stacking, auto-deploy + placement, disorder, barrage vs stacks (§4.7 relief swaps not yet) | `tests/engine/test_columns.py` |
 | **W2** Travel | `TravelOrder`, routing, standing orders in state, validation, `TravelHalted` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim | §8–9 | §9 acceptance gates |

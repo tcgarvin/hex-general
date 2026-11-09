@@ -45,6 +45,8 @@ export function unit(
     type: opts.type ?? "infantry",
     hp: opts.hp ?? 10,
     facing: opts.facing ?? "right",
+    posture: "deployed",
+    disordered: false,
   };
 }
 

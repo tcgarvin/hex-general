@@ -31,6 +31,11 @@ class MoveBlockedReason(StrEnum):
     OCCUPIED = "occupied"  # a friendly unit holds the hex and did not vacate it
     ZOC_LOCKED = "zoc_locked"  # engaged unit tried an illegal ZOC->ZOC step (SPEC §8.4)
     ATTACK_FORBIDDEN = "attack_forbidden"  # artillery tried to attack by moving (§5.4)
+    # WORLD_SPEC §4: columns and disorder.
+    DISORDERED = "disordered"  # a disordered unit cannot attack (§4.5)
+    COLUMN_SHELTERED = "column_sheltered"  # hostile columns hold the hex (§4.6)
+    ENGAGED_CANNOT_PACK = "engaged_cannot_pack"  # began the turn in hostile ZOC (§4.4)
+    PACK_INTERRUPTED = "pack_interrupted"  # attacked, or hostile came near, mid-pack
 
 
 class UnitMoved(BaseModel):
@@ -73,6 +78,71 @@ class TrafficJam(BaseModel):
     unit_ids: list[UnitId]
 
 
+class DeployCause(StrEnum):
+    """Why a column deployed (WORLD_SPEC §4.5)."""
+
+    ORDERED = "ordered"  # a Deploy order
+    ARRIVED = "arrived"  # a March with deploy-on-arrival reached its last hex
+    CONTACT = "contact"  # a hostile unit came within the deploy distance
+    BARRAGED = "barraged"  # struck by barrage while packed
+
+
+class UnitPacked(BaseModel):
+    """A deployed unit finished packing and is a column from ``pulse`` on."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["unit_packed"] = "unit_packed"
+    pulse: int
+    unit_id: UnitId
+    coord: Axial
+
+
+class UnitDeployed(BaseModel):
+    """A column unpacked at ``dest`` (``origin`` unless it spilled to a free hex).
+
+    ``disordered`` is set for unplanned deployments (contact, barrage): the unit
+    defends worse and cannot attack through the end of the next turn.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["unit_deployed"] = "unit_deployed"
+    pulse: int
+    unit_id: UnitId
+    origin: Axial
+    dest: Axial
+    cause: DeployCause
+    disordered: bool
+
+
+class ColumnStuck(BaseModel):
+    """A column had to deploy but no hex within reach was free; it stays packed."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["column_stuck"] = "column_stuck"
+    pulse: int
+    unit_id: UnitId
+    coord: Axial
+    cause: DeployCause
+
+
+class ColumnHeld(BaseModel):
+    """A column waited this pulse because ``target`` already holds a full stack.
+
+    Unlike `MoveBlocked`, the column keeps its order and tries again next pulse.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["column_held"] = "column_held"
+    pulse: int
+    unit_id: UnitId
+    coord: Axial
+    target: Axial
+
+
 class CombatRole(StrEnum):
     """A unit's role in a combat event (SPEC §12).
 
@@ -109,6 +179,8 @@ class CombatParticipant(BaseModel):
     damage_taken: int
     hp_after: int
     destroyed: bool
+    # Disorder penalty to a defender's defense (WORLD_SPEC §4.5).
+    defense_penalty: int = 0
 
 
 class CombatResolved(BaseModel):
@@ -150,6 +222,8 @@ class BarrageHit(BaseModel):
     damage: int
     hp_after: int
     destroyed: bool
+    # Column or disorder penalty to the struck unit's defense (WORLD_SPEC §4).
+    defense_penalty: int = 0
 
 
 class BarrageResolved(BaseModel):
@@ -165,6 +239,9 @@ class BarrageResolved(BaseModel):
     artillery_id: UnitId
     target: Axial
     hit: BarrageHit | None = None
+    # Packed columns stacked in the target hex are all struck too (WORLD_SPEC
+    # §4.6); ``hit`` is the deployed occupant if any, else the lowest-id column.
+    extra_hits: list[BarrageHit] = Field(default_factory=list)
 
 
 class OrderMootedReason(StrEnum):
@@ -310,7 +387,11 @@ Event = Annotated[
     | UnitRepaired
     | EconomyResolved
     | UnitRecruited
-    | RecruitmentVoided,
+    | RecruitmentVoided
+    | UnitPacked
+    | UnitDeployed
+    | ColumnStuck
+    | ColumnHeld,
     Field(discriminator="kind"),
 ]
 """Tagged union of all execution events, discriminated on ``kind``."""
