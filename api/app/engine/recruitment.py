@@ -61,12 +61,12 @@ def resolve_recruitment(
     turn itself can void a submission-legal recruit. New unit ids continue from the
     current maximum.
     """
-    new_state = state.model_copy(deep=True)
+    new_state = state.fork()
     if not recruitments:
         return new_state, []
 
     players = {p.id: p for p in new_state.players}
-    terrain_at = {h.coord: h.terrain for h in new_state.map.hexes}
+    hexes = new_state.map.index
     control_at = {s.coord: s.controlled_by for s in new_state.settlements}
     occupied = {u.coord for u in new_state.units}
 
@@ -82,7 +82,8 @@ def resolve_recruitment(
         player = players.get(request.owner)
         if player is None:
             raise EngineError(f"recruitment by unknown player {request.owner!r}")
-        if terrain_at.get(request.coord) is not Terrain.CITY:
+        target_hex = hexes.get(request.coord)
+        if target_hex is None or target_hex.terrain is not Terrain.CITY:
             raise EngineError(
                 f"recruitment for {request.owner!r} at {request.coord} is not a city"
             )

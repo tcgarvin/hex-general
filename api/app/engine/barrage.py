@@ -51,8 +51,8 @@ def resolve_barrage(
     Barrage order references an unknown unit, a non-artillery unit, or a target
     outside the unit's range.
     """
-    units = {u.id: u.model_copy(deep=True) for u in state.units}
-    hexes = {h.coord: h for h in state.map.hexes}
+    units = {u.id: u.model_copy() for u in state.units}
+    hexes = state.map.index
     occupant_at: dict[Axial, UnitId] = {u.coord: u.id for u in units.values()}
     hold_ids: set[UnitId] = {o.unit_id for o in orders if isinstance(o, HoldOrder)}
 
@@ -128,6 +128,6 @@ def resolve_barrage(
             BarrageResolved(artillery_id=shot.artillery_id, target=shot.target, hit=hit)
         )
 
-    new_state = state.model_copy(deep=True)
+    new_state = state.fork()
     new_state.units = [units[u.id] for u in state.units if u.id not in destroyed]
     return new_state, events

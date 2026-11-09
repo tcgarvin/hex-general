@@ -36,7 +36,7 @@ def resolve_repair(
     those units do not repair even if resting. ``state`` is not mutated. Units are
     healed in stored order for a deterministic event log.
     """
-    new_state = state.model_copy(deep=True)
+    new_state = state.fork()
     events: list[Event] = []
 
     resting: set[UnitId] = {
@@ -44,12 +44,12 @@ def resolve_repair(
         for o in orders
         if isinstance(o, RestOrder) and o.unit_id not in damaged
     }
-    terrain_at = {h.coord: h.terrain for h in new_state.map.hexes}
+    hexes = new_state.map.index
 
     for unit in new_state.units:
         if unit.id not in resting:
             continue
-        in_settlement = terrain_at[unit.coord] in SETTLEMENT_TERRAINS
+        in_settlement = hexes[unit.coord].terrain in SETTLEMENT_TERRAINS
         amount, ceiling = _REST_SETTLEMENT if in_settlement else _REST_ANYWHERE
         new_hp = min(unit.hp + amount, max(unit.hp, ceiling))
         if new_hp == unit.hp:

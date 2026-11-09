@@ -36,6 +36,7 @@ without stacking, so those units stay put (as in Phase 2).
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from app.engine.combat import ContestOutcome, compute_damage, resolve_contest
@@ -107,6 +108,7 @@ class _PulseState:
     hold_ids: set[UnitId]
     destroyed: set[UnitId]
     events: list[Event]
+    hostile: Callable[[PlayerId, PlayerId], bool]
     start_pos: dict[Axial, UnitId] = field(default_factory=dict)
 
 
@@ -120,8 +122,8 @@ def resolve_movement(
     defenders. Raises `EngineError` if two orders target the same unit, an order
     references an unknown unit, or a move path is not a contiguous chain.
     """
-    units: dict[UnitId, Unit] = {u.id: u.model_copy(deep=True) for u in state.units}
-    hexes: dict[Axial, Hex] = {h.coord: h for h in state.map.hexes}
+    units: dict[UnitId, Unit] = {u.id: u.model_copy() for u in state.units}
+    hexes: dict[Axial, Hex] = state.map.index
 
     movers = _build_movers(state, units, orders, hexes)
     positions: dict[Axial, UnitId] = {u.coord: u.id for u in units.values()}
@@ -140,11 +142,12 @@ def resolve_movement(
             hold_ids=hold_ids,
             destroyed=destroyed,
             events=events,
+            hostile=state.hostile,
             start_pos=dict(positions),
         )
         _resolve_pulse(ctx)
 
-    new_state = state.model_copy(deep=True)
+    new_state = state.fork()
     new_state.units = [units[u.id] for u in state.units if u.id not in destroyed]
     return new_state, events
 
@@ -254,7 +257,7 @@ def _classify(
             continue
 
         occupant = ctx.start_pos.get(target)
-        if occupant is not None and ctx.units[occupant].owner != mover.owner:
+        if occupant is not None and ctx.hostile(ctx.units[occupant].owner, mover.owner):
             # Attacking into an enemy hex (SPEC §12.1) — allowed even when engaged.
             if ctx.units[mover.unit_id].type is UnitType.ARTILLERY:
                 _block(ctx, mover, target, MoveBlockedReason.ATTACK_FORBIDDEN)
@@ -265,7 +268,7 @@ def _classify(
         # Empty or friendly-occupied target: a move. An engaged unit may not
         # step into another enemy-controlled hex (illegal ZOC→ZOC, SPEC §8.4).
         if _engaged(ctx, mover.unit_id) and _has_adjacent_enemy(
-            target, mover.owner, ctx.units, ctx.start_pos
+            target, mover.owner, ctx.units, ctx.start_pos, ctx.hostile
         ):
             _block(ctx, mover, target, MoveBlockedReason.ZOC_LOCKED)
             continue
@@ -427,8 +430,7 @@ def _resolve_moves(
 
     singles: dict[UnitId, Axial] = {}
     for target, contenders in by_target.items():
-        owners = {m.owner for m in contenders}
-        if len(owners) > 1:
+        if any(ctx.hostile(a.owner, b.owner) for a in contenders for b in contenders):
             # Enemies racing for the same empty hex — a contest (SPEC §12.1/§12.8).
             attacker_units = [ctx.units[m.unit_id] for m in contenders]
             outcome = resolve_contest(
@@ -595,7 +597,9 @@ def _block(
 def _engaged(ctx: _PulseState, unit_id: UnitId) -> bool:
     """Whether ``unit_id`` begins the pulse adjacent to an enemy (SPEC §8.4)."""
     unit = ctx.units[unit_id]
-    return _has_adjacent_enemy(unit.coord, unit.owner, ctx.units, ctx.start_pos)
+    return _has_adjacent_enemy(
+        unit.coord, unit.owner, ctx.units, ctx.start_pos, ctx.hostile
+    )
 
 
 def _has_adjacent_enemy(
@@ -603,10 +607,11 @@ def _has_adjacent_enemy(
     owner: PlayerId,
     units: dict[UnitId, Unit],
     positions: dict[Axial, UnitId],
+    hostile: Callable[[PlayerId, PlayerId], bool],
 ) -> bool:
-    """Whether any of ``coord``'s six neighbours holds an enemy unit."""
+    """Whether any of ``coord``'s six neighbours holds a hostile unit."""
     for neighbor_coord in neighbors(coord):
         occupant = positions.get(neighbor_coord)
-        if occupant is not None and units[occupant].owner != owner:
+        if occupant is not None and hostile(units[occupant].owner, owner):
             return True
     return False

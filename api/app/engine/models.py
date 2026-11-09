@@ -20,7 +20,7 @@ from collections.abc import Iterable
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from app.engine.hex_coords import Axial, distance
 from app.engine.stats import (
@@ -60,7 +60,10 @@ class Hex(BaseModel):
     ``road`` is a layer on top of terrain (SPEC §3.3, §4.1): a unit whose entire
     path follows connected road hexes gets +1 movement. A bridge hex (terrain
     ``BRIDGE``) is what a road becomes where it crosses a river (SPEC §3.4).
+    Frozen: the map is static for the life of a game.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     coord: Axial
     terrain: Terrain
@@ -72,11 +75,25 @@ class GameMap(BaseModel):
 
     Holds only content that does not change during play. Dynamic facts
     (settlement control, unit positions) live on `GameState`, not here.
+
+    Frozen, so engine phases share one map between successive states instead of
+    deep-copying it (a world map is ~10^5 hexes; WORLD_SPEC §10). `index` is a
+    lazily built coord → hex lookup, safe to cache because the map never changes.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     width: int = Field(gt=0)
     height: int = Field(gt=0)
     hexes: list[Hex]
+    _index: dict[Axial, Hex] | None = PrivateAttr(default=None)
+
+    @property
+    def index(self) -> dict[Axial, Hex]:
+        """Coord → hex for every on-map hex (built once, then cached)."""
+        if self._index is None:
+            self._index = {h.coord: h for h in self.hexes}
+        return self._index
 
 
 class Settlement(BaseModel):
@@ -193,10 +210,31 @@ class GameState(BaseModel):
 
     def hex_at(self, coord: Axial) -> Hex | None:
         """Return the hex at ``coord``, or ``None`` if off-map."""
-        for hex_ in self.map.hexes:
-            if hex_.coord == coord:
-                return hex_
-        return None
+        return self.map.index.get(coord)
+
+    def hostile(self, a: PlayerId, b: PlayerId) -> bool:
+        """Whether players ``a`` and ``b`` are enemies (WORLD_SPEC §3).
+
+        Every rule that says "enemy" goes through this one predicate. Today every
+        pair of distinct players is hostile (a free-for-all); alliances will change
+        only the data this consults, not the rules that call it.
+        """
+        return a != b
+
+    def fork(self) -> GameState:
+        """Return a copy whose dynamic parts are independent of this state.
+
+        Units, settlements, players and the resignation list are deep-copied so a
+        phase can mutate them freely; the frozen static map is shared, not copied.
+        """
+        return self.model_copy(
+            update={
+                "units": [u.model_copy() for u in self.units],
+                "settlements": [s.model_copy() for s in self.settlements],
+                "players": [p.model_copy() for p in self.players],
+                "resigned": list(self.resigned),
+            }
+        )
 
     def unit_at(self, coord: Axial) -> Unit | None:
         """Return the (at most one) unit at ``coord``, or ``None`` (SPEC §8.1)."""

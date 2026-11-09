@@ -26,10 +26,10 @@ def resolve_capture(state: GameState) -> tuple[GameState, list[Event]]:
     armor unit ending execution on a town/city captures it. ``state`` is not
     mutated. Settlements are processed in stored order for a deterministic log.
     """
-    new_state = state.model_copy(deep=True)
+    new_state = state.fork()
     events: list[Event] = []
 
-    terrain_at = {h.coord: h.terrain for h in new_state.map.hexes}
+    hexes = new_state.map.index
     occupant_at = {u.coord: u for u in new_state.units}
 
     for settlement in new_state.settlements:
@@ -42,7 +42,7 @@ def resolve_capture(state: GameState) -> tuple[GameState, list[Event]]:
         events.append(
             SettlementCaptured(
                 coord=settlement.coord,
-                settlement=terrain_at[settlement.coord],
+                settlement=hexes[settlement.coord].terrain,
                 captured_by=occupant.owner,
                 previous_owner=settlement.controlled_by,
                 unit_id=occupant.id,

@@ -1,5 +1,7 @@
 """Tests for the axial/cube hex coordinate library (roadmap P0)."""
 
+import pytest
+
 from app.engine.hex_coords import (
     AXIAL_DIRECTIONS,
     Axial,
@@ -12,6 +14,7 @@ from app.engine.hex_coords import (
     neighbor,
     neighbors,
     to_cube,
+    within,
 )
 
 
@@ -116,3 +119,12 @@ def test_coords_serialize_to_json() -> None:
     assert Axial.model_validate_json(a.model_dump_json()) == a
     c = Cube(x=1, y=-1, z=0)
     assert Cube.model_validate_json(c.model_dump_json()) == c
+
+
+@pytest.mark.parametrize("radius", [0, 1, 2, 3, 5])
+def test_within_enumerates_the_hex_disc(radius: int) -> None:
+    center = Axial(q=4, r=-2)
+    disc = within(center, radius)
+    assert len(disc) == 3 * radius * radius + 3 * radius + 1
+    assert len(set(disc)) == len(disc)
+    assert all(distance(center, c) <= radius for c in disc)

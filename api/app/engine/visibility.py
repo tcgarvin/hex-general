@@ -19,7 +19,7 @@ All functions are pure queries over a `GameState`; they never mutate it.
 
 from __future__ import annotations
 
-from app.engine.hex_coords import Axial, distance, line
+from app.engine.hex_coords import Axial, line, within
 from app.engine.models import GameState, PlayerId, Unit
 from app.engine.stats import TERRAIN_STATS, UNIT_STATS
 
@@ -50,14 +50,12 @@ def unit_visible_hexes(state: GameState, unit: Unit) -> set[Axial]:
     sightline, always including the unit's own hex.
     """
     vision = UNIT_STATS[unit.type].vision
-    visible: set[Axial] = set()
-    for hex_ in state.map.hexes:
-        coord = hex_.coord
-        if distance(unit.coord, coord) <= vision and has_line_of_sight(
-            state, unit.coord, coord
-        ):
-            visible.add(coord)
-    return visible
+    on_map = state.map.index
+    return {
+        coord
+        for coord in within(unit.coord, vision)
+        if coord in on_map and has_line_of_sight(state, unit.coord, coord)
+    }
 
 
 _SETTLEMENT_VISION = 1
@@ -77,10 +75,10 @@ def visible_hexes(state: GameState, player_id: PlayerId) -> set[Axial]:
     for unit in state.units:
         if unit.owner == player_id:
             visible |= unit_visible_hexes(state, unit)
+    on_map = state.map.index
     for settlement in state.settlements:
         if settlement.controlled_by == player_id:
-            for hex_ in state.map.hexes:
-                coord = hex_.coord
-                if distance(settlement.coord, coord) <= _SETTLEMENT_VISION:
-                    visible.add(coord)
+            visible.update(
+                c for c in within(settlement.coord, _SETTLEMENT_VISION) if c in on_map
+            )
     return visible

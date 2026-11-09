@@ -475,7 +475,7 @@
         "type": "object"
       },
       "GameMap": {
-        "description": "Static board geometry: dimensions and the terrain of every hex.\n\nHolds only content that does not change during play. Dynamic facts\n(settlement control, unit positions) live on `GameState`, not here.",
+        "description": "Static board geometry: dimensions and the terrain of every hex.\n\nHolds only content that does not change during play. Dynamic facts\n(settlement control, unit positions) live on `GameState`, not here.\n\nFrozen, so engine phases share one map between successive states instead of\ndeep-copying it (a world map is ~10^5 hexes; WORLD_SPEC \u00a710). `index` is a\nlazily built coord \u2192 hex lookup, safe to cache because the map never changes.",
         "properties": {
           "height": {
             "exclusiveMinimum": 0.0,
@@ -659,7 +659,7 @@
         "type": "object"
       },
       "Hex": {
-        "description": "A single map cell: its coordinate, base terrain, and road layer.\n\n``road`` is a layer on top of terrain (SPEC \u00a73.3, \u00a74.1): a unit whose entire\npath follows connected road hexes gets +1 movement. A bridge hex (terrain\n``BRIDGE``) is what a road becomes where it crosses a river (SPEC \u00a73.4).",
+        "description": "A single map cell: its coordinate, base terrain, and road layer.\n\n``road`` is a layer on top of terrain (SPEC \u00a73.3, \u00a74.1): a unit whose entire\npath follows connected road hexes gets +1 movement. A bridge hex (terrain\n``BRIDGE``) is what a road becomes where it crosses a river (SPEC \u00a73.4).\nFrozen: the map is static for the life of a game.",
         "properties": {
           "coord": {
             "$ref": "#/components/schemas/Axial"

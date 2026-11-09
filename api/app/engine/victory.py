@@ -67,7 +67,7 @@ class VictoryStatus(BaseModel):
 def victory_status(state: GameState) -> VictoryStatus:
     """Evaluate the scenario's victory conditions against ``state`` (SPEC §15)."""
     config = state.config.victory
-    terrain_at = {h.coord: h.terrain for h in state.map.hexes}
+    hexes = state.map.index
 
     resigned = set(state.resigned)
     contenders = [p.id for p in state.players if p.id not in resigned]
@@ -78,7 +78,7 @@ def victory_status(state: GameState) -> VictoryStatus:
         owner = settlement.controlled_by
         if owner is None:
             continue
-        if terrain_at[settlement.coord] is Terrain.CITY:
+        if hexes[settlement.coord].terrain is Terrain.CITY:
             cities[owner] += 1
             scores[owner] += config.city_points
         else:

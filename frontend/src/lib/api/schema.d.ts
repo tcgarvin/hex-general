@@ -578,6 +578,10 @@ export interface components {
          *
          *     Holds only content that does not change during play. Dynamic facts
          *     (settlement control, unit positions) live on `GameState`, not here.
+         *
+         *     Frozen, so engine phases share one map between successive states instead of
+         *     deep-copying it (a world map is ~10^5 hexes; WORLD_SPEC §10). `index` is a
+         *     lazily built coord → hex lookup, safe to cache because the map never changes.
          */
         GameMap: {
             /** Height */
@@ -660,6 +664,7 @@ export interface components {
          *     ``road`` is a layer on top of terrain (SPEC §3.3, §4.1): a unit whose entire
          *     path follows connected road hexes gets +1 movement. A bridge hex (terrain
          *     ``BRIDGE``) is what a road becomes where it crosses a river (SPEC §3.4).
+         *     Frozen: the map is static for the life of a game.
          */
         Hex: {
             coord: components["schemas"]["Axial"];

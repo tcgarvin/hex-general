@@ -115,6 +115,20 @@ def distance(a: Axial, b: Axial) -> int:
     return (abs(dq) + abs(dq + dr) + abs(dr)) // 2
 
 
+def within(center: Axial, radius: int) -> list[Axial]:
+    """Return every coordinate within ``radius`` steps of ``center`` (inclusive).
+
+    Enumerates the hexagonal disc directly (3r² + 3r + 1 coordinates), so callers
+    never scan a whole map to find nearby hexes. Off-map coordinates are included;
+    filter against the map index. Order is deterministic (by ``q``, then ``r``).
+    """
+    out: list[Axial] = []
+    for dq in range(-radius, radius + 1):
+        for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1):
+            out.append(Axial(q=center.q + dq, r=center.r + dr))
+    return out
+
+
 def is_adjacent(a: Axial, b: Axial) -> bool:
     """Return whether two distinct coordinates share an edge."""
     return distance(a, b) == 1

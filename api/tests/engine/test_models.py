@@ -172,3 +172,67 @@ def test_state_with_units_lacking_facing_still_validates() -> None:
         }
     )
     assert state.units[0].facing == "right"
+
+
+# --- World-scale state handling (WORLD_SPEC §10, phase W0) ------------------
+
+
+def _small_state() -> GameState:
+    hexes = [
+        Hex(coord=Axial(q=q, r=r), terrain=Terrain.PLAINS)
+        for q in range(3)
+        for r in range(3)
+    ]
+    return GameState(
+        turn=0,
+        map=GameMap(width=3, height=3, hexes=hexes),
+        settlements=[Settlement(coord=Axial(q=1, r=1), controlled_by="blue")],
+        units=[
+            Unit(
+                id=1, type=UnitType.INFANTRY, owner="blue", coord=Axial(q=0, r=0), hp=10
+            )
+        ],
+        players=[Player(id="blue"), Player(id="red")],
+        config=GameConfig(victory=VictoryConfig(turn_limit=5)),
+    )
+
+
+def test_map_is_frozen() -> None:
+    state = _small_state()
+    with pytest.raises(ValidationError):
+        state.map.width = 9  # type: ignore[misc]
+    with pytest.raises(ValidationError):
+        state.map.hexes[0].terrain = Terrain.WOODS  # type: ignore[misc]
+
+
+def test_hex_at_uses_the_index_and_reports_off_map() -> None:
+    state = _small_state()
+    assert state.hex_at(Axial(q=2, r=2)) is state.map.index[Axial(q=2, r=2)]
+    assert state.hex_at(Axial(q=7, r=7)) is None
+
+
+def test_fork_shares_the_map_but_isolates_dynamic_state() -> None:
+    state = _small_state()
+    forked = state.fork()
+    assert forked.map is state.map
+    forked.units[0].hp = 3
+    forked.settlements[0].controlled_by = "red"
+    forked.players[0].bank = 7
+    forked.resigned.append("red")
+    assert state.units[0].hp == 10
+    assert state.settlements[0].controlled_by == "blue"
+    assert state.players[0].bank == 0
+    assert state.resigned == []
+
+
+def test_index_survives_json_round_trip() -> None:
+    state = _small_state()
+    reloaded = GameState.model_validate_json(state.model_dump_json())
+    assert reloaded == state
+    assert reloaded.hex_at(Axial(q=1, r=2)) == state.hex_at(Axial(q=1, r=2))
+
+
+def test_distinct_players_are_hostile() -> None:
+    state = _small_state()
+    assert state.hostile("blue", "red")
+    assert not state.hostile("blue", "blue")

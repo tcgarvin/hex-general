@@ -29,14 +29,14 @@ def resolve_economy(state: GameState) -> tuple[GameState, list[Event]]:
     ``state`` is not mutated. One `EconomyResolved` event is emitted per player in
     roster order, so the replay can show each player's muster accounting.
     """
-    new_state = state.model_copy(deep=True)
+    new_state = state.fork()
     bank_cap = new_state.config.muster_bank_cap
-    terrain_at = {h.coord: h.terrain for h in new_state.map.hexes}
+    hexes = new_state.map.index
 
     income: dict[PlayerId, int] = defaultdict(int)
     for settlement in new_state.settlements:
         if settlement.controlled_by is not None:
-            terrain = terrain_at[settlement.coord]
+            terrain = hexes[settlement.coord].terrain
             income[settlement.controlled_by] += SETTLEMENT_STATS[terrain].income
 
     upkeep: dict[PlayerId, int] = defaultdict(int)
