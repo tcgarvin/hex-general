@@ -38,6 +38,8 @@ import {
   type WorldOrder,
 } from "./plan";
 import { siteIconUrl } from "./siteArt";
+import { turnReport, turnTrails, unitBook, type ReportItem, type TurnTrails } from "./turnReport";
+import { useTurnReport, type ReportLoad } from "./useTurnReport";
 import { useWorld, type WorldView } from "./useWorld";
 import { useWorldPlan, type PlannedRoute, type WorldPlanning } from "./useWorldPlan";
 import { WorldBoard } from "./WorldBoard";
@@ -82,7 +84,18 @@ function WorldScreen({
   const base = useMemo(() => baseOf(view.state, map, view.your_slot), [view, map]);
   const [panTo, setPanTo] = useState<{ hex: Axial; seq: number } | null>(null);
   const jump = useCallback((hex: Axial) => setPanTo((p) => ({ hex, seq: (p?.seq ?? 0) + 1 })), []);
-  const overlay = useMemo(() => overlayOf(planning, view.state.units), [planning, view.state.units]);
+  const report = useTurnReport(view.game_id, view.turn > 0 ? view.turn - 1 : null);
+  const digest = useMemo(() => {
+    if (report.status !== "ready") return null;
+    const { events, state_after } = report.replay;
+    const book = unitBook(events, state_after.units ?? [], view.your_slot);
+    return { items: turnReport(events, view.your_slot, book), trails: turnTrails(events, book) };
+  }, [report, view.your_slot]);
+  // The report opens with each new turn; closing it also hides the trails.
+  const [reportClosedFor, setReportClosedFor] = useState<number | null>(null);
+  const reportOpen = reportClosedFor !== view.turn;
+  const trails = reportOpen ? (digest?.trails ?? null) : null;
+  const overlay = useMemo(() => overlayOf(planning, view.state.units, trails), [planning, view.state.units, trails]);
 
   const { selectUnit } = planning;
   useEffect(() => {
@@ -110,8 +123,15 @@ function WorldScreen({
           panTo={panTo}
           onHexClick={planning.onHexClick}
         />
-        <div className="pointer-events-none absolute left-3 top-3 flex max-h-[calc(100%-260px)] w-64 flex-col">
+        <div className="pointer-events-none absolute left-3 top-3 flex max-h-[calc(100%-260px)] w-72 flex-col gap-3">
           <ArmyPanel view={view} planning={planning} onJump={jump} />
+          <ReportPanel
+            load={report}
+            items={digest?.items ?? null}
+            open={reportOpen}
+            onToggle={() => setReportClosedFor(reportOpen ? view.turn : null)}
+            onJump={jump}
+          />
         </div>
         <div className="pointer-events-none absolute right-3 top-3 flex max-h-[calc(100%-24px)] w-80 flex-col gap-3 overflow-y-auto">
           <BasePanel state={view.state} economy={economy} slot={view.your_slot} planning={planning} />
@@ -145,7 +165,7 @@ function baseOf(state: WorldState, map: WorldMap, slot: string): Axial | null {
   return held?.coord ?? state.units.find((u) => u.owner === slot)?.coord ?? null;
 }
 
-function overlayOf(planning: WorldPlanning, units: readonly Unit[]): WorldOverlay {
+function overlayOf(planning: WorldPlanning, units: readonly Unit[], trails: TurnTrails | null): WorldOverlay {
   const selectedId = planning.selectedUnit?.id ?? null;
   const barrages = units.flatMap((u) => {
     const order = planning.plan.orders[u.id];
@@ -158,6 +178,7 @@ function overlayOf(planning: WorldPlanning, units: readonly Unit[]): WorldOverla
     barrages,
     reach: [...planning.moveReach.values()].map((path) => path[path.length - 1]),
     recruits: Object.values(planning.plan.recruits).map((r) => r.coord),
+    lastTurn: trails,
   };
 }
 
@@ -388,6 +409,106 @@ function ArmyPanel({
   );
 }
 
+// --- last turn ----------------------------------------------------------------------
+
+const SECTION_LABEL = { fighting: "Fighting", base: "Base", movement: "Movement", seen: "Also seen" } as const;
+const TONE_CLASS = { good: "text-valid", bad: "text-invalid", neutral: "" } as const;
+
+function ReportPanel({
+  load,
+  items,
+  open,
+  onToggle,
+  onJump,
+}: {
+  load: ReportLoad;
+  items: readonly ReportItem[] | null;
+  open: boolean;
+  onToggle: () => void;
+  onJump: (hex: Axial) => void;
+}) {
+  if (load.status === "none") return null;
+  const title = `Turn ${load.turn} report`;
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className="pointer-events-auto self-start rounded-sm border border-wood-700 bg-parchment-200 px-3 py-1 font-label text-xs uppercase tracking-wide text-ink-900 shadow"
+      >
+        Show {title.toLowerCase()}
+      </button>
+    );
+  }
+  return (
+    <Panel title={title} onClose={onToggle} className="flex min-h-0 flex-col">
+      {load.status === "loading" && <p className="text-xs text-wood-500">Loading…</p>}
+      {load.status === "error" && <p className="text-xs text-invalid">{load.message}</p>}
+      {items !== null && (
+        <div className="-mx-1 flex min-h-0 flex-col gap-2 overflow-y-auto px-1">
+          {items.length === 0 && <p className="text-xs text-wood-500">A quiet turn.</p>}
+          {(["fighting", "base", "movement"] as const).map((section) => {
+            const list = items.filter((i) => i.section === section);
+            return list.length === 0 ? null : (
+              <div key={section}>
+                <p className="font-label text-[11px] uppercase tracking-wider text-wood-500">{SECTION_LABEL[section]}</p>
+                <ul className="flex flex-col">
+                  {list.map((item, k) => (
+                    <ReportLine key={k} item={item} onJump={onJump} />
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+          {items.some((i) => i.section === "seen") && (
+            <details>
+              <summary className="cursor-pointer font-label text-[11px] uppercase tracking-wider text-wood-500">
+                {SECTION_LABEL.seen} ({items.filter((i) => i.section === "seen").length})
+              </summary>
+              <ul className="flex flex-col">
+                {items
+                  .filter((i) => i.section === "seen")
+                  .map((item, k) => (
+                    <ReportLine key={k} item={item} onJump={onJump} />
+                  ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function ReportLine({ item, onJump }: { item: ReportItem; onJump: (hex: Axial) => void }) {
+  const body = (
+    <>
+      <span className={TONE_CLASS[item.tone]}>{item.text}</span>
+      {item.detail.map((d) => (
+        <span key={d} className="block pl-3 text-wood-500">
+          {d}
+        </span>
+      ))}
+    </>
+  );
+  const at = item.at;
+  return (
+    <li className="text-xs leading-snug">
+      {at === null ? (
+        <span className="block px-1 py-0.5">{body}</span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onJump(at)}
+          className="block w-full rounded-sm px-1 py-0.5 text-left hover:bg-parchment-400/40"
+        >
+          {body}
+        </button>
+      )}
+    </li>
+  );
+}
+
 // --- the selected unit ----------------------------------------------------------------
 
 const KIND_LABEL: Record<OrderKind, string> = {
@@ -529,12 +650,18 @@ function BasePanel({
           );
         })}
       </ul>
-      {building && work !== null && (
-        <p className="mt-2 text-xs">
-          Building {BUILDING_LABEL[work.building]} {work.level}, done turn{" "}
-          <span className="font-data">{work.completes_on}</span>.
-        </p>
-      )}
+      {work !== null &&
+        (building ? (
+          <p className="mt-2 text-xs">
+            Building {BUILDING_LABEL[work.building]} {work.level}, done turn{" "}
+            <span className="font-data">{work.completes_on}</span>.
+          </p>
+        ) : (
+          <p className="mt-2 text-xs">
+            {BUILDING_LABEL[work.building]} {work.level} completes as this turn resolves; you can queue the next
+            build now.
+          </p>
+        ))}
     </Panel>
   );
 }

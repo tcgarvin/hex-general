@@ -65,6 +65,13 @@ export interface WorldOverlay {
   /** Hexes a click would move the selected unit to. */
   reach: readonly Axial[];
   recruits: readonly Axial[];
+  /** Last turn's trails and fights (`null`: hidden). */
+  lastTurn: {
+    moves: readonly { owner: string | null; path: readonly Axial[] }[];
+    fights: readonly Axial[];
+    captures: readonly { coord: Axial; owner: string }[];
+    barrages: readonly Axial[];
+  } | null;
 }
 
 export interface WorldRendererOptions {
@@ -507,6 +514,8 @@ export class WorldRenderer {
     const px = (n: number) => n / scale;
     const centre = (a: Axial) => axialToPixel(a.q, a.r, HEX_SIZE);
 
+    if (o.lastTurn !== null) this.drawLastTurn(g, o.lastTurn, px);
+
     for (const hex of o.reach) {
       const { x, y } = centre(hex);
       g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.9)).fill({ color: 0xf2e6c8, alpha: 0.22 });
@@ -551,6 +560,42 @@ export class WorldRenderer {
     if (o.selectedUnit !== null) {
       const { x, y } = centre(o.selectedUnit);
       top.circle(x, y, Math.max(HEX_SIZE * 0.85, px(10))).stroke({ color: 0xffd25a, width: px(3) });
+    }
+  }
+
+  private drawLastTurn(g: Graphics, last: NonNullable<WorldOverlay["lastTurn"]>, px: (n: number) => number): void {
+    const viewer = this.scene?.viewer ?? "";
+    const centre = (a: Axial) => axialToPixel(a.q, a.r, HEX_SIZE);
+    for (const move of last.moves) {
+      const color = move.owner === null ? 0x9a9a9a : ownerColor(move.owner, viewer);
+      const pts = move.path.map(centre);
+      g.moveTo(pts[0].x, pts[0].y);
+      for (const p of pts.slice(1)) g.lineTo(p.x, p.y);
+      g.stroke({ color, width: px(2), alpha: 0.55, cap: "round", join: "round" });
+      // Arrowhead on the last step, so direction reads without animation.
+      const a = pts[pts.length - 2];
+      const b = pts[pts.length - 1];
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      const len = Math.max(px(7), HEX_SIZE * 0.3);
+      g.moveTo(b.x, b.y)
+        .lineTo(b.x - len * Math.cos(ang - 0.5), b.y - len * Math.sin(ang - 0.5))
+        .lineTo(b.x - len * Math.cos(ang + 0.5), b.y - len * Math.sin(ang + 0.5))
+        .closePath()
+        .fill({ color, alpha: 0.7 });
+    }
+    for (const at of last.barrages) {
+      const { x, y } = centre(at);
+      g.circle(x, y, HEX_SIZE * 0.55).stroke({ color: 0xe0503a, width: px(1.5), alpha: 0.7 });
+    }
+    for (const at of last.fights) {
+      const { x, y } = centre(at);
+      const r = Math.max(px(6), HEX_SIZE * 0.35);
+      g.moveTo(x - r, y - r).lineTo(x + r, y + r).moveTo(x + r, y - r).lineTo(x - r, y + r);
+      g.stroke({ color: 0xffb347, width: px(3), alpha: 0.9, cap: "round" });
+    }
+    for (const c of last.captures) {
+      const { x, y } = centre(c.coord);
+      g.poly(hexCornerPoints(x, y, HEX_SIZE * 1.05)).stroke({ color: ownerColor(c.owner, viewer), width: px(3.5) });
     }
   }
 

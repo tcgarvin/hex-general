@@ -25,6 +25,14 @@ export function unitName(owner: string, type: UnitType): string {
   return `${cap(owner)} ${cap(type)}`;
 }
 
+/** How players and units are named in log lines; the default capitalises slot ids. */
+export interface Naming {
+  player: (id: string) => string;
+  unit: (owner: string, type: UnitType) => string;
+}
+
+export const DEFAULT_NAMING: Naming = { player: cap, unit: unitName };
+
 const coord = (a: Axial): string => `(${a.q},${a.r})`;
 
 const MOVE_BLOCKED_REASON: Record<
@@ -87,7 +95,7 @@ const stocksText = (s: Stocks): string => {
  * Render a single resolved event as one or more log lines (SPEC §16.3). `nameOf`
  * resolves the display name of units the event references only by id.
  */
-export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
+export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = DEFAULT_NAMING): LogLine[] {
   switch (event.kind) {
     case "unit_moved":
       // Collapsed into a per-beat summary by the log model — never rendered here.
@@ -99,7 +107,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       if (hit === null || hit === undefined) {
         return [{ indent: 0, text: `${firer} barraged ${coord(event.target)} — no unit there.` }];
       }
-      const target = unitName(hit.owner, hit.unit_type);
+      const target = naming.unit(hit.owner, hit.unit_type);
       const lines: LogLine[] = [
         { indent: 0, text: `${firer} barraged ${target} at ${coord(event.target)}.` },
       ];
@@ -116,7 +124,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
     case "combat_resolved": {
       const attackers = event.participants.filter((p) => p.role === "attacker");
       const defender = event.participants.find((p) => p.role === "defender");
-      const nameOfP = (p: (typeof event.participants)[number]) => unitName(p.owner, p.unit_type);
+      const nameOfP = (p: (typeof event.participants)[number]) => naming.unit(p.owner, p.unit_type);
 
       const attackerLabel =
         attackers.length === 0
@@ -162,7 +170,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       const from =
         event.previous_owner === null
           ? " (was neutral)"
-          : ` from ${cap(event.previous_owner)}`;
+          : ` from ${naming.player(event.previous_owner)}`;
       return [
         {
           indent: 0,
@@ -186,7 +194,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       const lines: LogLine[] = [
         {
           indent: 0,
-          text: `${cap(event.player)}: +${event.income} income, −${event.upkeep} upkeep (net ${net}). Bank ${event.bank_before}→${event.bank_after}.`,
+          text: `${naming.player(event.player)}: +${event.income} income, −${event.upkeep} upkeep (net ${net}). Bank ${event.bank_before}→${event.bank_after}.`,
         },
       ];
       if (event.lost_to_cap > 0) {
@@ -199,7 +207,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       return [
         {
           indent: 0,
-          text: `${cap(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)} (−${event.cost}, bank ${event.bank_after}).`,
+          text: `${naming.player(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)} (−${event.cost}, bank ${event.bank_after}).`,
         },
       ];
 
@@ -209,7 +217,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       const lines: LogLine[] = [
         {
           indent: 0,
-          text: `${cap(event.player)}: earned ${stocksText(event.income)}, upkeep ${stocksText(event.upkeep)}. Stocks now ${stocksText(event.after)}.`,
+          text: `${naming.player(event.player)}: earned ${stocksText(event.income)}, upkeep ${stocksText(event.upkeep)}. Stocks now ${stocksText(event.after)}.`,
         },
       ];
       const lost = event.lost_to_storage;
@@ -223,7 +231,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       return [
         {
           indent: 0,
-          text: `${unitName(event.owner, event.unit_type)} at ${coord(event.coord)} disbanded: out of ${event.shortage}${event.chosen ? " (your pick)" : ""}.`,
+          text: `${naming.unit(event.owner, event.unit_type)} at ${coord(event.coord)} disbanded: out of ${event.shortage}${event.chosen ? " (your pick)" : ""}.`,
         },
       ];
 
@@ -231,25 +239,25 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       return [
         {
           indent: 0,
-          text: `${cap(event.player)} began ${cap(event.building)} level ${event.level} (${stocksText(event.cost)}), done on turn ${event.completes_on}.`,
+          text: `${naming.player(event.player)} began ${cap(event.building)} level ${event.level} (${stocksText(event.cost)}), done on turn ${event.completes_on}.`,
         },
       ];
 
     case "construction_completed":
       return [
-        { indent: 0, text: `${cap(event.player)}'s ${cap(event.building)} reached level ${event.level}.` },
+        { indent: 0, text: `${naming.player(event.player)}: ${cap(event.building)} reached level ${event.level}.` },
       ];
 
     case "construction_voided":
       return [
-        { indent: 0, text: `${cap(event.player)} could not start the ${event.building}: stocks fell short.` },
+        { indent: 0, text: `${naming.player(event.player)} could not start the ${event.building}: stocks fell short.` },
       ];
 
     case "world_unit_recruited":
       return [
         {
           indent: 0,
-          text: `${cap(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)} (${stocksText(event.cost)}).`,
+          text: `${naming.player(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)} (${stocksText(event.cost)}).`,
         },
       ];
 
@@ -332,7 +340,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
       return [
         {
           indent: 0,
-          text: `${unitName(event.owner, event.unit_type)} recruit at ${coord(event.coord)} was voided — ${RECRUIT_VOIDED_REASON[event.reason]}.`,
+          text: `${naming.unit(event.owner, event.unit_type)} recruit at ${coord(event.coord)} was voided — ${RECRUIT_VOIDED_REASON[event.reason]}.`,
         },
       ];
   }
