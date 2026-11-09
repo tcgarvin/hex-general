@@ -365,7 +365,7 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 | **W1** Columns ✅ | posture, March/Deploy orders, pack/deploy, column movement + stacking, auto-deploy + placement, disorder, barrage vs stacks, §4.7 friendly swaps and rotations | `tests/engine/test_columns.py` |
 | **W2** Travel ✅ | `TravelOrder`, routing, standing orders in state, validation, `TravelEnded` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator ✅ (review pending) | §6, fairness gates, PNG preview | user reviews sample worlds |
-| **W4** Bots + sim | §8–9 | §9 acceptance gates |
+| **W4** Bots + sim (first cut) | §8–9: `app/ai/world.py`, `app/world/sim.py`, AI_SPEC §12 | §9 acceptance gates (not yet met: see AI_SPEC §12.4) |
 | **W5** Persistence + clock | schema, scheduled resolve, dev manual clock | live world ticks on schedule |
 | **W6** Frontend world view | §11 | art ratified; user can plan a world turn |
 | **W7** Live playtest | the user plays a week | the user's verdict |
