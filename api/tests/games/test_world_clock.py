@@ -16,7 +16,12 @@ from app.games.scheduler_auth import (
     SchedulerAuthError,
     verify_scheduler_token,
 )
-from app.games.service import GameService, TurnClosed, WorldTicksFailed
+from app.games.service import (
+    GameNotActive,
+    GameService,
+    TurnClosed,
+    WorldTicksFailed,
+)
 from app.main import app
 from games.fake_repo import FakeGameRepo
 
@@ -94,6 +99,33 @@ def test_manual_worlds_and_manual_ticks_leave_schedules_alone(
     run = service.tick_due_worlds()
     assert run.ticked == [scheduled]
     assert (repo.get_game(manual) or game).state.turn == 0
+
+
+def test_a_tick_loop_announces_its_next_tick_on_a_manual_world(
+    repo: FakeGameRepo, service: GameService, clock: Clock
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=1)
+    soon = START + timedelta(minutes=10)
+    service.announce_tick(game_id, soon)
+    assert (game := repo.get_game(game_id)) is not None and game.next_tick_at == soon
+
+    later = soon + timedelta(minutes=10)
+    service.tick_world(game_id, next_tick_at=later)
+    game = repo.get_game(game_id)
+    assert game is not None and game.state.turn == 1 and game.next_tick_at == later
+
+    # The scheduled sweep never touches a manual world, announced time or not.
+    clock.now = later + timedelta(hours=1)
+    assert service.tick_due_worlds().ticked == []
+
+    service.announce_tick(game_id, None)
+    assert (game := repo.get_game(game_id)) is not None and game.next_tick_at is None
+
+
+def test_a_scheduled_world_refuses_an_announced_tick(service: GameService) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=1, clock="twice_daily")
+    with pytest.raises(GameNotActive):
+        service.announce_tick(game_id, START)
 
 
 def test_one_failing_world_does_not_stop_the_others(

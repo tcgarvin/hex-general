@@ -54,6 +54,8 @@ export interface WorldPlanning {
   dirty: boolean;
   /** The server holds a plan for this turn. */
   submitted: boolean;
+  /** The previous turn resolved while it had edits that were never sent. */
+  droppedTurn: number | null;
   selectedUnit: Unit | null;
   selectedHex: Axial | null;
   mode: PlanMode;
@@ -79,8 +81,11 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   const slot = view.your_slot;
   const state = view.state;
   const server = useMemo(() => planFromSubmission(view.submission), [view.submission]);
-  const [local, setLocal] = useState<{ turn: number; plan: WorldPlan } | null>(null);
+  // `sent`: the server accepted this exact local plan (so a turn resolving under
+  // it loses nothing).
+  const [local, setLocal] = useState<{ turn: number; plan: WorldPlan; sent: boolean } | null>(null);
   const plan = local !== null && local.turn === view.turn ? local.plan : server;
+  const droppedTurn = local !== null && local.turn < view.turn && !local.sent ? local.turn : null;
   const dirty = !samePlan(plan, server, slot);
 
   const [selection, setSelection] = useState<{ turn: number; unitId: number | null; hex: Axial | null; mode: PlanMode }>(
@@ -99,7 +104,7 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     (change: (p: WorldPlan) => WorldPlan) => {
       setLocal((prev) => {
         const base = prev !== null && prev.turn === view.turn ? prev.plan : server;
-        return { turn: view.turn, plan: change(base) };
+        return { turn: view.turn, plan: change(base), sent: false };
       });
     },
     [server, view.turn],
@@ -191,18 +196,23 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
         body: toSubmission(plan, slot),
       });
       if (error) setSubmitError(describeApiError(error));
-      else onSubmitted();
+      else {
+        const turn = view.turn;
+        setLocal((prev) => (prev !== null && prev.turn === turn && prev.plan === plan ? { ...prev, sent: true } : prev));
+        onSubmitted();
+      }
     } catch (err) {
       setSubmitError(describeApiError(err));
     } finally {
       setSubmitting(false);
     }
-  }, [plan, slot, view.game_id, onSubmitted]);
+  }, [plan, slot, view.game_id, view.turn, onSubmitted]);
 
   return {
     plan,
     dirty,
     submitted: view.submission !== null && view.submission !== undefined,
+    droppedTurn,
     selectedUnit,
     selectedHex: sel.hex,
     mode: selectedUnit === null ? "travel" : sel.mode,

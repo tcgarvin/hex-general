@@ -470,13 +470,22 @@ class GameService:
         self._repo.set_game_state(game, state, game.status)
         return game, slot
 
-    def tick_world(self, game_id: str) -> SubmitResult:
+    def tick_world(
+        self, game_id: str, *, next_tick_at: datetime | None | Keep = KEEP
+    ) -> SubmitResult:
         """Resolve the world's current turn now (WORLD_SPEC §10.1).
 
         Bots plan from their fogged views. A human who sent no orders simply has
         none this turn: their standing travel orders still continue.
+        ``next_tick_at`` is when the next turn will resolve, for a caller that
+        drives the clock itself (the local tick loop); by default a manual tick
+        leaves the world's schedule where it was.
         """
-        next_state, status = _retry_stale(lambda: self._tick_once(game_id))
+        next_state, status = _retry_stale(
+            lambda: self._tick_game(
+                self._require_world(game_id), next_tick_at=next_tick_at
+            )
+        )
         return SubmitResult(
             locked=True, executed=True, turn=next_state.turn, status=status
         )
@@ -553,12 +562,23 @@ class GameService:
         self._tick_game(game, next_tick_at=next_tick_after(now))
         return True
 
-    def _tick_once(self, game_id: str) -> tuple[GameState, str]:
-        """One attempt at resolving a fresh read of the world's turn.
+    def announce_tick(self, game_id: str, at: datetime | None) -> None:
+        """Publish when a manual world's next turn resolves (``None``: unknown).
 
-        A manual tick leaves a scheduled world's next tick where it was.
+        For the local tick loop, so players see a countdown. Refused for a
+        scheduled world, whose next tick belongs to the scheduled clock.
         """
-        return self._tick_game(self._require_world(game_id), next_tick_at=KEEP)
+
+        def attempt() -> None:
+            game = self._require_world(game_id)
+            if game.clock != "manual":
+                raise GameNotActive(
+                    f"world {game_id} runs on the {game.clock} clock; "
+                    "its next tick is not announced by hand"
+                )
+            self._repo.set_game_state(game, game.state, game.status, next_tick_at=at)
+
+        _retry_stale(attempt)
 
     def _tick_game(
         self, game: GameRecord, *, next_tick_at: datetime | None | Keep

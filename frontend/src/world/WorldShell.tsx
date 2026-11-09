@@ -241,19 +241,24 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
 function Countdown({ clock, nextTickAt }: { clock: string; nextTickAt: string | null }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    const id = setInterval(() => setNow(Date.now()), 15_000);
     return () => clearInterval(id);
   }, []);
-  if (clock !== "twice_daily" || nextTickAt === null) {
-    return <Stat label="Clock">manual</Stat>;
+  if (nextTickAt === null) {
+    return <Stat label="Clock">{clock === "manual" ? "manual" : "unscheduled"}</Stat>;
   }
   const at = new Date(nextTickAt);
-  const minutes = Math.max(0, Math.round((at.getTime() - now) / 60_000));
+  const seconds = Math.round((at.getTime() - now) / 1000);
+  const minutes = Math.ceil(seconds / 60);
   const when = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   return (
     <Stat label="Resolves">
       <span className="font-data">
-        {minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`}
+        {seconds <= 0
+          ? "resolving…"
+          : minutes >= 60
+            ? `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+            : `${minutes}m`}
       </span>{" "}
       <span className="text-ivory-400">({when})</span>
     </Stat>
@@ -810,6 +815,11 @@ function PlanBar({
       : "Nothing submitted this turn";
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
+      {planning.droppedTurn !== null && (
+        <div className="pointer-events-auto rounded-sm border border-brass-600 bg-parchment-200 px-3 py-1.5 text-xs text-ink-900 shadow">
+          Turn {planning.droppedTurn} resolved before your last changes were sent; they were dropped.
+        </div>
+      )}
       {(problems.length > 0 || planning.submitError !== null) && (
         <div className="pointer-events-auto rounded-sm border border-invalid bg-parchment-200 px-3 py-1.5 text-xs text-invalid shadow">
           {[...problems, ...(planning.submitError !== null ? [planning.submitError] : [])].map((p) => (

@@ -280,7 +280,8 @@ class WorldView(BaseModel):
     state: WorldState
     visible: list[Axial]
     clock: Literal["manual", "twice_daily"]
-    # When the current turn resolves on a scheduled world; None on a manual clock.
+    # When the current turn resolves: the scheduled clock's next tick, or the time
+    # a local tick loop announced on a manual world; None when nothing has said.
     next_tick_at: datetime | None
 
 
