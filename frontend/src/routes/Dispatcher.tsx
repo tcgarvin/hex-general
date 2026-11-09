@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from "react-router";
 import { Button, Centered, ErrorBanner, Loading } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
+import type { components } from "@/lib/api/schema";
 import {
   DEFAULT_BOT_POLICY,
   DEFAULT_SCENARIO,
@@ -61,7 +62,8 @@ export function Dispatcher() {
     );
   }
   if (state.status === "active") {
-    return <Navigate to={`/game/${state.game.game_id}`} replace />;
+    const path = state.game.kind === "world" ? "world" : "game";
+    return <Navigate to={`/${path}/${state.game.game_id}`} replace />;
   }
   return <StartScreen />;
 }
@@ -118,11 +120,78 @@ function StartScreen() {
         </Button>
       </div>
 
+      <WorldList />
+
       {error !== null && <ErrorBanner message={error} />}
 
       <Link to="/account" className="text-sm text-indigo-400 hover:underline">
         Account & game history
       </Link>
     </Centered>
+  );
+}
+
+type WorldSummary = components["schemas"]["WorldSummary"];
+
+/**
+ * The running worlds (W6): join one to take its first open slot. Shown under the
+ * match buttons until the 2-player flow is retired at the cutover.
+ */
+function WorldList() {
+  const navigate = useNavigate();
+  const [worlds, setWorlds] = useState<WorldSummary[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [joining, setJoining] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .GET("/worlds")
+      .then(({ data, error: apiError }) => {
+        if (cancelled) return;
+        if (apiError) setError(describeApiError(apiError));
+        else setWorlds(data);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(describeApiError(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function join(gameId: string) {
+    setJoining(gameId);
+    setError(null);
+    const { error: apiError } = await api.POST("/worlds/{game_id}/join", {
+      params: { path: { game_id: gameId } },
+    });
+    if (apiError) {
+      setError(describeApiError(apiError));
+      setJoining(null);
+      return;
+    }
+    navigate(`/world/${gameId}`);
+  }
+
+  if (worlds === null && error === null) return null;
+  return (
+    <div className="flex w-full max-w-sm flex-col gap-2 rounded-lg border border-zinc-800 p-5">
+      <h2 className="text-lg font-semibold">Join a world</h2>
+      {worlds !== null && worlds.length === 0 && (
+        <p className="text-sm text-zinc-400">No worlds are running.</p>
+      )}
+      {worlds?.map((w) => (
+        <div key={w.game_id} className="flex items-center justify-between gap-3 text-sm">
+          <span>
+            Turn {w.turn} · {w.players}/{w.slots} players ({w.humans} human)
+          </span>
+          <Button onClick={() => void join(w.game_id)} disabled={joining !== null}>
+            {joining === w.game_id ? "Joining…" : "Join"}
+          </Button>
+        </div>
+      ))}
+      {error !== null && <ErrorBanner message={error} />}
+    </div>
   );
 }

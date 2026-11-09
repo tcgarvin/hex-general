@@ -430,7 +430,7 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 | **W3** World generator ✅ (review pending) | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim (first cut) | §8–9: `app/ai/world.py`, `app/world/sim.py`, AI_SPEC §12 | §9 acceptance gates (not yet met: see AI_SPEC §12.4) |
 | **W5** Persistence + clock ✅ (economy and clock built 2026-11-10; scheduler infra at cutover) | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
-| **W6** Frontend world view | §11 | art ratified; user can plan a world turn |
+| **W6** Frontend world view (read side built 2026-11-10: `/world/:id`, pooled tile renderer + overview/minimap, economy header, base and hex panels, world list on the start screen; planning, replays and art next) | §11 | art ratified; user can plan a world turn |
 | **W7** Live playtest | the user plays a week | the user's verdict |
 
 W0–W4 are headless and can run largely in parallel with W5–W6 once W0 is done.

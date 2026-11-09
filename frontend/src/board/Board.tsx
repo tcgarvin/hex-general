@@ -76,8 +76,9 @@ import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panel
 import { SelectedUnitPanel, type PortraitTile } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
-import { roadTileRefs, type RoadTileRef } from "./roadTiles";
-import { loadTerrainTextures, variantIndex, type LoadedTiles } from "./tiles";
+import { roadTileRefs } from "./roadTiles";
+import { hexTileRef } from "./hexTile";
+import { loadTerrainTextures, type LoadedTiles } from "./tiles";
 import {
   drawPipBar,
   hudVisibleAtZoom,
@@ -1724,44 +1725,6 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   );
 }
 
-/**
- * The texture + mirror the board draws for a hex, in branch priority order:
- * river/bridge oriented art (chosen by edge mask so the water/deck connects
- * across shared edges, possibly L↔R mirrored, unhandled shapes falling back to
- * the generic "00" tile), baked road-on-terrain art (T5 — a missing texture
- * falls through to the base tile + vector road overlay), then the coord-hashed
- * cosmetic variant of the base terrain. Shared by the map render loop and the
- * dock portrait so the portrait backdrop always matches the board.
- */
-function hexTileRef(
-  h: Hex,
-  terrainTex: LoadedTiles,
-  riverCourse: Map<string, number[]>,
-  roadTiles: Map<string, RoadTileRef>,
-): PortraitTile {
-  if (h.terrain === "river" || h.terrain === "bridge") {
-    const oriented = orientedRiverTile(
-      riverCourse.get(hexKey(h.coord.q, h.coord.r)) ?? [],
-    );
-    const name = oriented ? `${h.terrain}/${oriented.name}` : `${h.terrain}/00`;
-    const variants =
-      terrainTex.byOriented[name] ?? terrainTex.byOriented[`${h.terrain}/00`];
-    const tex = variants[variantIndex(h.coord.q, h.coord.r, variants.length)];
-    return { tex, mirror: oriented?.mirror ?? false };
-  }
-  const roadRef = h.road ? roadTiles.get(hexKey(h.coord.q, h.coord.r)) : undefined;
-  const roadVariants =
-    roadRef === undefined ? undefined : terrainTex.byOriented[roadRef.lookup];
-  if (roadRef !== undefined && roadVariants !== undefined) {
-    const tex = roadVariants[variantIndex(h.coord.q, h.coord.r, roadVariants.length)];
-    return { tex, mirror: roadRef.mirror };
-  }
-  const variants = terrainTex.byTerrain[h.terrain];
-  return {
-    tex: variants[variantIndex(h.coord.q, h.coord.r, variants.length)],
-    mirror: false,
-  };
-}
 
 /**
  * A single unit: two-layer painterly sprite (neutral base + owner-tinted team

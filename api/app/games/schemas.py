@@ -123,6 +123,20 @@ class ActiveGame(BaseModel):
 
     game_id: str
     slot: PlayerId
+    # A world opens the world view (/world/:id); a match the 2-player board.
+    kind: Literal["match", "world"]
+
+
+class WorldSummary(BaseModel):
+    """A running world as the join screen lists it (``GET /worlds``)."""
+
+    game_id: str
+    turn: int
+    slots: int
+    players: int
+    humans: int
+    clock: Literal["manual", "twice_daily"]
+    next_tick_at: datetime | None
 
 
 class DispatchView(BaseModel):

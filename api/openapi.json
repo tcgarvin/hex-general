@@ -8,6 +8,14 @@
             "title": "Game Id",
             "type": "string"
           },
+          "kind": {
+            "enum": [
+              "match",
+              "world"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
           "slot": {
             "title": "Slot",
             "type": "string"
@@ -15,7 +23,8 @@
         },
         "required": [
           "game_id",
-          "slot"
+          "slot",
+          "kind"
         ],
         "title": "ActiveGame",
         "type": "object"
@@ -2767,6 +2776,62 @@
         "title": "WorldState",
         "type": "object"
       },
+      "WorldSummary": {
+        "description": "A running world as the join screen lists it (``GET /worlds``).",
+        "properties": {
+          "clock": {
+            "enum": [
+              "manual",
+              "twice_daily"
+            ],
+            "title": "Clock",
+            "type": "string"
+          },
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "humans": {
+            "title": "Humans",
+            "type": "integer"
+          },
+          "next_tick_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Tick At"
+          },
+          "players": {
+            "title": "Players",
+            "type": "integer"
+          },
+          "slots": {
+            "title": "Slots",
+            "type": "integer"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "game_id",
+          "turn",
+          "slots",
+          "players",
+          "humans",
+          "clock",
+          "next_tick_at"
+        ],
+        "title": "WorldSummary",
+        "type": "object"
+      },
       "WorldUnitRecruited": {
         "additionalProperties": false,
         "description": "A world player recruited a unit, paying ``cost`` from their stocks.",
@@ -3938,6 +4003,76 @@
           }
         },
         "summary": "Version"
+      }
+    },
+    "/worlds": {
+      "get": {
+        "description": "Every running world, newest first, so a player can pick one to join.",
+        "operationId": "list_worlds_worlds_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WorldSummary"
+                  },
+                  "title": "Response List Worlds Worlds Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Worlds",
+        "tags": [
+          "worlds"
+        ]
       }
     },
     "/worlds/{game_id}": {

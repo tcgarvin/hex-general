@@ -2,6 +2,7 @@
 
 Thin adapter over `GameService`'s world operations, like `app.games.routes`:
 
+- ``GET /worlds``: the running worlds, to pick one to join.
 - ``POST /worlds/{id}/join``: take the first open slot in a running world.
 - ``GET /worlds/{id}``: the caller's fogged view, without the map.
 - ``GET /worlds/{id}/map``: the static map in the compact grid encoding. It never
@@ -39,6 +40,7 @@ from app.games.schemas import (
     SubmitResult,
     WorldCreated,
     WorldReplay,
+    WorldSummary,
     WorldView,
 )
 from app.games.service import (
@@ -65,6 +67,15 @@ def require_dev(identity: AuthIdentity = Depends(current_identity)) -> AuthIdent
     if not is_dev(identity.user_id):
         raise HTTPException(status_code=403, detail="dev-only endpoint")
     return identity
+
+
+@router.get("")
+def list_worlds(
+    _identity: AuthIdentity = Depends(current_identity),
+    service: GameService = Depends(get_service),
+) -> list[WorldSummary]:
+    """Every running world, newest first, so a player can pick one to join."""
+    return service.list_worlds()
 
 
 @router.post("/{game_id}/join", status_code=201)

@@ -356,6 +356,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/worlds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Worlds
+         * @description Every running world, newest first, so a player can pick one to join.
+         */
+        get: operations["list_worlds_worlds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/worlds/{game_id}": {
         parameters: {
             query?: never;
@@ -447,6 +467,11 @@ export interface components {
         ActiveGame: {
             /** Game Id */
             game_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "match" | "world";
             /** Slot */
             slot: string;
         };
@@ -1922,6 +1947,29 @@ export interface components {
             units: components["schemas"]["Unit"][];
         };
         /**
+         * WorldSummary
+         * @description A running world as the join screen lists it (``GET /worlds``).
+         */
+        WorldSummary: {
+            /**
+             * Clock
+             * @enum {string}
+             */
+            clock: "manual" | "twice_daily";
+            /** Game Id */
+            game_id: string;
+            /** Humans */
+            humans: number;
+            /** Next Tick At */
+            next_tick_at: string | null;
+            /** Players */
+            players: number;
+            /** Slots */
+            slots: number;
+            /** Turn */
+            turn: number;
+        };
+        /**
          * WorldUnitRecruited
          * @description A world player recruited a unit, paying ``cost`` from their stocks.
          */
@@ -2516,6 +2564,38 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    list_worlds_worlds_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorldSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

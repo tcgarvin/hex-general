@@ -10,6 +10,7 @@ import { Join } from "@/routes/Join";
 import { JoinForm } from "@/routes/JoinForm";
 import { Login } from "@/routes/Login";
 import { Stats } from "@/routes/Stats";
+import { WorldShell } from "@/world/WorldShell";
 
 /**
  * Route table (FRONTEND.md). One-game-per-user keeps it tiny: a public login gate
@@ -35,6 +36,7 @@ export function App() {
           <Route path="/join/:id" element={<Join />} />
         </Route>
         <Route path="/game/:id" element={<GameShell />} />
+        <Route path="/world/:id" element={<WorldShell />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -28,7 +28,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 from pydantic import TypeAdapter
 
@@ -62,6 +62,7 @@ from app.games.schemas import (
     SubmitResult,
     TurnReplay,
     WorldReplay,
+    WorldSummary,
     WorldState,
     WorldView,
 )
@@ -252,9 +253,30 @@ class GameService:
         player = self._repo.get_active_player_for_user(user_id)
         if player is None:
             return DispatchView(active_game=None)
-        return DispatchView(
-            active_game=ActiveGame(game_id=player.game_id, slot=player.slot)
+        kind: Literal["match", "world"] = (
+            "world" if self._repo.is_world_game(player.game_id) else "match"
         )
+        return DispatchView(
+            active_game=ActiveGame(game_id=player.game_id, slot=player.slot, kind=kind)
+        )
+
+    def list_worlds(self) -> list[WorldSummary]:
+        """Every running world, newest first, with how full it is."""
+        summaries = []
+        for row in self._repo.list_worlds():
+            players = self._repo.list_players(row.id)
+            summaries.append(
+                WorldSummary(
+                    game_id=row.id,
+                    turn=row.turn,
+                    slots=len(self._repo.get_map_slots(row.map_id)),
+                    players=len(players),
+                    humans=sum(1 for p in players if p.bot_policy is None),
+                    clock=row.clock,
+                    next_tick_at=row.next_tick_at,
+                )
+            )
+        return summaries
 
     def get_history(self, user_id: str) -> list[GameHistoryEntry]:
         """Return ``user_id``'s games (newest first) with a per-player outcome.

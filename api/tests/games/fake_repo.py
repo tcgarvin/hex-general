@@ -27,6 +27,7 @@ from app.games.repo import (
     StaleGame,
     TurnRecord,
     UserGameRecord,
+    WorldRow,
     join_state,
     state_blob,
 )
@@ -114,6 +115,24 @@ class FakeGameRepo:
         if not isinstance(next_tick_at, Keep):
             update["next_tick_at"] = next_tick_at
         self._games[game.id] = stored.model_copy(update=update)
+
+    def is_world_game(self, game_id: str) -> bool:
+        return self._games[game_id].map_id is not None
+
+    def list_worlds(self) -> list[WorldRow]:
+        worlds = [
+            g for g in self._games.values() if g.is_world and g.status == "active"
+        ]
+        return [
+            WorldRow(
+                id=g.id,
+                map_id=g.map_id or "",
+                turn=g.state.turn,
+                clock=g.clock,
+                next_tick_at=g.next_tick_at,
+            )
+            for g in sorted(worlds, key=lambda g: self._created_at[g.id], reverse=True)
+        ]
 
     def list_due_worlds(self, now: datetime) -> list[str]:
         due = [

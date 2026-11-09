@@ -57,6 +57,18 @@ KEEP = Keep.KEEP
 Clock = Literal["manual", "twice_daily"]
 
 
+class WorldRow(BaseModel):
+    """A world's games row without its state (for listing)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    map_id: str
+    turn: int
+    clock: Clock
+    next_tick_at: datetime | None
+
+
 class GameRecord(BaseModel):
     """A games row with its canonical state parsed back into a `GameState`.
 
@@ -191,6 +203,15 @@ class GameRepo(Protocol):
         was written since ``game`` was read. ``next_tick_at`` moves the world's
         next scheduled tick in the same write (`KEEP` leaves it alone).
         """
+        ...
+
+    def is_world_game(self, game_id: str) -> bool:
+        """Whether ``game_id`` is a world (has a stored-apart map), without
+        loading its state."""
+        ...
+
+    def list_worlds(self) -> list[WorldRow]:
+        """Every active world, newest first, without loading states."""
         ...
 
     def list_due_worlds(self, now: datetime) -> list[str]:
@@ -468,6 +489,23 @@ class SupabaseGameRepo:
         if not _rows(response):
             raise StaleGame(f"game {game.id} changed since revision {game.revision}")
         _one_row(response, "set_game_state")
+
+    def is_world_game(self, game_id: str) -> bool:
+        response = (
+            self._client.table("games").select("map_id").eq("id", game_id).execute()
+        )
+        return _one_row(response, f"is_world_game({game_id})")["map_id"] is not None
+
+    def list_worlds(self) -> list[WorldRow]:
+        response = (
+            self._client.table("games")
+            .select("id, map_id, turn:state->turn, clock, next_tick_at")
+            .not_.is_("map_id", "null")
+            .eq("status", "active")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return [WorldRow.model_validate(row) for row in _rows(response)]
 
     def list_due_worlds(self, now: datetime) -> list[str]:
         response = (

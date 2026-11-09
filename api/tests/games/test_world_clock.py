@@ -242,3 +242,24 @@ def test_orders_that_lose_the_race_to_a_tick_are_refused(
     monkeypatch.setattr(repo, "replace_orders", store_then_tick)
     with pytest.raises(TurnClosed):
         service.submit_orders(player, [], [])
+
+
+def test_worlds_are_listed_and_dispatch_knows_a_world(
+    repo: FakeGameRepo, service: GameService
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=2, clock="twice_daily")
+    service.join_world(game_id, "user-1")
+    [summary] = service.list_worlds()
+    assert (summary.game_id, summary.slots, summary.players, summary.humans) == (
+        game_id,
+        4,
+        3,
+        1,
+    )
+    assert summary.clock == "twice_daily" and summary.next_tick_at is not None
+    active = service.get_dispatch("user-1").active_game
+    assert active is not None and active.kind == "world"
+    match = service.create_game("twin_rivers", "user-2")
+    dispatch = service.get_dispatch("user-2").active_game
+    assert dispatch is not None and dispatch.game_id == match.game_id
+    assert dispatch.kind == "match"
