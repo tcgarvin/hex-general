@@ -274,20 +274,24 @@ def _engagements(front: set[Axial], deployed: dict[Axial, PlayerId]) -> list[flo
 def _neighbor_pairs(world: GeneratedWorld, ids: list[PlayerId]) -> list[str]:
     """Pairs of seated players whose start regions share a border."""
     slot_player = {world.fill_order[k]: p for k, p in enumerate(ids)}
-    coords = [h.coord for h in world.game_map.hexes]
-    where: dict[Axial, int] = {c: i for i, c in enumerate(coords)}
+    width = world.game_map.width
+    height = world.game_map.height
+    owner = [slot_player.get(t) for t in world.territory]
     pairs: set[str] = set()
-    for i, coord in enumerate(coords):
-        a = slot_player.get(world.territory[i])
+    for i, a in enumerate(owner):
         if a is None:
             continue
-        for n in neighbors(coord):
-            j = where.get(n)
-            if j is None:
-                continue
-            b = slot_player.get(world.territory[j])
-            if b is not None and b != a:
-                pairs.add("|".join(sorted((a, b))))
+        col, row = i % width, i // width
+        # Right and down neighbours in odd-q offset cover every adjacency once.
+        if col & 1:
+            near = ((col + 1, row), (col + 1, row + 1), (col, row + 1))
+        else:
+            near = ((col + 1, row - 1), (col + 1, row), (col, row + 1))
+        for ncol, nrow in near:
+            if 0 <= ncol < width and 0 <= nrow < height:
+                b = owner[nrow * width + ncol]
+                if b is not None and b != a:
+                    pairs.add("|".join(sorted((a, b))))
     return sorted(pairs)
 
 

@@ -67,6 +67,7 @@ _FOCUS_RADIUS = 14
 _NO_HOSTILE = 10**6
 _STAGE_BACK = 5  # columns bound for a held settlement deploy this far short
 _MIN_ATTACK_GROUP = 2  # never send fewer at a hostile-held settlement
+_HORIZON = 45  # hexes: about three turns of road travel
 
 
 class Stance(StrEnum):
@@ -208,6 +209,7 @@ class _Target:
     objective: Objective
     capacity: int
     min_group: int = 1
+    near_focus: bool = False
 
 
 def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> BotPlan:
@@ -421,11 +423,11 @@ def _assign(
     Combat units take capture/defend targets; artillery follows the nearest
     assigned combat unit's objective.
     """
-    targets = _targets(view, slot, hostiles, args)
     combat = sorted(
         (u for u in own if is_combat_unit(u) and u.id not in garrisoned),
         key=lambda u: u.id,
     )
+    targets = _targets(view, slot, hostiles, args, [u.coord for u in combat])
     load: dict[Axial, int] = {}
     assignment: dict[int, Objective] = {}
     pairs = sorted(
@@ -437,6 +439,7 @@ def _assign(
             )
             for u in combat
             for k, t in enumerate(targets)
+            if t.near_focus or _within_horizon(u.coord, t.objective.coord)
         ),
     )
     dropped: set[Axial] = set()
@@ -472,19 +475,41 @@ def _assign(
     return assignment
 
 
+def _within_horizon(a: Axial, b: Axial) -> bool:
+    """Whether ``b`` is close enough to ``a`` to be worth planning for."""
+    dq = a.q - b.q
+    dr = a.r - b.r
+    if abs(dq) > _HORIZON or abs(dr) > _HORIZON:
+        return False
+    return (abs(dq) + abs(dr) + abs(dq + dr)) // 2 <= _HORIZON
+
+
 def _targets(
-    view: GameState, slot: PlayerId, hostiles: list[Unit], args: StrategistArgs
+    view: GameState,
+    slot: PlayerId,
+    hostiles: list[Unit],
+    args: StrategistArgs,
+    origins: list[Axial],
 ) -> list[_Target]:
-    """Score every settlement worth a unit, given the stance and focus."""
+    """Score every settlement within the horizon of ``origins`` worth a unit.
+
+    Settlements farther than `_HORIZON` hexes from every origin are skipped
+    unless they lie near the strategist's focus: a world has thousands, and a bot
+    plans for the ones its army could reach in a few turns.
+    """
     index = view.map.index
     targets: list[_Target] = []
     for settlement in view.settlements:
-        terrain = index[settlement.coord].terrain
-        base = _CAPTURE_VALUE[terrain]
         near_focus = (
             args.focus is not None
             and distance(settlement.coord, args.focus) <= _FOCUS_RADIUS
         )
+        if not near_focus and not any(
+            _within_horizon(o, settlement.coord) for o in origins
+        ):
+            continue
+        terrain = index[settlement.coord].terrain
+        base = _CAPTURE_VALUE[terrain]
         owner = settlement.controlled_by
         if owner == slot:
             threat = sum(
@@ -525,6 +550,7 @@ def _targets(
                 Objective(ObjectiveKind.CAPTURE, settlement.coord, value),
                 capacity,
                 min_group,
+                near_focus,
             )
         )
     return targets

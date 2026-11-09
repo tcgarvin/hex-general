@@ -14,6 +14,8 @@ odd-q); none of that changes the math here.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -28,6 +30,17 @@ class Axial(BaseModel):
 
     q: int
     r: int
+
+    # Coordinates are dict keys and set members in every hot loop of the engine,
+    # the bots and fog. Pydantic's generic frozen-model hash and equality walk the
+    # field dict; these do the same comparison on the two ints directly.
+    def __hash__(self) -> int:
+        return hash((self.q, self.r))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Axial):
+            return NotImplemented
+        return self.q == other.q and self.r == other.r
 
 
 class Cube(BaseModel):
@@ -105,7 +118,12 @@ def neighbor(a: Axial, direction: int) -> Axial:
 
 def neighbors(a: Axial) -> list[Axial]:
     """Return all six neighbours of ``a`` in fixed direction order."""
-    return [add(a, d) for d in AXIAL_DIRECTIONS]
+    return list(_neighbors(a))
+
+
+@lru_cache(maxsize=1 << 18)
+def _neighbors(a: Axial) -> tuple[Axial, ...]:
+    return tuple(Axial(q=a.q + d.q, r=a.r + d.r) for d in AXIAL_DIRECTIONS)
 
 
 def distance(a: Axial, b: Axial) -> int:
@@ -122,11 +140,18 @@ def within(center: Axial, radius: int) -> list[Axial]:
     never scan a whole map to find nearby hexes. Off-map coordinates are included;
     filter against the map index. Order is deterministic (by ``q``, then ``r``).
     """
+    return list(_within(center, radius))
+
+
+@lru_cache(maxsize=1 << 16)
+def _within(center: Axial, radius: int) -> tuple[Axial, ...]:
+    # Cached: contact and vision checks ask for the same small discs every pulse,
+    # and building coordinate models dominated their cost (WORLD_SPEC §10).
     out: list[Axial] = []
     for dq in range(-radius, radius + 1):
         for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1):
             out.append(Axial(q=center.q + dq, r=center.r + dr))
-    return out
+    return tuple(out)
 
 
 def is_adjacent(a: Axial, b: Axial) -> bool:
