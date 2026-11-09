@@ -160,6 +160,25 @@ Seeded accounts (same password for both):
 To add or rename accounts, edit `DEV_USER_EMAILS` in `api/app/dev_seed.py` and
 re-run `./scripts/dev.sh up` (re-seeding is idempotent).
 
+### A world playtest on a fast clock
+
+World games (WORLD_SPEC) resolve on a clock rather than when everyone submits.
+Locally, create a world with the dev endpoint (`POST /dev/worlds`, e.g.
+`{"slots": 200, "bots": 100}`), join it (`POST /worlds/{id}/join`, or the
+"Join" button on the start screen), then drive its clock with the tick loop,
+detached and logging under `.dev/`:
+
+```bash
+cd api && setsid nohup uv run python -m app.world.tick_loop \
+  --game <world id> --every 600 > ../.dev/tick-loop.log 2>&1 < /dev/null &
+```
+
+It waits one interval before the first tick, and publishes each next tick time
+so the world header counts down. Stop it with `pkill -f app.world.tick_loop`
+(it clears the countdown on exit). `POST /dev/worlds/{id}/tick` resolves a turn
+immediately. A user can hold one active game at a time, so resign any 2-player
+match first.
+
 ## Tear down
 
 ```bash
