@@ -87,6 +87,18 @@ travel: fast, stacks, can't attack, fights badly). Study results (§12):
 - **Resources: not decided.** Food, minerals, oil and factories were examples; the
   NetEase approach is a good model. Test for any resource: *losing it must change what
   you can do next week.*
+- **Economy framing (decided, 2026-11-09):**
+  - **Setting:** WWII-ish industrial: manpower, fuel (oil), industry (factories,
+    mines), maybe food (farms).
+  - **Base:** your capital plus a few buildings (barracks, depot, workshop and the
+    like), built with resources. There is no single base level.
+  - **Neutral sites are defended:** each has a small computer-controlled garrison,
+    tougher farther from the capitals and on more valuable sites. Every capture is a
+    small tactical fight, and the garrisons later become the marauders (§7).
+  - **Slow growth:** a full-strength army (~15 units) takes **3+ weeks** (40+ turns),
+    so most early fights are small.
+  - The detailed design (site types and counts, building costs, growth curves) comes
+    next, measured with the world sim.
 - **Sites unlock unit types (decided direction).** E.g. a **tank factory** enables
   armor, and the map must supply enough that **most players who work for one can get
   one.**
