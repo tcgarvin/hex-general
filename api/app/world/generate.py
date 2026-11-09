@@ -161,6 +161,11 @@ class GeneratedWorld:
     province: list[int]
     stats: dict[str, float] = field(default_factory=dict)
 
+    @property
+    def slots(self) -> list[Axial]:
+        """Capitals in fill order: ``slots[k]`` is the capital of fill position k."""
+        return [self.capitals[k] for k in self.fill_order]
+
     def to_state(self, players: list[PlayerId]) -> GameState:
         """A turn-0 state with ``players`` filling the first slots of ``fill_order``.
 
@@ -209,7 +214,7 @@ class GeneratedWorld:
         units: list[Unit] = []
         for k, player in enumerate(players):
             capital = self.capitals[self.fill_order[k]]
-            spots = [capital] + _nearest_open(capital, index, settlement_hexes, taken)
+            spots = [capital] + nearest_open(capital, index, settlement_hexes, taken)
             for unit_type, coord in zip(STARTING_UNITS, spots, strict=False):
                 taken.add(coord)
                 units.append(
@@ -224,7 +229,7 @@ class GeneratedWorld:
         return units
 
 
-def _nearest_open(
+def nearest_open(
     center: Axial,
     index: dict[Axial, Hex],
     settlement_hexes: set[Axial],

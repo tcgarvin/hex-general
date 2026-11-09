@@ -28,6 +28,7 @@ from typing import Any, Protocol, cast
 from pydantic import BaseModel, ConfigDict
 from supabase import Client
 
+from app.engine.hex_coords import Axial
 from app.engine.map_codec import CompactMap, decode_map, encode_map
 from app.engine.models import GameMap, GameState
 from app.engine.victory import VictoryStatus
@@ -53,6 +54,11 @@ class GameRecord(BaseModel):
     state: GameState
     invite_token: str
     map_id: str | None = None
+
+    @property
+    def is_world(self) -> bool:
+        """Whether this is a world game (its map stored apart, WORLD_SPEC §10)."""
+        return self.map_id is not None
 
 
 class PlayerRecord(BaseModel):
@@ -118,11 +124,21 @@ class TurnRecord(BaseModel):
 class GameRepo(Protocol):
     """Persistence operations the lifecycle service depends on."""
 
-    def create_map(self, game_map: GameMap, params: dict[str, Any] | None) -> str:
-        """Store ``game_map`` once and return its id; ``params`` regenerate it."""
+    def create_map(
+        self,
+        game_map: GameMap,
+        params: dict[str, Any] | None,
+        slots: list[Axial],
+    ) -> str:
+        """Store ``game_map`` once and return its id.
+
+        ``params`` regenerate the map; ``slots`` are its capitals in fill order.
+        """
         ...
 
     def get_map(self, map_id: str) -> GameMap: ...
+
+    def get_map_slots(self, map_id: str) -> list[Axial]: ...
 
     def create_game(
         self,
@@ -267,11 +283,22 @@ class SupabaseGameRepo:
         self._client = client
         self._maps = maps
 
-    def create_map(self, game_map: GameMap, params: dict[str, Any] | None) -> str:
+    def create_map(
+        self,
+        game_map: GameMap,
+        params: dict[str, Any] | None,
+        slots: list[Axial],
+    ) -> str:
         compact = encode_map(game_map)
         response = (
             self._client.table("game_maps")
-            .insert({**compact.model_dump(), "params": params})
+            .insert(
+                {
+                    **compact.model_dump(),
+                    "params": params,
+                    "slots": [c.model_dump() for c in slots],
+                }
+            )
             .execute()
         )
         map_id = cast(str, _one_row(response, "create_map")["id"])
@@ -292,6 +319,13 @@ class SupabaseGameRepo:
         game_map = decode_map(CompactMap.model_validate(row))
         self._maps.put(map_id, game_map)
         return game_map
+
+    def get_map_slots(self, map_id: str) -> list[Axial]:
+        response = (
+            self._client.table("game_maps").select("slots").eq("id", map_id).execute()
+        )
+        row = _one_row(response, f"get_map_slots({map_id})")
+        return [Axial.model_validate(c) for c in row["slots"]]
 
     def _map_for(self, map_id: str | None) -> GameMap | None:
         return None if map_id is None else self.get_map(map_id)

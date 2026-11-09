@@ -11,6 +11,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from app.engine.hex_coords import Axial
 from app.engine.map_codec import decode_map, encode_map
 from app.engine.models import GameMap, GameState
 from app.engine.victory import VictoryStatus
@@ -36,15 +37,25 @@ class FakeGameRepo:
         self._orders: dict[tuple[str, int, str], OrdersRecord] = {}
         self._turns: dict[tuple[str, int], TurnRecord] = {}
         self._maps: dict[str, GameMap] = {}
+        self._map_slots: dict[str, list[Axial]] = {}
 
-    def create_map(self, game_map: GameMap, params: dict[str, Any] | None) -> str:
+    def create_map(
+        self,
+        game_map: GameMap,
+        params: dict[str, Any] | None,
+        slots: list[Axial],
+    ) -> str:
         map_id = str(uuid.uuid4())
         # Round-trip through the storage encoding, as the real table does.
         self._maps[map_id] = decode_map(encode_map(game_map))
+        self._map_slots[map_id] = list(slots)
         return map_id
 
     def get_map(self, map_id: str) -> GameMap:
         return self._maps[map_id]
+
+    def get_map_slots(self, map_id: str) -> list[Axial]:
+        return list(self._map_slots[map_id])
 
     def _stored(self, state: GameState, map_id: str | None) -> GameState:
         """``state`` as it reads back from storage (map rejoined if stored apart)."""

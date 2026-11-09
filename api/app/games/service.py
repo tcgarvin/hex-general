@@ -19,6 +19,7 @@ a completed set is expected to resolve without the engine raising.
 
 from __future__ import annotations
 
+import dataclasses
 import re
 import secrets
 import uuid
@@ -27,6 +28,7 @@ from pathlib import Path
 from pydantic import TypeAdapter
 
 from app.ai.arena import REGISTRY as BOT_REGISTRY
+from app.ai.world import WorldPolicy
 from app.engine.execution import resolve_execution
 from app.engine.events import Event
 from app.engine.fog import filter_events, redact_state
@@ -46,6 +48,8 @@ from app.games.schemas import (
     TurnReplay,
 )
 from app.games.validation import validate_submission
+from app.world.generate import WorldParams, generate
+from app.world.seating import WorldFull, seat_player, slot_id
 
 # Bytes of entropy behind a game's invite token (token_urlsafe ~1.3 chars/byte).
 _INVITE_TOKEN_BYTES = 24
@@ -56,6 +60,12 @@ _SCENARIO_NAME = re.compile(r"^[a-z0-9_]+$")
 _ORDERS = TypeAdapter(list[Order])
 _RECRUITMENTS = TypeAdapter(list[Recruitment])
 _EVENTS = TypeAdapter(list[Event])
+
+WORLD_SCENARIO = "world"
+"""The ``games.scenario`` label of a generated world."""
+
+WORLD_BOT_POLICY = "world"
+"""The ``players.bot_policy`` of a world bot (`WorldPolicy`, AI_SPEC §12)."""
 
 
 class GameError(Exception):
@@ -92,6 +102,10 @@ class ReplayNotFound(GameError):
 
 class UnknownBotPolicy(GameError):
     """The requested bot policy name is not in the AI registry (AI_SPEC §9)."""
+
+
+class NotAWorld(GameError):
+    """A world-only operation (join a slot, tick) was asked of a v0.1 match."""
 
 
 class GameService:
@@ -274,6 +288,11 @@ class GameService:
             },
         )
 
+        if game.is_world:
+            # A world resolves on its clock (`tick_world`), not when all lock.
+            return SubmitResult(
+                locked=True, executed=False, turn=turn, status=game.status
+            )
         players = self._repo.list_players(game.id)
         self._submit_bot_orders(game, players, turn)
         submissions = self._repo.list_turn_orders(game.id, turn)
@@ -286,6 +305,89 @@ class GameService:
         return SubmitResult(
             locked=True, executed=True, turn=next_state.turn, status=status
         )
+
+    def create_world(self, slots: int, seed: int, bots: int) -> str:
+        """Generate a ``slots``-slot world, seat ``bots`` bots, return its game id.
+
+        The map is stored once (WORLD_SPEC §10.1) and the game starts active: a
+        world has no lobby, and players join a running world with `join_world`.
+        """
+        params = WorldParams.for_slots(slots, seed=seed)
+        world = generate(params)
+        bot_ids = [slot_id(k) for k in range(bots)]
+        state = world.to_state(bot_ids)
+        map_id = self._repo.create_map(
+            world.game_map, dataclasses.asdict(params), world.slots
+        )
+        game = self._repo.create_game(
+            WORLD_SCENARIO,
+            state,
+            secrets.token_urlsafe(_INVITE_TOKEN_BYTES),
+            map_id=map_id,
+        )
+        for bot in bot_ids:
+            self._repo.create_player(
+                game.id, bot, str(uuid.uuid4()), bot_policy=WORLD_BOT_POLICY
+            )
+        self._repo.set_game_state(game, game.state, "active")
+        return game.id
+
+    def join_world(self, game_id: str, user_id: str) -> PlayerCredentials:
+        """Seat ``user_id`` in the world's first open slot (WORLD_SPEC §10.1).
+
+        The players row is written first: its ``(game_id, slot)`` uniqueness is
+        what stops two simultaneous joiners from taking the same slot.
+        """
+        game = self._require_world(game_id)
+        self._require_no_active_game(user_id)
+        try:
+            state, slot = seat_player(
+                game.state, self._repo.get_map_slots(_map_id(game))
+            )
+        except WorldFull as exc:
+            raise GameFull(f"world {game_id} has no open slot") from exc
+        player = self._repo.create_player(game.id, slot, user_id)
+        self._repo.set_game_state(game, state, game.status)
+        return PlayerCredentials(
+            game_id=game.id,
+            slot=player.slot,
+            status=game.status,
+            invite_token=game.invite_token,
+        )
+
+    def tick_world(self, game_id: str) -> SubmitResult:
+        """Resolve the world's current turn now (WORLD_SPEC §10.1).
+
+        Bots plan from their fogged views. A human who sent no orders simply has
+        none this turn: their standing travel orders still continue.
+        """
+        game = self._require_world(game_id)
+        if game.status != "active":
+            raise GameNotActive(f"world {game_id} is {game.status}; cannot tick")
+        players = self._repo.list_players(game.id)
+        bot_orders = self._world_bot_orders(game, players)
+        next_state, status = self._resolve_turn(game, players, extra=bot_orders)
+        return SubmitResult(
+            locked=True, executed=True, turn=next_state.turn, status=status
+        )
+
+    def _world_bot_orders(
+        self, game: GameRecord, players: list[PlayerRecord]
+    ) -> tuple[list[Order], list[Recruitment]]:
+        """Every world bot's plan for this turn, validated like a human's.
+
+        Personalities are seeded from the game id, so a bot keeps its character
+        from turn to turn and differs from the same slot in another world.
+        """
+        policy = WorldPolicy(seed=uuid.UUID(game.id).int % (1 << 31))
+        orders: list[Order] = []
+        recruitments: list[Recruitment] = []
+        for bot in (p for p in players if p.bot_policy == WORLD_BOT_POLICY):
+            plan = policy.plan(redact_state(game.state, bot.slot), bot.slot)
+            validate_submission(game.state, bot.slot, plan.orders, plan.recruitments)
+            orders.extend(plan.orders)
+            recruitments.extend(plan.recruitments)
+        return orders, recruitments
 
     def resign(self, player: PlayerRecord) -> GameView:
         """Concede ``player``'s slot, ending the game if they were the last rival.
@@ -362,7 +464,10 @@ class GameService:
             )
 
     def _resolve_turn(
-        self, game: GameRecord, players: list[PlayerRecord]
+        self,
+        game: GameRecord,
+        players: list[PlayerRecord],
+        extra: tuple[list[Order], list[Recruitment]] = ([], []),
     ) -> tuple[GameState, str]:
         """Run the engine over the full set of submissions and persist the result.
 
@@ -372,6 +477,9 @@ class GameService:
         city lost/occupied/unaffordable mid-turn (possible under fog even though
         each submission validated statically) — resolving them as no-ops with a
         replay event rather than crashing the turn.
+
+        ``extra`` are orders planned at resolution rather than stored: a world's
+        bots plan when the turn ticks.
         """
         turn = game.state.turn
         slot_by_player_id = {p.id: p.slot for p in players}
@@ -388,6 +496,8 @@ class GameService:
                 _RECRUITMENTS.validate_python(submission.orders["recruitments"])
             )
 
+        orders.extend(extra[0])
+        recruitments.extend(extra[1])
         next_state, events = resolve_execution(game.state, orders, recruitments)
         victory = victory_status(next_state)
         status = "finished" if victory.decided else "active"
@@ -408,6 +518,12 @@ class GameService:
             raise GameNotFound(f"no game with id {game_id}")
         return game
 
+    def _require_world(self, game_id: str) -> GameRecord:
+        game = self._require_game(game_id)
+        if not game.is_world:
+            raise NotAWorld(f"game {game_id} is a v0.1 match, not a world")
+        return game
+
     def _require_no_active_game(self, user_id: str) -> None:
         """Enforce one active game per user before a create/join (SPEC: Phase 7)."""
         existing = self._repo.get_active_player_for_user(user_id)
@@ -415,6 +531,13 @@ class GameService:
             raise GameAlreadyActive(
                 f"user already holds slot {existing.slot!r} in game {existing.game_id}"
             )
+
+
+def _map_id(game: GameRecord) -> str:
+    """The map id of a world game (`GameService._require_world` checked it has one)."""
+    if game.map_id is None:
+        raise NotAWorld(f"game {game.id} has no stored map")
+    return game.map_id
 
 
 def _outcome_for(victory: VictoryStatus, slot: str) -> str:

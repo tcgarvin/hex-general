@@ -63,7 +63,7 @@ def test_map_cache_evicts_the_least_recently_used() -> None:
 
 def test_world_states_and_turns_share_the_stored_map(world: GeneratedWorld) -> None:
     repo = FakeGameRepo()
-    map_id = repo.create_map(world.game_map, {"seed": 7})
+    map_id = repo.create_map(world.game_map, {"seed": 7}, world.slots)
     stored_map = repo.get_map(map_id)
     state = world.to_state(["a", "b"])
 

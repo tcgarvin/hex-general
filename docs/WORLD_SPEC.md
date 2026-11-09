@@ -333,9 +333,20 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 - **`games`** gains `kind` (`match` | `world`), `clock` (`manual` | `twice_daily`) and `next_tick_at`. For a world, `games.state` and
   `turns.state_after` hold the state *without* its map. The repo rejoins the cached map
   on load, so the engine still sees one `GameState`.
-- **Slots:** `players` rows for every filled slot (bots carry `bot_policy`); a human
-  joining takes the next slot in `fill_order`.
-- **Tick:** `POST /internal/worlds/{id}/tick`, authenticated by OIDC from a Cloud
+- **Slots ✅ (built 2026-11-09):** `game_maps.slots` holds the capitals in fill order,
+  and fill position k is player `s<k+1>` (`s001`, `s002`, …). `GameService.create_world`
+  generates the world, stores the map, seats the bots (`bot_policy = "world"`) and
+  starts the game active. `join_world` seats a human in the first open slot
+  (`app.world.seating`): never held, capital still neutral, and no unit within 3 hexes
+  of it. The `players` row is written first, so its `(game_id, slot)` uniqueness
+  settles two people joining at once.
+- **Tick (service ✅ 2026-11-09, routes and scheduler to come):** `tick_world` plans
+  every bot from its fogged view (personalities seeded from the game id), adds the
+  humans' stored submissions, and resolves. A world submission is stored but never
+  resolves the turn itself. Measured on local Supabase with 200 slots, 100 bots and
+  one human: ~1.1 s per tick, 1.8 s on a cold process. Still open: optimistic
+  concurrency on `games.state`, so a join landing during a tick can't be lost.
+  Planned route: `POST /internal/worlds/{id}/tick`, authenticated by OIDC from a Cloud
   Scheduler service account. Bots plan, missing human orders become "no order" (standing
   travel continues), the turn resolves, and the `(game_id, turn)` unique constraint on
   `turns` makes a retried tick a no-op. Dev worlds use `POST /dev/worlds/{id}/resolve`.
