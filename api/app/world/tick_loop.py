@@ -15,6 +15,8 @@ instead (``POST /internal/clock``).
 from __future__ import annotations
 
 import argparse
+import signal
+import sys
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -33,6 +35,8 @@ def main() -> None:
     if args.every <= 0:
         parser.error("--every must be positive")
 
+    # `pkill` sends SIGTERM; exit through `finally` so the countdown is cleared.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     service = GameService(SupabaseGameRepo(get_supabase_client()))
     every = timedelta(seconds=args.every)
     due = datetime.now(timezone.utc) + every

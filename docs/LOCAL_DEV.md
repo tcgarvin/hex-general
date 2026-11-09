@@ -174,8 +174,9 @@ cd api && setsid nohup uv run python -m app.world.tick_loop \
 ```
 
 It waits one interval before the first tick, and publishes each next tick time
-so the world header counts down. Stop it with `pkill -f app.world.tick_loop`
-(it clears the countdown on exit). `POST /dev/worlds/{id}/tick` resolves a turn
+so the world header counts down. Stop it with `pkill -f '^uv run python -m app.world.tick_loop'`
+(the anchor keeps the pattern from matching the shell that runs `pkill`); it
+clears the countdown on exit. `POST /dev/worlds/{id}/tick` resolves a turn
 immediately. A user can hold one active game at a time, so resign any 2-player
 match first.
 
