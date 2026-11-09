@@ -132,7 +132,7 @@ class GameService:
                     game.id, slot, str(uuid.uuid4()), bot_policy=bot_policy
                 )
             status = "active"
-            self._repo.set_game_state(game.id, state, status)
+            self._repo.set_game_state(game, state, status)
         return PlayerCredentials(
             game_id=game.id,
             slot=player.slot,
@@ -163,7 +163,7 @@ class GameService:
         status = game.status
         if len(present) + 1 == len(game.state.players):
             status = "active"
-            self._repo.set_game_state(game_id, game.state, status)
+            self._repo.set_game_state(game, game.state, status)
         return PlayerCredentials(
             game_id=game_id,
             slot=player.slot,
@@ -304,7 +304,7 @@ class GameService:
         )
         victory = victory_status(new_state)
         status = "finished" if victory.decided else "active"
-        self._repo.set_game_state(game.id, new_state, status)
+        self._repo.set_game_state(game, new_state, status)
         return self.get_view(player)
 
     def get_replay(self, player: PlayerRecord, turn: int) -> TurnReplay:
@@ -393,13 +393,13 @@ class GameService:
         status = "finished" if victory.decided else "active"
 
         self._repo.record_turn(
-            game.id,
+            game,
             turn,
             [event.model_dump(mode="json") for event in events],
             next_state,
             victory,
         )
-        self._repo.set_game_state(game.id, next_state, status)
+        self._repo.set_game_state(game, next_state, status)
         return next_state, status
 
     def _require_game(self, game_id: str) -> GameRecord:

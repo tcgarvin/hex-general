@@ -11,7 +11,8 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.engine.models import GameState
+from app.engine.map_codec import decode_map, encode_map
+from app.engine.models import GameMap, GameState
 from app.engine.victory import VictoryStatus
 from app.games.repo import (
     GameRecord,
@@ -20,6 +21,8 @@ from app.games.repo import (
     RepoError,
     TurnRecord,
     UserGameRecord,
+    join_state,
+    state_blob,
 )
 
 
@@ -32,16 +35,37 @@ class FakeGameRepo:
         self._players: dict[str, PlayerRecord] = {}
         self._orders: dict[tuple[str, int, str], OrdersRecord] = {}
         self._turns: dict[tuple[str, int], TurnRecord] = {}
+        self._maps: dict[str, GameMap] = {}
+
+    def create_map(self, game_map: GameMap, params: dict[str, Any] | None) -> str:
+        map_id = str(uuid.uuid4())
+        # Round-trip through the storage encoding, as the real table does.
+        self._maps[map_id] = decode_map(encode_map(game_map))
+        return map_id
+
+    def get_map(self, map_id: str) -> GameMap:
+        return self._maps[map_id]
+
+    def _stored(self, state: GameState, map_id: str | None) -> GameState:
+        """``state`` as it reads back from storage (map rejoined if stored apart)."""
+        game_map = None if map_id is None else self._maps[map_id]
+        return join_state(state_blob(state, map_id), game_map)
 
     def create_game(
-        self, scenario: str, state: GameState, invite_token: str
+        self,
+        scenario: str,
+        state: GameState,
+        invite_token: str,
+        *,
+        map_id: str | None = None,
     ) -> GameRecord:
         game = GameRecord(
             id=str(uuid.uuid4()),
             scenario=scenario,
             status="lobby",
-            state=state,
+            state=self._stored(state, map_id),
             invite_token=invite_token,
+            map_id=map_id,
         )
         self._games[game.id] = game
         # Monotonic per-creation timestamp so history ordering is deterministic.
@@ -51,10 +75,10 @@ class FakeGameRepo:
     def get_game(self, game_id: str) -> GameRecord | None:
         return self._games.get(game_id)
 
-    def set_game_state(self, game_id: str, state: GameState, status: str) -> None:
-        game = self._games[game_id]
-        self._games[game_id] = game.model_copy(
-            update={"state": state, "status": status}
+    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
+        stored = self._games[game.id]
+        self._games[game.id] = stored.model_copy(
+            update={"state": self._stored(state, game.map_id), "status": status}
         )
 
     def create_player(
@@ -140,17 +164,20 @@ class FakeGameRepo:
 
     def record_turn(
         self,
-        game_id: str,
+        game: GameRecord,
         turn: int,
         events: list[dict[str, Any]],
         state_after: GameState,
         victory: VictoryStatus,
     ) -> None:
-        key = (game_id, turn)
+        key = (game.id, turn)
         if key in self._turns:
-            raise RepoError(f"turn {turn} already recorded for game {game_id}")
+            raise RepoError(f"turn {turn} already recorded for game {game.id}")
         self._turns[key] = TurnRecord(
-            turn=turn, events=events, state_after=state_after, victory=victory
+            turn=turn,
+            events=events,
+            state_after=self._stored(state_after, game.map_id),
+            victory=victory,
         )
 
     def get_turn(self, game_id: str, turn: int) -> TurnRecord | None:

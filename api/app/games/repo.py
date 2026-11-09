@@ -11,17 +11,25 @@ that is real domain optionality, not an error signal.
 
 The service depends on the `GameRepo` *protocol*, not the Supabase class, so the
 lifecycle logic is unit-testable against an in-memory fake.
+
+World games store their static map once (WORLD_SPEC §10.1): a games row with a
+``map_id`` keeps ``games.state`` and ``turns.state_after`` *without* the map, and
+the repo rejoins the stored map on load, so the service still sees whole
+`GameState`s. Decoded maps are cached per process (`MapCache`), because a map row
+never changes and decoding a world map takes about two seconds.
 """
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Any, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict
 from supabase import Client
 
-from app.engine.models import GameState
+from app.engine.map_codec import CompactMap, decode_map, encode_map
+from app.engine.models import GameMap, GameState
 from app.engine.victory import VictoryStatus
 
 
@@ -30,7 +38,12 @@ class RepoError(RuntimeError):
 
 
 class GameRecord(BaseModel):
-    """A games row with its canonical state parsed back into a `GameState`."""
+    """A games row with its canonical state parsed back into a `GameState`.
+
+    ``map_id`` is the `game_maps` row holding the game's static map, stored apart
+    from the state; ``None`` means the map is embedded in the state (a v0.1
+    match). Either way ``state`` is whole: the repo has rejoined the map.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -39,6 +52,7 @@ class GameRecord(BaseModel):
     status: str
     state: GameState
     invite_token: str
+    map_id: str | None = None
 
 
 class PlayerRecord(BaseModel):
@@ -104,13 +118,26 @@ class TurnRecord(BaseModel):
 class GameRepo(Protocol):
     """Persistence operations the lifecycle service depends on."""
 
+    def create_map(self, game_map: GameMap, params: dict[str, Any] | None) -> str:
+        """Store ``game_map`` once and return its id; ``params`` regenerate it."""
+        ...
+
+    def get_map(self, map_id: str) -> GameMap: ...
+
     def create_game(
-        self, scenario: str, state: GameState, invite_token: str
+        self,
+        scenario: str,
+        state: GameState,
+        invite_token: str,
+        *,
+        map_id: str | None = None,
     ) -> GameRecord: ...
 
     def get_game(self, game_id: str) -> GameRecord | None: ...
 
-    def set_game_state(self, game_id: str, state: GameState, status: str) -> None: ...
+    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
+        """Replace ``game``'s canonical state (map stored apart if it has a map_id)."""
+        ...
 
     def create_player(
         self, game_id: str, slot: str, user_id: str, bot_policy: str | None = None
@@ -132,7 +159,7 @@ class GameRepo(Protocol):
 
     def record_turn(
         self,
-        game_id: str,
+        game: GameRecord,
         turn: int,
         events: list[dict[str, Any]],
         state_after: GameState,
@@ -159,15 +186,55 @@ def _one_row(response: Any, context: str) -> dict[str, Any]:
     return rows[0]
 
 
-def _game_record(row: dict[str, Any]) -> GameRecord:
-    """Build a `GameRecord` from a games row, parsing the JSONB state blob."""
-    return GameRecord(
-        id=row["id"],
-        scenario=row["scenario"],
-        status=row["status"],
-        state=GameState.model_validate(row["state"]),
-        invite_token=row["invite_token"],
-    )
+def state_blob(state: GameState, map_id: str | None) -> dict[str, Any]:
+    """The JSON stored for ``state``: without its map when the map has a row."""
+    if map_id is None:
+        return state.model_dump(mode="json")
+    return state.model_dump(mode="json", exclude={"map"})
+
+
+def join_state(blob: dict[str, Any], game_map: GameMap | None) -> GameState:
+    """Parse a stored state, rejoining ``game_map`` if it was stored apart.
+
+    The map is passed as the decoded instance, which pydantic keeps as is, so
+    every state of a world shares one map object rather than re-validating it.
+    """
+    if game_map is None:
+        return GameState.model_validate(blob)
+    if "map" in blob:
+        raise RepoError("state stored with an embedded map for a game with map_id")
+    return GameState.model_validate({**blob, "map": game_map})
+
+
+class MapCache:
+    """Decoded maps by `game_maps` id, kept for the life of the process.
+
+    A map row is immutable, so a cached map never goes stale. The cache is
+    shared by every request's repo (one per process) and bounded, because a
+    decoded world map holds ~10^5 hex objects (~100 MB).
+    """
+
+    def __init__(self, capacity: int = 4) -> None:
+        self._capacity = capacity
+        self._maps: OrderedDict[str, GameMap] = OrderedDict()
+
+    def get(self, map_id: str) -> GameMap | None:
+        """The cached map for ``map_id``, or ``None`` if it is not cached."""
+        game_map = self._maps.get(map_id)
+        if game_map is not None:
+            self._maps.move_to_end(map_id)
+        return game_map
+
+    def put(self, map_id: str, game_map: GameMap) -> None:
+        """Cache ``game_map`` under ``map_id``, evicting the least recently used."""
+        self._maps[map_id] = game_map
+        self._maps.move_to_end(map_id)
+        while len(self._maps) > self._capacity:
+            self._maps.popitem(last=False)
+
+
+MAP_CACHE = MapCache()
+"""The process-wide map cache that `SupabaseGameRepo` uses by default."""
 
 
 def _player_record(row: dict[str, Any]) -> PlayerRecord:
@@ -196,11 +263,57 @@ def _opponent_bot_policy(players: list[dict[str, Any]], own_slot: str) -> str | 
 class SupabaseGameRepo:
     """`GameRepo` backed by Supabase (service-role key; bypasses RLS)."""
 
-    def __init__(self, client: Client) -> None:
+    def __init__(self, client: Client, maps: MapCache = MAP_CACHE) -> None:
         self._client = client
+        self._maps = maps
+
+    def create_map(self, game_map: GameMap, params: dict[str, Any] | None) -> str:
+        compact = encode_map(game_map)
+        response = (
+            self._client.table("game_maps")
+            .insert({**compact.model_dump(), "params": params})
+            .execute()
+        )
+        map_id = cast(str, _one_row(response, "create_map")["id"])
+        self._maps.put(map_id, game_map)
+        return map_id
+
+    def get_map(self, map_id: str) -> GameMap:
+        cached = self._maps.get(map_id)
+        if cached is not None:
+            return cached
+        response = (
+            self._client.table("game_maps")
+            .select("width, height, terrain, roads")
+            .eq("id", map_id)
+            .execute()
+        )
+        row = _one_row(response, f"get_map({map_id})")
+        game_map = decode_map(CompactMap.model_validate(row))
+        self._maps.put(map_id, game_map)
+        return game_map
+
+    def _map_for(self, map_id: str | None) -> GameMap | None:
+        return None if map_id is None else self.get_map(map_id)
+
+    def _game_record(self, row: dict[str, Any]) -> GameRecord:
+        """Build a `GameRecord` from a games row, rejoining a stored-apart map."""
+        return GameRecord(
+            id=row["id"],
+            scenario=row["scenario"],
+            status=row["status"],
+            state=join_state(row["state"], self._map_for(row["map_id"])),
+            invite_token=row["invite_token"],
+            map_id=row["map_id"],
+        )
 
     def create_game(
-        self, scenario: str, state: GameState, invite_token: str
+        self,
+        scenario: str,
+        state: GameState,
+        invite_token: str,
+        *,
+        map_id: str | None = None,
     ) -> GameRecord:
         response = (
             self._client.table("games")
@@ -209,19 +322,20 @@ class SupabaseGameRepo:
                     "name": scenario,
                     "scenario": scenario,
                     "status": "lobby",
-                    "state": state.model_dump(mode="json"),
+                    "state": state_blob(state, map_id),
                     "invite_token": invite_token,
+                    "map_id": map_id,
                 }
             )
             .execute()
         )
         row = _one_row(response, "create_game")
-        return _game_record(row)
+        return self._game_record(row)
 
     def get_game(self, game_id: str) -> GameRecord | None:
         response = (
             self._client.table("games")
-            .select("id, scenario, status, state, invite_token")
+            .select("id, scenario, status, state, invite_token, map_id")
             .eq("id", game_id)
             .execute()
         )
@@ -229,19 +343,19 @@ class SupabaseGameRepo:
         if not rows:
             return None
         row = _one_row(response, "get_game")
-        return _game_record(row)
+        return self._game_record(row)
 
-    def set_game_state(self, game_id: str, state: GameState, status: str) -> None:
+    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
         response = (
             self._client.table("games")
             .update(
                 {
-                    "state": state.model_dump(mode="json"),
+                    "state": state_blob(state, game.map_id),
                     "status": status,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
-            .eq("id", game_id)
+            .eq("id", game.id)
             .execute()
         )
         _one_row(response, "set_game_state")
@@ -314,7 +428,7 @@ class SupabaseGameRepo:
         response = (
             self._client.table("players")
             .select(
-                "slot, games!inner(id, scenario, status, state, created_at, "
+                "slot, games!inner(id, scenario, status, state, map_id, created_at, "
                 "players(slot, bot_policy))"
             )
             .eq("user_id", user_id)
@@ -328,7 +442,7 @@ class SupabaseGameRepo:
                     game_id=game["id"],
                     scenario=game["scenario"],
                     status=game["status"],
-                    state=GameState.model_validate(game["state"]),
+                    state=join_state(game["state"], self._map_for(game["map_id"])),
                     created_at=game["created_at"],
                     slot=row["slot"],
                     bot_policy=_opponent_bot_policy(game["players"], row["slot"]),
@@ -369,7 +483,7 @@ class SupabaseGameRepo:
 
     def record_turn(
         self,
-        game_id: str,
+        game: GameRecord,
         turn: int,
         events: list[dict[str, Any]],
         state_after: GameState,
@@ -379,10 +493,10 @@ class SupabaseGameRepo:
             self._client.table("turns")
             .insert(
                 {
-                    "game_id": game_id,
+                    "game_id": game.id,
                     "turn": turn,
                     "events": events,
-                    "state_after": state_after.model_dump(mode="json"),
+                    "state_after": state_blob(state_after, game.map_id),
                     "victory": victory.model_dump(mode="json"),
                 }
             )
@@ -393,7 +507,7 @@ class SupabaseGameRepo:
     def get_turn(self, game_id: str, turn: int) -> TurnRecord | None:
         response = (
             self._client.table("turns")
-            .select("turn, events, state_after, victory")
+            .select("turn, events, state_after, victory, games!inner(map_id)")
             .eq("game_id", game_id)
             .eq("turn", turn)
             .execute()
@@ -405,6 +519,8 @@ class SupabaseGameRepo:
         return TurnRecord(
             turn=row["turn"],
             events=row["events"],
-            state_after=GameState.model_validate(row["state_after"]),
+            state_after=join_state(
+                row["state_after"], self._map_for(row["games"]["map_id"])
+            ),
             victory=VictoryStatus.model_validate(row["victory"]),
         )

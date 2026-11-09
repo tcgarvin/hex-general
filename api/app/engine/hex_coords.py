@@ -89,6 +89,11 @@ def offset_to_axial(col: int, row: int) -> Axial:
     return Axial(q=q, r=r)
 
 
+def axial_to_offset(a: Axial) -> tuple[int, int]:
+    """Inverse of `offset_to_axial`: the odd-q ``(col, row)`` grid cell of ``a``."""
+    return a.q, a.r + (a.q - (a.q & 1)) // 2
+
+
 def to_cube(a: Axial) -> Cube:
     """Convert an axial coordinate to its cube representation."""
     x = a.q

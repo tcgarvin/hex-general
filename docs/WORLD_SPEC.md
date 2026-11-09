@@ -314,17 +314,23 @@ The real gate is the user playing a live world on the real clock for a week.
 - Whole-world resolution in one call is fine at 12 slots (~180 units). Splitting
   resolution into independent contact clusters waits until measurements demand it.
 
-### 10.1 Proposed W5 design (drafted 2026-11-09; needs the user's go-ahead)
+### 10.1 W5 design (drafted 2026-11-09; map storage built, the rest proposed)
 
 Sizes measured on a 200-slot world: the full `GameState` JSON is ~7 MB, almost all of
 it map. Embedding that in every `games.state` and `turns.state_after` row would cost
 ~14 MB per turn.
 
-- **`game_maps` table:** `id`, `width`, `height`, generator `params` (jsonb, so a map can
-  be regenerated), and the hexes in the compact scenario grid encoding (one terrain char
-  per hex, plus a road grid): ~250 KB for 349².
-- **`games`** gains `kind` (`match` | `world`), `map_id` (nullable for v0.1 matches),
-  `clock` (`manual` | `twice_daily`) and `next_tick_at`. For a world, `games.state` and
+- **`game_maps` table ✅ (built 2026-11-09):** `id`, `width`, `height`, generator `params`
+  (jsonb, so a map can be regenerated), and `terrain`/`roads` in the compact grid
+  encoding (`app.engine.map_codec.CompactMap`: one char per hex each, row-major over the
+  odd-q rectangle, the scenario alphabet). `games.map_id` points at it; a game with a
+  `map_id` stores `games.state` and `turns.state_after` without the `map` key, and
+  `SupabaseGameRepo` rejoins the map on load from a per-process LRU (`MapCache`), so
+  every state of a world shares one map object. Measured on a 200-slot world in local
+  Postgres: the map row is 40 KB and a 100-player state row 20 KB after TOAST
+  compression (versus 8.4 MB of JSON for a full state). Decoding the map costs ~1.2 s on
+  a cold process, then a load is ~0.15 s.
+- **`games`** gains `kind` (`match` | `world`), `clock` (`manual` | `twice_daily`) and `next_tick_at`. For a world, `games.state` and
   `turns.state_after` hold the state *without* its map. The repo rejoins the cached map
   on load, so the engine still sees one `GameState`.
 - **Slots:** `players` rows for every filled slot (bots carry `bot_policy`); a human
@@ -366,7 +372,7 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 | **W2** Travel ✅ | `TravelOrder`, routing, standing orders in state, validation, `TravelEnded` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator ✅ (review pending) | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim (first cut) | §8–9: `app/ai/world.py`, `app/world/sim.py`, AI_SPEC §12 | §9 acceptance gates (not yet met: see AI_SPEC §12.4) |
-| **W5** Persistence + clock | schema, scheduled resolve, dev manual clock | live world ticks on schedule |
+| **W5** Persistence + clock — started | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
 | **W6** Frontend world view | §11 | art ratified; user can plan a world turn |
 | **W7** Live playtest | the user plays a week | the user's verdict |
 
