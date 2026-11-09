@@ -333,6 +333,10 @@ If multiple friendly units attempt to enter the same hex during the same movemen
 * all involved units remain in their previous hexes
 * all involved units stop moving for the turn
 
+Friendly units stepping into each other's hexes in the same pulse (a head-on swap, or a
+closed rotation of three or more) all move together rather than jamming. This is how a
+fresh unit relieves one in the line (WORLD_SPEC §4.7).
+
 ### 8.3 Zones of Control
 
 Every non-destroyed unit exerts a Zone of Control into each adjacent hex.

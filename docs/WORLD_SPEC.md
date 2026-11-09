@@ -136,11 +136,14 @@ Barrage still resolves before pulse 1.
 
 This changes SPEC §8.2, where two friendly units trying to swap hexes jam.
 
-- **Relieve order:** a deployed unit adjacent to a friendly deployed unit may swap hexes
-  with it in the same pulse. Both moves succeed together; neither counts as a jam. The
-  relieved unit is then free to withdraw.
-- **Friendly head-on swaps:** two friendly deployed units whose paths cross the same edge
-  in opposite directions in the same pulse swap instead of jamming.
+- **Friendly swaps:** two friendly deployed units that step into each other's hex in the
+  same pulse swap instead of jamming; both keep moving along their paths. A closed
+  rotation of three or more resolves the same way. A third unit contending for one of
+  the hexes turns it back into a jam.
+- **Relief in place** needs no extra order: the fresh unit moves into the line hex and the
+  relieved unit moves out through the fresh unit's hex, in the same pulse. ZOC still
+  applies to each step (an engaged unit can't step into another hostile-ZOC hex).
+  *(Implemented with W1.)*
 - Why: rotating a front line without this left ~14% of front slots reachable only through
   occupied slots, and clusters of slots locked for 50+ turns. Relief swaps added ~2 points
   of front share and cut line jams by two-thirds (VISION §12).
@@ -303,7 +306,7 @@ The real gate is the user playing a live world on the real clock for a week.
 | Phase | Delivers | Gate |
 | --- | --- | --- |
 | **W0** Engine generalization ✅ | indexed lookups, shared static map, `hostile()`, perf baseline (`app.world.bench`). The static/dynamic *storage* split and N-slot turn flow moved to W5, where persistence changes | v0.1 suite green; 350² / 1,500 units resolves in 0.05 s, one player's fog in 0.006 s |
-| **W1** Columns ✅ | posture, March/Deploy orders, pack/deploy, column movement + stacking, auto-deploy + placement, disorder, barrage vs stacks (§4.7 relief swaps not yet) | `tests/engine/test_columns.py` |
+| **W1** Columns ✅ | posture, March/Deploy orders, pack/deploy, column movement + stacking, auto-deploy + placement, disorder, barrage vs stacks, §4.7 friendly swaps and rotations | `tests/engine/test_columns.py` |
 | **W2** Travel | `TravelOrder`, routing, standing orders in state, validation, `TravelHalted` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim | §8–9 | §9 acceptance gates |

@@ -29,8 +29,13 @@ Documented v0.1 limitations (rare simultaneity corners): a unit whose own hex is
 attacked is *pinned* — it defends and its own move is cancelled even in the edge
 case where its attacker is itself cancelled; and a third unit attacking a hex
 already involved in an edge swap is simply blocked rather than merged into the
-clash. Pure friendly cycles (2-unit swaps, rotations) still cannot resolve
-without stacking, so those units stay put (as in Phase 2).
+clash.
+
+Friendly cycles resolve (WORLD_SPEC §4.7, replacing SPEC §8.2's swap jam): two
+friendly units stepping into each other's hex in the same pulse swap, and a
+closed rotation of three or more all step together. This is how a fresh unit
+relieves one in the line: both order a move into the other's hex. A cycle with a
+third unit also contending for one of its hexes is a jam, not a cycle.
 """
 
 from __future__ import annotations
@@ -579,16 +584,59 @@ def _resolve_follow_chains(ctx: _PulseState, singles: dict[UnitId, Axial]) -> No
             target = singles[unit_id]
             if target in ctx.positions:
                 continue
-            origin = ctx.units[unit_id].coord
-            _complete_move(ctx, ctx.movers[unit_id], target)
-            ctx.events.append(
-                UnitMoved(pulse=ctx.pulse, unit_id=unit_id, origin=origin, dest=target)
-            )
+            _step_into(ctx, unit_id, target)
             pending.discard(unit_id)
             progressed = True
 
+    for cycle in _friendly_cycles(ctx, singles, pending):
+        # Relief in place / rotation (WORLD_SPEC §4.7): every member steps at once.
+        for unit_id in cycle:
+            _step_into(ctx, unit_id, singles[unit_id])
+            pending.discard(unit_id)
+
     for unit_id in sorted(pending):
         _block(ctx, ctx.movers[unit_id], singles[unit_id], MoveBlockedReason.OCCUPIED)
+
+
+def _step_into(ctx: _PulseState, unit_id: UnitId, target: Axial) -> None:
+    """Complete one lone, uncontested step and log it."""
+    origin = ctx.units[unit_id].coord
+    _complete_move(ctx, ctx.movers[unit_id], target)
+    ctx.events.append(
+        UnitMoved(pulse=ctx.pulse, unit_id=unit_id, origin=origin, dest=target)
+    )
+
+
+def _friendly_cycles(
+    ctx: _PulseState, singles: dict[UnitId, Axial], pending: set[UnitId]
+) -> list[list[UnitId]]:
+    """Closed loops of stalled movers, each stepping into the next one's hex.
+
+    After the follow-chain fixpoint, a pending mover's target is held by another
+    unit. Following "whose hex do I want" from mover to occupant either reaches a
+    unit that isn't moving (blocked) or closes a loop of pending movers: a
+    head-on swap (two units) or a rotation (three or more). Only units owned by
+    non-hostile players reach this point (a hostile occupant is an attack), so
+    loops are friendly by construction. Each loop is returned starting from its
+    lowest id, loops ordered by that id.
+    """
+    cycles: list[list[UnitId]] = []
+    settled: set[UnitId] = set()
+    for start in sorted(pending):
+        if start in settled:
+            continue
+        trail: list[UnitId] = []
+        current: UnitId | None = start
+        while current is not None and current in pending and current not in settled:
+            if current in trail:
+                loop = trail[trail.index(current) :]
+                first = loop.index(min(loop))
+                cycles.append(loop[first:] + loop[:first])
+                break
+            trail.append(current)
+            current = ctx.positions.get(singles[current])
+        settled.update(trail)
+    return sorted(cycles, key=lambda loop: loop[0])
 
 
 # --- Combat application -----------------------------------------------------

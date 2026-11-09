@@ -217,9 +217,9 @@ def test_follow_the_leader_chain_resolves_in_one_pulse() -> None:
     assert {e.unit_id for e in pulse1} == {1, 2, 3}
 
 
-def test_swap_deadlocks_and_both_stop() -> None:
-    # Two adjacent friendly units try to swap hexes — a cycle that cannot
-    # resolve without stacking, so neither moves (documented v0.1 limitation).
+def test_friendly_head_on_swap_succeeds() -> None:
+    # Two adjacent friendly units step into each other's hex: they swap
+    # (WORLD_SPEC §4.7 replaces the v0.1 swap deadlock).
     state = build(
         [".."],
         [
@@ -229,12 +229,88 @@ def test_swap_deadlocks_and_both_stop() -> None:
     )
     new_state, events = resolve_movement(state, [move(1, (1, 0)), move(2, (0, 0))])
 
+    assert at(new_state, 0, 0) == 2
+    assert at(new_state, 1, 0) == 1
+    assert [e for e in events if isinstance(e, UnitMoved)] == [
+        UnitMoved(pulse=1, unit_id=1, origin=ax(0, 0), dest=ax(1, 0)),
+        UnitMoved(pulse=1, unit_id=2, origin=ax(1, 0), dest=ax(0, 0)),
+    ]
+
+
+def test_swapped_units_keep_moving() -> None:
+    # The relieved unit carries on along its path after the swap.
+    state = build(
+        ["...."],
+        [
+            {"type": "infantry", "owner": "blue", "q": 1, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 2, "r": 0},
+        ],
+    )
+    new_state, _ = resolve_movement(state, [move(1, (2, 0)), move(2, (1, 0), (0, 0))])
+
+    assert at(new_state, 2, 0) == 1
+    assert at(new_state, 0, 0) == 2
+
+
+def test_friendly_rotation_of_three_succeeds() -> None:
+    # A closed loop of three friendly units each stepping into the next's hex.
+    state = build(
+        ["...", "..."],
+        [
+            {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 1, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 0, "r": 1},
+        ],
+    )
+    new_state, _ = resolve_movement(
+        state, [move(1, (1, 0)), move(2, (0, 1)), move(3, (0, 0))]
+    )
+
+    assert at(new_state, 1, 0) == 1
+    assert at(new_state, 0, 1) == 2
+    assert at(new_state, 0, 0) == 3
+
+
+def test_relief_in_place_on_a_front_line() -> None:
+    # Blue 1 holds the line next to red; fresh blue 2 relieves it from behind.
+    # The engaged unit withdraws into a hex outside red's ZOC, so the swap is legal.
+    state = build(
+        ["...."],
+        [
+            {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 1, "r": 0},
+            {"type": "infantry", "owner": "red", "q": 2, "r": 0},
+        ],
+    )
+    new_state, events = resolve_movement(state, [move(1, (1, 0)), move(2, (0, 0))])
+
+    assert at(new_state, 1, 0) == 1
+    assert at(new_state, 0, 0) == 2
+    assert not [e for e in events if isinstance(e, MoveBlocked)]
+
+
+def test_swap_with_a_third_contender_jams() -> None:
+    # A third friendly unit also wants one of the swap hexes: that's a jam, and
+    # the other swap partner, left facing an occupied hex, is blocked.
+    state = build(
+        ["...", "..."],
+        [
+            {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 1, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 1, "r": 1},
+        ],
+    )
+    new_state, events = resolve_movement(
+        state, [move(1, (1, 0)), move(2, (0, 0)), move(3, (1, 0))]
+    )
+
     assert at(new_state, 0, 0) == 1
     assert at(new_state, 1, 0) == 2
-    assert all(isinstance(e, MoveBlocked) for e in events)
-    assert {e.reason for e in events if isinstance(e, MoveBlocked)} == {
-        MoveBlockedReason.OCCUPIED
-    }
+    assert at(new_state, 1, 1) == 3
+    assert [e for e in events if isinstance(e, TrafficJam)] == [
+        TrafficJam(pulse=1, coord=ax(1, 0), unit_ids=[1, 3])
+    ]
+    assert {e.unit_id for e in events if isinstance(e, MoveBlocked)} == {2}
 
 
 # --- Friendly traffic jams (SPEC §8.2) --------------------------------------
