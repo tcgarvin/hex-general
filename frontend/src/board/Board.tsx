@@ -10,6 +10,7 @@ import { Container, Graphics, NineSliceSprite, Sprite, Text, TextStyle, TilingSp
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api/schema";
+import { unitCapFor } from "@/planning/economy";
 import { defaultFacing } from "@/planning/facing";
 import { reachableContinuations } from "@/planning/reach";
 import type { Planning } from "@/planning/usePlanning";
@@ -547,7 +548,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     () => (state.players ?? []).find((p) => p.id === yourSlot)?.bank ?? 0,
     [state.players, yourSlot],
   );
-  const unitCap = state.config.unit_cap;
+  const unitCap = useMemo(() => unitCapFor(state, yourSlot), [state, yourSlot]);
   const selectedUnit = useMemo(() => {
     if (selectedUnitId === null) return null;
     return units.find((u) => u.id === selectedUnitId) ?? null;

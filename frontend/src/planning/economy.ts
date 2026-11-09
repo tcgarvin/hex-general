@@ -67,3 +67,16 @@ export function economyFor(state: GameState, slot: string): Economy {
     towns,
   };
 }
+
+/**
+ * How many units `slot` may field now (engine `GameState.unit_cap_for`): the flat
+ * `unit_cap`, or, when the game sets a `command_cap`, base + per town + per city,
+ * capped by its ceiling and by `unit_cap` (WORLD_SPEC §7).
+ */
+export function unitCapFor(state: GameState, slot: string): number {
+  const rule = state.config.command_cap;
+  if (rule === null || rule === undefined) return state.config.unit_cap;
+  const { cities, towns } = economyFor(state, slot);
+  const cap = Math.min(rule.ceiling, rule.base + rule.per_town * towns + rule.per_city * cities);
+  return Math.min(state.config.unit_cap, cap);
+}
