@@ -10,6 +10,7 @@ import { hexKey, type Axial } from "@/board/hex";
 import { loadTerrainTextures } from "@/board/tiles";
 import { loadUnitTextures } from "@/board/units";
 
+import { loadColumnTextures } from "./columnArt";
 import { loadSiteTextures } from "./siteArt";
 import type { WorldView } from "./useWorld";
 import { WorldRenderer, type WorldOverlay } from "./WorldRenderer";
@@ -57,9 +58,9 @@ export function WorldBoard({
         made = new WorldRenderer(app, map, { onHexClick: (hex) => clickRef.current(hex) });
         if (focusRef.current !== null) made.centerOn(focusRef.current);
         setRenderer(made);
-        void Promise.all([loadTerrainTextures(), loadUnitTextures(), loadSiteTextures()])
-          .then(([tiles, units, sites]) => {
-            if (!disposed) made?.setTextures(tiles, units, sites);
+        void Promise.all([loadTerrainTextures(), loadUnitTextures(), loadSiteTextures(), loadColumnTextures()])
+          .then(([tiles, units, sites, columns]) => {
+            if (!disposed) made?.setTextures(tiles, units, sites, columns);
           })
           .catch((err: unknown) => console.error("world textures failed to load", err));
       });

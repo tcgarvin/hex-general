@@ -22,10 +22,11 @@ import { TERRAIN_FILL } from "@/board/palette";
 import { riverCourseEdges } from "@/board/riverTiles";
 import { roadTileRefs, type RoadTileRef } from "@/board/roadTiles";
 import type { LoadedTiles } from "@/board/tiles";
-import type { LoadedUnits } from "@/board/units";
+import type { LoadedUnits, UnitSpritePair } from "@/board/units";
 import type { components } from "@/lib/api/schema";
 
 import { NEUTRAL_OWNER, ownerColor } from "./colors";
+import type { LoadedColumns } from "./columnArt";
 import type { LoadedSites } from "./siteArt";
 import { visibleCells, worldPixelBounds, type WorldMap } from "./worldMap";
 
@@ -41,6 +42,19 @@ const MAX_SCALE = 2.5;
 const OVERVIEW_HEX = 2; // overview texture: hex radius in texture pixels
 const MINIMAP_SIZE = 220;
 const MINIMAP_MARGIN = 12;
+
+/**
+ * Where each column of a 1–6 stack sits in its hex (in HEX_SIZE units from the
+ * centre) and how big it's drawn (× the standard unit size). Six is the stack cap.
+ */
+const CONVOY_SLOTS: readonly { scale: number; slots: readonly (readonly [number, number])[] }[] = [
+  { scale: 1, slots: [[0, 0]] },
+  { scale: 0.68, slots: [[-0.32, -0.22], [0.32, 0.22]] },
+  { scale: 0.6, slots: [[0, -0.4], [-0.38, 0.28], [0.38, 0.28]] },
+  { scale: 0.55, slots: [[-0.36, -0.32], [0.36, -0.32], [-0.36, 0.32], [0.36, 0.32]] },
+  { scale: 0.48, slots: [[-0.34, -0.55], [0.34, -0.55], [-0.34, 0], [0.34, 0], [0, 0.55]] },
+  { scale: 0.48, slots: [[-0.34, -0.55], [0.34, -0.55], [-0.34, 0], [0.34, 0], [-0.34, 0.55], [0.34, 0.55]] },
+];
 
 export interface WorldScene {
   readonly state: WorldState;
@@ -95,6 +109,7 @@ export class WorldRenderer {
   private readonly siteLayer = new Container();
   private readonly siteSprites = new Map<string, Sprite>();
   private siteArt: LoadedSites | null = null;
+  private columnArt: LoadedColumns = {};
   /** Hexes where a player's (not a garrison's) unit stands; refreshed per scene. */
   private armyHexes = new Set<string>();
   private readonly unitLayer = new Container();
@@ -169,10 +184,16 @@ export class WorldRenderer {
     this.app.destroy(true, { children: true });
   }
 
-  setTextures(tiles: LoadedTiles | null, units: LoadedUnits | null, sites: LoadedSites | null): void {
+  setTextures(
+    tiles: LoadedTiles | null,
+    units: LoadedUnits | null,
+    sites: LoadedSites | null,
+    columns: LoadedColumns,
+  ): void {
     this.tiles = tiles;
     this.units = units;
     this.siteArt = sites;
+    this.columnArt = columns;
     for (const sprite of this.tileSprites.values()) this.releaseTile(sprite);
     this.tileSprites.clear();
     this.refresh();
@@ -459,6 +480,11 @@ export class WorldRenderer {
       const { x, y } = axialToPixel(lead.coord.q, lead.coord.r, HEX_SIZE);
       const color = ownerColor(lead.owner, scene.viewer);
       const columns = list.filter((u) => u.posture === "column").length;
+      if (tileMode && lead.posture === "column" && lead.owner !== NEUTRAL_OWNER) {
+        // A hex of nothing but columns: every column drawn, side by side.
+        this.drawConvoy(tokens, list, x, y, color);
+        continue;
+      }
       if (tileMode && lead.owner === NEUTRAL_OWNER && this.siteArt !== null) {
         // A garrison: a slate badge in the corner with one pip per defender, so
         // the site's icon stays the main read.
@@ -470,17 +496,7 @@ export class WorldRenderer {
         continue;
       }
       if (tileMode && units !== null && lead.posture !== "column" && lead.owner !== NEUTRAL_OWNER) {
-        const pair = units[lead.type];
-        const s = (1.5 * HEX_SIZE) / pair.base.width;
-        const base = new Sprite(pair.base);
-        const mask = new Sprite(pair.mask);
-        for (const sp of [base, mask]) {
-          sp.anchor.set(0.5);
-          sp.scale.set(lead.facing === "left" ? -s : s, s);
-          sp.position.set(x, y);
-        }
-        mask.tint = color;
-        this.unitLayer.addChild(base, mask);
+        this.placeUnitSprite(units[lead.type], x, y, 1, lead.facing, color);
       } else {
         const r = tileMode ? HEX_SIZE * 0.42 : Math.max(HEX_SIZE * 0.6, 4 / this.world.scale.x);
         if (lead.posture === "column") {
@@ -489,12 +505,14 @@ export class WorldRenderer {
           tokens.circle(x, y, r).fill(color).stroke({ color: 0x101114, width: r * 0.15 });
         }
       }
-      if (tileMode && columns > 1) {
-        // Stack count for packed columns sharing the hex.
-        tokens.circle(x + HEX_SIZE * 0.55, y - HEX_SIZE * 0.45, HEX_SIZE * 0.22).fill(0x101114);
-        for (let k = 0; k < Math.min(columns, 6); k++) {
-          tokens.circle(x + HEX_SIZE * 0.55 + (k - (Math.min(columns, 6) - 1) / 2) * 3, y - HEX_SIZE * 0.45, 1.2).fill(0xffffff);
-        }
+      if (tileMode && columns > 0 && lead.posture !== "column") {
+        // Columns sharing a deployed unit's hex: a pill with one pip each.
+        const n = Math.min(columns, 6);
+        const w = 4 + n * 3.5;
+        const bx = x + HEX_SIZE * 0.5;
+        const by = y - HEX_SIZE * 0.45;
+        tokens.roundRect(bx - w / 2, by - 4, w, 8, 4).fill(0x101114);
+        for (let k = 0; k < n; k++) tokens.circle(bx + (k - (n - 1) / 2) * 3.5, by, 1.2).fill(0xffffff);
       }
       if (tileMode && lead.hp < 10) {
         const w = HEX_SIZE * 1.1;
@@ -502,6 +520,48 @@ export class WorldRenderer {
         tokens.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / 10, 4).fill(lead.hp > 5 ? 0x7bd389 : 0xe0a040);
       }
     }
+  }
+
+  /** One unit's base + tinted mask, `scale` × the standard unit size. */
+  private placeUnitSprite(pair: UnitSpritePair, x: number, y: number, scale: number, facing: Unit["facing"], color: number): void {
+    // The art faces west; a unit facing right is mirrored (as on the 2-player board).
+    const s = (1.5 * HEX_SIZE * scale) / pair.base.width;
+    const base = new Sprite(pair.base);
+    const mask = new Sprite(pair.mask);
+    for (const sp of [base, mask]) {
+      sp.anchor.set(0.5);
+      sp.scale.set(facing === "right" ? -s : s, s);
+      sp.position.set(x, y);
+    }
+    mask.tint = color;
+    this.unitLayer.addChild(base, mask);
+  }
+
+  /**
+   * Up to six friendly columns in one hex, laid out side by side and shrinking as
+   * the stack grows, so the whole stack reads at a glance (no count badge). A
+   * type without column art falls back to a small token.
+   */
+  private drawConvoy(tokens: Graphics, list: readonly Unit[], x: number, y: number, color: number): void {
+    const stack = [...list].sort((a, b) => a.id - b.id).slice(0, CONVOY_SLOTS.length);
+    const { scale, slots } = CONVOY_SLOTS[stack.length - 1];
+    stack.forEach((unit, k) => {
+      const cx = x + slots[k][0] * HEX_SIZE;
+      const cy = y + slots[k][1] * HEX_SIZE;
+      const pair = this.columnArt[unit.type];
+      if (pair !== undefined) {
+        this.placeUnitSprite(pair, cx, cy, scale, unit.facing, color);
+      } else {
+        const r = HEX_SIZE * 0.42 * scale;
+        tokens.roundRect(cx - r * 1.2, cy - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill(color).stroke({ color: 0x101114, width: r * 0.15 });
+      }
+      if (unit.hp < 10) {
+        const w = HEX_SIZE * 0.9 * scale;
+        const by = cy + HEX_SIZE * 0.5 * scale;
+        tokens.rect(cx - w / 2, by, w, 3).fill(0x101114);
+        tokens.rect(cx - w / 2, by, (w * unit.hp) / 10, 3).fill(unit.hp > 5 ? 0x7bd389 : 0xe0a040);
+      }
+    });
   }
 
   private drawOverlay(): void {
