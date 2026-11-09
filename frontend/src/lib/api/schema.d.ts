@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/dev/clock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dev Clock
+         * @description Run the scheduler's sweep now (dev-only): resolves whatever is due.
+         */
+        post: operations["dev_clock_dev_clock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dev/profiles": {
         parameters: {
             query?: never;
@@ -244,6 +264,26 @@ export interface paths {
         get: operations["health_health_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/clock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scheduled Clock
+         * @description Resolve every scheduled world whose turn is due (Cloud Scheduler only).
+         */
+        post: operations["scheduled_clock_internal_clock_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -530,6 +570,16 @@ export interface components {
             turns: number;
         };
         /**
+         * ClockRunView
+         * @description Returned by the clock endpoint: worlds resolved, and those already done.
+         */
+        ClockRunView: {
+            /** Skipped */
+            skipped: string[];
+            /** Ticked */
+            ticked: string[];
+        };
+        /**
          * ColumnHeld
          * @description A column waited this pulse because ``target`` already holds a full stack.
          *
@@ -794,6 +844,12 @@ export interface components {
         CreateWorldRequest: {
             /** Bots */
             bots: number;
+            /**
+             * Clock
+             * @default manual
+             * @enum {string}
+             */
+            clock: "manual" | "twice_daily";
             /**
              * Seed
              * @default 0
@@ -1892,10 +1948,17 @@ export interface components {
          *     the turn itself resolves on the world's clock, not when everyone is in.
          */
         WorldView: {
+            /**
+             * Clock
+             * @enum {string}
+             */
+            clock: "manual" | "twice_daily";
             /** Game Id */
             game_id: string;
             /** Map Id */
             map_id: string;
+            /** Next Tick At */
+            next_tick_at: string | null;
             state: components["schemas"]["WorldState"];
             /** Status */
             status: string;
@@ -1917,6 +1980,38 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    dev_clock_dev_clock_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClockRunView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dev_profiles_dev_profiles_get: {
         parameters: {
             query?: never;
@@ -2315,6 +2410,37 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    scheduled_clock_internal_clock_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClockRunView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

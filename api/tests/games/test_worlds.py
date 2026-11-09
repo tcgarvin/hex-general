@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from collections.abc import Callable
 
 import pytest
@@ -10,6 +12,7 @@ from app.engine.hex_coords import Axial, neighbors
 from app.engine.economy_rules import Building
 from app.engine.models import EconomyOrders
 from app.engine.models import GameState, MoveOrder, Unit
+from app.games.repo import KEEP, Keep
 from app.games.repo import GameRecord
 from app.games.service import (
     WORLD_BOT_POLICY,
@@ -143,11 +146,18 @@ class _RacingRepo(FakeGameRepo):
         super().__init__()
         self.intrude: Callable[[], object] | None = None
 
-    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
+    def set_game_state(
+        self,
+        game: GameRecord,
+        state: GameState,
+        status: str,
+        *,
+        next_tick_at: datetime | None | Keep = KEEP,
+    ) -> None:
         intrude, self.intrude = self.intrude, None
         if intrude is not None:
             intrude()
-        super().set_game_state(game, state, status)
+        super().set_game_state(game, state, status, next_tick_at=next_tick_at)
 
 
 def test_a_join_during_a_tick_survives_the_tick() -> None:

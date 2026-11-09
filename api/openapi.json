@@ -219,6 +219,31 @@
         "title": "BuildingLevel",
         "type": "object"
       },
+      "ClockRunView": {
+        "description": "Returned by the clock endpoint: worlds resolved, and those already done.",
+        "properties": {
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skipped",
+            "type": "array"
+          },
+          "ticked": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ticked",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ticked",
+          "skipped"
+        ],
+        "title": "ClockRunView",
+        "type": "object"
+      },
       "ColumnHeld": {
         "additionalProperties": false,
         "description": "A column waited this pulse because ``target`` already holds a full stack.\n\nUnlike `MoveBlocked`, the column keeps its order and tries again next pulse.",
@@ -639,6 +664,15 @@
             "minimum": 0.0,
             "title": "Bots",
             "type": "integer"
+          },
+          "clock": {
+            "default": "manual",
+            "enum": [
+              "manual",
+              "twice_daily"
+            ],
+            "title": "Clock",
+            "type": "string"
           },
           "seed": {
             "default": 0,
@@ -2778,6 +2812,14 @@
       "WorldView": {
         "description": "A player's fog-filtered view of a world (the map comes separately).\n\n``submitted`` says whether the caller's orders for this turn are already in;\nthe turn itself resolves on the world's clock, not when everyone is in.",
         "properties": {
+          "clock": {
+            "enum": [
+              "manual",
+              "twice_daily"
+            ],
+            "title": "Clock",
+            "type": "string"
+          },
           "game_id": {
             "title": "Game Id",
             "type": "string"
@@ -2785,6 +2827,18 @@
           "map_id": {
             "title": "Map Id",
             "type": "string"
+          },
+          "next_tick_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Tick At"
           },
           "state": {
             "$ref": "#/components/schemas/WorldState"
@@ -2821,7 +2875,9 @@
           "map_id",
           "submitted",
           "state",
-          "visible"
+          "visible",
+          "clock",
+          "next_tick_at"
         ],
         "title": "WorldView",
         "type": "object"
@@ -2834,6 +2890,72 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/dev/clock": {
+      "post": {
+        "description": "Run the scheduler's sweep now (dev-only): resolves whatever is due.",
+        "operationId": "dev_clock_dev_clock_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClockRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dev Clock",
+        "tags": [
+          "worlds"
+        ]
+      }
+    },
     "/dev/profiles": {
       "get": {
         "description": "List the accounts the dev switcher can impersonate.\n\nDev-only (403 otherwise). Returns the calling dev's own account plus every\n``@hex.local`` test account, read server-side via the service-role admin API.",
@@ -3673,6 +3795,56 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/internal/clock": {
+      "post": {
+        "description": "Resolve every scheduled world whose turn is due (Cloud Scheduler only).",
+        "operationId": "scheduled_clock_internal_clock_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClockRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Scheduled Clock",
+        "tags": [
+          "worlds"
+        ]
       }
     },
     "/me": {

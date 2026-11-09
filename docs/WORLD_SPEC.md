@@ -368,11 +368,23 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   `turns` row, so a lost race leaves nothing behind. World players may revise their
   orders until the tick (an upsert on `turn_orders`). Known gap: a submission that
   lands during the ~1 s tick is stored for the turn that just resolved and is
-  ignored.
-  Planned route: `POST /internal/worlds/{id}/tick`, authenticated by OIDC from a Cloud
-  Scheduler service account. Bots plan, missing human orders become "no order" (standing
-  travel continues), the turn resolves, and the `(game_id, turn)` unique constraint on
-  `turns` makes a retried tick a no-op. Dev worlds use `POST /dev/worlds/{id}/resolve`.
+  ignored. *Closed 2026-11-10:* orders for a scheduled world are refused (409) once its
+  turn is due, and every world submission re-reads the game after storing and is
+  refused if a tick won the race, so orders are never silently dropped.
+- **Scheduled clock ✅ (built 2026-11-10, not yet deployed):** a world is created with
+  `clock` = `manual` or `twice_daily`. A scheduled world stores `next_tick_at`
+  (`app/world/clock.py`: the next 01:00 or 13:00 America/New_York, DST-aware; on the
+  autumn changeover the first 01:00). `POST /internal/clock` resolves every active
+  scheduled world that is due, and moves its `next_tick_at` in the same
+  compare-and-set as the state, so a repeated, overlapping or late call never resolves
+  a turn twice (a late clock resolves one turn and reschedules from now). One failing
+  world doesn't block the rest; the call then answers 500 so the scheduler retries.
+  The caller is Cloud Scheduler with a Google OIDC token for `hex-clock@`, verified
+  in-app (`app/games/scheduler_auth.py`: Google signature, issuer, audience, verified
+  email), because the API is public. With `CLOCK_AUDIENCE` or `CLOCK_INVOKER_EMAIL`
+  unset the endpoint answers 503. `POST /dev/clock` runs the same sweep for a dev, and
+  `python -m app.world.tick_loop --game ID --every 300` is a fast clock for a local
+  playtest. The `WorldView` carries `clock` and `next_tick_at` for a countdown.
 - **Routes ✅ (built 2026-11-09, `app/games/world_routes.py`):**
   - `POST /worlds/{id}/join` takes a slot.
   - `GET /worlds/{id}` returns the fogged `WorldView`, whose `WorldState` is
@@ -384,8 +396,10 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 
   Orders still go to `POST /games/{id}/orders` and are stored until the tick. The
   2-player `/games` flow stays until the W6 frontend switches to worlds, then goes.
-- **Infra** (confirm before applying): a scheduler job per world, at 01:00 and 13:00
-  America/New_York, and an invoker binding for the scheduler's service account.
+- **Infra** (written, not applied; confirm at cutover): `infra/setup-world-clock.sh`
+  creates the `hex-clock` service account and one Cloud Scheduler job for all worlds
+  (`0 1,13 * * *`, America/New_York, OIDC, 5 retries). The API deploy already sets
+  `CLOCK_AUDIENCE` and `CLOCK_INVOKER_EMAIL`.
 
 ## 11. Frontend world view
 
@@ -415,7 +429,7 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 | **W2** Travel ✅ | `TravelOrder`, routing, standing orders in state, validation, `TravelEnded` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator ✅ (review pending) | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim (first cut) | §8–9: `app/ai/world.py`, `app/world/sim.py`, AI_SPEC §12 | §9 acceptance gates (not yet met: see AI_SPEC §12.4) |
-| **W5** Persistence + clock — started (economy built 2026-11-10) | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
+| **W5** Persistence + clock ✅ (economy and clock built 2026-11-10; scheduler infra at cutover) | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
 | **W6** Frontend world view | §11 | art ratified; user can plan a world turn |
 | **W7** Live playtest | the user plays a week | the user's verdict |
 

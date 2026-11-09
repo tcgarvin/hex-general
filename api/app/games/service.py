@@ -20,10 +20,13 @@ a completed set is expected to resolve without the engine raising.
 from __future__ import annotations
 
 import dataclasses
+import functools
+import logging
 import re
 import secrets
 import uuid
 from collections.abc import Callable
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TypeVar
 
@@ -39,7 +42,16 @@ from app.engine.models import EconomyOrders, GameState, Order, Recruitment
 from app.engine.visibility import visible_hexes
 from app.engine.scenario import load_scenario_file
 from app.engine.victory import VictoryStatus, victory_status
-from app.games.repo import GameRecord, GameRepo, PlayerRecord, StaleGame, TurnRecord
+from app.games.repo import (
+    KEEP,
+    Clock,
+    GameRecord,
+    GameRepo,
+    Keep,
+    PlayerRecord,
+    StaleGame,
+    TurnRecord,
+)
 from app.games.schemas import (
     DEFAULT_BOT_POLICY,
     ActiveGame,
@@ -54,6 +66,7 @@ from app.games.schemas import (
     WorldView,
 )
 from app.games.validation import validate_submission
+from app.world.clock import next_tick_after
 from app.world.generate import WorldParams, generate
 from app.world.seating import WorldFull, seat_player, slot_id
 
@@ -110,6 +123,13 @@ class GameNotActive(GameError):
     """The game is not accepting orders (still in lobby, or already finished)."""
 
 
+class TurnClosed(GameNotActive):
+    """A world's turn closed (it is due or just resolved) before the orders landed.
+
+    The orders were not counted; the player should re-plan for the new turn.
+    """
+
+
 class AlreadySubmitted(GameError):
     """This player already has a locked submission for the current turn."""
 
@@ -122,6 +142,29 @@ class UnknownBotPolicy(GameError):
     """The requested bot policy name is not in the AI registry (AI_SPEC §9)."""
 
 
+class WorldTicksFailed(GameError):
+    """Some due worlds failed to resolve on a clock run (the rest did)."""
+
+    def __init__(self, failed: dict[str, str]) -> None:
+        super().__init__(f"{len(failed)} world(s) failed to tick: {failed}")
+        self.failed = failed
+
+
+@dataclasses.dataclass(frozen=True)
+class ClockRun:
+    """What one scheduler call did: the worlds it resolved and those already done."""
+
+    ticked: list[str]
+    skipped: list[str]
+
+
+_log = logging.getLogger(__name__)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class NotAWorld(GameError):
     """A world-only operation (join a slot, tick) was asked of a v0.1 match."""
 
@@ -129,8 +172,9 @@ class NotAWorld(GameError):
 class GameService:
     """Coordinates persistence and the engine across the turn lifecycle."""
 
-    def __init__(self, repo: GameRepo) -> None:
+    def __init__(self, repo: GameRepo, now: Callable[[], datetime] = _utc_now) -> None:
         self._repo = repo
+        self._now = now
 
     def create_game(
         self,
@@ -307,7 +351,14 @@ class GameService:
         }
         if game.is_world:
             # A world player may revise their plan until the tick resolves it.
+            # Once a scheduled turn is due it is closed, so nothing lands while it
+            # resolves; and a re-read catches a tick that won the race anyway.
+            due = game.next_tick_at
+            if game.clock == "twice_daily" and due is not None and due <= self._now():
+                raise TurnClosed(f"turn {turn} is resolving; resubmit for the next")
             self._repo.replace_orders(game.id, player.id, turn, submission)
+            if self._require_game(game.id).state.turn != turn:
+                raise TurnClosed(f"turn {turn} resolved first; resubmit for the next")
             return SubmitResult(
                 locked=True, executed=False, turn=turn, status=game.status
             )
@@ -332,11 +383,15 @@ class GameService:
             locked=True, executed=True, turn=next_state.turn, status=status
         )
 
-    def create_world(self, slots: int, seed: int, bots: int) -> str:
+    def create_world(
+        self, slots: int, seed: int, bots: int, clock: Clock = "manual"
+    ) -> str:
         """Generate a ``slots``-slot world, seat ``bots`` bots, return its game id.
 
         The map is stored once (WORLD_SPEC §10.1) and the game starts active: a
         world has no lobby, and players join a running world with `join_world`.
+        A ``"twice_daily"`` world is scheduled for the next 01:00 or 13:00 New
+        York tick; a ``"manual"`` one only moves when ticked.
         """
         params = WorldParams.for_slots(slots, seed=seed)
         world = generate(params)
@@ -350,6 +405,10 @@ class GameService:
             state,
             secrets.token_urlsafe(_INVITE_TOKEN_BYTES),
             map_id=map_id,
+            clock=clock,
+            next_tick_at=(
+                next_tick_after(self._now()) if clock == "twice_daily" else None
+            ),
         )
         for bot in bot_ids:
             self._repo.create_player(
@@ -414,6 +473,8 @@ class GameService:
             map_id=_map_id(game),
             submitted=submitted,
             state=WorldState.of(redact_state(game.state, player.slot)),
+            clock=game.clock,
+            next_tick_at=game.next_tick_at,
             visible=sorted(
                 visible_hexes(game.state, player.slot), key=lambda c: (c.q, c.r)
             ),
@@ -432,14 +493,59 @@ class GameService:
             turn=record.turn, events=events, state_after=WorldState.of(fogged)
         )
 
-    def _tick_once(self, game_id: str) -> tuple[GameState, str]:
-        """One attempt at resolving a fresh read of the world's turn."""
+    def tick_due_worlds(self) -> ClockRun:
+        """Resolve every scheduled world whose tick is due (the scheduler's call).
+
+        Each world's next tick moves on in the same compare-and-set as its new
+        state, so a repeated or overlapping call skips a world another call
+        already resolved. One world failing doesn't stop the others: every due
+        world is tried, then `WorldTicksFailed` names the failures so the
+        scheduler retries (the ones that succeeded are no longer due).
+        """
+        now = self._now()
+        ticked: list[str] = []
+        skipped: list[str] = []
+        failed: dict[str, str] = {}
+        for game_id in self._repo.list_due_worlds(now):
+            try:
+                done = _retry_stale(
+                    functools.partial(self._scheduled_tick, game_id, now)
+                )
+            except Exception as exc:  # isolate one world; re-raised below
+                _log.exception("scheduled tick of world %s failed", game_id)
+                failed[game_id] = f"{type(exc).__name__}: {exc}"
+                continue
+            (ticked if done else skipped).append(game_id)
+        if failed:
+            raise WorldTicksFailed(failed)
+        return ClockRun(ticked=ticked, skipped=skipped)
+
+    def _scheduled_tick(self, game_id: str, now: datetime) -> bool:
+        """Resolve ``game_id`` if its tick is still due at ``now``; report whether."""
         game = self._require_world(game_id)
+        due = game.next_tick_at
+        if game.status != "active" or due is None or due > now:
+            return False
+        self._tick_game(game, next_tick_at=next_tick_after(now))
+        return True
+
+    def _tick_once(self, game_id: str) -> tuple[GameState, str]:
+        """One attempt at resolving a fresh read of the world's turn.
+
+        A manual tick leaves a scheduled world's next tick where it was.
+        """
+        return self._tick_game(self._require_world(game_id), next_tick_at=KEEP)
+
+    def _tick_game(
+        self, game: GameRecord, *, next_tick_at: datetime | None | Keep
+    ) -> tuple[GameState, str]:
         if game.status != "active":
-            raise GameNotActive(f"world {game_id} is {game.status}; cannot tick")
+            raise GameNotActive(f"world {game.id} is {game.status}; cannot tick")
         players = self._repo.list_players(game.id)
         bot_orders = self._world_bot_orders(game, players)
-        return self._resolve_turn(game, players, extra=bot_orders)
+        return self._resolve_turn(
+            game, players, extra=bot_orders, next_tick_at=next_tick_at
+        )
 
     def _world_bot_orders(
         self, game: GameRecord, players: list[PlayerRecord]
@@ -548,6 +654,7 @@ class GameService:
         game: GameRecord,
         players: list[PlayerRecord],
         extra: _Planned | None = None,
+        next_tick_at: datetime | None | Keep = KEEP,
     ) -> tuple[GameState, str]:
         """Run the engine over the full set of submissions and persist the result.
 
@@ -593,7 +700,7 @@ class GameService:
 
         # State first: it is the compare-and-set, so a turn that lost a race
         # leaves no turns row behind and can be retried.
-        self._repo.set_game_state(game, next_state, status)
+        self._repo.set_game_state(game, next_state, status, next_tick_at=next_tick_at)
         self._repo.record_turn(
             game,
             turn,

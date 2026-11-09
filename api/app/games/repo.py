@@ -23,7 +23,8 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from datetime import datetime, timezone
-from typing import Any, Protocol, cast
+from enum import Enum
+from typing import Any, Literal, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict
 from supabase import Client
@@ -46,6 +47,16 @@ class StaleGame(Exception):
     """
 
 
+class Keep(Enum):
+    """Sentinel for `GameRepo.set_game_state`: leave ``next_tick_at`` as it is."""
+
+    KEEP = "keep"
+
+
+KEEP = Keep.KEEP
+Clock = Literal["manual", "twice_daily"]
+
+
 class GameRecord(BaseModel):
     """A games row with its canonical state parsed back into a `GameState`.
 
@@ -63,6 +74,10 @@ class GameRecord(BaseModel):
     invite_token: str
     map_id: str | None = None
     revision: int = 0
+    # How turns advance (WORLD_SPEC §2). ``next_tick_at`` is the next scheduled
+    # resolution of a "twice_daily" world; ``None`` means none is scheduled.
+    clock: Clock = "manual"
+    next_tick_at: datetime | None = None
 
     @property
     def is_world(self) -> bool:
@@ -156,16 +171,31 @@ class GameRepo(Protocol):
         invite_token: str,
         *,
         map_id: str | None = None,
+        clock: Clock = "manual",
+        next_tick_at: datetime | None = None,
     ) -> GameRecord: ...
 
     def get_game(self, game_id: str) -> GameRecord | None: ...
 
-    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
+    def set_game_state(
+        self,
+        game: GameRecord,
+        state: GameState,
+        status: str,
+        *,
+        next_tick_at: datetime | None | Keep = KEEP,
+    ) -> None:
         """Replace ``game``'s canonical state (map stored apart if it has a map_id).
 
         A compare-and-set on ``game.revision``: raises `StaleGame` if the game
-        was written since ``game`` was read.
+        was written since ``game`` was read. ``next_tick_at`` moves the world's
+        next scheduled tick in the same write (`KEEP` leaves it alone).
         """
+        ...
+
+    def list_due_worlds(self, now: datetime) -> list[str]:
+        """Ids of active scheduled worlds whose next tick is at or before ``now``,
+        earliest first."""
         ...
 
     def create_player(
@@ -359,6 +389,8 @@ class SupabaseGameRepo:
             invite_token=row["invite_token"],
             map_id=row["map_id"],
             revision=row["revision"],
+            clock=row["clock"],
+            next_tick_at=row["next_tick_at"],
         )
 
     def create_game(
@@ -368,6 +400,8 @@ class SupabaseGameRepo:
         invite_token: str,
         *,
         map_id: str | None = None,
+        clock: Clock = "manual",
+        next_tick_at: datetime | None = None,
     ) -> GameRecord:
         response = (
             self._client.table("games")
@@ -379,6 +413,10 @@ class SupabaseGameRepo:
                     "state": state_blob(state, map_id),
                     "invite_token": invite_token,
                     "map_id": map_id,
+                    "clock": clock,
+                    "next_tick_at": (
+                        None if next_tick_at is None else next_tick_at.isoformat()
+                    ),
                 }
             )
             .execute()
@@ -389,7 +427,10 @@ class SupabaseGameRepo:
     def get_game(self, game_id: str) -> GameRecord | None:
         response = (
             self._client.table("games")
-            .select("id, scenario, status, state, invite_token, map_id, revision")
+            .select(
+                "id, scenario, status, state, invite_token, map_id, revision, "
+                "clock, next_tick_at"
+            )
             .eq("id", game_id)
             .execute()
         )
@@ -399,17 +440,27 @@ class SupabaseGameRepo:
         row = _one_row(response, "get_game")
         return self._game_record(row)
 
-    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
+    def set_game_state(
+        self,
+        game: GameRecord,
+        state: GameState,
+        status: str,
+        *,
+        next_tick_at: datetime | None | Keep = KEEP,
+    ) -> None:
+        update: dict[str, Any] = {
+            "state": state_blob(state, game.map_id),
+            "status": status,
+            "revision": game.revision + 1,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if not isinstance(next_tick_at, Keep):
+            update["next_tick_at"] = (
+                None if next_tick_at is None else next_tick_at.isoformat()
+            )
         response = (
             self._client.table("games")
-            .update(
-                {
-                    "state": state_blob(state, game.map_id),
-                    "status": status,
-                    "revision": game.revision + 1,
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                }
-            )
+            .update(update)
             .eq("id", game.id)
             .eq("revision", game.revision)
             .execute()
@@ -417,6 +468,18 @@ class SupabaseGameRepo:
         if not _rows(response):
             raise StaleGame(f"game {game.id} changed since revision {game.revision}")
         _one_row(response, "set_game_state")
+
+    def list_due_worlds(self, now: datetime) -> list[str]:
+        response = (
+            self._client.table("games")
+            .select("id")
+            .eq("clock", "twice_daily")
+            .eq("status", "active")
+            .lte("next_tick_at", now.isoformat())
+            .order("next_tick_at")
+            .execute()
+        )
+        return [cast(str, row["id"]) for row in _rows(response)]
 
     def create_player(
         self, game_id: str, slot: str, user_id: str, bot_policy: str | None = None

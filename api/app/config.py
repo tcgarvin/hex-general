@@ -28,6 +28,13 @@ class Settings(BaseSettings):
         """The dev allowlist as a set (empty entries from the CSV are dropped)."""
         return frozenset(u.strip() for u in self.dev_user_ids.split(",") if u.strip())
 
+    # The world turn clock (app.games.scheduler_auth): the OIDC audience Cloud
+    # Scheduler's token names (the API's URL) and the scheduler's service-account
+    # email. Both empty by default, so the clock endpoint refuses every call until
+    # a deployment configures it.
+    clock_audience: str = ""
+    clock_invoker_email: str = ""
+
     # Browser origins allowed to call the API (CORS). Defaults to this
     # project's Vercel deployments (production + preview subdomains) and local
     # development. Override with CORS_ALLOW_ORIGIN_REGEX if the domain changes.

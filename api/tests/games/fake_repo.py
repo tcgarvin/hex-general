@@ -9,6 +9,7 @@ per turn) are reproduced so the service is exercised against the same invariants
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from app.engine.hex_coords import Axial
@@ -16,7 +17,10 @@ from app.engine.map_codec import decode_map, encode_map
 from app.engine.models import GameMap, GameState
 from app.engine.victory import VictoryStatus
 from app.games.repo import (
+    KEEP,
+    Clock,
     GameRecord,
+    Keep,
     OrdersRecord,
     PlayerRecord,
     RepoError,
@@ -70,8 +74,12 @@ class FakeGameRepo:
         invite_token: str,
         *,
         map_id: str | None = None,
+        clock: Clock = "manual",
+        next_tick_at: datetime | None = None,
     ) -> GameRecord:
         game = GameRecord(
+            clock=clock,
+            next_tick_at=next_tick_at,
             id=str(uuid.uuid4()),
             scenario=scenario,
             status="lobby",
@@ -87,17 +95,36 @@ class FakeGameRepo:
     def get_game(self, game_id: str) -> GameRecord | None:
         return self._games.get(game_id)
 
-    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
+    def set_game_state(
+        self,
+        game: GameRecord,
+        state: GameState,
+        status: str,
+        *,
+        next_tick_at: datetime | None | Keep = KEEP,
+    ) -> None:
         stored = self._games[game.id]
         if stored.revision != game.revision:
             raise StaleGame(f"game {game.id} changed since revision {game.revision}")
-        self._games[game.id] = stored.model_copy(
-            update={
-                "state": self._stored(state, game.map_id),
-                "status": status,
-                "revision": stored.revision + 1,
-            }
-        )
+        update: dict[str, Any] = {
+            "state": self._stored(state, game.map_id),
+            "status": status,
+            "revision": stored.revision + 1,
+        }
+        if not isinstance(next_tick_at, Keep):
+            update["next_tick_at"] = next_tick_at
+        self._games[game.id] = stored.model_copy(update=update)
+
+    def list_due_worlds(self, now: datetime) -> list[str]:
+        due = [
+            g
+            for g in self._games.values()
+            if g.clock == "twice_daily"
+            and g.status == "active"
+            and g.next_tick_at is not None
+            and g.next_tick_at <= now
+        ]
+        return [g.id for g in sorted(due, key=lambda g: (g.next_tick_at, g.id))]
 
     def create_player(
         self, game_id: str, slot: str, user_id: str, bot_policy: str | None = None

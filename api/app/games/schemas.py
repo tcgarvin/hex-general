@@ -9,6 +9,9 @@ engine.
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.engine.economy_rules import Building
@@ -234,6 +237,9 @@ class CreateWorldRequest(BaseModel):
     slots: int = Field(ge=1, le=400)
     seed: int = 0
     bots: int = Field(ge=0)
+    # "manual" moves only when ticked (dev); "twice_daily" resolves at 01:00 and
+    # 13:00 New York time on the scheduler.
+    clock: Literal["manual", "twice_daily"] = "manual"
 
 
 class WorldCreated(BaseModel):
@@ -257,6 +263,16 @@ class WorldView(BaseModel):
     submitted: bool
     state: WorldState
     visible: list[Axial]
+    clock: Literal["manual", "twice_daily"]
+    # When the current turn resolves on a scheduled world; None on a manual clock.
+    next_tick_at: datetime | None
+
+
+class ClockRunView(BaseModel):
+    """Returned by the clock endpoint: worlds resolved, and those already done."""
+
+    ticked: list[str]
+    skipped: list[str]
 
 
 class WorldReplay(BaseModel):
