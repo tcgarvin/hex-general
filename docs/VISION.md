@@ -1,8 +1,10 @@
 # Vision: from skirmish to persistent war
 
 Where hex-general is headed after v0.1. This is direction, not rules — `SPEC.md`
-stays the source of truth for anything implemented. Decisions marked **(decided)**
-were ratified by the user on 2026-11-08; everything else is a working proposal.
+stays the source of truth for anything implemented, and [`WORLD_SPEC.md`](./WORLD_SPEC.md)
+specs the first slice. Items marked **(decided)** were ratified by the user;
+everything else is a working proposal. Numbers come from the 2026-11-08 sizing study
+(§12).
 
 ## 1. The target
 
@@ -10,17 +12,18 @@ Scope and scale in the vein of NetEase's persistent-war SLGs (*LotR: Rise to War
 *Infinite Lagrange*): a large shared map, many commanders, a season arc that
 escalates from local land-grabs to multi-player assaults on great cities.
 
-What we keep from them: a map full of things worth taking, reasons to leave
-troops at home, cheap long-distance travel, and a season that unlocks bigger
-objectives over time.
-
-What we reject:
-
-- **Unconvincing movement.** Armies marching in straight lines over anything.
-  Ours path over real terrain, roads, rivers and bridges.
-- **Army-building as the game.** No hero leveling, no unit-training grind,
-  no "did you bring the right roster." Units stay roughly uniform (special units
-  someday); **tactical interplay is the game.**
+- **Scale (decided, 2026-11-08):** size the world for **200 player slots, expecting
+  ~100 live at any time.** The slack is deliberate: beaten players relocate, new
+  players arrive, and both need room.
+- What we keep from the NetEase games: a map full of things worth taking, reasons to
+  leave troops at home, cheap long-distance travel, and a season that unlocks bigger
+  objectives over time.
+- What we reject:
+  - **Unconvincing movement.** Armies marching in straight lines over anything. Ours
+    path over real terrain, roads, rivers and bridges.
+  - **Army-building as the game.** No hero leveling, no unit-training grind, no "did
+    you bring the right roster." Units stay roughly uniform (special units someday);
+    **tactical interplay is the game.**
 
 ## 2. Pillars
 
@@ -36,103 +39,190 @@ What we reject:
 
 ## 3. Turn clock (decided)
 
-- **Two turns a day on a fixed clock:** one overnight (plan before bed) and one
-  at **~1 p.m. Eastern** (plan around lunch). Other time zones are a later problem.
+- **Two turns a day on a fixed clock:** one overnight (plan before bed) and one at
+  **~1 p.m. Eastern** (plan around lunch). Other time zones are a later problem.
 - Turns resolve on schedule, not when everyone locks. A unit with no fresh order
   keeps its standing behavior (hold / continue its multi-turn move).
-- Consequence for tuning: an engagement "over some days" is ~6–10 turns, so each
-  turn carries more weight than a v0.1 turn, and long-distance movement per turn
-  must be much larger than today's 2–4 hexes (see §5).
+- Consequence: an engagement "over some days" is ~6–10 turns, so each turn carries
+  more weight than a v0.1 turn, and long-distance movement per turn is much larger
+  (§5).
 
-## 4. Automation (decided: not yet)
+## 4. Automation (decided: not yet, for humans)
 
-- **No doctrine or conditional scripting for human players to start.** The user's
-  original objection to it may still hold; revisit later.
-- **Multi-turn travel orders are in.** "Go there" may take several days to arrive —
-  the NetEase baseline, and necessary under a two-a-day clock.
-- **Bots are automated by definition.** AI commanders plan their own turns; the
-  LLM strategic layer (§9) assigns objectives/scripts to bot armies.
+- **No doctrine or conditional scripting for human players to start.** Revisit later.
+- **Multi-turn travel orders are in.** "Go there" may take several days to arrive.
+- **Bots are automated by definition** (§9).
 
-## 5. Transit: columns and auto-deploy (proposal)
+## 5. Transit: columns and auto-deploy
 
-The user's "pack them like troops on a train" idea, as two movement states:
+Two postures: **deployed** (v0.1 rules, one per hex) and **column** (packed for
+travel: fast, stacks, can't attack, fights badly). Study results (§12):
 
-| State | Movement | Stacking | ZOC | Combat |
-| --- | --- | --- | --- | --- |
-| **Deployed** | v0.1 rules | one per hex | exerts / obeys | normal |
-| **Column** | fast, much faster on road/rail | stacks freely | exerts none; cannot enter enemy ZOC | cannot attack; fights badly |
+- **Deploy distance X = 3 (proposal):** a column halts and deploys when its next step
+  would come within 3 hexes of a hostile brigade (true positions, so columns can
+  blunder into ambushes). Each extra hex of X cost ~1.5 points of front share; X = 3
+  buys a hex of buffer outside enemy ZOC.
+- **Where columns may go: open.** "Roads only" (columns exist only on roads and in
+  towns) cost ~5 points of front share, mostly from walking deployed between road and
+  line and from road networks that don't reach every front. Untested middle option:
+  columns may leave roads at half speed but **stack only on roads and in towns**. If
+  roads-only is chosen, the generator must guarantee roads reach every border and stay
+  connected within each territory.
+- **Stack cap 6 per hex (proposal):** stacks never passed 8 in simulation; a cap of 6
+  caused almost no jams and keeps big stacks from being free.
+- **Relief in place + friendly swaps (proposal):** an arriving brigade can swap hexes
+  with the tired brigade it relieves, and friendly brigades may swap head-on. Without
+  this, rotating a front line jams and slot clusters can lock for weeks. (v0.1 treats
+  friendly swaps as a traffic jam, SPEC §8.2 — this is a rule change.)
+- **Strategic movement (rail or similar) is a must-have, not a nice-to-have.** At world
+  scale the median capital-to-capital march is ~8–9 days and alliance call-ups reach
+  two weeks (§8).
 
-- A column **auto-deploys** when it would enter enemy ZOC, is blocked, or is
-  attacked, at a deterministic nearest-legal hex. Deploying costs tempo.
-- Result: one-per-hex only binds where both sides are deployed — the front.
-  Rear traffic stacks; garrisons in settlements stack up to a capacity.
-- Tactical payoff: deploy too early and you crawl; too late and your column gets
-  ambushed. Raiding columns and holding junctions become real jobs.
-
-## 6. Map, sites and economy (proposal; resource list is open)
+## 6. Map, sites and economy
 
 - **Objective density is the fix for sparseness.** Twin Rivers has ~1 objective
-  per 200 hexes; unit density (0.5–2.5% of hexes) is probably fine to keep.
-- **Ownership lives on sites, not every hex.** Provinces (~20–40 hexes) take
-  their control and borders from an anchor site; the strategic map shows borders.
-- **Resources: not decided.** Food, minerals, oil and factories were examples.
-  The NetEase approach to resource variety is a good model. Test for any resource:
-  *losing it must change what you can do next week*, not just shrink a number.
+  per 200 hexes.
+- **Ownership lives on sites, not every hex.** Provinces take their control and
+  borders from an anchor site.
+- **Resources: not decided.** Food, minerals, oil and factories were examples; the
+  NetEase approach is a good model. Test for any resource: *losing it must change what
+  you can do next week.*
 - **Sites unlock unit types (decided direction).** E.g. a **tank factory** enables
-  armor. Every player wants one, so the map must supply enough that **most players
-  who work for one can get one** — scarce enough to fight over, not so scarce that
-  most players are locked out.
-- Light supply (repair only when connected to friendly territory) is a probable
-  later addition — it's what makes encirclement and rotation matter.
+  armor, and the map must supply enough that **most players who work for one can get
+  one.**
+- **World size (proposal): ~350 × 350 (~122k hexes) for 200 slots** — ~610 hexes per
+  slot when full (83% of battle groups keep an open flank), ~1,200 per live player at
+  100 live (92%). Flank room levels off past ~600–900 hexes per player; bigger only
+  lengthens marches.
 
-## 7. Army size, rotation, rear pressure (proposal)
+## 7. Army size, rotation, rear pressure
 
-- **Command cap grows with maturity:** a mature player fields ~12–15 brigades —
-  enough for a front, flanks and a reserve. Warlords maybe slightly more.
-- **Clicks per turn is the real limit.** Group/formation orders matter more than
-  the cap number.
-- **Rotation:** pull worn brigades (or a whole division) back to regroup and repair.
-- **Unrest / marauders:** sites left uncovered accumulate unrest and eventually
-  spawn bot raiders. This justifies home garrisons, gives early PvE, and soft-caps
-  sprawl.
+- **Command cap grows with maturity:** a mature player fields ~12–15 brigades.
+- **Expect about a third of an army in the line, not half.** With brigades worn down
+  at ~1.5 HP/turn, rotating out at 4 HP and healing in towns, simulated front share
+  was 32–41% depending on rules. Levers: relief swaps (+2 pts), 3 HP/turn healing
+  (+1.4), sending replacements early (+4, a player habit). To field 7–8 brigades in the
+  line at once, the cap would need to be ~22.
+- **Host-nation rest (proposal):** brigades heal in any allied town, not only their
+  owner's. For a big alliance's distant members this is the difference between ~46%
+  and ~22% of brigades in the line.
+- **Unrest / marauders:** uncovered sites accumulate unrest and spawn bot raiders —
+  justifies garrisons, gives early PvE, soft-caps sprawl.
+- **Relocation (decided direction):** a beaten player whose home is destroyed packs
+  everything into columns plus a headquarters train, marches to unclaimed land and
+  founds a new capital (minimum distance from others) — or gives up. Land of departed
+  or beaten players reverts to neutral (marauders may hold it); that's the room people
+  restart in.
+- **New players** spawn near the active population (not at random into empty land) and
+  get a protection window.
 
-## 8. Players, factions, season arc (proposal)
+## 8. Players, factions, season arc
 
-- Everyone starts as a **warlord.** Some stay one (diplomacy with neighbors, a
-  small edge, easy to team up against); most group into **factions** with chat
-  and shared vision.
-- **NPC governments** hold great cities: bot garrisons and fortifications too
-  strong for one warlord — roughly five mature warlords to take one.
-- Season arc: warlord land-grab → factions form → NPC cities fall → late-season
-  objectives. Player-to-player chat comes eventually.
+- Everyone starts as a **warlord.** Some stay one; most group into **alliances**
+  (members stay separate players; allies don't fight and may march through each other's
+  land), with chat and shared vision.
+- **Alliance cap (proposal): starts at 5, grows to ~20 as the alliance matures.** In
+  simulation, the farthest member's march to a single big push was ~6 days at 5
+  members, 9 at 10, 11 at 20, 13 at 35, 15 at 50. Bigger than 20 needs faster strategic
+  movement. Alliances that only grow by recruiting independents stopped at 8–14 on their
+  own; a cap only bites if alliances can merge.
+- **Operations need a commitment horizon (proposal).** Alliances that re-picked targets
+  every ~10 days redirected 60–80% of big-push marches before they arrived. Alliance
+  operations (and the bots that run them) should hold a target for ~2 weeks.
+- **NPC governments** hold great cities too strong for one warlord.
+- Season arc: warlord land-grab → alliances form → NPC cities fall → late-season
+  objectives.
 
 ## 9. Bots are the product (decided)
 
-- **First season is likely one human plus all-AI.** Bots aren't a stopgap that
-  fills empty seats; they *are* the opponents, allies and factions.
-- Layers: the existing tactical planner (`AI_SPEC.md`) commands units; an LLM
-  strategic layer runs warlords/factions (diplomacy, objectives, assigning armies).
-- A **headless world simulator** (bots only, turns as fast as compute allows) is
-  both the bot test bench and the tool for tuning map size and density.
+First seasons will be mostly bots. Architecture (decided direction, 2026-11-08):
 
-## 10. Sequence (slices)
+- **Two layers.** An **LLM strategist** makes high-level decisions; **hand-written
+  tactical AI** (the existing planner, `AI_SPEC.md`) produces the actual orders.
+- **The strategist chooses which tactical AI runs the turn, with which arguments**
+  (e.g. "hold this front, 30% in reserve, raid that junction"), and takes structured
+  diplomacy actions (propose / accept alliance, request help, declare war).
+- **Chat:** the strategist reads chat and may leave **at most one message per turn**
+  across a few channels/DMs.
+- **Timing:** strategist calls arrive at random times across the 12-hour planning window,
+  like humans. Safe because the board doesn't change during planning; the tactical AI
+  runs as soon as the plan lands.
+- **Cheap model** (e.g. DeepSeek) behind a model-agnostic client (any OpenAI-compatible
+  endpoint). Rough budget: ~8k tokens in / 1k out per call, 2 calls/day/bot — on the order
+  of tens of dollars a month for 100 bots at current cheap-model prices (verify).
+- **Design rules (proposal):**
+  - The LLM is never on the critical path: a failed or late call keeps the previous plan.
+  - Input is a compact, **fog-honest strategic digest** (regions, fronts, relative
+    strength, alliances, unread chat), not the board.
+  - A small **persistent notebook** the bot rewrites each turn, so it remembers grudges
+    and promises.
+  - Game state never comes from parsing prose; chat is flavor, actions are structured.
+  - Player chat is untrusted input (prompt injection); the fixed action schema caps the
+    damage at legal moves. Outgoing bot chat gets a cheap moderation pass.
+  - Open product question: label bots as bots in chat (recommended).
+- **Testing:** the world simulator runs bots with a scripted stand-in strategist (fast,
+  deterministic) and records real LLM decisions so a season can be replayed exactly.
+
+## 10. Strategic UI (proposal)
+
+The hex board stays the tactical view. Above it, a zoomed-out world view in the
+spirit of the sizing-study viewers (§12):
+
+1. **Theater** (full-screen): alliance-colored territory, front lines, army counters
+   with strength, march arrows with ETAs, battle markers that open the tactical replay.
+2. **Operational:** one region; brigade counters, columns, stacks.
+3. **Tactical:** the existing hex board.
+
+- **Replays:** a season timeline (like the alliance viewer) plus a per-turn "what
+  happened near me" digest.
+- **Fog-aware for players:** the theater view shows what your alliance knows, with stale
+  intel marked ("last seen 2 days ago"). The omniscient view stays an observer/debug tool
+  for bot worlds.
+- **Art register (proposal, needs the user's pick):** a printed staff map with
+  grease-pencil front lines and pins, drawn procedurally from the terrain data — the Field
+  HQ "map table" taken to world scale.
+
+## 11. Art generation (decided, 2026-11-08)
+
+**New art generation goes to Codex** (the `codex` CLI and its built-in image
+generation), not the NBP tile-foundry / `tile-smith` loop. The NBP foundry stays as the
+record and reproducer for the tiles already shipped. Unchanged: the user ratifies every
+art change from a hosted review page before anything is applied (CLAUDE.md).
+
+## 12. Evidence: the 2026-11-08 sizing study
+
+Standalone simulations (not in this repo) with an interactive write-up and replays:
+https://claude.ai/artifact/AMdx9xH3SfcewwkM7m7gfB (private to the user).
+
+- **Round 1, map size:** 100 players × 15 brigades, half engaged. ~280² (~800 hexes per
+  player) is where flank room levels off; fronts close up below 200².
+- **Round 2, columns:** roads-only −5 pts front share; X = 3 costs ~1.5 pts per hex over
+  X = 2; relief swaps +2 pts and cut line jams by two-thirds; best combination 41%.
+- **Round 3, alliances:** march times by alliance size (§8); host-nation rest; the
+  two-week commitment horizon.
+- **Follow-up, 200 slots:** ~350² keeps full-world fronts as good as 280² was for 100.
+
+Simplifications throughout: no deaths, no conquest, fixed fronts. Treat the numbers as
+sizing, not balance.
+
+## 13. Sequence (slices)
 
 **No 2-player detour (decided, 2026-11-08):** build and test against the world
 itself, not the Twin Rivers 2-player game.
 
 1. **Open world** — [`WORLD_SPEC.md`](./WORLD_SPEC.md): N-slot world, generated map,
-   two-a-day clock, columns + auto-deploy, multi-turn travel, growing command cap,
-   world bots + headless world sim, frontend world view.
-2. **Sites + unit unlocks** (resource sites, tank-factory-style unlocks).
-3. **Unrest / marauders** (rear-area PvE).
-4. **Factions, diplomacy, chat, NPC governments, LLM commanders, season arc.**
+   two-a-day clock, columns + auto-deploy, multi-turn travel, relief swaps, growing
+   command cap, world bots + headless world sim, frontend world view.
+2. **Sites + unit unlocks**, and **strategic movement** (rail or similar).
+3. **Unrest / marauders**, relocation, new-player placement.
+4. **Alliances, diplomacy, chat, LLM strategists, NPC governments, season arc.**
 5. **Scale-out** when measurements demand it: chunked state, per-turn resolution
    split into independent contact clusters.
 
-## 11. Open questions
+## 14. Open questions
 
-- The resource set, and how many types (§6).
+- Columns: anywhere vs roads-only vs "stack only on roads" (§5).
+- The resource set (§6).
 - Whether, and when, to give humans standing orders or doctrine (§4).
-- Column speed, deploy cost, and whether rail is a separate network (§5).
-- Map size and player count for the first world.
 - How to handle other time zones.
+- Bot disclosure in chat (§9).

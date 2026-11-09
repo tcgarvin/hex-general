@@ -6,9 +6,9 @@ with packed **columns** for long-distance transit and multi-turn **travel
 orders**. Tactical rules for deployed units are unchanged from
 [`SPEC.md`](./SPEC.md), which stays authoritative for them.
 
-Status: **draft for user review** (2026-11-08). Numbers are starting defaults to be
-tuned with the world simulator (§9); bracketed **[tunable]** marks the ones we expect
-to move.
+Status: **draft for user review** (2026-11-08; revised the same day after the sizing
+study, VISION §12). Numbers are starting defaults to be tuned with the world simulator
+(§9); bracketed **[tunable]** marks the ones we expect to move.
 
 **Direction (user, 2026-11-08): no 2-player detour.** We build and test against the
 world, not against Twin Rivers. The engine stays one engine — a 2-player 40×40 game
@@ -20,8 +20,8 @@ is just a tiny world — but new work is judged by how it plays at world scale.
 
 In slice 1:
 
-- One persistent **world**: N player slots (1 human + bots), generated map, no
-  season end.
+- One persistent **world**: sized for 200 player slots (VISION §1), with roughly 100
+  filled at first (the user plus bots), on a generated map, with no season end.
 - **Turn clock:** two scheduled resolutions a day (§2).
 - **Postures:** deployed vs column, with auto-deploy on contact (§4).
 - **Travel orders:** multi-turn "go there" for columns (§5).
@@ -68,7 +68,7 @@ Hold / Rest, deployed movement rates (infantry 2, armor 4, artillery 1).
 | Property | Column rule |
 | --- | --- |
 | Movement | Road step costs 1 pulse, off-road step costs 2 [tunable] |
-| Stacking | Any number of friendly columns per hex, plus at most one friendly deployed unit |
+| Stacking | Up to 6 friendly columns per hex [tunable], plus at most one friendly deployed unit. A column that would enter a full hex waits. Where columns may travel (anywhere vs roads only vs stack only on roads) is open: VISION §5 |
 | ZOC | Exerts none; may not enter a hex in hostile ZOC or containing a hostile unit |
 | Attack | Cannot attack |
 | Defense | Defense −3, no terrain or Hold bonus [tunable] |
@@ -99,8 +99,11 @@ Barrage still resolves before pulse 1.
   **Deploy** order. The unit deploys clean at the end of the turn in which it stops.
 - **Auto-deploy on contact:** at the start of each pulse, a column halts and
   deploys if any of these hold:
-  1. it is adjacent to a hostile unit;
-  2. its next step would enter hostile ZOC or a hostile-occupied hex;
+  1. its next step would come within **X = 3** hexes of a hostile unit [tunable]. Distance
+     uses true positions, not the owner's fog view, so a column can blunder into an enemy
+     hidden in woods. The sizing study measured each extra hex of X at ~1.5 points of front
+     share; 3 leaves a hex of buffer outside hostile ZOC;
+  2. a hostile unit comes within X of it (it was approached);
   3. it was attacked or barraged this turn (it deploys after that combat, if it survives).
 
   An auto-deployed unit is **disordered** for the following turn's execution:
@@ -122,6 +125,19 @@ Barrage still resolves before pulse 1.
   one's (reduced) return damage.
 - "All opposition destroyed" (SPEC §12.5) means every unit in the hex.
 - Hostile columns never fight each other directly; contact auto-deploys both.
+
+### 4.7 Relief in place and friendly swaps
+
+This changes SPEC §8.2, where two friendly units trying to swap hexes jam.
+
+- **Relieve order:** a deployed unit adjacent to a friendly deployed unit may swap hexes
+  with it in the same pulse. Both moves succeed together; neither counts as a jam. The
+  relieved unit is then free to withdraw.
+- **Friendly head-on swaps:** two friendly deployed units whose paths cross the same edge
+  in opposite directions in the same pulse swap instead of jamming.
+- Why: rotating a front line without this left ~14% of front slots reachable only through
+  occupied slots, and clusters of slots locked for 50+ turns. Relief swaps added ~2 points
+  of front share and cut line jams by two-thirds (VISION §12).
 
 ## 5. Travel orders (multi-turn)
 
@@ -150,14 +166,20 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
 
 `app/world/generate.py`: seeded, deterministic, pure.
 
-- **Size:** default 12 slots on about 110×110 (~1,000 hexes per player, close to
-  v0.1's 800) [tunable].
+- **Size:** 200 slots on about **350×350** (~122k hexes; ~610 hexes per slot when full,
+  ~1,200 per live player at 100 live) [tunable]. Flank room levels off past ~600–900
+  hexes per player; a bigger map only lengthens marches (VISION §6, §12). Small worlds
+  (e.g. 12 slots on 110×110) stay supported for tests.
+- **Unfilled slots:** their start regions are generated but left neutral; that land is
+  room for relocation and new players (VISION §7).
 - **Terrain:** plains, woods, hills (as v0.1); rivers as impassable hex chains;
   bridges where roads cross them.
 - **Settlements:** about 1 per 70 hexes [tunable], roughly 3× v0.1's density, mostly
   towns. Cities are rarer and anchor regions.
 - **Roads:** a spanning network linking settlements plus redundant links, so no
-  single bridge decides a whole region.
+  single bridge decides a whole region. Each territory's roads must form one connected
+  network, and roads must reach its borders. In the study, 52–60% of territories had
+  split road networks, which stranded brigades under roads-only movement.
 - **Provinces:** every settlement anchors a province (about 20–40 hexes), assigned
   by travel-cost distance. Province control is derived from its anchor settlement,
   with no extra state. Provinces exist for borders and the strategic view.
@@ -176,6 +198,8 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
   `cap = 4 + 1 per town + 2 per city`, up to a maximum of **15** [tunable]. A mature
   player fields a division. Growth comes from land, not grinding.
 - Recruits deploy at friendly cities (as v0.1).
+- **Healing:** resting in a friendly settlement restores **3 HP/turn** [tunable], up from
+  v0.1's 2. Expect about a third of an army in the line at once, not half (VISION §7).
 - **Elimination:** a player with no settlements and no units is out of the world.
   A player with units but no cities can't recruit, but can retake ground.
 - No victory condition in slice 1; the world simply runs.
@@ -190,7 +214,13 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
 - **Personalities:** per-bot seeded weights (aggression, expansion appetite, garrison
   share), so twelve bots aren't twelve clones.
 - **Budget:** ≤ 2 s per bot-turn at the default world size (today's search bot is
-  ~0.5 s on 40×40).
+  ~0.5 s on 40×40). 100 bots are about 3 minutes per turn on one core, which is fine
+  inside a 12-hour window and parallelizes for the simulator.
+- **Plan interface (for the later LLM strategist, VISION §9):** each bot turn runs
+  `tactical_policy(view, args)`, where a *strategist* picks the policy and its arguments
+  (target region, reserve share, posture). In slice 1 the strategist is a scripted stand-in.
+  Defining the seam now means the LLM layer drops in later without touching the tactical
+  AI.
 - AI_SPEC gets a world addendum when this phase starts.
 
 ## 9. World simulator
@@ -214,7 +244,8 @@ main way to judge whether the world is fun before a human plays it.
 
 **Slice 1 acceptance gates** (over 20 seeds):
 
-1. **Jams:** zero column-involved jams; deployed jams occur only near contact.
+1. **Jams:** column jams near zero (the stack cap rarely binds); deployed jams occur
+   only near contact.
 2. **Travel:** ≥ 95% of travel orders end in arrival or contact, none in limbo.
 3. **Expansion:** every bot captures ≥ 3 settlements by turn 20, and all pairs of
    neighboring bots have made contact by turn 30 [tunable].
@@ -255,8 +286,11 @@ The real gate is the user playing a live world on the real clock for a week.
   - a countdown to the next tick.
 - **Replay:** a world turn filtered to visible events, with a list of "your
   engagements" to jump between.
+- **Zoom tiers:** this slice builds the operational and tactical tiers. The full-screen
+  theater view, fog-aware with stale intel, comes with alliances (VISION §10).
 - **Art:** column tokens, the province border style, and strategic-zoom tokens are
-  new art. They go through Artifact review for the user's pick before they're applied.
+  new art, generated with Codex (VISION §11). They go through Artifact review for the
+  user's pick before they're applied.
 
 ## 12. Implementation phases
 
@@ -276,8 +310,9 @@ W0–W4 are headless and can run largely in parallel with W5–W6 once W0 is don
 ## 13. Open questions
 
 1. Is packing taking pulses 1–4 (vs a whole turn) the right cost?
-2. Column speed: 12/6 hexes per turn after packing, 16/8 at full speed. That means
-   ~7–14 turns (4–7 days) to cross a 110-hex world. Too slow? Rail can come later.
-3. Should a stack of columns have a cap (e.g. a road hex holds 6) so mass
-   stacking has a cost even before contact?
-4. Starting world: 12 slots right for the first live world?
+2. Where columns may travel: anywhere (current text), roads only, or anywhere but
+   stacking only on roads and in towns (untested). See VISION §5.
+3. At 350² the median capital-to-capital march is ~8–9 days. Strategic movement
+   (rail or similar) is planned for slice 2. Should a minimal version come into slice 1?
+4. The first live world: full 200-slot map with ~100 bots, or a smaller rehearsal world
+   first?

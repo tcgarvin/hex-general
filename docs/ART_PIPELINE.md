@@ -1,5 +1,10 @@
 # Terrain art pipeline — inputs & outputs
 
+> **Status (2026-11-08):** new art generation moves to **Codex** (the `codex` CLI's
+> built-in image generation; see `docs/VISION.md` §11). This document remains the
+> contract for the NBP foundry that produced the shipped tiles, and for reproducing
+> them. The asset spec and the user-ratification gate still apply to Codex-made art.
+
 The review artifact for how terrain hex art gets made, now that the loop is
 proven on plains, woods, hills, and city. It defines the **contract**: what
 art direction goes in, what assets come out, and where human judgment sits.

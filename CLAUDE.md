@@ -39,8 +39,14 @@ context). To health-check them, **spawn the `dev-doctor` subagent**
 returns a compact verdict, restarts a cleanly-dead server, and escalates real
 faults rather than fixing them. See `docs/LOCAL_DEV.md`.
 
+**Art generation goes to Codex from now on** (user, 2026-11-08): new art (tiles,
+tokens, UI and strategic-map art) is generated with Codex (the `codex` CLI and its
+built-in image generation), not the NBP/`tile-smith` loop below. The NBP foundry stays
+as the record and reproducer for tiles already shipped. The ratification rule below is
+unchanged. See `docs/VISION.md` §11.
+
 Board tileset work (painterly hex tiles in `frontend/src/board/tiles/`, 128px
-flat-top RGBA): the pipeline is the NBP (Nano Banana Pro / Vertex, keyless)
+flat-top RGBA): the existing tiles were made by the NBP (Nano Banana Pro / Vertex, keyless)
 tile-foundry — **`docs/ART_PIPELINE.md` is the canonical contract** (inputs, asset
 spec, terrain classes, command quick-ref); tooling lives in `scripts/tile-foundry/`
 and provenance in `art/foundry/`. `python3 scripts/tile-montage.py <dir|globs>
