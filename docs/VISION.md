@@ -97,8 +97,19 @@ travel: fast, stacks, can't attack, fights badly). Study results (§12):
     small tactical fight, and the garrisons later become the marauders (§7).
   - **Slow growth:** a full-strength army (~15 units) takes **3+ weeks** (40+ turns),
     so most early fights are small.
-  - The detailed design (site types and counts, building costs, growth curves) comes
-    next, measured with the world sim.
+  - The detailed design (site types and counts, building costs, growth curves) is
+    drafted for review: https://claude.ai/artifact/BjDgptUsyxZn7aLBW5pxd4 (revision 2).
+- **Economy decisions (user, 2026-11-09):**
+  - **Resources:** manpower, fuel, steel. **Sites:** farms, oil fields, steel mills,
+    factories, cities. **Buildings:** barracks, depot, workshop. Names approved.
+  - **Army size comes from barracks and sites** (draft: `4 + 2 × barracks level +
+    1 per 4 sites`, max 15). Tune later.
+  - **Shortages disband units.** Out of fuel, the player picks a tank or gun to
+    disband; out of manpower, any unit. (Draft: one unit per short turn, with the
+    weakest as the default pick.) A manpower shortage does not stop healing.
+  - **Bases are not cities.** Each player has a base, its own kind of site. Empty
+    slots are vacant base sites that can't be captured. **"The Capital"** is saved for
+    later as a season end-game objective rather than something every player has.
 - **Sites unlock unit types (decided direction).** E.g. a **tank factory** enables
   armor, and the map must supply enough that **most players who work for one can get
   one.**
