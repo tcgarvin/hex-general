@@ -186,9 +186,17 @@ def line(a: Axial, b: Axial) -> list[Axial]:
     way every time — the line is deterministic but computed from ``a`` outward, so
     it is not guaranteed identical when reversed.
     """
+    return list(_line(a, b))
+
+
+@lru_cache(maxsize=1 << 18)
+def _line(a: Axial, b: Axial) -> tuple[Axial, ...]:
+    # Cached on the exact endpoints: the float sampling is not translation
+    # invariant, so lines can't be shared between offsets. Fog recomputes the
+    # same sightlines turn after turn for units that haven't moved.
     steps = distance(a, b)
     if steps == 0:
-        return [a]
+        return (a,)
     start, end = to_cube(a), to_cube(b)
     result: list[Axial] = []
     for i in range(steps + 1):
@@ -197,4 +205,4 @@ def line(a: Axial, b: Axial) -> list[Axial]:
         y = start.y + (end.y - start.y) * t + 1e-6
         z = start.z + (end.z - start.z) * t - 2e-6
         result.append(from_cube(_cube_round(x, y, z)))
-    return result
+    return tuple(result)
