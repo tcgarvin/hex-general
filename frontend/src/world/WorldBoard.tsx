@@ -11,19 +11,24 @@ import { loadTerrainTextures } from "@/board/tiles";
 import { loadUnitTextures } from "@/board/units";
 
 import type { WorldView } from "./useWorld";
-import { WorldRenderer } from "./WorldRenderer";
+import { WorldRenderer, type WorldOverlay } from "./WorldRenderer";
 import type { WorldMap } from "./worldMap";
 
 export function WorldBoard({
   map,
   view,
   focus,
+  overlay,
+  panTo,
   onHexClick,
 }: {
   map: WorldMap;
   view: WorldView;
   /** Where to centre the camera when the board first opens (e.g. the player's base). */
   focus: Axial | null;
+  overlay: WorldOverlay;
+  /** Pan the camera here whenever the request changes (`seq` makes repeats count). */
+  panTo: { hex: Axial; seq: number } | null;
   onHexClick: (hex: Axial) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -71,6 +76,14 @@ export function WorldBoard({
       visible: new Set(view.visible.map((c) => hexKey(c.q, c.r))),
     });
   }, [renderer, view]);
+
+  useEffect(() => {
+    renderer?.setOverlay(overlay);
+  }, [renderer, overlay]);
+
+  useEffect(() => {
+    if (panTo !== null) renderer?.panTo(panTo.hex);
+  }, [renderer, panTo]);
 
   return <div ref={host} className="absolute inset-0 touch-none select-none" />;
 }

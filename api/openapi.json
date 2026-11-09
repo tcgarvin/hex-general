@@ -2875,7 +2875,7 @@
         "type": "object"
       },
       "WorldView": {
-        "description": "A player's fog-filtered view of a world (the map comes separately).\n\n``submitted`` says whether the caller's orders for this turn are already in;\nthe turn itself resolves on the world's clock, not when everyone is in.",
+        "description": "A player's fog-filtered view of a world (the map comes separately).\n\n``submission`` is the caller's plan for this turn as last submitted, which they\nmay revise until the turn resolves; ``None`` means they have submitted nothing\nthis turn. The turn itself resolves on the world's clock, not when everyone\nis in.",
         "properties": {
           "clock": {
             "enum": [
@@ -2912,9 +2912,15 @@
             "title": "Status",
             "type": "string"
           },
-          "submitted": {
-            "title": "Submitted",
-            "type": "boolean"
+          "submission": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SubmitOrdersRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "turn": {
             "title": "Turn",
@@ -2938,7 +2944,7 @@
           "turn",
           "your_slot",
           "map_id",
-          "submitted",
+          "submission",
           "state",
           "visible",
           "clock",

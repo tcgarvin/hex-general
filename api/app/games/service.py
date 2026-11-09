@@ -28,7 +28,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 from pydantic import TypeAdapter
 
@@ -59,6 +59,7 @@ from app.games.schemas import (
     GameHistoryEntry,
     GameView,
     PlayerCredentials,
+    SubmitOrdersRequest,
     SubmitResult,
     TurnReplay,
     WorldReplay,
@@ -483,17 +484,18 @@ class GameService:
     def get_world_view(self, player: PlayerRecord) -> WorldView:
         """``player``'s fogged view of their world, without the map."""
         game = self._require_world(player.game_id)
-        submitted = any(
-            o.player_id == player.id
+        mine = [
+            o
             for o in self._repo.list_turn_orders(game.id, game.state.turn)
-        )
+            if o.player_id == player.id
+        ]
         return WorldView(
             game_id=game.id,
             status=game.status,
             turn=game.state.turn,
             your_slot=player.slot,
             map_id=_map_id(game),
-            submitted=submitted,
+            submission=_submission_request(mine[0].orders) if mine else None,
             state=WorldState.of(redact_state(game.state, player.slot)),
             clock=game.clock,
             next_tick_at=game.next_tick_at,
@@ -799,3 +801,19 @@ def _load_scenario_state(scenario: str) -> GameState:
     if not path.is_file():
         raise GameNotFound(f"no scenario named {scenario!r}")
     return load_scenario_file(path)
+
+
+def _submission_request(stored: dict[str, Any]) -> SubmitOrdersRequest:
+    """A stored ``turn_orders`` plan, back in the shape it was submitted in.
+
+    The row is read from the database, so it is validated on the way in.
+    """
+    economy = stored["economy"]
+    return SubmitOrdersRequest.model_validate(
+        {
+            "orders": stored["orders"],
+            "recruitments": stored["recruitments"],
+            "build": None if economy is None else economy["build"],
+            "disband": [] if economy is None else economy["disband"],
+        }
+    )

@@ -48,6 +48,24 @@ export interface WorldScene {
   readonly visible: ReadonlySet<string>;
 }
 
+/** Planning marks drawn over the map (WorldPlanning, projected for drawing). */
+export interface WorldOverlay {
+  /** The selected unit's hex. */
+  selectedUnit: Axial | null;
+  /** The hex being inspected. */
+  selectedHex: Axial | null;
+  routes: readonly {
+    from: Axial;
+    path: readonly Axial[];
+    kind: "travel" | "standing" | "move" | "march";
+    selected: boolean;
+  }[];
+  barrages: readonly { from: Axial; target: Axial }[];
+  /** Hexes a click would move the selected unit to. */
+  reach: readonly Axial[];
+  recruits: readonly Axial[];
+}
+
 export interface WorldRendererOptions {
   onHexClick?: (hex: Axial) => void;
 }
@@ -67,6 +85,9 @@ export class WorldRenderer {
   private readonly overview: Sprite;
   private readonly sites = new Graphics();
   private readonly unitLayer = new Container();
+  private readonly overlay = new Graphics();
+  private readonly selection = new Graphics();
+  private overlayData: WorldOverlay | null = null;
   private readonly minimap = new Container();
   private readonly minimapFrame = new Graphics();
   private readonly minimapSites = new Graphics();
@@ -104,7 +125,7 @@ export class WorldRenderer {
     this.overview.position.set(-HEX_SIZE, -HEX_SIZE);
     this.fogTexture = hexTexture(app);
 
-    this.world.addChild(this.overview, this.tileLayer, this.fogLayer, this.sites, this.unitLayer);
+    this.world.addChild(this.overview, this.tileLayer, this.fogLayer, this.sites, this.overlay, this.unitLayer, this.selection);
     app.stage.addChild(this.world, this.minimap);
     this.buildMinimap(overviewTexture);
 
@@ -140,8 +161,18 @@ export class WorldRenderer {
     this.refresh();
   }
 
+  setOverlay(overlay: WorldOverlay): void {
+    this.overlayData = overlay;
+    this.drawOverlay();
+  }
+
   get camera(): Camera {
     return { x: this.world.x, y: this.world.y, scale: this.world.scale.x };
+  }
+
+  /** Centre the view on `hex`, keeping the zoom unless `scale` is given. */
+  panTo(hex: Axial): void {
+    this.centerOn(hex, Math.max(this.world.scale.x, TILE_MIN_SCALE));
   }
 
   /** Centre the view on `hex` at `scale` (default: a comfortable tactical zoom). */
@@ -236,6 +267,7 @@ export class WorldRenderer {
     if (tileMode) this.syncTiles(range);
     this.drawSites(range, tileMode);
     this.drawUnits(range, tileMode);
+    this.drawOverlay();
     this.drawMinimapFrame(x0, y0, x1, y1);
   };
 
@@ -401,6 +433,63 @@ export class WorldRenderer {
         tokens.rect(x - w / 2, y + HEX_SIZE * 0.62, w, 4).fill(0x101114);
         tokens.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / 10, 4).fill(lead.hp > 5 ? 0x7bd389 : 0xe0a040);
       }
+    }
+  }
+
+  private drawOverlay(): void {
+    const g = this.overlay.clear();
+    const top = this.selection.clear();
+    const o = this.overlayData;
+    if (o === null) return;
+    const scale = this.world.scale.x;
+    // Line widths in screen pixels, so marks stay readable at every zoom.
+    const px = (n: number) => n / scale;
+    const centre = (a: Axial) => axialToPixel(a.q, a.r, HEX_SIZE);
+
+    for (const hex of o.reach) {
+      const { x, y } = centre(hex);
+      g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.9)).fill({ color: 0xf2e6c8, alpha: 0.22 });
+    }
+    for (const route of o.routes) {
+      if (route.path.length === 0) continue;
+      const color = route.kind === "move" ? 0xf2e6c8 : route.kind === "standing" ? 0x9fb7d9 : 0x3d7eff;
+      const width = px(route.selected ? 4 : 2.5);
+      const alpha = route.selected ? 0.95 : route.kind === "standing" ? 0.55 : 0.75;
+      const start = centre(route.from);
+      g.moveTo(start.x, start.y);
+      for (const step of route.path) {
+        const p = centre(step);
+        g.lineTo(p.x, p.y);
+      }
+      g.stroke({ color: 0x101114, width: width + px(2), alpha: alpha * 0.6, cap: "round", join: "round" });
+      g.moveTo(start.x, start.y);
+      for (const step of route.path) {
+        const p = centre(step);
+        g.lineTo(p.x, p.y);
+      }
+      g.stroke({ color, width, alpha, cap: "round", join: "round" });
+      const end = centre(route.path[route.path.length - 1]);
+      g.circle(end.x, end.y, Math.max(px(5), HEX_SIZE * 0.22)).fill({ color, alpha }).stroke({ color: 0x101114, width: px(1.5) });
+    }
+    for (const b of o.barrages) {
+      const from = centre(b.from);
+      const to = centre(b.target);
+      g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ color: 0xe0503a, width: px(2.5), alpha: 0.9 });
+      g.poly(hexCornerPoints(to.x, to.y, HEX_SIZE * 0.85)).stroke({ color: 0xe0503a, width: px(3) });
+    }
+    for (const hex of o.recruits) {
+      const { x, y } = centre(hex);
+      g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.7)).stroke({ color: 0x7bd389, width: px(3) });
+      g.moveTo(x - HEX_SIZE * 0.3, y).lineTo(x + HEX_SIZE * 0.3, y).moveTo(x, y - HEX_SIZE * 0.3).lineTo(x, y + HEX_SIZE * 0.3);
+      g.stroke({ color: 0x7bd389, width: px(3) });
+    }
+    if (o.selectedHex !== null) {
+      const { x, y } = centre(o.selectedHex);
+      top.poly(hexCornerPoints(x, y, HEX_SIZE)).stroke({ color: 0xf2e6c8, width: px(2), alpha: 0.9 });
+    }
+    if (o.selectedUnit !== null) {
+      const { x, y } = centre(o.selectedUnit);
+      top.circle(x, y, Math.max(HEX_SIZE * 0.85, px(10))).stroke({ color: 0xffd25a, width: px(3) });
     }
   }
 

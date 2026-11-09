@@ -66,7 +66,7 @@ def test_join_view_map_tick_and_replay(client: TestClient) -> None:
     assert view.status_code == 200, view.text
     body = view.json()
     assert body["your_slot"] == slot and body["turn"] == 0
-    assert body["submitted"] is False
+    assert body["submission"] is None
     assert "map" not in body["state"]
 
     game_map = client.get(f"/worlds/{game_id}/map", headers=_as(PLAYER))
@@ -75,13 +75,17 @@ def test_join_view_map_tick_and_replay(client: TestClient) -> None:
     decoded = decode_map(CompactMap.model_validate(game_map.json()))
     assert decoded.width == 49
 
-    orders = client.post(
-        f"/games/{game_id}/orders",
-        json={"orders": [], "recruitments": []},
-        headers=_as(PLAYER),
-    )
+    unit = next(u for u in body["state"]["units"] if u["owner"] == slot)
+    plan = {
+        "orders": [{"kind": "hold", "unit_id": unit["id"]}],
+        "recruitments": [],
+        "build": "barracks",
+        "disband": [unit["id"]],
+    }
+    orders = client.post(f"/games/{game_id}/orders", json=plan, headers=_as(PLAYER))
     assert orders.status_code == 200 and orders.json()["executed"] is False
-    assert client.get(f"/worlds/{game_id}", headers=_as(PLAYER)).json()["submitted"]
+    after = client.get(f"/worlds/{game_id}", headers=_as(PLAYER)).json()
+    assert after["submission"] == plan
 
     tick = client.post(f"/dev/worlds/{game_id}/tick", headers=_as(DEV))
     assert tick.status_code == 200 and tick.json()["turn"] == 1

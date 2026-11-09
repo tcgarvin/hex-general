@@ -265,8 +265,10 @@ class WorldCreated(BaseModel):
 class WorldView(BaseModel):
     """A player's fog-filtered view of a world (the map comes separately).
 
-    ``submitted`` says whether the caller's orders for this turn are already in;
-    the turn itself resolves on the world's clock, not when everyone is in.
+    ``submission`` is the caller's plan for this turn as last submitted, which they
+    may revise until the turn resolves; ``None`` means they have submitted nothing
+    this turn. The turn itself resolves on the world's clock, not when everyone
+    is in.
     """
 
     game_id: str
@@ -274,7 +276,7 @@ class WorldView(BaseModel):
     turn: int
     your_slot: PlayerId
     map_id: str
-    submitted: bool
+    submission: SubmitOrdersRequest | None
     state: WorldState
     visible: list[Axial]
     clock: Literal["manual", "twice_daily"]

@@ -1992,8 +1992,10 @@ export interface components {
          * WorldView
          * @description A player's fog-filtered view of a world (the map comes separately).
          *
-         *     ``submitted`` says whether the caller's orders for this turn are already in;
-         *     the turn itself resolves on the world's clock, not when everyone is in.
+         *     ``submission`` is the caller's plan for this turn as last submitted, which they
+         *     may revise until the turn resolves; ``None`` means they have submitted nothing
+         *     this turn. The turn itself resolves on the world's clock, not when everyone
+         *     is in.
          */
         WorldView: {
             /**
@@ -2010,8 +2012,7 @@ export interface components {
             state: components["schemas"]["WorldState"];
             /** Status */
             status: string;
-            /** Submitted */
-            submitted: boolean;
+            submission: components["schemas"]["SubmitOrdersRequest"] | null;
             /** Turn */
             turn: number;
             /** Visible */
