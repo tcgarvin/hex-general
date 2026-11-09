@@ -18,6 +18,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Header, HTTPException, Path
 from supabase import Client
 
+from app.ai.policy import economy_orders_for
 from app.db import get_supabase_client
 from app.games.auth import AuthError, AuthIdentity, is_dev, verify_jwt
 from app.games.repo import GameRepo, PlayerRecord, SupabaseGameRepo
@@ -190,7 +191,12 @@ def submit_orders(
 ) -> SubmitResult:
     """Validate and lock the caller's orders; resolve the turn if both are in."""
     try:
-        return service.submit_orders(player, body.orders, body.recruitments)
+        return service.submit_orders(
+            player,
+            body.orders,
+            body.recruitments,
+            economy_orders_for(player.slot, body.build, body.disband),
+        )
     except OrderValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except GameNotActive as exc:

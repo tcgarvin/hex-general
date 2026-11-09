@@ -36,7 +36,7 @@ from collections import Counter, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from app.engine.economy_rules import SiteKind, WorldEconomy
+from app.engine.economy_rules import GARRISON_FORCES, SiteKind, WorldEconomy
 from app.engine.hex_coords import Axial, distance, within
 from app.engine.models import (
     NEUTRAL,
@@ -77,13 +77,6 @@ WORLD_UNIT_CAP = 15
 WORLD_SETTLEMENT_REPAIR = 3
 """HP per turn regained resting in a town or city (WORLD_SPEC §7)."""
 
-GARRISON_FORCES: dict[int, tuple[tuple[UnitType, int], ...]] = {
-    1: ((UnitType.INFANTRY, 5),),
-    2: ((UnitType.INFANTRY, 10),),
-    3: ((UnitType.INFANTRY, 10), (UnitType.ARTILLERY, 10)),
-    4: ((UnitType.INFANTRY, 10), (UnitType.INFANTRY, 10), (UnitType.ARTILLERY, 10)),
-}
-"""Each garrison tier's units and HP, the first on the site (economy draft §04)."""
 
 # Site kinds (economy draft §03): per territory, one factory at 11–20 hexes, one
 # oil field and one steel mill within 12, and in territories with at least six

@@ -64,6 +64,23 @@ const RECRUIT_VOIDED_REASON: Record<
   hex_occupied: "the hex was occupied",
   unit_cap_reached: "the unit cap was reached",
   insufficient_muster: "the bank fell short",
+  insufficient_stocks: "stocks fell short",
+};
+
+type Stocks = components["schemas"]["Stocks"];
+
+/** "5 manpower, 2 steel" — the non-zero parts of an amount of resources. */
+const stocksText = (s: Stocks): string => {
+  const parts = (
+    [
+      ["manpower", s.manpower ?? 0],
+      ["fuel", s.fuel ?? 0],
+      ["steel", s.steel ?? 0],
+    ] as const
+  )
+    .filter(([, n]) => n !== 0)
+    .map(([name, n]) => `${n} ${name}`);
+  return parts.length === 0 ? "nothing" : parts.join(", ");
 };
 
 /**
@@ -183,6 +200,56 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf): LogLine[] {
         {
           indent: 0,
           text: `${cap(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)} (−${event.cost}, bank ${event.bank_after}).`,
+        },
+      ];
+
+    // World economy (economy draft). Plain text for now; the world view (W6)
+    // gets a proper resource bar and base panel.
+    case "stocks_resolved": {
+      const lines: LogLine[] = [
+        {
+          indent: 0,
+          text: `${cap(event.player)}: earned ${stocksText(event.income)}, upkeep ${stocksText(event.upkeep)}. Stocks now ${stocksText(event.after)}.`,
+        },
+      ];
+      const lost = event.lost_to_storage;
+      if ((lost.manpower ?? 0) + (lost.fuel ?? 0) + (lost.steel ?? 0) > 0) {
+        lines.push({ indent: 1, text: `Lost ${stocksText(lost)} for lack of storage.` });
+      }
+      return lines;
+    }
+
+    case "unit_disbanded":
+      return [
+        {
+          indent: 0,
+          text: `${unitName(event.owner, event.unit_type)} at ${coord(event.coord)} disbanded: out of ${event.shortage}${event.chosen ? " (your pick)" : ""}.`,
+        },
+      ];
+
+    case "construction_started":
+      return [
+        {
+          indent: 0,
+          text: `${cap(event.player)} began ${cap(event.building)} level ${event.level} (${stocksText(event.cost)}), done on turn ${event.completes_on}.`,
+        },
+      ];
+
+    case "construction_completed":
+      return [
+        { indent: 0, text: `${cap(event.player)}'s ${cap(event.building)} reached level ${event.level}.` },
+      ];
+
+    case "construction_voided":
+      return [
+        { indent: 0, text: `${cap(event.player)} could not start the ${event.building}: stocks fell short.` },
+      ];
+
+    case "world_unit_recruited":
+      return [
+        {
+          indent: 0,
+          text: `${cap(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)} (${stocksText(event.cost)}).`,
         },
       ];
 

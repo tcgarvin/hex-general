@@ -35,7 +35,7 @@ from app.engine.execution import resolve_execution
 from app.engine.events import Event
 from app.engine.fog import filter_events, redact_state
 from app.engine.map_codec import CompactMap, encode_map
-from app.engine.models import GameState, Order, Recruitment
+from app.engine.models import EconomyOrders, GameState, Order, Recruitment
 from app.engine.visibility import visible_hexes
 from app.engine.scenario import load_scenario_file
 from app.engine.victory import VictoryStatus, victory_status
@@ -66,6 +66,17 @@ _SCENARIO_NAME = re.compile(r"^[a-z0-9_]+$")
 _ORDERS = TypeAdapter(list[Order])
 _RECRUITMENTS = TypeAdapter(list[Recruitment])
 _EVENTS = TypeAdapter(list[Event])
+
+
+@dataclasses.dataclass
+class _Planned:
+    """Submissions planned at resolution rather than stored (a world's bots)."""
+
+    orders: list[Order] = dataclasses.field(default_factory=list)
+    recruitments: list[Recruitment] = dataclasses.field(default_factory=list)
+    economy: list[EconomyOrders] = dataclasses.field(default_factory=list)
+
+
 _T = TypeVar("_T")
 
 WORLD_SCENARIO = "world"
@@ -268,20 +279,31 @@ class GameService:
         player: PlayerRecord,
         orders: list[Order],
         recruitments: list[Recruitment],
+        economy_orders: EconomyOrders | None = None,
     ) -> SubmitResult:
-        """Validate and lock ``player``'s submission; resolve the turn if it's last."""
+        """Validate and lock ``player``'s submission; resolve the turn if it's last.
+
+        ``economy_orders`` are a world player's base orders (build, disband pick).
+        """
         game = self._require_game(player.game_id)
         if game.status != "active":
             raise GameNotActive(
                 f"game {game.id} is {game.status}, not accepting orders"
             )
 
-        validate_submission(game.state, player.slot, orders, recruitments)
+        validate_submission(
+            game.state, player.slot, orders, recruitments, economy_orders
+        )
 
         turn = game.state.turn
         submission = {
             "orders": [o.model_dump(mode="json") for o in orders],
             "recruitments": [r.model_dump(mode="json") for r in recruitments],
+            "economy": (
+                None
+                if economy_orders is None
+                else economy_orders.model_dump(mode="json")
+            ),
         }
         if game.is_world:
             # A world player may revise their plan until the tick resolves it.
@@ -421,21 +443,25 @@ class GameService:
 
     def _world_bot_orders(
         self, game: GameRecord, players: list[PlayerRecord]
-    ) -> tuple[list[Order], list[Recruitment]]:
+    ) -> _Planned:
         """Every world bot's plan for this turn, validated like a human's.
 
         Personalities are seeded from the game id, so a bot keeps its character
         from turn to turn and differs from the same slot in another world.
         """
         policy = WorldPolicy(seed=uuid.UUID(game.id).int % (1 << 31))
-        orders: list[Order] = []
-        recruitments: list[Recruitment] = []
+        planned = _Planned()
         for bot in (p for p in players if p.bot_policy == WORLD_BOT_POLICY):
             plan = policy.plan(redact_state(game.state, bot.slot), bot.slot)
-            validate_submission(game.state, bot.slot, plan.orders, plan.recruitments)
-            orders.extend(plan.orders)
-            recruitments.extend(plan.recruitments)
-        return orders, recruitments
+            economy = plan.economy_orders(bot.slot)
+            validate_submission(
+                game.state, bot.slot, plan.orders, plan.recruitments, economy
+            )
+            planned.orders.extend(plan.orders)
+            planned.recruitments.extend(plan.recruitments)
+            if economy is not None:
+                planned.economy.append(economy)
+        return planned
 
     def resign(self, player: PlayerRecord) -> GameView:
         """Concede ``player``'s slot, ending the game if they were the last rival.
@@ -521,7 +547,7 @@ class GameService:
         self,
         game: GameRecord,
         players: list[PlayerRecord],
-        extra: tuple[list[Order], list[Recruitment]] = ([], []),
+        extra: _Planned | None = None,
     ) -> tuple[GameState, str]:
         """Run the engine over the full set of submissions and persist the result.
 
@@ -542,17 +568,26 @@ class GameService:
             key=lambda o: slot_by_player_id[o.player_id],
         )
 
+        planned = extra if extra is not None else _Planned()
         orders: list[Order] = []
         recruitments: list[Recruitment] = []
+        economy: list[EconomyOrders] = []
         for submission in submissions:
             orders.extend(_ORDERS.validate_python(submission.orders["orders"]))
             recruitments.extend(
                 _RECRUITMENTS.validate_python(submission.orders["recruitments"])
             )
+            # Rows stored before base orders existed have no "economy" key.
+            stored_economy = submission.orders.get("economy")
+            if stored_economy is not None:
+                economy.append(EconomyOrders.model_validate(stored_economy))
 
-        orders.extend(extra[0])
-        recruitments.extend(extra[1])
-        next_state, events = resolve_execution(game.state, orders, recruitments)
+        orders.extend(planned.orders)
+        recruitments.extend(planned.recruitments)
+        economy.extend(planned.economy)
+        next_state, events = resolve_execution(
+            game.state, orders, recruitments, economy
+        )
         victory = victory_status(next_state)
         status = "finished" if victory.decided else "active"
 

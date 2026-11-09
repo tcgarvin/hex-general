@@ -18,7 +18,15 @@ from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.engine.models import GameState, Order, PlayerId, Recruitment
+from app.engine.economy_rules import Building
+from app.engine.models import (
+    EconomyOrders,
+    GameState,
+    Order,
+    PlayerId,
+    Recruitment,
+    UnitId,
+)
 
 
 class BotPlan(BaseModel):
@@ -33,6 +41,23 @@ class BotPlan(BaseModel):
 
     orders: list[Order] = Field(default_factory=list)
     recruitments: list[Recruitment] = Field(default_factory=list)
+    # World games only (see `SubmitOrdersRequest`).
+    build: Building | None = None
+    disband: list[UnitId] = Field(default_factory=list)
+
+    def economy_orders(self, slot: PlayerId) -> EconomyOrders | None:
+        """This plan's base orders for ``slot``, or ``None`` if it has none."""
+        return economy_orders_for(slot, self.build, self.disband)
+
+
+def economy_orders_for(
+    slot: PlayerId, build: Building | None, disband: list[UnitId]
+) -> EconomyOrders | None:
+    """Base orders from a submission's ``build`` and ``disband`` fields, or
+    ``None`` when both are empty (a v0.1 submission never sets them)."""
+    if build is None and not disband:
+        return None
+    return EconomyOrders(owner=slot, build=build, disband=list(disband))
 
 
 @runtime_checkable

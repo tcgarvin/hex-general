@@ -33,9 +33,13 @@ from app.ai.board import BoardIndex, is_combat_unit
 from app.ai.candidates import unit_candidates
 from app.ai.objectives import Objective, ObjectiveKind
 from app.ai.policy import BotPlan
+from app.ai.base_plan import plan_base, site_needs
 from app.ai.recruit import plan_recruitment
 from app.engine.hex_coords import Axial, distance
+from app.engine.economy_rules import GARRISON_FORCES, SiteKind
 from app.engine.models import (
+    NEUTRAL,
+    MapSite,
     DeployOrder,
     GameState,
     HoldOrder,
@@ -56,6 +60,17 @@ _CAPTURE_VALUE: dict[Terrain, float] = {Terrain.CITY: 6.0, Terrain.TOWN: 3.0}
 _NEUTRAL_CAP: dict[Terrain, int] = {Terrain.CITY: 2, Terrain.TOWN: 1}
 _HOSTILE_CAP = 4
 _DEFEND_CAP = 3
+# World sites (economy draft): what each kind is worth to a bot. Garrisoned sites
+# need an attack group one bigger than the garrison, and room for one more.
+_SITE_VALUE: dict[SiteKind, float] = {
+    SiteKind.BASE: 8.0,
+    SiteKind.CITY: 5.0,
+    SiteKind.FACTORY: 5.0,
+    SiteKind.OIL_FIELD: 4.0,
+    SiteKind.STEEL_MILL: 4.0,
+    SiteKind.FARM: 3.0,
+}
+_GARRISON_SIGHT = 3  # an own unit this close sees whether a garrison is still there
 # Beyond this many hexes an objective is reached by Travel, not by Move.
 _TRAVEL_MIN = 6
 # Within this many hexes of a visible hostile a unit fights tactically. Columns
@@ -215,7 +230,12 @@ class _Target:
 def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> BotPlan:
     """Turn the strategist's ``args`` into a legal plan for ``slot``."""
     board = BoardIndex(view, slot)
-    recruitments = plan_recruitment(board, slot)
+    build = None
+    if view.config.economy is None:
+        recruitments = plan_recruitment(board, slot)
+    else:
+        base = plan_base(view, slot)
+        recruitments, build = base.recruitments, base.build
     reserved = frozenset(r.coord for r in recruitments)
     hostiles = [u for u in view.units if view.hostile(u.owner, slot)]
     standing = {o.unit_id: o for o in view.standing_orders}
@@ -252,7 +272,7 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
         )
         if order is not None:
             orders.append(order)
-    return BotPlan(orders=orders, recruitments=recruitments)
+    return BotPlan(orders=orders, recruitments=recruitments, build=build)
 
 
 @dataclass
@@ -386,7 +406,12 @@ def _pick_garrisons(
         (s.coord for s in view.settlements if s.controlled_by == slot),
         key=lambda c: (index[c].terrain is not Terrain.CITY, c.q, c.r),
     )
-    hostiles = [u.coord for u in view.units if view.hostile(u.owner, slot)]
+    # Garrisons hold their own sites and never move, so they threaten nothing.
+    hostiles = [
+        u.coord
+        for u in view.units
+        if view.hostile(u.owner, slot) and u.owner != NEUTRAL
+    ]
     count = round(args.reserve_share * len(combat))
     if args.stance is Stance.DEFEND or any(
         _nearest(c, hostiles) <= _THREAT_RADIUS
@@ -498,6 +523,7 @@ def _targets(
     plans for the ones its army could reach in a few turns.
     """
     index = view.map.index
+    needs = site_needs(view, slot) if view.config.economy is not None else {}
     targets: list[_Target] = []
     for settlement in view.settlements:
         near_focus = (
@@ -509,13 +535,19 @@ def _targets(
         ):
             continue
         terrain = index[settlement.coord].terrain
-        base = _CAPTURE_VALUE[terrain]
+        site = view.map.site_index.get(settlement.coord)
+        base = (
+            _CAPTURE_VALUE[terrain]
+            if site is None
+            else _SITE_VALUE[site.kind] * needs[site.kind]
+        )
         owner = settlement.controlled_by
         if owner == slot:
             threat = sum(
                 1
                 for h in hostiles
-                if distance(h.coord, settlement.coord) <= _THREAT_RADIUS
+                if h.owner != NEUTRAL
+                and distance(h.coord, settlement.coord) <= _THREAT_RADIUS
             )
             if threat == 0:
                 continue
@@ -532,11 +564,16 @@ def _targets(
             )
             continue
         defenders = sum(1 for h in hostiles if distance(h.coord, settlement.coord) <= 1)
+        if owner is None and site is not None:
+            defenders = _expected_garrison(settlement.coord, site, defenders, origins)
         value = base / (1.0 + 0.7 * defenders)
         min_group = 1
         if owner is None:
             value *= 1.4 if args.stance is Stance.EXPAND else 1.0
             capacity = _NEUTRAL_CAP[terrain] + defenders
+            if site is not None and defenders:
+                min_group = defenders + 1
+                capacity = max(capacity, defenders + 2)
         else:
             value *= (1.6 if args.stance is Stance.ATTACK else 0.8) * (
                 0.5 + args.aggression
@@ -554,6 +591,19 @@ def _targets(
             )
         )
     return targets
+
+
+def _expected_garrison(
+    coord: Axial, site: MapSite, seen: int, origins: list[Axial]
+) -> int:
+    """How many garrison units a bot should plan to fight at a neutral site.
+
+    Up close it counts what it sees; farther off it goes by the site's tier, which
+    the map always shows.
+    """
+    if any(distance(o, coord) <= _GARRISON_SIGHT for o in origins):
+        return seen
+    return len(GARRISON_FORCES.get(site.garrison, ()))
 
 
 def _nearest(coord: Axial, others: list[Axial]) -> int:

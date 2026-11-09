@@ -411,6 +411,33 @@ export interface components {
             slot: string;
         };
         /**
+         * ArmySize
+         * @description The army size rule: ``base + per_barracks × barracks level + held sites ÷
+         *     sites_per_point``, never above ``ceiling``. Your own base is not a held site.
+         */
+        ArmySize: {
+            /**
+             * Base
+             * @default 4
+             */
+            base: number;
+            /**
+             * Ceiling
+             * @default 15
+             */
+            ceiling: number;
+            /**
+             * Per Barracks
+             * @default 2
+             */
+            per_barracks: number;
+            /**
+             * Sites Per Point
+             * @default 4
+             */
+            sites_per_point: number;
+        };
+        /**
          * Axial
          * @description An axial hex coordinate.
          *
@@ -486,6 +513,21 @@ export interface components {
              */
             kind: "barrage_resolved";
             target: components["schemas"]["Axial"];
+        };
+        /**
+         * Building
+         * @description A building at a player's base, upgraded level by level.
+         * @enum {string}
+         */
+        Building: "barracks" | "depot" | "workshop";
+        /**
+         * BuildingLevel
+         * @description What one level of a building costs and how many turns it takes to build.
+         */
+        BuildingLevel: {
+            cost: components["schemas"]["Stocks"];
+            /** Turns */
+            turns: number;
         };
         /**
          * ColumnHeld
@@ -642,11 +684,83 @@ export interface components {
             height: number;
             /** Roads */
             roads: string;
+            /** Sites */
+            sites?: components["schemas"]["MapSite"][];
             /** Terrain */
             terrain: string;
             /** Width */
             width: number;
         };
+        /**
+         * Construction
+         * @description A building level under construction at a player's base.
+         *
+         *     Paid for when it starts; it completes in the economy phase of turn
+         *     ``completes_on``.
+         */
+        Construction: {
+            building: components["schemas"]["Building"];
+            /** Completes On */
+            completes_on: number;
+            /** Level */
+            level: number;
+        };
+        /**
+         * ConstructionCompleted
+         * @description A building reached a new level.
+         */
+        ConstructionCompleted: {
+            building: components["schemas"]["Building"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "construction_completed";
+            /** Level */
+            level: number;
+            /** Player */
+            player: string;
+        };
+        /**
+         * ConstructionStarted
+         * @description A player paid for and began a building level at their base.
+         */
+        ConstructionStarted: {
+            building: components["schemas"]["Building"];
+            /** Completes On */
+            completes_on: number;
+            cost: components["schemas"]["Stocks"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "construction_started";
+            /** Level */
+            level: number;
+            /** Player */
+            player: string;
+        };
+        /**
+         * ConstructionVoided
+         * @description A build order was skipped; nothing was paid.
+         */
+        ConstructionVoided: {
+            building: components["schemas"]["Building"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "construction_voided";
+            /** Player */
+            player: string;
+            reason: components["schemas"]["ConstructionVoidedReason"];
+        };
+        /**
+         * ConstructionVoidedReason
+         * @description Why a submission-legal build order did not start this turn.
+         * @enum {string}
+         */
+        ConstructionVoidedReason: "insufficient_stocks";
         /**
          * CreateGameRequest
          * @description Body for ``POST /games``: which authored scenario to instantiate.
@@ -787,6 +901,7 @@ export interface components {
          */
         GameConfig: {
             command_cap?: components["schemas"]["CommandCap"] | null;
+            economy?: components["schemas"]["WorldEconomy"] | null;
             /**
              * Muster Bank Cap
              * @default 20
@@ -848,6 +963,8 @@ export interface components {
             height: number;
             /** Hexes */
             hexes: components["schemas"]["Hex"][];
+            /** Sites */
+            sites?: components["schemas"]["MapSite"][];
             /** Width */
             width: number;
         };
@@ -957,6 +1074,20 @@ export interface components {
         JoinGameRequest: {
             /** Invite Token */
             invite_token: string;
+        };
+        /**
+         * MapSite
+         * @description A settlement's static role in a world economy, fixed at generation.
+         *
+         *     ``garrison`` is the tier (1–4) of the neutral garrison the site starts with,
+         *     or 0 for a base, which is never garrisoned. It stays on the map after the
+         *     garrison is gone so the strategic view can always show how hard a site was.
+         */
+        MapSite: {
+            coord: components["schemas"]["Axial"];
+            /** Garrison */
+            garrison: number;
+            kind: components["schemas"]["SiteKind"];
         };
         /**
          * MarchOrder
@@ -1076,11 +1207,14 @@ export interface components {
         OrderMootedReason: "destroyed_in_barrage";
         /**
          * Player
-         * @description A participant's mutable economy state (SPEC §6).
+         * @description A participant's mutable economy state (SPEC §6, economy draft).
          *
-         *     ``bank`` is the muster bank, clamped to 0..`GameConfig.muster_bank_cap` by the
-         *     economy phase (SPEC §6.3,
-         *     §6.4). Settlement control is not duplicated here — derive it from
+         *     ``bank`` is the v0.1 muster bank, clamped to 0..`GameConfig.muster_bank_cap`
+         *     by the economy phase (SPEC §6.3, §6.4). A world game uses ``stocks``,
+         *     ``buildings`` and ``construction`` instead and leaves ``bank`` at 0.
+         *     ``buildings`` maps a building to its completed level; a building never built
+         *     is absent (level 0). ``construction`` is ``None`` when nothing is being built.
+         *     Settlement control is not duplicated here — derive it from
          *     `GameState.settlements` to keep one source of truth.
          */
         Player: {
@@ -1089,8 +1223,14 @@ export interface components {
              * @default 0
              */
             bank: number;
+            /** Buildings */
+            buildings?: {
+                [key: string]: number;
+            };
+            construction?: components["schemas"]["Construction"] | null;
             /** Id */
             id: string;
+            stocks?: components["schemas"]["Stocks"];
         };
         /**
          * PlayerCredentials
@@ -1162,7 +1302,7 @@ export interface components {
          * @description Why a submission-legal recruit was voided by the turn (SPEC §6.5, §11.3).
          * @enum {string}
          */
-        RecruitmentVoidedReason: "city_not_friendly" | "hex_occupied" | "unit_cap_reached" | "insufficient_muster";
+        RecruitmentVoidedReason: "city_not_friendly" | "hex_occupied" | "unit_cap_reached" | "insufficient_muster" | "insufficient_stocks";
         /**
          * RestOrder
          * @description Do not move; repair HP if undamaged during execution (SPEC §7.3).
@@ -1216,6 +1356,16 @@ export interface components {
             unit_id: number;
         };
         /**
+         * SiteKind
+         * @description What a settlement is in a world economy, fixed when the map is generated.
+         *
+         *     The hex terrain (town or city tile) is only how the site looks on the board;
+         *     the kind decides what it produces and what may be recruited there. A `BASE` is
+         *     a player's home: not a city, and one per slot.
+         * @enum {string}
+         */
+        SiteKind: "base" | "city" | "farm" | "oil_field" | "steel_mill" | "factory";
+        /**
          * StandingTravel
          * @description A travel order still in progress, carried from turn to turn (WORLD_SPEC §5).
          *
@@ -1235,6 +1385,49 @@ export interface components {
             unit_id: number;
         };
         /**
+         * Stocks
+         * @description An amount of each resource: a stockpile, an income, a cost or an upkeep.
+         */
+        Stocks: {
+            /**
+             * Fuel
+             * @default 0
+             */
+            fuel: number;
+            /**
+             * Manpower
+             * @default 0
+             */
+            manpower: number;
+            /**
+             * Steel
+             * @default 0
+             */
+            steel: number;
+        };
+        /**
+         * StocksResolved
+         * @description One world player's resource accounting for the turn (economy draft §02).
+         *
+         *     ``after = before + income - upkeep``, floored at 0 and limited to storage;
+         *     ``lost_to_storage`` is what the depot could not hold. A shortfall below 0
+         *     disbands a unit (`UnitDisbanded`).
+         */
+        StocksResolved: {
+            after: components["schemas"]["Stocks"];
+            before: components["schemas"]["Stocks"];
+            income: components["schemas"]["Stocks"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "stocks_resolved";
+            lost_to_storage: components["schemas"]["Stocks"];
+            /** Player */
+            player: string;
+            upkeep: components["schemas"]["Stocks"];
+        };
+        /**
          * SubmitOrdersRequest
          * @description Body for ``POST /games/{id}/orders``: a player's full plan for the turn.
          *
@@ -1243,6 +1436,9 @@ export interface components {
          *     `Order` union, so unknown order shapes are rejected as 422 at the wire.
          */
         SubmitOrdersRequest: {
+            build?: components["schemas"]["Building"] | null;
+            /** Disband */
+            disband?: number[];
             /** Orders */
             orders?: (components["schemas"]["MoveOrder"] | components["schemas"]["BarrageOrder"] | components["schemas"]["RestOrder"] | components["schemas"]["HoldOrder"] | components["schemas"]["MarchOrder"] | components["schemas"]["DeployOrder"] | components["schemas"]["TravelOrder"])[];
             /** Recruitments */
@@ -1351,7 +1547,7 @@ export interface components {
          */
         TurnReplay: {
             /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"])[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"] | components["schemas"]["StocksResolved"] | components["schemas"]["UnitDisbanded"] | components["schemas"]["ConstructionStarted"] | components["schemas"]["ConstructionCompleted"] | components["schemas"]["ConstructionVoided"] | components["schemas"]["WorldUnitRecruited"])[];
             state_after: components["schemas"]["GameState"];
             /** Turn */
             turn: number;
@@ -1416,6 +1612,33 @@ export interface components {
             pulse: number;
             /** Unit Id */
             unit_id: number;
+        };
+        /**
+         * UnitDisbanded
+         * @description A shortage disbanded a unit (economy draft §02).
+         *
+         *     ``shortage`` is the resource that ran out. ``chosen`` is whether the unit was
+         *     the player's own pick, rather than the weakest qualifying unit by default.
+         */
+        UnitDisbanded: {
+            /** Chosen */
+            chosen: boolean;
+            coord: components["schemas"]["Axial"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "unit_disbanded";
+            /** Owner */
+            owner: string;
+            /**
+             * Shortage
+             * @enum {string}
+             */
+            shortage: "fuel" | "manpower";
+            /** Unit Id */
+            unit_id: number;
+            unit_type: components["schemas"]["UnitType"];
         };
         /**
          * UnitMoved
@@ -1578,12 +1801,43 @@ export interface components {
             game_id: string;
         };
         /**
+         * WorldEconomy
+         * @description Every tunable number of the world economy (defaults: draft revision 2).
+         *
+         *     ``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is
+         *     the per-resource stockpile limit at depot level ``k``, so it has one more
+         *     entry than the depot has levels. Artillery needs a workshop and armor a held
+         *     factory; those unlock rules are fixed in the recruitment phase.
+         */
+        WorldEconomy: {
+            army?: components["schemas"]["ArmySize"];
+            /** Buildings */
+            buildings?: {
+                [key: string]: components["schemas"]["BuildingLevel"][];
+            };
+            /** Recruit Cost */
+            recruit_cost?: {
+                [key: string]: components["schemas"]["Stocks"];
+            };
+            /** Site Income */
+            site_income?: {
+                [key: string]: components["schemas"]["Stocks"];
+            };
+            starting_stocks?: components["schemas"]["Stocks"];
+            /** Storage */
+            storage?: number[];
+            /** Upkeep */
+            upkeep?: {
+                [key: string]: components["schemas"]["Stocks"];
+            };
+        };
+        /**
          * WorldReplay
          * @description A resolved world turn for one viewer: witnessed events and the fogged state.
          */
         WorldReplay: {
             /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"])[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"] | components["schemas"]["StocksResolved"] | components["schemas"]["UnitDisbanded"] | components["schemas"]["ConstructionStarted"] | components["schemas"]["ConstructionCompleted"] | components["schemas"]["ConstructionVoided"] | components["schemas"]["WorldUnitRecruited"])[];
             state_after: components["schemas"]["WorldState"];
             /** Turn */
             turn: number;
@@ -1610,6 +1864,25 @@ export interface components {
             turn: number;
             /** Units */
             units: components["schemas"]["Unit"][];
+        };
+        /**
+         * WorldUnitRecruited
+         * @description A world player recruited a unit, paying ``cost`` from their stocks.
+         */
+        WorldUnitRecruited: {
+            coord: components["schemas"]["Axial"];
+            cost: components["schemas"]["Stocks"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "world_unit_recruited";
+            /** Owner */
+            owner: string;
+            stocks_after: components["schemas"]["Stocks"];
+            /** Unit Id */
+            unit_id: number;
+            unit_type: components["schemas"]["UnitType"];
         };
         /**
          * WorldView

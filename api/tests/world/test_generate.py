@@ -13,14 +13,13 @@ from collections import deque
 
 import pytest
 
-from app.engine.economy_rules import SiteKind, WorldEconomy
+from app.engine.economy_rules import GARRISON_FORCES, SiteKind, WorldEconomy
 from app.engine.execution import resolve_execution
 from app.engine.hex_coords import Axial, distance, neighbors
 from app.engine.models import NEUTRAL
 from app.engine.routing import find_route
 from app.engine.stats import TERRAIN_STATS, Terrain
 from app.world.generate import (
-    GARRISON_FORCES,
     STARTING_UNITS,
     GeneratedWorld,
     WorldGenError,

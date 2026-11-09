@@ -538,6 +538,16 @@ settlements by turn 20, and none was eliminated. Holdings at turn 60 ran 1–41
 (median 18). Half-filled worlds have room to expand; the crowded 12-slot test worlds
 don't.
 
+**World economy (2026-11-10), 100 bots on the 200-slot world, seed 1, 60 turns (66 s):**
+resolution 0.18 s median and 0.82 s worst with ~2,500 garrison units; planning 4 ms
+mean. Bots build and recruit with `app/ai/base_plan.py` and value sites by kind and
+need. Median units 5 at turn 14, 7 at 28, 8 at 42, 9 at 60 (8 of 100 reach 15);
+holdings including the base 3 / 4 / 5 / 7. That is about half the economy draft's
+model player (11 units at turn 28, 15 by turn 45), which is fine while bots only fill
+the map; better bots wait for the user's first playtest. 31 units disbanded by
+shortages in 60 turns across all bots. Bots attack a garrison with one unit at a time,
+which is slow; massing on a site is the first bot improvement to make.
+
 Gaps:
 
 - Fights stay small: the median engagement is about one unit per side. Bots spread across

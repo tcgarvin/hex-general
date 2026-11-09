@@ -33,11 +33,15 @@ from app.engine.events import (
     TrafficJam,
     TravelEnded,
     UnitDeployed,
+    UnitDisbanded,
 )
 from app.engine.execution import resolve_execution
 from app.engine.fog import redact_state
 from app.engine.hex_coords import Axial, distance, neighbors, within
+from app.engine.economy_rules import Building
 from app.engine.models import (
+    NEUTRAL,
+    EconomyOrders,
     GameState,
     Order,
     PlayerId,
@@ -66,6 +70,12 @@ class TurnStats(BaseModel):
     jams_far: int
     resolve_ms: float
     think_ms_max: float
+    # World economy (economy draft): barracks level per player, neutral garrison
+    # units left, units disbanded by shortages and fights against garrisons.
+    barracks: dict[PlayerId, int] = Field(default_factory=dict)
+    garrison_units: int = 0
+    disbanded: int = 0
+    garrison_fights: int = 0
 
 
 class SimReport(BaseModel):
@@ -130,15 +140,21 @@ def run_sim(
         live = [p for p in ids if p not in report.eliminated]
         orders: list[Order] = []
         recruitments: list[Recruitment] = []
+        economy: list[EconomyOrders] = []
         think: list[float] = []
         for player in live:
             view = redact_state(state, player)
             start = time.perf_counter()
             plan = bots[player].plan(view, player)
             think.append((time.perf_counter() - start) * 1000.0)
-            validate_submission(view, player, plan.orders, plan.recruitments)
+            base_orders = plan.economy_orders(player)
+            validate_submission(
+                view, player, plan.orders, plan.recruitments, base_orders
+            )
             orders.extend(plan.orders)
             recruitments.extend(plan.recruitments)
+            if base_orders is not None:
+                economy.append(base_orders)
         for order in orders:
             if isinstance(order, TravelOrder):
                 report.travel_issued += 1
@@ -146,7 +162,7 @@ def run_sim(
 
         before = state
         start = time.perf_counter()
-        state, events = resolve_execution(state, orders, recruitments)
+        state, events = resolve_execution(state, orders, recruitments, economy)
         resolve_ms = (time.perf_counter() - start) * 1000.0
         think_all.extend(think)
 
@@ -187,7 +203,7 @@ def _tally(
     owner_of = {u.id: u.owner for u in before.units}
     hostile_coords = [(u.coord, u.owner) for u in before.units]
     jams_near = jams_far = 0
-    combats = 0
+    combats = disbanded = garrison_fights = 0
     for event in events:
         if isinstance(event, TrafficJam):
             owner = owner_of[event.unit_ids[0]]
@@ -208,9 +224,14 @@ def _tally(
             DeployCause.BARRAGED,
         ):
             report.auto_deploys += 1
+        elif isinstance(event, UnitDisbanded):
+            disbanded += 1
         elif isinstance(event, CombatResolved):
             combats += 1
             sides = Counter(p.owner for p in event.participants)
+            if NEUTRAL in sides:
+                garrison_fights += 1
+                continue
             if any(p.defense_penalty > 0 for p in event.participants):
                 report.disordered_fights += 1
             owners = sorted(sides)
@@ -218,7 +239,11 @@ def _tally(
                 for b in owners[k + 1 :]:
                     report.first_contact.setdefault(f"{a}|{b}", after.turn)
 
-    deployed = {u.coord: u.owner for u in after.units if u.posture is Posture.DEPLOYED}
+    deployed = {
+        u.coord: u.owner
+        for u in after.units
+        if u.posture is Posture.DEPLOYED and u.owner != NEUTRAL
+    }
     front_hexes = {
         coord
         for coord, owner in deployed.items()
@@ -232,7 +257,7 @@ def _tally(
             settlements=dict(
                 Counter(s.controlled_by for s in after.settlements if s.controlled_by)
             ),
-            units=dict(Counter(u.owner for u in after.units)),
+            units=dict(Counter(u.owner for u in after.units if u.owner != NEUTRAL)),
             columns=sum(1 for u in after.units if u.posture is Posture.COLUMN),
             front_units=front,
             combats=combats,
@@ -240,6 +265,10 @@ def _tally(
             jams_far=jams_far,
             resolve_ms=round(resolve_ms, 1),
             think_ms_max=round(think_ms_max, 1),
+            barracks={p.id: p.level(Building.BARRACKS) for p in after.players},
+            garrison_units=sum(1 for u in after.units if u.owner == NEUTRAL),
+            disbanded=disbanded,
+            garrison_fights=garrison_fights,
         )
     )
 

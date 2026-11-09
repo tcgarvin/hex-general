@@ -23,7 +23,12 @@ opponent's simultaneous orders:
     needs a packed column (WORLD_SPEC §4);
   * barrage is by an artillery unit at an on-map hex within range (SPEC §7.2);
   * recruits target a city the caller controls, are affordable from the current
-    bank, and stay under the unit cap (SPEC §6.5, §6.1).
+    bank, and stay under the unit cap (SPEC §6.5, §6.1). In a world game they
+    target a site of the right kind (tanks at a factory, guns need a workshop)
+    and, with any build order, are affordable from the current stocks;
+  * world base orders are the caller's own: a build only when nothing else is
+    under construction and the building has a level left, and disband picks only
+    from the caller's units.
 
 **Dynamic** interactions — ZOC stops, stacking conflicts, edge swaps, and the
 exact end-of-turn bank after economy — are the engine's authority and are not
@@ -36,9 +41,11 @@ supports it. This conservatism keeps a locked turn guaranteed to resolve.
 from __future__ import annotations
 
 from app.engine.hex_coords import Axial, distance, is_adjacent
+from app.engine.economy_rules import Stocks, WorldEconomy
 from app.engine.models import (
     BarrageOrder,
     DeployOrder,
+    EconomyOrders,
     GameState,
     Hex,
     MarchOrder,
@@ -50,6 +57,7 @@ from app.engine.models import (
     TravelOrder,
     Unit,
 )
+from app.engine.recruitment import WORLD_RECRUIT_NEEDS, WORLD_RECRUIT_SITES
 from app.engine.routing import find_route
 from app.engine.stats import TERRAIN_STATS, UNIT_STATS, Terrain, UnitType
 
@@ -63,8 +71,11 @@ def validate_submission(
     slot: PlayerId,
     orders: list[Order],
     recruitments: list[Recruitment],
+    economy_orders: EconomyOrders | None = None,
 ) -> None:
     """Validate one player's full submission against ``state``.
+
+    ``economy_orders`` are a world player's base orders (``None``: none sent).
 
     Raises `OrderValidationError` on the first problem found; returns ``None`` when
     the whole submission is statically legal for ``slot``.
@@ -100,7 +111,14 @@ def validate_submission(
         elif isinstance(order, TravelOrder):
             _validate_travel(order, unit, state)
 
-    _validate_recruitments(state, slot, recruitments, hexes_by_coord)
+    economy = state.config.economy
+    if economy is None:
+        if economy_orders is not None:
+            raise OrderValidationError("base orders are only for world games")
+        _validate_recruitments(state, slot, recruitments, hexes_by_coord)
+        return
+    spent = _validate_economy_orders(state, economy, slot, economy_orders)
+    _validate_world_recruitments(state, economy, slot, recruitments, spent)
 
 
 def _validate_path(
@@ -222,4 +240,94 @@ def _validate_recruitments(
             raise OrderValidationError(
                 f"recruits cost {spent} but {slot!r} has only "
                 f"{bank_by_player[slot]} banked"
+            )
+
+
+def _validate_economy_orders(
+    state: GameState,
+    economy: WorldEconomy,
+    slot: PlayerId,
+    orders: EconomyOrders | None,
+) -> Stocks:
+    """Check a world player's base orders; return what the build order costs."""
+    if orders is None:
+        return Stocks()
+    if orders.owner != slot:
+        raise OrderValidationError(
+            f"base orders for {orders.owner!r} are not owned by caller {slot!r}"
+        )
+    owned = {u.id for u in state.units if u.owner == slot}
+    if len(set(orders.disband)) != len(orders.disband):
+        raise OrderValidationError("a unit is listed twice in the disband pick")
+    strangers = [i for i in orders.disband if i not in owned]
+    if strangers:
+        raise OrderValidationError(f"disband pick names units not yours: {strangers}")
+    if orders.build is None:
+        return Stocks()
+    player = state.player(slot)
+    work = player.construction
+    if work is not None and work.completes_on > state.turn:
+        raise OrderValidationError(
+            f"{work.building} level {work.level} is still under construction"
+        )
+    level = player.level(orders.build)
+    if work is not None and work.building is orders.build:
+        level = work.level  # finishing this turn: the order builds the next one
+    if level >= economy.max_level(orders.build):
+        raise OrderValidationError(f"{orders.build} is already at its top level")
+    cost = economy.buildings[orders.build][level].cost
+    if not player.stocks.covers(cost):
+        raise OrderValidationError(
+            f"{orders.build} level {level + 1} costs {cost} but stocks are "
+            f"{player.stocks}"
+        )
+    return cost
+
+
+def _validate_world_recruitments(
+    state: GameState,
+    economy: WorldEconomy,
+    slot: PlayerId,
+    recruitments: list[Recruitment],
+    spent: Stocks,
+) -> None:
+    """World recruits: the right kind of held site, affordable, under army size.
+
+    Costs accumulate on top of any build order (``spent``) and are checked
+    against the current stocks, as v0.1 checks the current bank.
+    """
+    if not recruitments:
+        return
+    player = state.player(slot)
+    sites = state.map.site_index
+    control_at = {s.coord: s.controlled_by for s in state.settlements}
+    unit_count = sum(1 for u in state.units if u.owner == slot)
+    cap = state.unit_cap_for(slot)
+    claimed: set[Axial] = set()
+    for recruit in recruitments:
+        if recruit.owner != slot:
+            raise OrderValidationError(
+                f"recruit for {recruit.owner!r} is not owned by caller {slot!r}"
+            )
+        site = sites.get(recruit.coord)
+        if site is None or site.kind not in WORLD_RECRUIT_SITES[recruit.type]:
+            allowed = sorted(WORLD_RECRUIT_SITES[recruit.type])
+            raise OrderValidationError(
+                f"{recruit.type} recruits only at {allowed}, not {recruit.coord}"
+            )
+        needs = WORLD_RECRUIT_NEEDS.get(recruit.type)
+        if needs is not None and player.level(needs) < 1:
+            raise OrderValidationError(f"{recruit.type} needs a {needs}")
+        if control_at.get(recruit.coord) != slot:
+            raise OrderValidationError(f"{recruit.coord} is not held by {slot!r}")
+        if recruit.coord in claimed:
+            raise OrderValidationError(f"two recruits target {recruit.coord}")
+        claimed.add(recruit.coord)
+        unit_count += 1
+        if unit_count > cap:
+            raise OrderValidationError(f"recruiting exceeds the army size of {cap}")
+        spent = spent + economy.recruit_cost[recruit.type]
+        if not player.stocks.covers(spent):
+            raise OrderValidationError(
+                f"orders cost {spent} but stocks are {player.stocks}"
             )

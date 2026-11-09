@@ -228,22 +228,40 @@ takes ~18 s), `app/world/preview.py` (stdlib PNG), gates in `tests/world/`.
   517–681); settlements within 14 hexes of a capital 4–12 (median 8). Edge and river
   starts run small. The W4 sim will show whether it matters.
 
-## 7. Economy and command cap
+## 7. Economy and army size
 
-- Muster as v0.1 (town +2, city +3, upkeep). The bank cap scales to 40 [tunable].
-- **Command cap** replaces the flat 20-unit cap:
-  `cap = 4 + 1 per town + 2 per city`, up to a maximum of **15** [tunable]. A mature
-  player fields a division. Growth comes from land, not grinding.
-- Recruits deploy at friendly cities (as v0.1).
-- **Healing:** resting in a friendly settlement restores **3 HP/turn** [tunable], up from
-  v0.1's 2. Expect about a third of an army in the line at once, not half (VISION §7).
+The reviewed economy draft (https://claude.ai/artifact/BjDgptUsyxZn7aLBW5pxd4,
+revision 2; decisions in VISION §6) replaces v0.1 muster in world games.
+
+- **Resources:** manpower, fuel, steel, each with a storage limit (30, then 50 and
+  80 with depot levels).
+- **Sites** (`MapSite`, stored with the map): base, city, farm, oil field, steel mill,
+  factory. Per territory: one factory 11–20 hexes out, one oil field and one steel
+  mill within 12, one more of either farther out where there are 6+ towns; other
+  towns are farms. Bases are their own site kind (not cities); an unfilled slot's
+  base site is vacant (no settlement, can't be captured) until a player founds a base
+  there.
+- **Garrisons:** every neutral site starts with a neutral garrison (owner `neutral`,
+  hostile to all, always holds, never captures). Tier by distance to the nearest base
+  and value: T1 militia (infantry at 5 HP), T2 infantry, T3 infantry + gun, T4 two
+  infantry + gun. No respawn and no regeneration yet.
+- **Buildings** at the base, one under construction at a time: barracks (5 levels),
+  depot (2), workshop (1, unlocks guns). Tanks recruit only at a held factory;
+  infantry and guns at the base or a held city.
+- **Army size:** `4 + 2 × barracks level + 1 per 4 held sites` (the base doesn't
+  count), up to 15.
+- **Shortages:** each turn the stock can't cover upkeep, one unit disbands per short
+  resource (fuel: a tank or gun; manpower: any unit). The player's `disband` pick goes
+  first, else the weakest (lowest HP, then newest).
+- **Healing:** resting in a friendly settlement restores **3 HP/turn**.
 - **Elimination:** a player with no settlements and no units is out of the world.
-  A player with units but no cities can't recruit, but can retake ground.
 - No victory condition in slice 1; the world simply runs.
-- *As built:* `GameConfig.command_cap` (`CommandCap`), `muster_bank_cap = 40` and
-  `settlement_repair = 3` are per-game config that `GeneratedWorld.to_state` sets;
-  v0.1 games keep their flat cap of 20, bank cap of 20 and +2 healing. The bank
-  ceiling is now checked on `GameState` rather than on `Player`.
+- *As built (2026-11-10):* rules data `app/engine/economy_rules.py` (`WorldEconomy`,
+  carried in `GameConfig.economy`, so each world can be tuned), the phase
+  `app/engine/world_economy.py`, world recruitment in `recruitment.py`, validation in
+  `app/games/validation.py`. Submissions carry `build` and `disband`
+  (`EconomyOrders`). Other players' stocks and base are hidden by fog. v0.1 muster
+  stays on its own path until the 2-player flow is removed.
 
 ## 8. Bots
 
@@ -397,7 +415,7 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 | **W2** Travel ✅ | `TravelOrder`, routing, standing orders in state, validation, `TravelEnded` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator ✅ (review pending) | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim (first cut) | §8–9: `app/ai/world.py`, `app/world/sim.py`, AI_SPEC §12 | §9 acceptance gates (not yet met: see AI_SPEC §12.4) |
-| **W5** Persistence + clock — started | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
+| **W5** Persistence + clock — started (economy built 2026-11-10) | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
 | **W6** Frontend world view | §11 | art ratified; user can plan a world turn |
 | **W7** Live playtest | the user plays a week | the user's verdict |
 

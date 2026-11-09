@@ -113,6 +113,17 @@ class ArmySize(BaseModel):
         )
 
 
+GARRISON_FORCES: dict[int, tuple[tuple[UnitType, int], ...]] = {
+    1: ((UnitType.INFANTRY, 5),),
+    2: ((UnitType.INFANTRY, 10),),
+    3: ((UnitType.INFANTRY, 10), (UnitType.ARTILLERY, 10)),
+    4: ((UnitType.INFANTRY, 10), (UnitType.INFANTRY, 10), (UnitType.ARTILLERY, 10)),
+}
+"""Each garrison tier's units and HP, the first on the site (economy draft §04).
+
+A generator places these at world creation; bots read them to size attacks."""
+
+
 def _levels(*levels: tuple[Stocks, int]) -> list[BuildingLevel]:
     return [BuildingLevel(cost=cost, turns=turns) for cost, turns in levels]
 

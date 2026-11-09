@@ -7,6 +7,8 @@ from collections.abc import Callable
 import pytest
 
 from app.engine.hex_coords import Axial, neighbors
+from app.engine.economy_rules import Building
+from app.engine.models import EconomyOrders
 from app.engine.models import GameState, MoveOrder, Unit
 from app.games.repo import GameRecord
 from app.games.service import (
@@ -211,3 +213,20 @@ def test_a_world_player_can_revise_orders_before_the_tick(
     after = repo.get_game(game_id)
     assert after is not None
     assert next(u for u in after.state.units if u.id == unit.id).coord == second
+
+
+def test_a_world_players_build_order_is_stored_and_resolved(
+    repo: FakeGameRepo, service: GameService
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=1)
+    service.join_world(game_id, "user-1")
+    player = repo.get_player(game_id, "user-1")
+    assert player is not None
+    service.submit_orders(
+        player, [], [], EconomyOrders(owner=player.slot, build=Building.BARRACKS)
+    )
+    service.tick_world(game_id)
+    after = repo.get_game(game_id)
+    assert after is not None
+    work = after.state.player(player.slot).construction
+    assert work is not None and work.building is Building.BARRACKS

@@ -20,6 +20,37 @@
         "title": "ActiveGame",
         "type": "object"
       },
+      "ArmySize": {
+        "description": "The army size rule: ``base + per_barracks \u00d7 barracks level + held sites \u00f7\nsites_per_point``, never above ``ceiling``. Your own base is not a held site.",
+        "properties": {
+          "base": {
+            "default": 4,
+            "minimum": 0.0,
+            "title": "Base",
+            "type": "integer"
+          },
+          "ceiling": {
+            "default": 15,
+            "minimum": 1.0,
+            "title": "Ceiling",
+            "type": "integer"
+          },
+          "per_barracks": {
+            "default": 2,
+            "minimum": 0.0,
+            "title": "Per Barracks",
+            "type": "integer"
+          },
+          "sites_per_point": {
+            "default": 4,
+            "minimum": 1.0,
+            "title": "Sites Per Point",
+            "type": "integer"
+          }
+        },
+        "title": "ArmySize",
+        "type": "object"
+      },
       "Axial": {
         "description": "An axial hex coordinate.\n\n``q`` is the column-ish axis and ``r`` the row-ish axis. Frozen so two\ncoordinates with the same values are equal and hashable.",
         "properties": {
@@ -157,6 +188,35 @@
           "target"
         ],
         "title": "BarrageResolved",
+        "type": "object"
+      },
+      "Building": {
+        "description": "A building at a player's base, upgraded level by level.",
+        "enum": [
+          "barracks",
+          "depot",
+          "workshop"
+        ],
+        "title": "Building",
+        "type": "string"
+      },
+      "BuildingLevel": {
+        "description": "What one level of a building costs and how many turns it takes to build.",
+        "properties": {
+          "cost": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "turns": {
+            "minimum": 1.0,
+            "title": "Turns",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cost",
+          "turns"
+        ],
+        "title": "BuildingLevel",
         "type": "object"
       },
       "ColumnHeld": {
@@ -391,6 +451,13 @@
             "title": "Roads",
             "type": "string"
           },
+          "sites": {
+            "items": {
+              "$ref": "#/components/schemas/MapSite"
+            },
+            "title": "Sites",
+            "type": "array"
+          },
           "terrain": {
             "title": "Terrain",
             "type": "string"
@@ -409,6 +476,137 @@
         ],
         "title": "CompactMap",
         "type": "object"
+      },
+      "Construction": {
+        "description": "A building level under construction at a player's base.\n\nPaid for when it starts; it completes in the economy phase of turn\n``completes_on``.",
+        "properties": {
+          "building": {
+            "$ref": "#/components/schemas/Building"
+          },
+          "completes_on": {
+            "minimum": 0.0,
+            "title": "Completes On",
+            "type": "integer"
+          },
+          "level": {
+            "minimum": 1.0,
+            "title": "Level",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "building",
+          "level",
+          "completes_on"
+        ],
+        "title": "Construction",
+        "type": "object"
+      },
+      "ConstructionCompleted": {
+        "additionalProperties": false,
+        "description": "A building reached a new level.",
+        "properties": {
+          "building": {
+            "$ref": "#/components/schemas/Building"
+          },
+          "kind": {
+            "const": "construction_completed",
+            "default": "construction_completed",
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "integer"
+          },
+          "player": {
+            "title": "Player",
+            "type": "string"
+          }
+        },
+        "required": [
+          "player",
+          "building",
+          "level"
+        ],
+        "title": "ConstructionCompleted",
+        "type": "object"
+      },
+      "ConstructionStarted": {
+        "additionalProperties": false,
+        "description": "A player paid for and began a building level at their base.",
+        "properties": {
+          "building": {
+            "$ref": "#/components/schemas/Building"
+          },
+          "completes_on": {
+            "title": "Completes On",
+            "type": "integer"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "kind": {
+            "const": "construction_started",
+            "default": "construction_started",
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "integer"
+          },
+          "player": {
+            "title": "Player",
+            "type": "string"
+          }
+        },
+        "required": [
+          "player",
+          "building",
+          "level",
+          "completes_on",
+          "cost"
+        ],
+        "title": "ConstructionStarted",
+        "type": "object"
+      },
+      "ConstructionVoided": {
+        "additionalProperties": false,
+        "description": "A build order was skipped; nothing was paid.",
+        "properties": {
+          "building": {
+            "$ref": "#/components/schemas/Building"
+          },
+          "kind": {
+            "const": "construction_voided",
+            "default": "construction_voided",
+            "title": "Kind",
+            "type": "string"
+          },
+          "player": {
+            "title": "Player",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ConstructionVoidedReason"
+          }
+        },
+        "required": [
+          "player",
+          "building",
+          "reason"
+        ],
+        "title": "ConstructionVoided",
+        "type": "object"
+      },
+      "ConstructionVoidedReason": {
+        "description": "Why a submission-legal build order did not start this turn.",
+        "enum": [
+          "insufficient_stocks"
+        ],
+        "title": "ConstructionVoidedReason",
+        "type": "string"
       },
       "CreateGameRequest": {
         "additionalProperties": false,
@@ -609,6 +807,16 @@
               }
             ]
           },
+          "economy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorldEconomy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "muster_bank_cap": {
             "default": 20,
             "title": "Muster Bank Cap",
@@ -709,6 +917,13 @@
               "$ref": "#/components/schemas/Hex"
             },
             "title": "Hexes",
+            "type": "array"
+          },
+          "sites": {
+            "items": {
+              "$ref": "#/components/schemas/MapSite"
+            },
+            "title": "Sites",
             "type": "array"
           },
           "width": {
@@ -944,6 +1159,30 @@
         "title": "JoinGameRequest",
         "type": "object"
       },
+      "MapSite": {
+        "description": "A settlement's static role in a world economy, fixed at generation.\n\n``garrison`` is the tier (1\u20134) of the neutral garrison the site starts with,\nor 0 for a base, which is never garrisoned. It stays on the map after the\ngarrison is gone so the strategic view can always show how hard a site was.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "garrison": {
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Garrison",
+            "type": "integer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SiteKind"
+          }
+        },
+        "required": [
+          "coord",
+          "kind",
+          "garrison"
+        ],
+        "title": "MapSite",
+        "type": "object"
+      },
       "MarchOrder": {
         "description": "Travel as a column along an exact path (WORLD_SPEC \u00a74.4, \u00a75).\n\nA deployed unit packs first (the opening pulses of the turn) and then\nmarches; a column marches from pulse 1. Steps cost pulses (road vs off-road)\nrather than one per pulse. With ``deploy_on_arrival`` the unit deploys, clean,\nat the end of the turn in which it completes the path.",
         "properties": {
@@ -1119,7 +1358,7 @@
         "type": "string"
       },
       "Player": {
-        "description": "A participant's mutable economy state (SPEC \u00a76).\n\n``bank`` is the muster bank, clamped to 0..`GameConfig.muster_bank_cap` by the\neconomy phase (SPEC \u00a76.3,\n\u00a76.4). Settlement control is not duplicated here \u2014 derive it from\n`GameState.settlements` to keep one source of truth.",
+        "description": "A participant's mutable economy state (SPEC \u00a76, economy draft).\n\n``bank`` is the v0.1 muster bank, clamped to 0..`GameConfig.muster_bank_cap`\nby the economy phase (SPEC \u00a76.3, \u00a76.4). A world game uses ``stocks``,\n``buildings`` and ``construction`` instead and leaves ``bank`` at 0.\n``buildings`` maps a building to its completed level; a building never built\nis absent (level 0). ``construction`` is ``None`` when nothing is being built.\nSettlement control is not duplicated here \u2014 derive it from\n`GameState.settlements` to keep one source of truth.",
         "properties": {
           "bank": {
             "default": 0,
@@ -1127,9 +1366,32 @@
             "title": "Bank",
             "type": "integer"
           },
+          "buildings": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Building"
+            },
+            "title": "Buildings",
+            "type": "object"
+          },
+          "construction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Construction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "stocks": {
+            "$ref": "#/components/schemas/Stocks"
           }
         },
         "required": [
@@ -1238,7 +1500,8 @@
           "city_not_friendly",
           "hex_occupied",
           "unit_cap_reached",
-          "insufficient_muster"
+          "insufficient_muster",
+          "insufficient_stocks"
         ],
         "title": "RecruitmentVoidedReason",
         "type": "string"
@@ -1333,6 +1596,19 @@
         "title": "SettlementCaptured",
         "type": "object"
       },
+      "SiteKind": {
+        "description": "What a settlement is in a world economy, fixed when the map is generated.\n\nThe hex terrain (town or city tile) is only how the site looks on the board;\nthe kind decides what it produces and what may be recruited there. A `BASE` is\na player's home: not a city, and one per slot.",
+        "enum": [
+          "base",
+          "city",
+          "farm",
+          "oil_field",
+          "steel_mill",
+          "factory"
+        ],
+        "title": "SiteKind",
+        "type": "string"
+      },
       "StandingTravel": {
         "description": "A travel order still in progress, carried from turn to turn (WORLD_SPEC \u00a75).\n\n``route`` is the hexes the unit has yet to enter, in order, fixed when the\norder was issued (routes are planned over the static map, so they never need\nrecomputing). Each turn the unit has no fresh order, the engine marches it\nalong ``route``; the order ends on arrival, contact, an explicit order, or the\nunit's destruction. ``on_arrival`` is the posture to finish in.",
         "properties": {
@@ -1364,10 +1640,91 @@
         "title": "StandingTravel",
         "type": "object"
       },
+      "Stocks": {
+        "additionalProperties": false,
+        "description": "An amount of each resource: a stockpile, an income, a cost or an upkeep.",
+        "properties": {
+          "fuel": {
+            "default": 0,
+            "title": "Fuel",
+            "type": "integer"
+          },
+          "manpower": {
+            "default": 0,
+            "title": "Manpower",
+            "type": "integer"
+          },
+          "steel": {
+            "default": 0,
+            "title": "Steel",
+            "type": "integer"
+          }
+        },
+        "title": "Stocks",
+        "type": "object"
+      },
+      "StocksResolved": {
+        "additionalProperties": false,
+        "description": "One world player's resource accounting for the turn (economy draft \u00a702).\n\n``after = before + income - upkeep``, floored at 0 and limited to storage;\n``lost_to_storage`` is what the depot could not hold. A shortfall below 0\ndisbands a unit (`UnitDisbanded`).",
+        "properties": {
+          "after": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "before": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "income": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "kind": {
+            "const": "stocks_resolved",
+            "default": "stocks_resolved",
+            "title": "Kind",
+            "type": "string"
+          },
+          "lost_to_storage": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "player": {
+            "title": "Player",
+            "type": "string"
+          },
+          "upkeep": {
+            "$ref": "#/components/schemas/Stocks"
+          }
+        },
+        "required": [
+          "player",
+          "income",
+          "upkeep",
+          "before",
+          "after",
+          "lost_to_storage"
+        ],
+        "title": "StocksResolved",
+        "type": "object"
+      },
       "SubmitOrdersRequest": {
         "additionalProperties": false,
         "description": "Body for ``POST /games/{id}/orders``: a player's full plan for the turn.\n\nBoth lists default to empty: a player may legitimately submit no orders (every\nunit holds) and no recruits. FastAPI parses ``orders`` into the discriminated\n`Order` union, so unknown order shapes are rejected as 422 at the wire.",
         "properties": {
+          "build": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Building"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "disband": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Disband",
+            "type": "array"
+          },
           "orders": {
             "items": {
               "discriminator": {
@@ -1593,18 +1950,24 @@
                   "column_held": "#/components/schemas/ColumnHeld",
                   "column_stuck": "#/components/schemas/ColumnStuck",
                   "combat_resolved": "#/components/schemas/CombatResolved",
+                  "construction_completed": "#/components/schemas/ConstructionCompleted",
+                  "construction_started": "#/components/schemas/ConstructionStarted",
+                  "construction_voided": "#/components/schemas/ConstructionVoided",
                   "economy_resolved": "#/components/schemas/EconomyResolved",
                   "move_blocked": "#/components/schemas/MoveBlocked",
                   "order_mooted": "#/components/schemas/OrderMooted",
                   "recruitment_voided": "#/components/schemas/RecruitmentVoided",
                   "settlement_captured": "#/components/schemas/SettlementCaptured",
+                  "stocks_resolved": "#/components/schemas/StocksResolved",
                   "traffic_jam": "#/components/schemas/TrafficJam",
                   "travel_ended": "#/components/schemas/TravelEnded",
                   "unit_deployed": "#/components/schemas/UnitDeployed",
+                  "unit_disbanded": "#/components/schemas/UnitDisbanded",
                   "unit_moved": "#/components/schemas/UnitMoved",
                   "unit_packed": "#/components/schemas/UnitPacked",
                   "unit_recruited": "#/components/schemas/UnitRecruited",
-                  "unit_repaired": "#/components/schemas/UnitRepaired"
+                  "unit_repaired": "#/components/schemas/UnitRepaired",
+                  "world_unit_recruited": "#/components/schemas/WorldUnitRecruited"
                 },
                 "propertyName": "kind"
               },
@@ -1656,6 +2019,24 @@
                 },
                 {
                   "$ref": "#/components/schemas/TravelEnded"
+                },
+                {
+                  "$ref": "#/components/schemas/StocksResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitDisbanded"
+                },
+                {
+                  "$ref": "#/components/schemas/ConstructionStarted"
+                },
+                {
+                  "$ref": "#/components/schemas/ConstructionCompleted"
+                },
+                {
+                  "$ref": "#/components/schemas/ConstructionVoided"
+                },
+                {
+                  "$ref": "#/components/schemas/WorldUnitRecruited"
                 }
               ]
             },
@@ -1770,6 +2151,54 @@
           "disordered"
         ],
         "title": "UnitDeployed",
+        "type": "object"
+      },
+      "UnitDisbanded": {
+        "additionalProperties": false,
+        "description": "A shortage disbanded a unit (economy draft \u00a702).\n\n``shortage`` is the resource that ran out. ``chosen`` is whether the unit was\nthe player's own pick, rather than the weakest qualifying unit by default.",
+        "properties": {
+          "chosen": {
+            "title": "Chosen",
+            "type": "boolean"
+          },
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "kind": {
+            "const": "unit_disbanded",
+            "default": "unit_disbanded",
+            "title": "Kind",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "shortage": {
+            "enum": [
+              "fuel",
+              "manpower"
+            ],
+            "title": "Shortage",
+            "type": "string"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "unit_id",
+          "unit_type",
+          "owner",
+          "coord",
+          "shortage",
+          "chosen"
+        ],
+        "title": "UnitDisbanded",
         "type": "object"
       },
       "UnitMoved": {
@@ -2063,6 +2492,69 @@
         "title": "WorldCreated",
         "type": "object"
       },
+      "WorldEconomy": {
+        "description": "Every tunable number of the world economy (defaults: draft revision 2).\n\n``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is\nthe per-resource stockpile limit at depot level ``k``, so it has one more\nentry than the depot has levels. Artillery needs a workshop and armor a held\nfactory; those unlock rules are fixed in the recruitment phase.",
+        "properties": {
+          "army": {
+            "$ref": "#/components/schemas/ArmySize"
+          },
+          "buildings": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/BuildingLevel"
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Building"
+            },
+            "title": "Buildings",
+            "type": "object"
+          },
+          "recruit_cost": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Stocks"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/UnitType"
+            },
+            "title": "Recruit Cost",
+            "type": "object"
+          },
+          "site_income": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Stocks"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/SiteKind"
+            },
+            "title": "Site Income",
+            "type": "object"
+          },
+          "starting_stocks": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "storage": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Storage",
+            "type": "array"
+          },
+          "upkeep": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Stocks"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/UnitType"
+            },
+            "title": "Upkeep",
+            "type": "object"
+          }
+        },
+        "title": "WorldEconomy",
+        "type": "object"
+      },
       "WorldReplay": {
         "description": "A resolved world turn for one viewer: witnessed events and the fogged state.",
         "properties": {
@@ -2074,18 +2566,24 @@
                   "column_held": "#/components/schemas/ColumnHeld",
                   "column_stuck": "#/components/schemas/ColumnStuck",
                   "combat_resolved": "#/components/schemas/CombatResolved",
+                  "construction_completed": "#/components/schemas/ConstructionCompleted",
+                  "construction_started": "#/components/schemas/ConstructionStarted",
+                  "construction_voided": "#/components/schemas/ConstructionVoided",
                   "economy_resolved": "#/components/schemas/EconomyResolved",
                   "move_blocked": "#/components/schemas/MoveBlocked",
                   "order_mooted": "#/components/schemas/OrderMooted",
                   "recruitment_voided": "#/components/schemas/RecruitmentVoided",
                   "settlement_captured": "#/components/schemas/SettlementCaptured",
+                  "stocks_resolved": "#/components/schemas/StocksResolved",
                   "traffic_jam": "#/components/schemas/TrafficJam",
                   "travel_ended": "#/components/schemas/TravelEnded",
                   "unit_deployed": "#/components/schemas/UnitDeployed",
+                  "unit_disbanded": "#/components/schemas/UnitDisbanded",
                   "unit_moved": "#/components/schemas/UnitMoved",
                   "unit_packed": "#/components/schemas/UnitPacked",
                   "unit_recruited": "#/components/schemas/UnitRecruited",
-                  "unit_repaired": "#/components/schemas/UnitRepaired"
+                  "unit_repaired": "#/components/schemas/UnitRepaired",
+                  "world_unit_recruited": "#/components/schemas/WorldUnitRecruited"
                 },
                 "propertyName": "kind"
               },
@@ -2137,6 +2635,24 @@
                 },
                 {
                   "$ref": "#/components/schemas/TravelEnded"
+                },
+                {
+                  "$ref": "#/components/schemas/StocksResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitDisbanded"
+                },
+                {
+                  "$ref": "#/components/schemas/ConstructionStarted"
+                },
+                {
+                  "$ref": "#/components/schemas/ConstructionCompleted"
+                },
+                {
+                  "$ref": "#/components/schemas/ConstructionVoided"
+                },
+                {
+                  "$ref": "#/components/schemas/WorldUnitRecruited"
                 }
               ]
             },
@@ -2215,6 +2731,48 @@
           "config"
         ],
         "title": "WorldState",
+        "type": "object"
+      },
+      "WorldUnitRecruited": {
+        "additionalProperties": false,
+        "description": "A world player recruited a unit, paying ``cost`` from their stocks.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "kind": {
+            "const": "world_unit_recruited",
+            "default": "world_unit_recruited",
+            "title": "Kind",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "stocks_after": {
+            "$ref": "#/components/schemas/Stocks"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "unit_id",
+          "unit_type",
+          "owner",
+          "coord",
+          "cost",
+          "stocks_after"
+        ],
+        "title": "WorldUnitRecruited",
         "type": "object"
       },
       "WorldView": {

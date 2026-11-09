@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.engine.economy_rules import Building
 from app.engine.events import Event
 from app.engine.hex_coords import Axial
 from app.engine.models import (
@@ -23,6 +24,7 @@ from app.engine.models import (
     Settlement,
     StandingTravel,
     Unit,
+    UnitId,
 )
 from app.engine.victory import VictoryStatus
 
@@ -62,6 +64,10 @@ class SubmitOrdersRequest(BaseModel):
 
     orders: list[Order] = Field(default_factory=list)
     recruitments: list[Recruitment] = Field(default_factory=list)
+    # World games only: start the next level of this building at your base, and
+    # who to let go first if a shortage forces a disband this turn.
+    build: Building | None = None
+    disband: list[UnitId] = Field(default_factory=list)
 
 
 class JoinGameRequest(BaseModel):
