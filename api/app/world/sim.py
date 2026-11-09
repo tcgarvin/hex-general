@@ -36,7 +36,7 @@ from app.engine.events import (
 )
 from app.engine.execution import resolve_execution
 from app.engine.fog import redact_state
-from app.engine.hex_coords import Axial, distance, neighbors
+from app.engine.hex_coords import Axial, distance, neighbors, within
 from app.engine.models import (
     GameState,
     Order,
@@ -90,7 +90,8 @@ class SimReport(BaseModel):
     disordered_fights: int = 0
     first_contact: dict[str, int] = Field(default_factory=dict)  # "a|b" -> turn
     neighbor_pairs: list[str] = Field(default_factory=list)
-    engagement_sizes: list[float] = Field(default_factory=list)  # median units/side
+    # Mean deployed units per side, per engagement per turn (see `_engagements`).
+    engagement_sizes: list[float] = Field(default_factory=list)
     eliminated: dict[PlayerId, int] = Field(default_factory=dict)
     think_ms_mean: float = 0.0
     think_ms_p95: float = 0.0
@@ -210,7 +211,6 @@ def _tally(
         elif isinstance(event, CombatResolved):
             combats += 1
             sides = Counter(p.owner for p in event.participants)
-            report.engagement_sizes.append(statistics.median(sides.values()))
             if any(p.defense_penalty > 0 for p in event.participants):
                 report.disordered_fights += 1
             owners = sorted(sides)
@@ -219,11 +219,13 @@ def _tally(
                     report.first_contact.setdefault(f"{a}|{b}", after.turn)
 
     deployed = {u.coord: u.owner for u in after.units if u.posture is Posture.DEPLOYED}
-    front = sum(
-        1
+    front_hexes = {
+        coord
         for coord, owner in deployed.items()
         if any(deployed.get(n, owner) != owner for n in neighbors(coord))
-    )
+    }
+    front = len(front_hexes)
+    report.engagement_sizes.extend(_engagements(front_hexes, deployed))
     report.turn_stats.append(
         TurnStats(
             turn=after.turn,
@@ -240,6 +242,33 @@ def _tally(
             think_ms_max=round(think_ms_max, 1),
         )
     )
+
+
+def _engagements(front: set[Axial], deployed: dict[Axial, PlayerId]) -> list[float]:
+    """Mean units per side in each engagement on the board.
+
+    An engagement is a connected group of front units (deployed and adjacent to a
+    hostile), joining units within two hexes of each other, so a line of
+    brigades facing another counts as one engagement, not as many duels.
+    """
+    sizes: list[float] = []
+    seen: set[Axial] = set()
+    for start in sorted(front, key=lambda c: (c.q, c.r)):
+        if start in seen:
+            continue
+        group = {start}
+        queue = [start]
+        while queue:
+            here = queue.pop()
+            for near in within(here, 2):
+                if near in front and near not in group:
+                    group.add(near)
+                    queue.append(near)
+        seen |= group
+        sides = Counter(deployed[c] for c in group)
+        if len(sides) > 1:
+            sizes.append(sum(sides.values()) / len(sides))
+    return sizes
 
 
 def _neighbor_pairs(world: GeneratedWorld, ids: list[PlayerId]) -> list[str]:

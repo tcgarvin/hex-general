@@ -23,7 +23,7 @@ statically legal (`validate_submission`), which the world simulator asserts.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol
 
@@ -39,6 +39,7 @@ from app.engine.models import (
     DeployOrder,
     GameState,
     HoldOrder,
+    MoveOrder,
     Order,
     PlayerId,
     Posture,
@@ -46,6 +47,7 @@ from app.engine.models import (
     TravelOrder,
     Unit,
 )
+from app.engine.routing import find_route
 from app.engine.stats import UNIT_STATS, Terrain
 
 _CAPTURE_VALUE: dict[Terrain, float] = {Terrain.CITY: 6.0, Terrain.TOWN: 3.0}
@@ -63,6 +65,8 @@ _WOUNDED_HP = 5
 _THREAT_RADIUS = 8  # a visible hostile this close to an own settlement threatens it
 _FOCUS_RADIUS = 14
 _NO_HOSTILE = 10**6
+_STAGE_BACK = 5  # columns bound for a held settlement deploy this far short
+_MIN_ATTACK_GROUP = 2  # never send fewer at a hostile-held settlement
 
 
 class Stance(StrEnum):
@@ -203,6 +207,7 @@ class _Target:
 
     objective: Objective
     capacity: int
+    min_group: int = 1
 
 
 def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> BotPlan:
@@ -216,7 +221,13 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
     assignment = _assign(view, slot, board.own_units, hostiles, args, set(garrisons))
 
     held = {s.coord for s in view.settlements if s.controlled_by == slot}
+    hostile_held = {
+        s.coord
+        for s in view.settlements
+        if s.controlled_by is not None and view.hostile(s.controlled_by, slot)
+    }
     hostile_coords = [h.coord for h in hostiles]
+    claims = _Claims()
     orders: list[Order] = []
     for unit in sorted(board.own_units, key=lambda u: u.id):
         objective = assignment.get(unit.id)
@@ -230,27 +241,86 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
             or (objective is not None and travel.destination == objective.coord)
         )
         order = _unit_order(
-            board,
+            _UnitContext(board, reserved, hostile_held, claims),
             unit,
             _nearest(unit.coord, hostile_coords),
             objective,
             garrison,
             keep_marching,
-            reserved,
         )
         if order is not None:
             orders.append(order)
     return BotPlan(orders=orders, recruitments=recruitments)
 
 
+@dataclass
+class _Claims:
+    """Hexes this turn's moves already use, so the bot doesn't jam itself.
+
+    A deployed move claims each hex it enters at the pulse it enters it, and its
+    final hex for the rest of the turn. A candidate that would enter a claimed
+    hex at the same pulse, or end on a claimed final hex, is skipped.
+    """
+
+    steps: set[tuple[Axial, int]] = field(default_factory=set)
+    finals: set[Axial] = field(default_factory=set)
+
+    def pick(self, unit: Unit, candidates: list[Order]) -> Order:
+        """The first candidate that doesn't collide (the last one, Hold, always fits)."""
+        for order in candidates:
+            if not isinstance(order, MoveOrder):
+                self.finals.add(unit.coord)
+                return order
+            steps = {(c, i) for i, c in enumerate(order.path)}
+            if steps & self.steps or order.path[-1] in self.finals:
+                continue
+            self.steps |= steps
+            self.finals.add(order.path[-1])
+            return order
+        self.finals.add(unit.coord)
+        return HoldOrder(unit_id=unit.id)
+
+
+@dataclass(frozen=True)
+class _UnitContext:
+    """What every per-unit decision needs, gathered once per turn."""
+
+    board: BoardIndex
+    reserved: frozenset[Axial]
+    hostile_held: set[Axial]
+    claims: _Claims
+
+    def tactical(self, unit: Unit, objective: Objective) -> Order:
+        """The best non-colliding v0.1 tactical candidate toward ``objective``."""
+        return self.claims.pick(
+            unit, unit_candidates(self.board, unit, objective, self.reserved)
+        )
+
+    def travel(self, unit: Unit, goal: Axial) -> Order | None:
+        """Travel toward ``goal``, stopping short of a hostile-held settlement.
+
+        Settlement control is public, so the bot stages a few hexes out and
+        deploys there clean, instead of marching into the garrison's contact
+        range and deploying disordered. Too close to stage, a deployed unit moves
+        tactically and a column gets ``None`` (it should deploy).
+        """
+        if goal not in self.hostile_held:
+            return TravelOrder(unit_id=unit.id, destination=goal)
+        route = find_route(self.board.view.map, unit.coord, goal)
+        if route is not None and len(route) > _STAGE_BACK + 1:
+            return TravelOrder(unit_id=unit.id, destination=route[-_STAGE_BACK - 1])
+        if unit.posture is Posture.COLUMN:
+            return None
+        return self.tactical(unit, Objective(ObjectiveKind.CAPTURE, goal, 0.0))
+
+
 def _unit_order(
-    board: BoardIndex,
+    ctx: _UnitContext,
     unit: Unit,
     threat: int,
     objective: Objective | None,
     garrison: Axial | None,
     keep_marching: bool,
-    reserved: frozenset[Axial],
 ) -> Order | None:
     """One unit's order, or ``None`` to let a standing travel order carry on."""
     if unit.posture is Posture.COLUMN:
@@ -261,12 +331,13 @@ def _unit_order(
         goal = garrison or (objective.coord if objective is not None else None)
         if goal is None or goal == unit.coord:
             return DeployOrder(unit_id=unit.id)
-        return TravelOrder(unit_id=unit.id, destination=goal)
+        return ctx.travel(unit, goal) or DeployOrder(unit_id=unit.id)
 
     if unit.hp <= _WOUNDED_HP and threat > 3:
-        return _recover(board, unit, reserved)
+        return _recover(ctx, unit)
     if garrison is not None:
         if garrison == unit.coord:
+            ctx.claims.finals.add(unit.coord)
             return _rest_or_hold(unit)
         if distance(unit.coord, garrison) > _TRAVEL_MIN and threat > _CONTACT_RADIUS:
             return TravelOrder(unit_id=unit.id, destination=garrison)
@@ -274,22 +345,22 @@ def _unit_order(
     if objective is None:
         objective = Objective(ObjectiveKind.SUPPORT, unit.coord, 0.0)
     if threat > _CONTACT_RADIUS and distance(unit.coord, objective.coord) > _TRAVEL_MIN:
-        return TravelOrder(unit_id=unit.id, destination=objective.coord)
-    return unit_candidates(board, unit, objective, reserved)[0]
+        order = ctx.travel(unit, objective.coord)
+        if order is not None:
+            return order
+    return ctx.tactical(unit, objective)
 
 
-def _recover(board: BoardIndex, unit: Unit, reserved: frozenset[Axial]) -> Order:
+def _recover(ctx: _UnitContext, unit: Unit) -> Order:
     """Send a wounded unit to rest in the nearest own settlement."""
-    own = [s.coord for s in board.controlled_settlements(board.slot)]
+    own = [s.coord for s in ctx.board.controlled_settlements(ctx.board.slot)]
     if unit.coord in own or not own:
+        ctx.claims.finals.add(unit.coord)
         return RestOrder(unit_id=unit.id)
     home = min(own, key=lambda c: (distance(unit.coord, c), c.q, c.r))
     if distance(unit.coord, home) > _TRAVEL_MIN:
         return TravelOrder(unit_id=unit.id, destination=home)
-    candidates = unit_candidates(
-        board, unit, Objective(ObjectiveKind.SUPPORT, home, 0.0), reserved
-    )
-    return candidates[0]
+    return ctx.tactical(unit, Objective(ObjectiveKind.SUPPORT, home, 0.0))
 
 
 def _rest_or_hold(unit: Unit) -> Order:
@@ -368,14 +439,29 @@ def _assign(
             for k, t in enumerate(targets)
         ),
     )
-    for _, unit_id, k in pairs:
-        if unit_id in assignment:
-            continue
-        target = targets[k]
-        if load.get(target.objective.coord, 0) >= target.capacity:
-            continue
-        assignment[unit_id] = target.objective
-        load[target.objective.coord] = load.get(target.objective.coord, 0) + 1
+    dropped: set[Axial] = set()
+    for _ in range(3):
+        assignment = {}
+        load = {}
+        for _, unit_id, k in pairs:
+            target = targets[k]
+            coord = target.objective.coord
+            if unit_id in assignment or coord in dropped:
+                continue
+            if load.get(coord, 0) >= target.capacity:
+                continue
+            assignment[unit_id] = target.objective
+            load[coord] = load.get(coord, 0) + 1
+        # A lone unit sent at a held settlement just feeds the garrison: drop
+        # such targets and match again, so attacks go in as groups.
+        lone = {
+            t.objective.coord
+            for t in targets
+            if t.min_group > 1 and 0 < load.get(t.objective.coord, 0) < t.min_group
+        }
+        if not lone:
+            break
+        dropped |= lone
     for gun in (u for u in own if not is_combat_unit(u)):
         escorts = [u for u in combat if u.id in assignment]
         if escorts:
@@ -422,6 +508,7 @@ def _targets(
             continue
         defenders = sum(1 for h in hostiles if distance(h.coord, settlement.coord) <= 1)
         value = base / (1.0 + 0.7 * defenders)
+        min_group = 1
         if owner is None:
             value *= 1.4 if args.stance is Stance.EXPAND else 1.0
             capacity = _NEUTRAL_CAP[terrain] + defenders
@@ -430,10 +517,15 @@ def _targets(
                 0.5 + args.aggression
             )
             capacity = _HOSTILE_CAP
+            min_group = _MIN_ATTACK_GROUP
         if near_focus:
             value *= 2.0
         targets.append(
-            _Target(Objective(ObjectiveKind.CAPTURE, settlement.coord, value), capacity)
+            _Target(
+                Objective(ObjectiveKind.CAPTURE, settlement.coord, value),
+                capacity,
+                min_group,
+            )
         )
     return targets
 
