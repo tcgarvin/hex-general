@@ -13,7 +13,17 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.engine.events import Event
 from app.engine.hex_coords import Axial
-from app.engine.models import GameState, Order, PlayerId, Recruitment
+from app.engine.models import (
+    GameConfig,
+    GameState,
+    Order,
+    Player,
+    PlayerId,
+    Recruitment,
+    Settlement,
+    StandingTravel,
+    Unit,
+)
 from app.engine.victory import VictoryStatus
 
 # Default scenario a new game is built from when the request omits one.
@@ -183,3 +193,69 @@ class GameHistoryEntry(BaseModel):
     # bot holds the other slot and ``bot_policy`` names it, else ``None``.
     vs_bot: bool
     bot_policy: str | None
+
+
+# --- World games (WORLD_SPEC §10.1) ----------------------------------------------
+
+
+class WorldState(BaseModel):
+    """A world `GameState` without its static map.
+
+    A world map is ~10^5 hexes, so the client fetches it once
+    (``GET /worlds/{id}/map``) and every per-turn payload carries this instead.
+    The fields mirror `GameState` minus ``map``; a test keeps them in step.
+    """
+
+    turn: int
+    settlements: list[Settlement]
+    units: list[Unit]
+    players: list[Player]
+    resigned: list[PlayerId]
+    standing_orders: list[StandingTravel]
+    config: GameConfig
+
+    @classmethod
+    def of(cls, state: GameState) -> WorldState:
+        """``state`` without its map (sharing, not copying, its parts)."""
+        return cls(**{name: getattr(state, name) for name in cls.model_fields})
+
+
+class CreateWorldRequest(BaseModel):
+    """Body for ``POST /dev/worlds``: the world to generate and how many bots."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    slots: int = Field(ge=1, le=400)
+    seed: int = 0
+    bots: int = Field(ge=0)
+
+
+class WorldCreated(BaseModel):
+    """Returned by ``POST /dev/worlds``."""
+
+    game_id: str
+
+
+class WorldView(BaseModel):
+    """A player's fog-filtered view of a world (the map comes separately).
+
+    ``submitted`` says whether the caller's orders for this turn are already in;
+    the turn itself resolves on the world's clock, not when everyone is in.
+    """
+
+    game_id: str
+    status: str
+    turn: int
+    your_slot: PlayerId
+    map_id: str
+    submitted: bool
+    state: WorldState
+    visible: list[Axial]
+
+
+class WorldReplay(BaseModel):
+    """A resolved world turn for one viewer: witnessed events and the fogged state."""
+
+    turn: int
+    events: list[Event]
+    state_after: WorldState

@@ -350,8 +350,17 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   Scheduler service account. Bots plan, missing human orders become "no order" (standing
   travel continues), the turn resolves, and the `(game_id, turn)` unique constraint on
   `turns` makes a retried tick a no-op. Dev worlds use `POST /dev/worlds/{id}/resolve`.
-- **Client payloads:** the world view fetches the map once (`GET /worlds/{id}/map`,
-  cacheable), then per-turn redacted states without the map.
+- **Routes ✅ (built 2026-11-09, `app/games/world_routes.py`):**
+  - `POST /worlds/{id}/join` takes a slot.
+  - `GET /worlds/{id}` returns the fogged `WorldView`, whose `WorldState` is
+    `GameState` minus the map.
+  - `GET /worlds/{id}/map` returns the `CompactMap` with `Cache-Control: immutable`.
+  - `GET /worlds/{id}/turns/{n}` returns the fogged replay.
+  - Dev-only: `POST /dev/worlds` creates a world and `POST /dev/worlds/{id}/tick`
+    is the manual clock.
+
+  Orders still go to `POST /games/{id}/orders` and are stored until the tick. The
+  2-player `/games` flow stays until the W6 frontend switches to worlds, then goes.
 - **Infra** (confirm before applying): a scheduler job per world, at 01:00 and 13:00
   America/New_York, and an invoker binding for the scheduler's service account.
 

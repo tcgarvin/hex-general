@@ -10,6 +10,8 @@ from app.games.auth import AuthIdentity, is_dev
 from app.games.routes import real_identity
 from app.games.routes import router as games_router
 from app.games.schemas import DevProfile, MeView
+from app.games.world_routes import dev_router as dev_worlds_router
+from app.games.world_routes import router as worlds_router
 from app.stats import count_active_users, count_games
 
 app = FastAPI(title="Hex General API", version=__version__)
@@ -22,6 +24,8 @@ app.add_middleware(
 )
 
 app.include_router(games_router)
+app.include_router(worlds_router)
+app.include_router(dev_worlds_router)
 
 
 @app.get("/health")

@@ -379,6 +379,37 @@
         "title": "CommandCap",
         "type": "object"
       },
+      "CompactMap": {
+        "description": "A map as two row-major offset grids flattened to strings.\n\n``terrain[row * width + col]`` is the terrain character of grid cell\n``(col, row)``; ``roads`` is the same shape with `ROAD_CHAR` for a road and\n`NO_ROAD_CHAR` for none.",
+        "properties": {
+          "height": {
+            "exclusiveMinimum": 0.0,
+            "title": "Height",
+            "type": "integer"
+          },
+          "roads": {
+            "title": "Roads",
+            "type": "string"
+          },
+          "terrain": {
+            "title": "Terrain",
+            "type": "string"
+          },
+          "width": {
+            "exclusiveMinimum": 0.0,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "terrain",
+          "roads"
+        ],
+        "title": "CompactMap",
+        "type": "object"
+      },
       "CreateGameRequest": {
         "additionalProperties": false,
         "description": "Body for ``POST /games``: which authored scenario to instantiate.\n\n``vs_bot`` requests a game against the computer (AI_SPEC \u00a79): the service\nfills the second slot with a bot player and the game starts immediately.\n``bot_policy`` picks the AI (resolved via `app.ai.arena`'s registry) and is\nonly consulted when ``vs_bot`` is true.",
@@ -400,6 +431,34 @@
           }
         },
         "title": "CreateGameRequest",
+        "type": "object"
+      },
+      "CreateWorldRequest": {
+        "additionalProperties": false,
+        "description": "Body for ``POST /dev/worlds``: the world to generate and how many bots.",
+        "properties": {
+          "bots": {
+            "minimum": 0.0,
+            "title": "Bots",
+            "type": "integer"
+          },
+          "seed": {
+            "default": 0,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "slots": {
+            "maximum": 400.0,
+            "minimum": 1.0,
+            "title": "Slots",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slots",
+          "bots"
+        ],
+        "title": "CreateWorldRequest",
         "type": "object"
       },
       "DeployCause": {
@@ -1989,6 +2048,225 @@
         ],
         "title": "VictoryStatus",
         "type": "object"
+      },
+      "WorldCreated": {
+        "description": "Returned by ``POST /dev/worlds``.",
+        "properties": {
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "game_id"
+        ],
+        "title": "WorldCreated",
+        "type": "object"
+      },
+      "WorldReplay": {
+        "description": "A resolved world turn for one viewer: witnessed events and the fogged state.",
+        "properties": {
+          "events": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "barrage_resolved": "#/components/schemas/BarrageResolved",
+                  "column_held": "#/components/schemas/ColumnHeld",
+                  "column_stuck": "#/components/schemas/ColumnStuck",
+                  "combat_resolved": "#/components/schemas/CombatResolved",
+                  "economy_resolved": "#/components/schemas/EconomyResolved",
+                  "move_blocked": "#/components/schemas/MoveBlocked",
+                  "order_mooted": "#/components/schemas/OrderMooted",
+                  "recruitment_voided": "#/components/schemas/RecruitmentVoided",
+                  "settlement_captured": "#/components/schemas/SettlementCaptured",
+                  "traffic_jam": "#/components/schemas/TrafficJam",
+                  "travel_ended": "#/components/schemas/TravelEnded",
+                  "unit_deployed": "#/components/schemas/UnitDeployed",
+                  "unit_moved": "#/components/schemas/UnitMoved",
+                  "unit_packed": "#/components/schemas/UnitPacked",
+                  "unit_recruited": "#/components/schemas/UnitRecruited",
+                  "unit_repaired": "#/components/schemas/UnitRepaired"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UnitMoved"
+                },
+                {
+                  "$ref": "#/components/schemas/MoveBlocked"
+                },
+                {
+                  "$ref": "#/components/schemas/TrafficJam"
+                },
+                {
+                  "$ref": "#/components/schemas/CombatResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/BarrageResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderMooted"
+                },
+                {
+                  "$ref": "#/components/schemas/SettlementCaptured"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitRepaired"
+                },
+                {
+                  "$ref": "#/components/schemas/EconomyResolved"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitRecruited"
+                },
+                {
+                  "$ref": "#/components/schemas/RecruitmentVoided"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitPacked"
+                },
+                {
+                  "$ref": "#/components/schemas/UnitDeployed"
+                },
+                {
+                  "$ref": "#/components/schemas/ColumnStuck"
+                },
+                {
+                  "$ref": "#/components/schemas/ColumnHeld"
+                },
+                {
+                  "$ref": "#/components/schemas/TravelEnded"
+                }
+              ]
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "state_after": {
+            "$ref": "#/components/schemas/WorldState"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turn",
+          "events",
+          "state_after"
+        ],
+        "title": "WorldReplay",
+        "type": "object"
+      },
+      "WorldState": {
+        "description": "A world `GameState` without its static map.\n\nA world map is ~10^5 hexes, so the client fetches it once\n(``GET /worlds/{id}/map``) and every per-turn payload carries this instead.\nThe fields mirror `GameState` minus ``map``; a test keeps them in step.",
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/GameConfig"
+          },
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/Player"
+            },
+            "title": "Players",
+            "type": "array"
+          },
+          "resigned": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resigned",
+            "type": "array"
+          },
+          "settlements": {
+            "items": {
+              "$ref": "#/components/schemas/Settlement"
+            },
+            "title": "Settlements",
+            "type": "array"
+          },
+          "standing_orders": {
+            "items": {
+              "$ref": "#/components/schemas/StandingTravel"
+            },
+            "title": "Standing Orders",
+            "type": "array"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          },
+          "units": {
+            "items": {
+              "$ref": "#/components/schemas/Unit"
+            },
+            "title": "Units",
+            "type": "array"
+          }
+        },
+        "required": [
+          "turn",
+          "settlements",
+          "units",
+          "players",
+          "resigned",
+          "standing_orders",
+          "config"
+        ],
+        "title": "WorldState",
+        "type": "object"
+      },
+      "WorldView": {
+        "description": "A player's fog-filtered view of a world (the map comes separately).\n\n``submitted`` says whether the caller's orders for this turn are already in;\nthe turn itself resolves on the world's clock, not when everyone is in.",
+        "properties": {
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "map_id": {
+            "title": "Map Id",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/WorldState"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "boolean"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          },
+          "visible": {
+            "items": {
+              "$ref": "#/components/schemas/Axial"
+            },
+            "title": "Visible",
+            "type": "array"
+          },
+          "your_slot": {
+            "title": "Your Slot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "game_id",
+          "status",
+          "turn",
+          "your_slot",
+          "map_id",
+          "submitted",
+          "state",
+          "visible"
+        ],
+        "title": "WorldView",
+        "type": "object"
       }
     }
   },
@@ -2047,6 +2325,157 @@
           }
         },
         "summary": "Dev Profiles"
+      }
+    },
+    "/dev/worlds": {
+      "post": {
+        "description": "Generate a world and fill ``bots`` slots with world bots (dev-only).",
+        "operationId": "create_world_dev_worlds_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create World",
+        "tags": [
+          "worlds"
+        ]
+      }
+    },
+    "/dev/worlds/{game_id}/tick": {
+      "post": {
+        "description": "Resolve the world's current turn now: the dev manual clock.",
+        "operationId": "tick_world_dev_worlds__game_id__tick_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Tick World",
+        "tags": [
+          "worlds"
+        ]
       }
     },
     "/games": {
@@ -2779,6 +3208,315 @@
           }
         },
         "summary": "Version"
+      }
+    },
+    "/worlds/{game_id}": {
+      "get": {
+        "description": "The caller's fogged view of their world, without the map.",
+        "operationId": "get_world_worlds__game_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get World",
+        "tags": [
+          "worlds"
+        ]
+      }
+    },
+    "/worlds/{game_id}/join": {
+      "post": {
+        "description": "Seat the caller in the world's first open slot.",
+        "operationId": "join_world_worlds__game_id__join_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerCredentials"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Join World",
+        "tags": [
+          "worlds"
+        ]
+      }
+    },
+    "/worlds/{game_id}/map": {
+      "get": {
+        "description": "The world's static map (compact grid encoding); safe to cache forever.",
+        "operationId": "get_world_map_worlds__game_id__map_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompactMap"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get World Map",
+        "tags": [
+          "worlds"
+        ]
+      }
+    },
+    "/worlds/{game_id}/turns/{turn}": {
+      "get": {
+        "description": "The caller's replay of a resolved world turn, without the map.",
+        "operationId": "get_world_replay_worlds__game_id__turns__turn__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turn",
+            "required": true,
+            "schema": {
+              "title": "Turn",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldReplay"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get World Replay",
+        "tags": [
+          "worlds"
+        ]
       }
     }
   }

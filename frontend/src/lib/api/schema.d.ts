@@ -27,6 +27,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dev/worlds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create World
+         * @description Generate a world and fill ``bots`` slots with world bots (dev-only).
+         */
+        post: operations["create_world_dev_worlds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dev/worlds/{game_id}/tick": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tick World
+         * @description Resolve the world's current turn now: the dev manual clock.
+         */
+        post: operations["tick_world_dev_worlds__game_id__tick_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games": {
         parameters: {
             query?: never;
@@ -276,6 +316,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/worlds/{game_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get World
+         * @description The caller's fogged view of their world, without the map.
+         */
+        get: operations["get_world_worlds__game_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/worlds/{game_id}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join World
+         * @description Seat the caller in the world's first open slot.
+         */
+        post: operations["join_world_worlds__game_id__join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/worlds/{game_id}/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get World Map
+         * @description The world's static map (compact grid encoding); safe to cache forever.
+         */
+        get: operations["get_world_map_worlds__game_id__map_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/worlds/{game_id}/turns/{turn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get World Replay
+         * @description The caller's replay of a resolved world turn, without the map.
+         */
+        get: operations["get_world_replay_worlds__game_id__turns__turn__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -510,6 +630,24 @@ export interface components {
             per_town: number;
         };
         /**
+         * CompactMap
+         * @description A map as two row-major offset grids flattened to strings.
+         *
+         *     ``terrain[row * width + col]`` is the terrain character of grid cell
+         *     ``(col, row)``; ``roads`` is the same shape with `ROAD_CHAR` for a road and
+         *     `NO_ROAD_CHAR` for none.
+         */
+        CompactMap: {
+            /** Height */
+            height: number;
+            /** Roads */
+            roads: string;
+            /** Terrain */
+            terrain: string;
+            /** Width */
+            width: number;
+        };
+        /**
          * CreateGameRequest
          * @description Body for ``POST /games``: which authored scenario to instantiate.
          *
@@ -534,6 +672,21 @@ export interface components {
              * @default false
              */
             vs_bot: boolean;
+        };
+        /**
+         * CreateWorldRequest
+         * @description Body for ``POST /dev/worlds``: the world to generate and how many bots.
+         */
+        CreateWorldRequest: {
+            /** Bots */
+            bots: number;
+            /**
+             * Seed
+             * @default 0
+             */
+            seed: number;
+            /** Slots */
+            slots: number;
         };
         /**
          * DeployCause
@@ -1416,6 +1569,72 @@ export interface components {
             /** Winner */
             winner: string | null;
         };
+        /**
+         * WorldCreated
+         * @description Returned by ``POST /dev/worlds``.
+         */
+        WorldCreated: {
+            /** Game Id */
+            game_id: string;
+        };
+        /**
+         * WorldReplay
+         * @description A resolved world turn for one viewer: witnessed events and the fogged state.
+         */
+        WorldReplay: {
+            /** Events */
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"])[];
+            state_after: components["schemas"]["WorldState"];
+            /** Turn */
+            turn: number;
+        };
+        /**
+         * WorldState
+         * @description A world `GameState` without its static map.
+         *
+         *     A world map is ~10^5 hexes, so the client fetches it once
+         *     (``GET /worlds/{id}/map``) and every per-turn payload carries this instead.
+         *     The fields mirror `GameState` minus ``map``; a test keeps them in step.
+         */
+        WorldState: {
+            config: components["schemas"]["GameConfig"];
+            /** Players */
+            players: components["schemas"]["Player"][];
+            /** Resigned */
+            resigned: string[];
+            /** Settlements */
+            settlements: components["schemas"]["Settlement"][];
+            /** Standing Orders */
+            standing_orders: components["schemas"]["StandingTravel"][];
+            /** Turn */
+            turn: number;
+            /** Units */
+            units: components["schemas"]["Unit"][];
+        };
+        /**
+         * WorldView
+         * @description A player's fog-filtered view of a world (the map comes separately).
+         *
+         *     ``submitted`` says whether the caller's orders for this turn are already in;
+         *     the turn itself resolves on the world's clock, not when everyone is in.
+         */
+        WorldView: {
+            /** Game Id */
+            game_id: string;
+            /** Map Id */
+            map_id: string;
+            state: components["schemas"]["WorldState"];
+            /** Status */
+            status: string;
+            /** Submitted */
+            submitted: boolean;
+            /** Turn */
+            turn: number;
+            /** Visible */
+            visible: components["schemas"]["Axial"][];
+            /** Your Slot */
+            your_slot: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -1443,6 +1662,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DevProfile"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_world_dev_worlds_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorldCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tick_world_dev_worlds__game_id__tick_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitResult"];
                 };
             };
             /** @description Validation Error */
@@ -1828,6 +2117,143 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    get_world_worlds__game_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorldView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    join_world_worlds__game_id__join_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayerCredentials"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_world_map_worlds__game_id__map_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompactMap"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_world_replay_worlds__game_id__turns__turn__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                turn: number;
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorldReplay"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

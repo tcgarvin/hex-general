@@ -32,11 +32,12 @@ from app.ai.world import WorldPolicy
 from app.engine.execution import resolve_execution
 from app.engine.events import Event
 from app.engine.fog import filter_events, redact_state
+from app.engine.map_codec import CompactMap, encode_map
 from app.engine.models import GameState, Order, Recruitment
 from app.engine.visibility import visible_hexes
 from app.engine.scenario import load_scenario_file
 from app.engine.victory import VictoryStatus, victory_status
-from app.games.repo import GameRecord, GameRepo, PlayerRecord
+from app.games.repo import GameRecord, GameRepo, PlayerRecord, TurnRecord
 from app.games.schemas import (
     DEFAULT_BOT_POLICY,
     ActiveGame,
@@ -46,6 +47,9 @@ from app.games.schemas import (
     PlayerCredentials,
     SubmitResult,
     TurnReplay,
+    WorldReplay,
+    WorldState,
+    WorldView,
 )
 from app.games.validation import validate_submission
 from app.world.generate import WorldParams, generate
@@ -371,6 +375,39 @@ class GameService:
             locked=True, executed=True, turn=next_state.turn, status=status
         )
 
+    def get_world_view(self, player: PlayerRecord) -> WorldView:
+        """``player``'s fogged view of their world, without the map."""
+        game = self._require_world(player.game_id)
+        submitted = any(
+            o.player_id == player.id
+            for o in self._repo.list_turn_orders(game.id, game.state.turn)
+        )
+        return WorldView(
+            game_id=game.id,
+            status=game.status,
+            turn=game.state.turn,
+            your_slot=player.slot,
+            map_id=_map_id(game),
+            submitted=submitted,
+            state=WorldState.of(redact_state(game.state, player.slot)),
+            visible=sorted(
+                visible_hexes(game.state, player.slot), key=lambda c: (c.q, c.r)
+            ),
+        )
+
+    def get_world_map(self, player: PlayerRecord) -> CompactMap:
+        """The static map of ``player``'s world, in the compact grid encoding."""
+        game = self._require_world(player.game_id)
+        return encode_map(game.state.map)
+
+    def get_world_replay(self, player: PlayerRecord, turn: int) -> WorldReplay:
+        """``player``'s fogged replay of world turn ``turn``, without the map."""
+        self._require_world(player.game_id)
+        record, events, fogged = self._fogged_turn(player, turn)
+        return WorldReplay(
+            turn=record.turn, events=events, state_after=WorldState.of(fogged)
+        )
+
     def _world_bot_orders(
         self, game: GameRecord, players: list[PlayerRecord]
     ) -> tuple[list[Order], list[Recruitment]]:
@@ -416,18 +453,24 @@ class GameService:
         only the events they could witness — combat and movement on hexes they can
         see, plus anything involving their own units.
         """
+        record, events, fogged = self._fogged_turn(player, turn)
+        return TurnReplay(
+            turn=record.turn,
+            events=events,
+            state_after=fogged,
+            victory=record.victory,
+        )
+
+    def _fogged_turn(
+        self, player: PlayerRecord, turn: int
+    ) -> tuple[TurnRecord, list[Event], GameState]:
+        """Resolved ``turn`` as ``player`` saw it: witnessed events, fogged state."""
         record = self._repo.get_turn(player.game_id, turn)
         if record is None:
             raise ReplayNotFound(f"game {player.game_id} has no resolved turn {turn}")
-        viewer = player.slot
         events = _EVENTS.validate_python(record.events)
-        witnessed = filter_events(events, record.state_after, viewer)
-        return TurnReplay(
-            turn=record.turn,
-            events=witnessed,
-            state_after=redact_state(record.state_after, viewer),
-            victory=record.victory,
-        )
+        witnessed = filter_events(events, record.state_after, player.slot)
+        return record, witnessed, redact_state(record.state_after, player.slot)
 
     def _submit_bot_orders(
         self, game: GameRecord, players: list[PlayerRecord], turn: int
