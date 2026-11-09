@@ -22,6 +22,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
+from app.engine.economy_rules import Building, SiteKind, Stocks, WorldEconomy
 from app.engine.hex_coords import Axial, distance
 from app.engine.stats import (
     COLUMN_RULES,
@@ -34,6 +35,13 @@ from app.engine.stats import (
 
 PlayerId = str
 UnitId = int
+
+NEUTRAL: PlayerId = "neutral"
+"""Owner of world garrisons: hostile to every player, never a `Player` itself.
+
+Garrison units hold the neutral sites of a world (economy draft §04). They always
+hold, never capture, and have no economy; settlement control stays ``None``
+(neutral) while they stand on it."""
 
 
 class Facing(StrEnum):
@@ -84,6 +92,21 @@ class Hex(BaseModel):
     road: bool = False
 
 
+class MapSite(BaseModel):
+    """A settlement's static role in a world economy, fixed at generation.
+
+    ``garrison`` is the tier (1–4) of the neutral garrison the site starts with,
+    or 0 for a base, which is never garrisoned. It stays on the map after the
+    garrison is gone so the strategic view can always show how hard a site was.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    coord: Axial
+    kind: SiteKind
+    garrison: int = Field(ge=0, le=4)
+
+
 class GameMap(BaseModel):
     """Static board geometry: dimensions and the terrain of every hex.
 
@@ -100,7 +123,11 @@ class GameMap(BaseModel):
     width: int = Field(gt=0)
     height: int = Field(gt=0)
     hexes: list[Hex]
+    # World maps only: every settlement's site kind and garrison tier, plus the
+    # base site of every slot (WORLD_SPEC §6). Empty for v0.1 scenario maps.
+    sites: list[MapSite] = Field(default_factory=list)
     _index: dict[Axial, Hex] | None = PrivateAttr(default=None)
+    _site_index: dict[Axial, MapSite] | None = PrivateAttr(default=None)
     _column_costs: dict[tuple[int, int], int] | None = PrivateAttr(default=None)
 
     @property
@@ -109,6 +136,13 @@ class GameMap(BaseModel):
         if self._index is None:
             self._index = {h.coord: h for h in self.hexes}
         return self._index
+
+    @property
+    def site_index(self) -> dict[Axial, MapSite]:
+        """Coord → site for every world site (built once, then cached)."""
+        if self._site_index is None:
+            self._site_index = {s.coord: s for s in self.sites}
+        return self._site_index
 
     @property
     def column_costs(self) -> dict[tuple[int, int], int]:
@@ -196,17 +230,39 @@ def default_facing(coord: Axial, owner: PlayerId, units: Iterable[Unit]) -> Faci
     return DEFAULT_FACING
 
 
-class Player(BaseModel):
-    """A participant's mutable economy state (SPEC §6).
+class Construction(BaseModel):
+    """A building level under construction at a player's base.
 
-    ``bank`` is the muster bank, clamped to 0..`GameConfig.muster_bank_cap` by the
-    economy phase (SPEC §6.3,
-    §6.4). Settlement control is not duplicated here — derive it from
+    Paid for when it starts; it completes in the economy phase of turn
+    ``completes_on``.
+    """
+
+    building: Building
+    level: int = Field(ge=1)
+    completes_on: int = Field(ge=0)
+
+
+class Player(BaseModel):
+    """A participant's mutable economy state (SPEC §6, economy draft).
+
+    ``bank`` is the v0.1 muster bank, clamped to 0..`GameConfig.muster_bank_cap`
+    by the economy phase (SPEC §6.3, §6.4). A world game uses ``stocks``,
+    ``buildings`` and ``construction`` instead and leaves ``bank`` at 0.
+    ``buildings`` maps a building to its completed level; a building never built
+    is absent (level 0). ``construction`` is ``None`` when nothing is being built.
+    Settlement control is not duplicated here — derive it from
     `GameState.settlements` to keep one source of truth.
     """
 
     id: PlayerId
     bank: int = Field(default=0, ge=0)
+    stocks: Stocks = Field(default_factory=Stocks)
+    buildings: dict[Building, int] = Field(default_factory=dict)
+    construction: Construction | None = None
+
+    def level(self, building: Building) -> int:
+        """The completed level of ``building`` (0 if never built)."""
+        return self.buildings.get(building, 0)
 
 
 class VictoryConfig(BaseModel):
@@ -256,6 +312,9 @@ class GameConfig(BaseModel):
     muster_bank_cap: int = MUSTER_BANK_CAP
     command_cap: CommandCap | None = None
     settlement_repair: int = Field(default=2, ge=1)
+    # Set for world games: the three-resource economy replaces muster, and army
+    # size comes from barracks and sites instead of ``command_cap``.
+    economy: WorldEconomy | None = None
     victory: VictoryConfig
 
 
@@ -303,11 +362,20 @@ class GameState(BaseModel):
     @model_validator(mode="after")
     def _banks_within_cap(self) -> GameState:
         """Every bank is within this game's ceiling (SPEC §6.4, WORLD_SPEC §7)."""
+        economy = self.config.economy
         for player in self.players:
             if player.bank > self.config.muster_bank_cap:
                 raise ValueError(
                     f"player {player.id!r} bank {player.bank} exceeds the cap of "
                     f"{self.config.muster_bank_cap}"
+                )
+            if economy is None:
+                continue
+            limit = economy.storage_limit(player.level(Building.DEPOT))
+            if player.stocks != player.stocks.clamped(limit):
+                raise ValueError(
+                    f"player {player.id!r} stocks {player.stocks} are outside "
+                    f"0..{limit}"
                 )
         return self
 
@@ -334,7 +402,10 @@ class GameState(BaseModel):
             update={
                 "units": [u.model_copy() for u in self.units],
                 "settlements": [s.model_copy() for s in self.settlements],
-                "players": [p.model_copy() for p in self.players],
+                "players": [
+                    p.model_copy(update={"buildings": dict(p.buildings)})
+                    for p in self.players
+                ],
                 "resigned": list(self.resigned),
                 "standing_orders": [o.model_copy() for o in self.standing_orders],
             }
@@ -357,6 +428,17 @@ class GameState(BaseModel):
 
     def unit_cap_for(self, player: PlayerId) -> int:
         """How many units ``player`` may field right now (SPEC §6.1, WORLD_SPEC §7)."""
+        economy = self.config.economy
+        if economy is not None:
+            sites = self.map.site_index
+            held = sum(
+                1
+                for s in self.settlements
+                if s.controlled_by == player
+                and sites[s.coord].kind is not SiteKind.BASE
+            )
+            barracks = self.player(player).level(Building.BARRACKS)
+            return min(self.config.unit_cap, economy.army.size(barracks, held))
         rule = self.config.command_cap
         if rule is None:
             return self.config.unit_cap
@@ -370,6 +452,13 @@ class GameState(BaseModel):
             else:
                 towns += 1
         return min(self.config.unit_cap, rule.cap(towns, cities))
+
+    def player(self, player_id: PlayerId) -> Player:
+        """The `Player` record for ``player_id`` (raises if there is none)."""
+        for player in self.players:
+            if player.id == player_id:
+                return player
+        raise KeyError(f"no player {player_id!r}")
 
     def settlement_at(self, coord: Axial) -> Settlement | None:
         """Return the settlement at ``coord``, or ``None`` if none is there."""
@@ -481,3 +570,19 @@ class Recruitment(BaseModel):
     owner: PlayerId
     type: UnitType
     coord: Axial
+
+
+class EconomyOrders(BaseModel):
+    """One world player's base orders for a turn (economy draft §02, §05).
+
+    ``build`` starts the next level of that building in this turn's economy
+    phase, paid on the spot; ``None`` starts nothing. ``disband`` is the player's
+    pick, in order of preference, of who goes if a shortage forces a disband this
+    turn; with no qualifying pick the weakest qualifying unit goes.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    owner: PlayerId
+    build: Building | None = None
+    disband: list[UnitId] = Field(default_factory=list)

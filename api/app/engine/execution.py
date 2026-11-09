@@ -11,6 +11,8 @@ single replay for the turn:
   3. **Capture** (§11.3 Phase 3, §14) — settlements flip to occupying infantry/armor.
   4. **Repair** (§11.3 Phase 4, §7.3) — undamaged resting units recover HP.
   5. **Economy** (§11.3 Phase 5, §6.2–6.4) — income and upkeep update each bank.
+     A world game runs `resolve_world_economy` instead: three resources,
+     shortages that disband units, and base construction.
   6. **Recruitment** (§11.3 Phase 6, §6.5) — banked muster deploys new units.
 
 It then advances ``turn`` by one: the returned state is the *next* turn's planning
@@ -28,17 +30,27 @@ from app.engine.barrage import resolve_barrage
 from app.engine.capture import resolve_capture
 from app.engine.economy import resolve_economy
 from app.engine.events import BarrageResolved, Event, OrderMooted, OrderMootedReason
-from app.engine.models import BarrageOrder, GameState, Order, Recruitment
-from app.engine.movement import resolve_movement
+from app.engine.models import (
+    NEUTRAL,
+    BarrageOrder,
+    EconomyOrders,
+    GameState,
+    HoldOrder,
+    Order,
+    Recruitment,
+)
+from app.engine.movement import EngineError, resolve_movement
 from app.engine.recruitment import resolve_recruitment
 from app.engine.repair import resolve_repair
 from app.engine.travel import begin_travel, settle_travel
+from app.engine.world_economy import resolve_world_economy
 
 
 def resolve_execution(
     state: GameState,
     orders: list[Order],
     recruitments: list[Recruitment] | None = None,
+    economy_orders: list[EconomyOrders] | None = None,
 ) -> tuple[GameState, list[Event]]:
     """Resolve a full turn, returning the next-turn state and the full event log.
 
@@ -61,6 +73,10 @@ def resolve_execution(
     (see ``resolve_recruitment``).
     """
     recruitments = recruitments if recruitments is not None else []
+    economy_orders = economy_orders if economy_orders is not None else []
+    if economy_orders and state.config.economy is None:
+        raise EngineError("economy orders need a world economy")
+    orders = orders + _garrison_holds(state, orders)
     # Travel (WORLD_SPEC §5): fresh Travel orders become standing ones, and every
     # standing order with no fresh order to replace it marches this turn.
     travel = begin_travel(state, orders)
@@ -116,7 +132,12 @@ def resolve_execution(
 
     after_capture, capture_events = resolve_capture(after_movement)
     after_repair, repair_events = resolve_repair(after_capture, live_orders, damaged)
-    after_economy, economy_events = resolve_economy(after_repair)
+    if after_repair.config.economy is None:
+        after_economy, economy_events = resolve_economy(after_repair)
+    else:
+        after_economy, economy_events = resolve_world_economy(
+            after_repair, economy_orders
+        )
     after_recruit, recruit_events = resolve_recruitment(after_economy, recruitments)
 
     next_state = after_recruit.model_copy(update={"turn": after_recruit.turn + 1})
@@ -135,3 +156,20 @@ def resolve_execution(
         + recruit_events
     )
     return next_state, events
+
+
+def _garrison_holds(state: GameState, orders: list[Order]) -> list[Order]:
+    """Hold orders for every neutral garrison unit: garrisons always hold.
+
+    Raises `EngineError` if a submitted order names a garrison unit, since no
+    player commands the neutral side.
+    """
+    garrison = {u.id for u in state.units if u.owner == NEUTRAL}
+    if not garrison:
+        return []
+    ordered = {o.unit_id for o in orders}
+    if ordered & garrison:
+        raise EngineError(
+            f"orders name neutral garrison units {sorted(ordered & garrison)}"
+        )
+    return [HoldOrder(unit_id=uid) for uid in sorted(garrison)]

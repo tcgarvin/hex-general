@@ -18,6 +18,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.engine.economy_rules import Building, Stocks
 from app.engine.hex_coords import Axial
 from app.engine.models import PlayerId, UnitId
 from app.engine.stats import Terrain, UnitType
@@ -383,6 +384,7 @@ class RecruitmentVoidedReason(StrEnum):
     HEX_OCCUPIED = "hex_occupied"  # a unit ended its move on the target hex
     UNIT_CAP_REACHED = "unit_cap_reached"  # the running cap filled first
     INSUFFICIENT_MUSTER = "insufficient_muster"  # the post-economy bank fell short
+    INSUFFICIENT_STOCKS = "insufficient_stocks"  # world: post-economy stocks fell short
 
 
 class RecruitmentVoided(BaseModel):
@@ -404,6 +406,98 @@ class RecruitmentVoided(BaseModel):
     reason: RecruitmentVoidedReason
 
 
+class StocksResolved(BaseModel):
+    """One world player's resource accounting for the turn (economy draft §02).
+
+    ``after = before + income - upkeep``, floored at 0 and limited to storage;
+    ``lost_to_storage`` is what the depot could not hold. A shortfall below 0
+    disbands a unit (`UnitDisbanded`).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["stocks_resolved"] = "stocks_resolved"
+    player: PlayerId
+    income: Stocks
+    upkeep: Stocks
+    before: Stocks
+    after: Stocks
+    lost_to_storage: Stocks
+
+
+class UnitDisbanded(BaseModel):
+    """A shortage disbanded a unit (economy draft §02).
+
+    ``shortage`` is the resource that ran out. ``chosen`` is whether the unit was
+    the player's own pick, rather than the weakest qualifying unit by default.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["unit_disbanded"] = "unit_disbanded"
+    unit_id: UnitId
+    unit_type: UnitType
+    owner: PlayerId
+    coord: Axial
+    shortage: Literal["fuel", "manpower"]
+    chosen: bool
+
+
+class ConstructionStarted(BaseModel):
+    """A player paid for and began a building level at their base."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["construction_started"] = "construction_started"
+    player: PlayerId
+    building: Building
+    level: int
+    completes_on: int
+    cost: Stocks
+
+
+class ConstructionCompleted(BaseModel):
+    """A building reached a new level."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["construction_completed"] = "construction_completed"
+    player: PlayerId
+    building: Building
+    level: int
+
+
+class ConstructionVoidedReason(StrEnum):
+    """Why a submission-legal build order did not start this turn."""
+
+    INSUFFICIENT_STOCKS = "insufficient_stocks"  # upkeep or recruits left too little
+
+
+class ConstructionVoided(BaseModel):
+    """A build order was skipped; nothing was paid."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["construction_voided"] = "construction_voided"
+    player: PlayerId
+    building: Building
+    reason: ConstructionVoidedReason
+
+
+class WorldUnitRecruited(BaseModel):
+    """A world player recruited a unit, paying ``cost`` from their stocks."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["world_unit_recruited"] = "world_unit_recruited"
+    unit_id: UnitId
+    unit_type: UnitType
+    owner: PlayerId
+    coord: Axial
+    cost: Stocks
+    stocks_after: Stocks
+
+
 Event = Annotated[
     UnitMoved
     | MoveBlocked
@@ -420,7 +514,13 @@ Event = Annotated[
     | UnitDeployed
     | ColumnStuck
     | ColumnHeld
-    | TravelEnded,
+    | TravelEnded
+    | StocksResolved
+    | UnitDisbanded
+    | ConstructionStarted
+    | ConstructionCompleted
+    | ConstructionVoided
+    | WorldUnitRecruited,
     Field(discriminator="kind"),
 ]
 """Tagged union of all execution events, discriminated on ``kind``."""

@@ -15,7 +15,7 @@ turn contributes its income immediately (SPEC §11.3 ordering).
 from __future__ import annotations
 
 from app.engine.events import Event, SettlementCaptured
-from app.engine.models import GameState, Posture
+from app.engine.models import NEUTRAL, GameState, Posture
 from app.engine.stats import UNIT_STATS
 
 
@@ -36,6 +36,9 @@ def resolve_capture(state: GameState) -> tuple[GameState, list[Event]]:
     for settlement in new_state.settlements:
         occupant = occupant_at.get(settlement.coord)
         if occupant is None or not UNIT_STATS[occupant.type].can_capture:
+            continue
+        # A garrison guards its site; it never takes control (economy draft §04).
+        if occupant.owner == NEUTRAL:
             continue
         if settlement.controlled_by == occupant.owner:
             continue

@@ -31,11 +31,13 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from app.engine.economy_rules import Building, SiteKind, WorldEconomy
 from app.engine.events import (
     Event,
     RecruitmentVoided,
     RecruitmentVoidedReason,
     UnitRecruited,
+    WorldUnitRecruited,
 )
 from app.engine.models import (
     GameState,
@@ -46,7 +48,17 @@ from app.engine.models import (
     default_facing,
 )
 from app.engine.movement import EngineError
-from app.engine.stats import UNIT_STATS, Terrain
+from app.engine.stats import UNIT_STATS, Terrain, UnitType
+
+# Where each unit type may be recruited in a world (economy draft §05): infantry
+# and guns at your base or a held city, tanks only at a held factory.
+WORLD_RECRUIT_SITES: dict[UnitType, frozenset[SiteKind]] = {
+    UnitType.INFANTRY: frozenset({SiteKind.BASE, SiteKind.CITY}),
+    UnitType.ARTILLERY: frozenset({SiteKind.BASE, SiteKind.CITY}),
+    UnitType.ARMOR: frozenset({SiteKind.FACTORY}),
+}
+# The base building a unit type needs before it can be recruited at all.
+WORLD_RECRUIT_NEEDS: dict[UnitType, Building] = {UnitType.ARTILLERY: Building.WORKSHOP}
 
 
 def resolve_recruitment(
@@ -65,6 +77,10 @@ def resolve_recruitment(
     new_state = state.fork()
     if not recruitments:
         return new_state, []
+    if new_state.config.economy is not None:
+        return _resolve_world_recruitment(
+            new_state, new_state.config.economy, recruitments
+        )
 
     players = {p.id: p for p in new_state.players}
     hexes = new_state.map.index
@@ -156,4 +172,87 @@ def resolve_recruitment(
         )
         next_id += 1
 
+    return new_state, events
+
+
+def _resolve_world_recruitment(
+    new_state: GameState, economy: WorldEconomy, recruitments: list[Recruitment]
+) -> tuple[GameState, list[Event]]:
+    """World recruitment: stocks pay, and site kinds decide what deploys where.
+
+    Static violations raise `EngineError` (validation rejects them first): an
+    unknown player, a hex with no site or the wrong kind of site for the unit
+    type, or a unit type whose base building is missing. The site being lost or
+    occupied, the army size filling, or the stocks falling short void the recruit.
+    """
+    players = {p.id: p for p in new_state.players}
+    sites = new_state.map.site_index
+    control_at = {s.coord: s.controlled_by for s in new_state.settlements}
+    occupied = {u.coord for u in new_state.units if u.posture is Posture.DEPLOYED}
+    unit_counts: dict[PlayerId, int] = defaultdict(int)
+    for unit in new_state.units:
+        unit_counts[unit.owner] += 1
+    caps = {p.id: new_state.unit_cap_for(p.id) for p in new_state.players}
+    next_id = max((u.id for u in new_state.units), default=0) + 1
+
+    events: list[Event] = []
+    for request in recruitments:
+        player = players.get(request.owner)
+        if player is None:
+            raise EngineError(f"recruitment by unknown player {request.owner!r}")
+        site = sites.get(request.coord)
+        if site is None or site.kind not in WORLD_RECRUIT_SITES[request.type]:
+            raise EngineError(
+                f"{request.type} cannot be recruited at {request.coord} "
+                f"({'no site' if site is None else site.kind})"
+            )
+        needs = WORLD_RECRUIT_NEEDS.get(request.type)
+        if needs is not None and player.level(needs) < 1:
+            raise EngineError(f"{request.owner!r} needs a {needs} for {request.type}")
+
+        reason: RecruitmentVoidedReason | None = None
+        cost = economy.recruit_cost[request.type]
+        if control_at.get(request.coord) != request.owner:
+            reason = RecruitmentVoidedReason.CITY_NOT_FRIENDLY
+        elif request.coord in occupied:
+            reason = RecruitmentVoidedReason.HEX_OCCUPIED
+        elif unit_counts[request.owner] >= caps[request.owner]:
+            reason = RecruitmentVoidedReason.UNIT_CAP_REACHED
+        elif not player.stocks.covers(cost):
+            reason = RecruitmentVoidedReason.INSUFFICIENT_STOCKS
+        if reason is not None:
+            events.append(
+                RecruitmentVoided(
+                    owner=request.owner,
+                    coord=request.coord,
+                    unit_type=request.type,
+                    reason=reason,
+                )
+            )
+            continue
+
+        new_state.units.append(
+            Unit(
+                id=next_id,
+                type=request.type,
+                owner=request.owner,
+                coord=request.coord,
+                hp=UNIT_STATS[request.type].max_hp,
+                facing=default_facing(request.coord, request.owner, new_state.units),
+            )
+        )
+        player.stocks = player.stocks - cost
+        occupied.add(request.coord)
+        unit_counts[request.owner] += 1
+        events.append(
+            WorldUnitRecruited(
+                unit_id=next_id,
+                unit_type=request.type,
+                owner=request.owner,
+                coord=request.coord,
+                cost=cost,
+                stocks_after=player.stocks,
+            )
+        )
+        next_id += 1
     return new_state, events
