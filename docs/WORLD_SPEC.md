@@ -212,6 +212,22 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
 - **Review:** the generator emits a PNG preview (terrain, roads, provinces, starts)
   for map-design review. Hex tile art is unchanged; this is a debug render, not board art.
 
+**As built (W3):** `app/world/generate.py` (pure Python, no numpy; a 200-slot 349² world
+takes ~18 s), `app/world/preview.py` (stdlib PNG), gates in `tests/world/`.
+
+- *Territories* (start regions) are each capital's nearest land in steps over passable
+  hexes, so roads never move a border. Fix-ups lay roads only inside territories: one road
+  network per territory, a road across every border with ≥ 4 hex contacts, and new towns
+  for any territory below half the median settlement count.
+- Capitals: farthest-point sampling, 6 Lloyd steps on open hexes, then each seats on a
+  nearby settlement (cities preferred) at least 60% of the ideal lattice spacing from
+  the others. Provinces average ~70 hexes at the default density, not 20–40.
+- `fill_order` orders slots so any prefix is spread out; `to_state(players)` seats the
+  first N, each with a garrisoned capital and the other three units beside it.
+- Known spread (seed 1, 200 slots): territory size 180–1,080 hexes (middle half
+  517–681); settlements within 14 hexes of a capital 4–12 (median 8). Edge and river
+  starts run small. The W4 sim will show whether it matters.
+
 ## 7. Economy and command cap
 
 - Muster as v0.1 (town +2, city +3, upkeep). The bank cap scales to 40 [tunable].
@@ -320,7 +336,7 @@ The real gate is the user playing a live world on the real clock for a week.
 | **W0** Engine generalization ✅ | indexed lookups, shared static map, `hostile()`, perf baseline (`app.world.bench`). The static/dynamic *storage* split and N-slot turn flow moved to W5, where persistence changes | v0.1 suite green; 350² / 1,500 units resolves in 0.05 s, one player's fog in 0.006 s |
 | **W1** Columns ✅ | posture, March/Deploy orders, pack/deploy, column movement + stacking, auto-deploy + placement, disorder, barrage vs stacks, §4.7 friendly swaps and rotations | `tests/engine/test_columns.py` |
 | **W2** Travel ✅ | `TravelOrder`, routing, standing orders in state, validation, `TravelEnded` | pytest; multi-turn arrival/halt cases |
-| **W3** World generator | §6, fairness gates, PNG preview | user reviews sample worlds |
+| **W3** World generator ✅ (review pending) | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim | §8–9 | §9 acceptance gates |
 | **W5** Persistence + clock | schema, scheduled resolve, dev manual clock | live world ticks on schedule |
 | **W6** Frontend world view | §11 | art ratified; user can plan a world turn |
