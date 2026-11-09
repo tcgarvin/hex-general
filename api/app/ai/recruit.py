@@ -116,7 +116,6 @@ def plan_recruitment(board: BoardIndex, slot: PlayerId) -> list[Recruitment]:
     counts: dict[UnitType, int] = {t: 0 for t in UnitType}
     for unit in board.own_units:
         counts[unit.type] += 1
-    total_units = len(board.view.units)
     own_total = len(board.own_units)
 
     net_income = _safe_net_income(board, slot)
@@ -124,11 +123,11 @@ def plan_recruitment(board: BoardIndex, slot: PlayerId) -> list[Recruitment]:
     # (`validate_submission`) and the post-economy bank the engine charges against.
     # When upkeep outruns guaranteed income the latter binds, so cap spend there.
     bank = max(0, player.bank + min(0, net_income))
-    unit_cap = board.view.config.unit_cap
+    unit_cap = board.view.unit_cap_for(slot)
 
     recruits: list[Recruitment] = []
     for city in cities:
-        if total_units >= unit_cap:
+        if own_total >= unit_cap:
             break
         unit_type = _pick_type(counts, own_total, bank, net_income)
         if unit_type is None:
@@ -137,6 +136,5 @@ def plan_recruitment(board: BoardIndex, slot: PlayerId) -> list[Recruitment]:
         bank -= UNIT_STATS[unit_type].recruit_cost
         counts[unit_type] += 1
         own_total += 1
-        total_units += 1
 
     return recruits

@@ -79,6 +79,7 @@ export function gameState(parts: {
     turn: parts.turn ?? 1,
     config: {
       muster_bank_cap: 20,
+      settlement_repair: 2,
       unit_cap: 20,
       victory: {
         city_elimination: true,

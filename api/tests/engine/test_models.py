@@ -25,6 +25,8 @@ from app.engine.models import (
 )
 from app.engine.stats import Terrain, UnitType
 
+from engine.helpers import build
+
 ORDER_ADAPTER: TypeAdapter[Order] = TypeAdapter(Order)
 
 
@@ -106,10 +108,14 @@ def test_unit_hp_is_bounded() -> None:
 
 
 def test_player_bank_is_bounded() -> None:
-    with pytest.raises(ValidationError):
-        Player(id="blue", bank=21)
+    # The ceiling is per game (GameConfig.muster_bank_cap), checked on the state.
     with pytest.raises(ValidationError):
         Player(id="blue", bank=-1)
+    state = build(["."], [{"type": "infantry", "owner": "blue", "q": 0, "r": 0}])
+    data = state.model_dump()
+    data["players"][0]["bank"] = state.config.muster_bank_cap + 1
+    with pytest.raises(ValidationError, match="exceeds the cap"):
+        GameState.model_validate(data)
 
 
 def test_game_state_forbids_unknown_fields() -> None:

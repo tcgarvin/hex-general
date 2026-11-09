@@ -240,6 +240,10 @@ takes ~18 s), `app/world/preview.py` (stdlib PNG), gates in `tests/world/`.
 - **Elimination:** a player with no settlements and no units is out of the world.
   A player with units but no cities can't recruit, but can retake ground.
 - No victory condition in slice 1; the world simply runs.
+- *As built:* `GameConfig.command_cap` (`CommandCap`), `muster_bank_cap = 40` and
+  `settlement_repair = 3` are per-game config that `GeneratedWorld.to_state` sets;
+  v0.1 games keep their flat cap of 20, bank cap of 20 and +2 healing. The bank
+  ceiling is now checked on `GameState` rather than on `Player`.
 
 ## 8. Bots
 

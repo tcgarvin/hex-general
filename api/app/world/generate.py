@@ -38,6 +38,7 @@ from dataclasses import dataclass, field
 
 from app.engine.hex_coords import Axial, distance, within
 from app.engine.models import (
+    CommandCap,
     GameConfig,
     GameMap,
     GameState,
@@ -70,7 +71,11 @@ STARTING_UNITS: tuple[UnitType, ...] = (
 """Each filled slot's opening force (WORLD_SPEC §6), garrison first."""
 
 WORLD_UNIT_CAP = 15
-"""Command cap ceiling (WORLD_SPEC §7). The holdings-based cap comes with W4."""
+"""Command cap ceiling (WORLD_SPEC §7): 4 + 1 per town + 2 per city, up to this."""
+WORLD_BANK_CAP = 40
+"""Muster bank ceiling in a world (WORLD_SPEC §7)."""
+WORLD_SETTLEMENT_REPAIR = 3
+"""HP per turn regained resting in a town or city (WORLD_SPEC §7)."""
 
 # Road laying: entering an existing road hex is cheap, so roads merge; crossing a
 # river (a bridge) is expensive, so bridges are few.
@@ -188,6 +193,9 @@ class GeneratedWorld:
             players=[Player(id=p) for p in players],
             config=GameConfig(
                 unit_cap=WORLD_UNIT_CAP,
+                muster_bank_cap=WORLD_BANK_CAP,
+                command_cap=CommandCap(ceiling=WORLD_UNIT_CAP),
+                settlement_repair=WORLD_SETTLEMENT_REPAIR,
                 victory=VictoryConfig(turn_limit=1_000_000, city_elimination=False),
             ),
         )

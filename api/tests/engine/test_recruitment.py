@@ -18,7 +18,7 @@ from app.engine.events import (
     RecruitmentVoidedReason,
     UnitRecruited,
 )
-from app.engine.models import GameState
+from app.engine.models import CommandCap, GameState
 from app.engine.movement import EngineError
 from app.engine.recruitment import resolve_recruitment
 from engine.helpers import at, build, recruit
@@ -185,3 +185,35 @@ def test_unaffordable_recruit_is_voided() -> None:
     voided = [e for e in events if isinstance(e, RecruitmentVoided)]
     assert len(voided) == 1
     assert voided[0].reason is RecruitmentVoidedReason.INSUFFICIENT_MUSTER
+
+
+def test_command_cap_grows_with_holdings() -> None:
+    # WORLD_SPEC §7: 4 + 1 per town + 2 per city. Blue holds a city and a town
+    # (cap 7) and already fields 7 units, so a recruit is voided.
+    units = [{"type": "infantry", "owner": "blue", "q": q, "r": 1} for q in range(7)]
+    state = build(
+        ["ct.....", "......."],
+        units,
+        settlements=[
+            {"q": 0, "r": 0, "owner": "blue"},
+            {"q": 1, "r": 0, "owner": "blue"},
+        ],
+        players=[{"id": "blue", "bank": 20}],
+    )
+    state.config = state.config.model_copy(update={"command_cap": CommandCap()})
+    assert state.unit_cap_for("blue") == 7
+
+    _, events = resolve_recruitment(state, [recruit("blue", "infantry", 0, 0)])
+    assert [e.reason for e in events if isinstance(e, RecruitmentVoided)] == [
+        RecruitmentVoidedReason.UNIT_CAP_REACHED
+    ]
+
+
+def test_command_cap_never_exceeds_its_ceiling_or_the_unit_cap() -> None:
+    rule = CommandCap()
+    assert rule.cap(towns=20, cities=20) == rule.ceiling
+    state = build(["c"], [], settlements=[{"q": 0, "r": 0, "owner": "blue"}])
+    state.config = state.config.model_copy(
+        update={"command_cap": CommandCap(base=50, ceiling=99), "unit_cap": 12}
+    )
+    assert state.unit_cap_for("blue") == 12

@@ -20,7 +20,7 @@ from collections.abc import Iterable
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from app.engine.hex_coords import Axial, distance
 from app.engine.stats import (
@@ -199,13 +199,14 @@ def default_facing(coord: Axial, owner: PlayerId, units: Iterable[Unit]) -> Faci
 class Player(BaseModel):
     """A participant's mutable economy state (SPEC §6).
 
-    ``bank`` is the muster bank, clamped to 0..`MUSTER_BANK_CAP` (SPEC §6.3,
+    ``bank`` is the muster bank, clamped to 0..`GameConfig.muster_bank_cap` by the
+    economy phase (SPEC §6.3,
     §6.4). Settlement control is not duplicated here — derive it from
     `GameState.settlements` to keep one source of truth.
     """
 
     id: PlayerId
-    bank: int = Field(default=0, ge=0, le=MUSTER_BANK_CAP)
+    bank: int = Field(default=0, ge=0)
 
 
 class VictoryConfig(BaseModel):
@@ -221,11 +222,40 @@ class VictoryConfig(BaseModel):
     city_points: int = 3
 
 
+class CommandCap(BaseModel):
+    """A unit cap that grows with holdings (WORLD_SPEC §7).
+
+    A player may field ``base + per_town × towns + per_city × cities`` units, up
+    to ``ceiling``: land, not grinding, grows an army.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    base: int = Field(default=4, ge=0)
+    per_town: int = Field(default=1, ge=0)
+    per_city: int = Field(default=2, ge=0)
+    ceiling: int = Field(default=15, ge=1)
+
+    def cap(self, towns: int, cities: int) -> int:
+        """The cap for a player holding ``towns`` and ``cities``."""
+        return min(
+            self.ceiling, self.base + self.per_town * towns + self.per_city * cities
+        )
+
+
 class GameConfig(BaseModel):
-    """Per-game limits and victory config (SPEC §6.1, §6.4, §15)."""
+    """Per-game limits and victory config (SPEC §6.1, §6.4, §15).
+
+    ``command_cap``, when set, replaces the flat ``unit_cap`` with a cap that grows
+    with holdings (still never above ``unit_cap``). ``settlement_repair`` is the
+    HP a unit resting in a town or city regains per turn. World games set both
+    (WORLD_SPEC §7); v0.1 games keep the defaults.
+    """
 
     unit_cap: int = UNIT_CAP
     muster_bank_cap: int = MUSTER_BANK_CAP
+    command_cap: CommandCap | None = None
+    settlement_repair: int = Field(default=2, ge=1)
     victory: VictoryConfig
 
 
@@ -270,6 +300,17 @@ class GameState(BaseModel):
     standing_orders: list[StandingTravel] = Field(default_factory=list)
     config: GameConfig
 
+    @model_validator(mode="after")
+    def _banks_within_cap(self) -> GameState:
+        """Every bank is within this game's ceiling (SPEC §6.4, WORLD_SPEC §7)."""
+        for player in self.players:
+            if player.bank > self.config.muster_bank_cap:
+                raise ValueError(
+                    f"player {player.id!r} bank {player.bank} exceeds the cap of "
+                    f"{self.config.muster_bank_cap}"
+                )
+        return self
+
     def hex_at(self, coord: Axial) -> Hex | None:
         """Return the hex at ``coord``, or ``None`` if off-map."""
         return self.map.index.get(coord)
@@ -313,6 +354,22 @@ class GameState(BaseModel):
     def units_at(self, coord: Axial) -> list[Unit]:
         """Return every unit at ``coord``: the deployed one, if any, and columns."""
         return [u for u in self.units if u.coord == coord]
+
+    def unit_cap_for(self, player: PlayerId) -> int:
+        """How many units ``player`` may field right now (SPEC §6.1, WORLD_SPEC §7)."""
+        rule = self.config.command_cap
+        if rule is None:
+            return self.config.unit_cap
+        index = self.map.index
+        towns = cities = 0
+        for settlement in self.settlements:
+            if settlement.controlled_by != player:
+                continue
+            if index[settlement.coord].terrain is Terrain.CITY:
+                cities += 1
+            else:
+                towns += 1
+        return min(self.config.unit_cap, rule.cap(towns, cities))
 
     def settlement_at(self, coord: Axial) -> Settlement | None:
         """Return the settlement at ``coord``, or ``None`` if none is there."""

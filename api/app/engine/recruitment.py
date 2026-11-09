@@ -78,7 +78,7 @@ def resolve_recruitment(
         unit_counts[unit.owner] += 1
 
     next_id = max((u.id for u in new_state.units), default=0) + 1
-    unit_cap = new_state.config.unit_cap
+    caps = {p.id: new_state.unit_cap_for(p.id) for p in new_state.players}
 
     events: list[Event] = []
     for request in recruitments:
@@ -110,7 +110,7 @@ def resolve_recruitment(
                 )
             )
             continue
-        if unit_counts[request.owner] >= unit_cap:
+        if unit_counts[request.owner] >= caps[request.owner]:
             events.append(
                 RecruitmentVoided(
                     owner=request.owner,

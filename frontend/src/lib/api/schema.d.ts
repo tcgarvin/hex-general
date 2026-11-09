@@ -481,6 +481,35 @@ export interface components {
          */
         CombatRole: "attacker" | "defender";
         /**
+         * CommandCap
+         * @description A unit cap that grows with holdings (WORLD_SPEC §7).
+         *
+         *     A player may field ``base + per_town × towns + per_city × cities`` units, up
+         *     to ``ceiling``: land, not grinding, grows an army.
+         */
+        CommandCap: {
+            /**
+             * Base
+             * @default 4
+             */
+            base: number;
+            /**
+             * Ceiling
+             * @default 15
+             */
+            ceiling: number;
+            /**
+             * Per City
+             * @default 2
+             */
+            per_city: number;
+            /**
+             * Per Town
+             * @default 1
+             */
+            per_town: number;
+        };
+        /**
          * CreateGameRequest
          * @description Body for ``POST /games``: which authored scenario to instantiate.
          *
@@ -597,13 +626,24 @@ export interface components {
         /**
          * GameConfig
          * @description Per-game limits and victory config (SPEC §6.1, §6.4, §15).
+         *
+         *     ``command_cap``, when set, replaces the flat ``unit_cap`` with a cap that grows
+         *     with holdings (still never above ``unit_cap``). ``settlement_repair`` is the
+         *     HP a unit resting in a town or city regains per turn. World games set both
+         *     (WORLD_SPEC §7); v0.1 games keep the defaults.
          */
         GameConfig: {
+            command_cap?: components["schemas"]["CommandCap"] | null;
             /**
              * Muster Bank Cap
              * @default 20
              */
             muster_bank_cap: number;
+            /**
+             * Settlement Repair
+             * @default 2
+             */
+            settlement_repair: number;
             /**
              * Unit Cap
              * @default 20
@@ -885,7 +925,8 @@ export interface components {
          * Player
          * @description A participant's mutable economy state (SPEC §6).
          *
-         *     ``bank`` is the muster bank, clamped to 0..`MUSTER_BANK_CAP` (SPEC §6.3,
+         *     ``bank`` is the muster bank, clamped to 0..`GameConfig.muster_bank_cap` by the
+         *     economy phase (SPEC §6.3,
          *     §6.4). Settlement control is not duplicated here — derive it from
          *     `GameState.settlements` to keep one source of truth.
          */

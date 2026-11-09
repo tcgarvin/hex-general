@@ -348,6 +348,37 @@
         "title": "CombatRole",
         "type": "string"
       },
+      "CommandCap": {
+        "description": "A unit cap that grows with holdings (WORLD_SPEC \u00a77).\n\nA player may field ``base + per_town \u00d7 towns + per_city \u00d7 cities`` units, up\nto ``ceiling``: land, not grinding, grows an army.",
+        "properties": {
+          "base": {
+            "default": 4,
+            "minimum": 0.0,
+            "title": "Base",
+            "type": "integer"
+          },
+          "ceiling": {
+            "default": 15,
+            "minimum": 1.0,
+            "title": "Ceiling",
+            "type": "integer"
+          },
+          "per_city": {
+            "default": 2,
+            "minimum": 0.0,
+            "title": "Per City",
+            "type": "integer"
+          },
+          "per_town": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Per Town",
+            "type": "integer"
+          }
+        },
+        "title": "CommandCap",
+        "type": "object"
+      },
       "CreateGameRequest": {
         "additionalProperties": false,
         "description": "Body for ``POST /games``: which authored scenario to instantiate.\n\n``vs_bot`` requests a game against the computer (AI_SPEC \u00a79): the service\nfills the second slot with a bot player and the game starts immediately.\n``bot_policy`` picks the AI (resolved via `app.ai.arena`'s registry) and is\nonly consulted when ``vs_bot`` is true.",
@@ -507,11 +538,27 @@
         "type": "string"
       },
       "GameConfig": {
-        "description": "Per-game limits and victory config (SPEC \u00a76.1, \u00a76.4, \u00a715).",
+        "description": "Per-game limits and victory config (SPEC \u00a76.1, \u00a76.4, \u00a715).\n\n``command_cap``, when set, replaces the flat ``unit_cap`` with a cap that grows\nwith holdings (still never above ``unit_cap``). ``settlement_repair`` is the\nHP a unit resting in a town or city regains per turn. World games set both\n(WORLD_SPEC \u00a77); v0.1 games keep the defaults.",
         "properties": {
+          "command_cap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommandCap"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "muster_bank_cap": {
             "default": 20,
             "title": "Muster Bank Cap",
+            "type": "integer"
+          },
+          "settlement_repair": {
+            "default": 2,
+            "minimum": 1.0,
+            "title": "Settlement Repair",
             "type": "integer"
           },
           "unit_cap": {
@@ -1013,11 +1060,10 @@
         "type": "string"
       },
       "Player": {
-        "description": "A participant's mutable economy state (SPEC \u00a76).\n\n``bank`` is the muster bank, clamped to 0..`MUSTER_BANK_CAP` (SPEC \u00a76.3,\n\u00a76.4). Settlement control is not duplicated here \u2014 derive it from\n`GameState.settlements` to keep one source of truth.",
+        "description": "A participant's mutable economy state (SPEC \u00a76).\n\n``bank`` is the muster bank, clamped to 0..`GameConfig.muster_bank_cap` by the\neconomy phase (SPEC \u00a76.3,\n\u00a76.4). Settlement control is not duplicated here \u2014 derive it from\n`GameState.settlements` to keep one source of truth.",
         "properties": {
           "bank": {
             "default": 0,
-            "maximum": 20.0,
             "minimum": 0.0,
             "title": "Bank",
             "type": "integer"

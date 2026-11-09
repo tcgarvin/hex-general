@@ -193,6 +193,7 @@ def _validate_recruitments(
         raise OrderValidationError(f"unknown player slot {slot!r}")
 
     unit_count = sum(1 for u in state.units if u.owner == slot)
+    cap = state.unit_cap_for(slot)
     spent = 0
     claimed: set[Axial] = set()
     for recruit in recruitments:
@@ -214,10 +215,8 @@ def _validate_recruitments(
         claimed.add(recruit.coord)
 
         unit_count += 1
-        if unit_count > state.config.unit_cap:
-            raise OrderValidationError(
-                f"recruiting exceeds the unit cap of {state.config.unit_cap}"
-            )
+        if unit_count > cap:
+            raise OrderValidationError(f"recruiting exceeds the unit cap of {cap}")
         spent += UNIT_STATS[recruit.type].recruit_cost
         if spent > bank_by_player[slot]:
             raise OrderValidationError(

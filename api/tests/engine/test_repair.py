@@ -79,3 +79,15 @@ def test_non_resting_unit_does_not_repair() -> None:
 
     assert hp_of(new_state, 1) == 5
     assert events == []
+
+
+def test_world_settlement_repair_heals_three() -> None:
+    # WORLD_SPEC §7: a world sets settlement_repair = 3.
+    state = build(
+        ["t.."],
+        [{"type": "infantry", "owner": "blue", "q": 0, "r": 0, "hp": 5}],
+    )
+    state.config = state.config.model_copy(update={"settlement_repair": 3})
+    new_state, _ = resolve_repair(state, [rest(1)], damaged=set())
+
+    assert hp_of(new_state, 1) == 8
