@@ -5,6 +5,8 @@ from __future__ import annotations
 import pytest
 
 from app.engine.hex_coords import distance
+from app.engine.economy_rules import WorldEconomy
+from app.engine.models import NEUTRAL, Settlement
 from app.world.generate import STARTING_UNITS, GeneratedWorld, WorldParams, generate
 from app.world.seating import (
     START_CLEARANCE,
@@ -58,12 +60,27 @@ def test_a_slot_with_an_army_near_its_capital_is_skipped(
     assert open_slot(state, world.slots) == 2
 
 
-def test_a_taken_capital_shuts_its_slot(world: GeneratedWorld) -> None:
+def test_a_founded_base_site_shuts_its_slot(world: GeneratedWorld) -> None:
     state = world.to_state([slot_id(0)])
-    for settlement in state.settlements:
-        if settlement.coord == world.slots[1]:
-            settlement.controlled_by = slot_id(0)
+    assert all(s.coord != world.slots[1] for s in state.settlements)
+    state.settlements.append(Settlement(coord=world.slots[1], controlled_by=slot_id(0)))
     assert open_slot(state, world.slots) == 2
+
+
+def test_garrisons_near_a_base_site_do_not_shut_it(world: GeneratedWorld) -> None:
+    state = world.to_state([slot_id(0)])
+    guard = next(u for u in state.units if u.owner == NEUTRAL)
+    guard.coord = world.slots[1]
+    assert open_slot(state, world.slots) == 1
+
+
+def test_a_seated_player_founds_their_base_with_starting_stocks(
+    world: GeneratedWorld,
+) -> None:
+    seated, player = seat_player(world.to_state([slot_id(0)]), world.slots)
+    base = next(s for s in seated.settlements if s.coord == world.slots[1])
+    assert base.controlled_by == player
+    assert seated.player(player).stocks == WorldEconomy().starting_stocks
 
 
 def test_a_full_world_refuses_newcomers(world: GeneratedWorld) -> None:

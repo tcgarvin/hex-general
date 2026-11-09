@@ -4,7 +4,8 @@ A world map is ~10^5 hexes; as a list of hex objects its JSON is ~7 MB, while
 the same map as two character grids is ~250 KB. `CompactMap` is that grid form:
 the terrain and road layers as row-major strings over the odd-q offset rectangle,
 one character per hex, using the scenario format's alphabet (`TERRAIN_CHARS`,
-`ROAD_CHAR`/`NO_ROAD_CHAR`). It is how the `game_maps` table stores a map once per
+`ROAD_CHAR`/`NO_ROAD_CHAR`), plus the map's sparse list of world sites
+(`MapSite`: kind and garrison tier per settlement). It is how the `game_maps` table stores a map once per
 world, instead of in every state row, and the form the client fetches it in.
 
 `encode_map` only accepts a map that is exactly a full offset rectangle in
@@ -19,7 +20,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.engine.hex_coords import axial_to_offset, offset_to_axial
-from app.engine.models import GameMap, Hex
+from app.engine.models import GameMap, Hex, MapSite
 from app.engine.scenario import NO_ROAD_CHAR, ROAD_CHAR, TERRAIN_CHARS, TERRAIN_TO_CHAR
 
 
@@ -41,6 +42,7 @@ class CompactMap(BaseModel):
     height: int = Field(gt=0)
     terrain: str
     roads: str
+    sites: list[MapSite] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _check_grids(self) -> CompactMap:
@@ -57,6 +59,14 @@ class CompactMap(BaseModel):
         unknown = set(self.roads) - {ROAD_CHAR, NO_ROAD_CHAR}
         if unknown:
             raise ValueError(f"unknown road chars {sorted(unknown)}")
+        seen: set[tuple[int, int]] = set()
+        for site in self.sites:
+            col, row = axial_to_offset(site.coord)
+            if not (0 <= col < self.width and 0 <= row < self.height):
+                raise ValueError(f"site at {site.coord} is off the map")
+            if (col, row) in seen:
+                raise ValueError(f"two sites at {site.coord}")
+            seen.add((col, row))
         return self
 
 
@@ -87,6 +97,7 @@ def encode_map(game_map: GameMap) -> CompactMap:
         height=game_map.height,
         terrain="".join(terrain),
         roads="".join(roads),
+        sites=list(game_map.sites),
     )
 
 
@@ -105,4 +116,6 @@ def decode_map(compact: CompactMap) -> GameMap:
                 road=road_char == ROAD_CHAR,
             )
         )
-    return GameMap(width=width, height=compact.height, hexes=hexes)
+    return GameMap(
+        width=width, height=compact.height, hexes=hexes, sites=list(compact.sites)
+    )

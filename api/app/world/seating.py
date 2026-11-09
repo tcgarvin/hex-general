@@ -7,15 +7,24 @@ World creation seats the bots in the first slots with `GeneratedWorld.to_state`.
 A player joining later takes the first slot that is still open, given the same
 opening force on the same terms.
 
-A slot is open when nobody has held its id, its capital is still neutral, and no
-unit stands within `START_CLEARANCE` hexes of the capital, so a newcomer never
-lands beside, or on top of, someone's army.
+A slot is open when nobody has held its id, its base site is still vacant (no
+settlement there yet), and no player's unit stands within `START_CLEARANCE` hexes
+of it, so a newcomer never lands beside, or on top of, someone's army. Neutral
+garrisons don't count: they hold their own sites and never move.
 """
 
 from __future__ import annotations
 
 from app.engine.hex_coords import Axial, distance
-from app.engine.models import GameState, Player, PlayerId, Unit, default_facing
+from app.engine.models import (
+    NEUTRAL,
+    GameState,
+    Player,
+    PlayerId,
+    Settlement,
+    Unit,
+    default_facing,
+)
 from app.world.generate import STARTING_UNITS, nearest_open
 
 START_CLEARANCE = 3
@@ -34,11 +43,12 @@ def slot_id(fill_position: int) -> PlayerId:
 def open_slot(state: GameState, slots: list[Axial]) -> int | None:
     """The first open fill position in ``slots``, or ``None`` if every slot is shut."""
     held_ids = {p.id for p in state.players}
-    neutral = {s.coord for s in state.settlements if s.controlled_by is None}
+    founded = {s.coord for s in state.settlements}
+    armies = [u.coord for u in state.units if u.owner != NEUTRAL]
     for position, capital in enumerate(slots):
-        if slot_id(position) in held_ids or capital not in neutral:
+        if slot_id(position) in held_ids or capital in founded:
             continue
-        if any(distance(u.coord, capital) <= START_CLEARANCE for u in state.units):
+        if any(distance(coord, capital) <= START_CLEARANCE for coord in armies):
             continue
         return position
     return None
@@ -47,8 +57,9 @@ def open_slot(state: GameState, slots: list[Axial]) -> int | None:
 def seat_player(state: GameState, slots: list[Axial]) -> tuple[GameState, PlayerId]:
     """Seat a new player in the first open slot; return the new state and their id.
 
-    The player controls the slot's capital and gets `STARTING_UNITS` on and
-    around it, as at world creation. Raises `WorldFull` if no slot is open.
+    The player founds their base on the slot's base site and gets
+    `STARTING_UNITS` on and around it, with the economy's starting stocks, as at
+    world creation. Raises `WorldFull` if no slot is open.
     """
     position = open_slot(state, slots)
     if position is None:
@@ -71,8 +82,9 @@ def seat_player(state: GameState, slots: list[Axial]) -> tuple[GameState, Player
     seated.units.extend(arrivals)
     for unit in arrivals:
         unit.facing = default_facing(unit.coord, unit.owner, seated.units)
-    for settlement in seated.settlements:
-        if settlement.coord == capital:
-            settlement.controlled_by = player
-    seated.players.append(Player(id=player))
+    seated.settlements.append(Settlement(coord=capital, controlled_by=player))
+    economy = seated.config.economy
+    if economy is None:
+        raise ValueError("seating needs a world economy")
+    seated.players.append(Player(id=player, stocks=economy.starting_stocks))
     return seated, player

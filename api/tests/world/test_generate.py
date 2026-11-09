@@ -13,11 +13,14 @@ from collections import deque
 
 import pytest
 
+from app.engine.economy_rules import SiteKind, WorldEconomy
 from app.engine.execution import resolve_execution
 from app.engine.hex_coords import Axial, distance, neighbors
+from app.engine.models import NEUTRAL
 from app.engine.routing import find_route
 from app.engine.stats import TERRAIN_STATS, Terrain
 from app.world.generate import (
+    GARRISON_FORCES,
     STARTING_UNITS,
     GeneratedWorld,
     WorldGenError,
@@ -183,17 +186,59 @@ def test_to_state_seats_players_and_resolves_a_turn(world: GeneratedWorld) -> No
     state = world.to_state(players)
 
     seated = {world.capitals[world.fill_order[k]]: p for k, p in enumerate(players)}
+    vacant = set(world.capitals) - set(seated)
     for settlement in state.settlements:
         assert settlement.controlled_by == seated.get(settlement.coord)
-    assert len(state.units) == len(STARTING_UNITS) * len(players)
+        assert settlement.coord not in vacant
+    player_units = [u for u in state.units if u.owner != NEUTRAL]
+    assert len(player_units) == len(STARTING_UNITS) * len(players)
     assert len({u.coord for u in state.units}) == len(state.units)
     for unit in state.units:
         assert TERRAIN_STATS[state.map.index[unit.coord].terrain].passable
-    garrisons = {u.coord: u.owner for u in state.units if u.coord in seated}
-    assert garrisons == seated
+    on_bases = {u.coord: u.owner for u in state.units if u.coord in seated}
+    assert on_bases == seated
+    for player in state.players:
+        assert player.stocks == WorldEconomy().starting_stocks
 
     next_state, _ = resolve_execution(state, [])
     assert next_state.turn == 1
+
+
+def test_every_neutral_site_starts_garrisoned_by_tier(world: GeneratedWorld) -> None:
+    state = world.to_state(["p0"])
+    garrison = [u for u in state.units if u.owner == NEUTRAL]
+    on_site = {u.coord: u for u in garrison}
+    expected = 0
+    for site in world.game_map.sites:
+        if site.kind is SiteKind.BASE:
+            assert site.garrison == 0
+            continue
+        assert 1 <= site.garrison <= 4
+        forces = GARRISON_FORCES[site.garrison]
+        expected += len(forces)
+        first = on_site[site.coord]
+        assert (first.type, first.hp) == forces[0]
+    assert len(garrison) == expected
+
+
+def test_sites_cover_every_settlement_and_bases_are_the_capitals(
+    world: GeneratedWorld,
+) -> None:
+    sites = world.game_map.site_index
+    assert set(sites) == set(world.settlements)
+    bases = {c for c, s in sites.items() if s.kind is SiteKind.BASE}
+    assert bases == set(world.capitals)
+
+
+def test_every_territory_gets_a_factory_oil_and_steel(world: GeneratedWorld) -> None:
+    hex_pos = {h.coord: i for i, h in enumerate(world.game_map.hexes)}
+    kinds_by_slot: dict[int, set[SiteKind]] = {}
+    for site in world.game_map.sites:
+        slot = world.territory[hex_pos[site.coord]]
+        kinds_by_slot.setdefault(slot, set()).add(site.kind)
+    needed = {SiteKind.FACTORY, SiteKind.OIL_FIELD, SiteKind.STEEL_MILL}
+    for slot in range(world.params.slots):
+        assert needed <= kinds_by_slot[slot], slot
 
 
 def test_to_state_rejects_too_many_players(world: GeneratedWorld) -> None:

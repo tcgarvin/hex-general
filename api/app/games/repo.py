@@ -313,7 +313,7 @@ class SupabaseGameRepo:
             self._client.table("game_maps")
             .insert(
                 {
-                    **compact.model_dump(),
+                    **compact.model_dump(mode="json"),
                     "params": params,
                     "slots": [c.model_dump() for c in slots],
                 }
@@ -330,7 +330,7 @@ class SupabaseGameRepo:
             return cached
         response = (
             self._client.table("game_maps")
-            .select("width, height, terrain, roads")
+            .select("width, height, terrain, roads, sites")
             .eq("id", map_id)
             .execute()
         )

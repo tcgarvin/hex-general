@@ -36,13 +36,15 @@ from collections import Counter, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from app.engine.economy_rules import SiteKind, WorldEconomy
 from app.engine.hex_coords import Axial, distance, within
 from app.engine.models import (
-    CommandCap,
+    NEUTRAL,
     GameConfig,
     GameMap,
     GameState,
     Hex,
+    MapSite,
     Player,
     PlayerId,
     Settlement,
@@ -71,11 +73,28 @@ STARTING_UNITS: tuple[UnitType, ...] = (
 """Each filled slot's opening force (WORLD_SPEC §6), garrison first."""
 
 WORLD_UNIT_CAP = 15
-"""Command cap ceiling (WORLD_SPEC §7): 4 + 1 per town + 2 per city, up to this."""
-WORLD_BANK_CAP = 40
-"""Muster bank ceiling in a world (WORLD_SPEC §7)."""
+"""Hard unit ceiling in a world; the army size rule (`WorldEconomy.army`) binds first."""
 WORLD_SETTLEMENT_REPAIR = 3
 """HP per turn regained resting in a town or city (WORLD_SPEC §7)."""
+
+GARRISON_FORCES: dict[int, tuple[tuple[UnitType, int], ...]] = {
+    1: ((UnitType.INFANTRY, 5),),
+    2: ((UnitType.INFANTRY, 10),),
+    3: ((UnitType.INFANTRY, 10), (UnitType.ARTILLERY, 10)),
+    4: ((UnitType.INFANTRY, 10), (UnitType.INFANTRY, 10), (UnitType.ARTILLERY, 10)),
+}
+"""Each garrison tier's units and HP, the first on the site (economy draft §04)."""
+
+# Site kinds (economy draft §03): per territory, one factory at 11–20 hexes, one
+# oil field and one steel mill within 12, and in territories with at least six
+# towns one more of either farther out. The other towns are farms.
+_FACTORY_BAND = (11, 20)
+_FACTORY_IDEAL = 14
+_NEAR_RESOURCE = 12
+_SECOND_RESOURCE_TOWNS = 6
+# Garrison tier by distance to the nearest slot base: militia, garrison, strongpoint.
+_TIER_NEAR = 10
+_TIER_MID = 14
 
 # Road laying: entering an existing road hex is cheap, so roads merge; crossing a
 # river (a bridge) is expensive, so bridges are few.
@@ -169,9 +188,12 @@ class GeneratedWorld:
     def to_state(self, players: list[PlayerId]) -> GameState:
         """A turn-0 state with ``players`` filling the first slots of ``fill_order``.
 
-        Each player controls their capital and gets `STARTING_UNITS` on and
-        around it; every other settlement starts neutral. Raises `WorldGenError`
-        if there are more players than slots or a player id repeats.
+        Each player holds their base and gets `STARTING_UNITS` on and around it,
+        plus the economy's starting stocks. Every other site starts neutral with
+        its tier's garrison (`GARRISON_FORCES`); the base sites of unfilled slots
+        stay vacant (no settlement, nothing to capture) until someone is seated
+        there. Raises `WorldGenError` if there are more players than slots or a
+        player id repeats.
         """
         if len(players) > self.params.slots:
             raise WorldGenError(
@@ -179,31 +201,60 @@ class GeneratedWorld:
             )
         if len(set(players)) != len(players):
             raise WorldGenError("player ids must be unique")
-        capital_owner = {
+        base_owner = {
             self.capitals[self.fill_order[k]]: player
             for k, player in enumerate(players)
         }
+        economy = WorldEconomy()
         settlements = [
-            Settlement(coord=coord, controlled_by=capital_owner.get(coord))
-            for coord in self.settlements
+            Settlement(coord=site.coord, controlled_by=base_owner.get(site.coord))
+            for site in self.game_map.sites
+            if site.kind is not SiteKind.BASE or site.coord in base_owner
         ]
         units = self._starting_units(players)
         for unit in units:
             unit.facing = default_facing(unit.coord, unit.owner, units)
+        units.extend(self._garrisons({u.coord for u in units}, len(units) + 1))
         return GameState(
             turn=0,
             map=self.game_map,
             settlements=settlements,
             units=units,
-            players=[Player(id=p) for p in players],
+            players=[Player(id=p, stocks=economy.starting_stocks) for p in players],
             config=GameConfig(
                 unit_cap=WORLD_UNIT_CAP,
-                muster_bank_cap=WORLD_BANK_CAP,
-                command_cap=CommandCap(ceiling=WORLD_UNIT_CAP),
                 settlement_repair=WORLD_SETTLEMENT_REPAIR,
+                economy=economy,
                 victory=VictoryConfig(turn_limit=1_000_000, city_elimination=False),
             ),
         )
+
+    def _garrisons(self, taken: set[Axial], first_id: int) -> list[Unit]:
+        """Every neutral site's garrison: its tier's first unit on the site, the
+        rest on the nearest free open hexes."""
+        index = self.game_map.index
+        settlement_hexes = set(self.settlements)
+        taken = set(taken)
+        units: list[Unit] = []
+        for site in self.game_map.sites:
+            if site.kind is SiteKind.BASE:
+                continue
+            forces = GARRISON_FORCES[site.garrison]
+            spots = [site.coord]
+            if len(forces) > 1:
+                spots += nearest_open(site.coord, index, settlement_hexes, taken)
+            for (unit_type, hp), coord in zip(forces, spots, strict=False):
+                taken.add(coord)
+                units.append(
+                    Unit(
+                        id=first_id + len(units),
+                        type=unit_type,
+                        owner=NEUTRAL,
+                        coord=coord,
+                        hp=hp,
+                    )
+                )
+        return units
 
     def _starting_units(self, players: list[PlayerId]) -> list[Unit]:
         """Place each player's opening force: the garrison on the capital, the
@@ -267,6 +318,7 @@ class _Draft:
     cities: list[bool] = field(default_factory=list)
     capitals: list[int] = field(default_factory=list)  # hex index per slot
     territory: list[int] = field(default_factory=list)
+    sites: list[tuple[SiteKind, int]] = field(default_factory=list)  # per settlement
 
     def passable(self, i: int) -> bool:
         return not self.river[i] or self.road[i]
@@ -305,7 +357,9 @@ def generate(params: WorldParams) -> GeneratedWorld:
             draft.terrain[i] = Terrain.RIVER
     draft.road = [False] * grid.size
 
-    count = grid.size // params.hexes_per_settlement
+    # One settlement per slot becomes a base, on top of the density target, so
+    # bases don't take neutral sites away (economy draft §03).
+    count = grid.size // params.hexes_per_settlement + params.slots
     draft.settlements = _place_settlements(grid, rng, draft.river, count)
     draft.cities = [rng.random() < params.city_share for _ in draft.settlements]
     capital_picks = _choose_capitals(draft, params.slots)
@@ -316,6 +370,7 @@ def generate(params: WorldParams) -> GeneratedWorld:
     for a, b in _road_plan(draft):
         draft.lay_road(draft.settlements[a], draft.settlements[b])
     _fix_up(draft)
+    draft.sites = _assign_sites(draft)
     return _finish(draft, params)
 
 
@@ -789,6 +844,80 @@ def _settlements_per_territory(draft: _Draft) -> list[int]:
     return counts
 
 
+# --- Sites -----------------------------------------------------------------------
+
+
+def _assign_sites(draft: _Draft) -> list[tuple[SiteKind, int]]:
+    """Each settlement's site kind and garrison tier, aligned with
+    ``draft.settlements`` (economy draft §03–04).
+
+    Capitals are bases (tier 0). Kinds are dealt per territory by the quotas
+    above; a settlement outside every territory is a farm. Tiers rise with hex
+    distance to the nearest base and with the site's value.
+    """
+    grid = draft.grid
+    rng = draft.rng
+    capital_slot = {c: p for p, c in enumerate(draft.capitals)}
+    kinds: dict[int, SiteKind] = {}
+    towns_by_slot: dict[int, list[int]] = {}
+    for s, city in zip(draft.settlements, draft.cities, strict=True):
+        if s in capital_slot:
+            kinds[s] = SiteKind.BASE
+        elif city:
+            kinds[s] = SiteKind.CITY
+        else:
+            kinds[s] = SiteKind.FARM
+            p = draft.territory[s]
+            if p >= 0:
+                towns_by_slot.setdefault(p, []).append(s)
+
+    for p, towns in sorted(towns_by_slot.items()):
+        home = draft.capitals[p]
+        dist = {t: grid.distance(t, home) for t in towns}
+        free = sorted(towns, key=lambda t: (dist[t], t))
+
+        def deal(kind: SiteKind, eligible: Callable[[int], bool], ideal: int) -> None:
+            pool = [t for t in free if eligible(t)] or list(free)
+            if not pool:
+                return
+            pick = min(pool, key=lambda t: (abs(dist[t] - ideal), rng.random()))
+            free.remove(pick)
+            kinds[pick] = kind
+
+        lo, hi = _FACTORY_BAND
+        deal(SiteKind.FACTORY, lambda t: lo <= dist[t] <= hi, _FACTORY_IDEAL)
+        near = lambda t: dist[t] <= _NEAR_RESOURCE  # noqa: E731
+        deal(SiteKind.OIL_FIELD, near, rng.randint(0, _NEAR_RESOURCE))
+        deal(SiteKind.STEEL_MILL, near, rng.randint(0, _NEAR_RESOURCE))
+        if len(towns) >= _SECOND_RESOURCE_TOWNS:
+            second = rng.choice((SiteKind.OIL_FIELD, SiteKind.STEEL_MILL))
+            deal(second, lambda t: dist[t] > _NEAR_RESOURCE, rng.randint(13, 24))
+
+    return [
+        (
+            kinds[s],
+            _garrison_tier(kinds[s], min(grid.distance(s, c) for c in draft.capitals)),
+        )
+        for s in draft.settlements
+    ]
+
+
+def _garrison_tier(kind: SiteKind, distance_to_base: int) -> int:
+    """Tier 1–4 for a neutral site (0 for a base): farther out and richer is harder."""
+    if kind is SiteKind.BASE:
+        return 0
+    tier = (
+        1
+        if distance_to_base <= _TIER_NEAR
+        else 2 if distance_to_base <= _TIER_MID else 3
+    )
+    if kind in (SiteKind.OIL_FIELD, SiteKind.STEEL_MILL):
+        tier = max(tier + 1, 2)
+    elif kind in (SiteKind.FACTORY, SiteKind.CITY):
+        tier = max(tier, 3)
+    return min(tier, 4)
+
+
 # --- Assembly ---------------------------------------------------------------------
 
 
@@ -823,6 +952,10 @@ def _finish(draft: _Draft, params: WorldParams) -> GeneratedWorld:
         hexes=[
             Hex(coord=coords[i], terrain=terrain[i], road=draft.road[i])
             for i in range(grid.size)
+        ],
+        sites=[
+            MapSite(coord=coords[s], kind=kind, garrison=tier)
+            for s, (kind, tier) in zip(draft.settlements, draft.sites, strict=True)
         ],
     )
     return GeneratedWorld(

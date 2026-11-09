@@ -114,14 +114,11 @@ def test_human_orders_are_resolved_at_the_tick(
     player = repo.get_player(game_id, "user-1")
     game = repo.get_game(game_id)
     assert player is not None and game is not None
-    unit = next(
-        u
+    unit, target = next(
+        (u, c)
         for u in game.state.units
         if u.owner == player.slot and game.state.map.index[u.coord].terrain != "city"
-    )
-    target = next(
-        c
-        for c in neighbors(unit.coord)
+        for c in neighbors(u.coord)
         if c in game.state.map.index
         and game.state.map.index[c].terrain == "plains"
         and game.state.unit_at(c) is None

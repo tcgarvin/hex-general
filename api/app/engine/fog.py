@@ -37,14 +37,20 @@ from app.engine.events import (
     SettlementCaptured,
     TrafficJam,
     UnitDeployed,
+    ConstructionCompleted,
+    ConstructionStarted,
+    ConstructionVoided,
+    StocksResolved,
     TravelEnded,
+    UnitDisbanded,
     UnitMoved,
     UnitPacked,
     UnitRecruited,
     UnitRepaired,
+    WorldUnitRecruited,
 )
 from app.engine.hex_coords import Axial
-from app.engine.models import GameState, PlayerId, UnitId
+from app.engine.models import GameState, Player, PlayerId, UnitId
 from app.engine.visibility import visible_hexes
 
 
@@ -53,13 +59,21 @@ def redact_state(state: GameState, viewer: PlayerId) -> GameState:
 
     Keeps every unit the viewer owns plus every other unit standing on a hex the
     viewer can see; the rest of the state is unchanged (the map, settlement
-    control, and banks are public in v0.1).
+    control, and banks are public in v0.1). In a world game, other players'
+    stocks, buildings and construction are private and come back blank.
     """
     visible = visible_hexes(state, viewer)
     units = [u for u in state.units if u.owner == viewer or u.coord in visible]
     own = {u.id for u in state.units if u.owner == viewer}
     standing = [o for o in state.standing_orders if o.unit_id in own]
-    return state.model_copy(update={"units": units, "standing_orders": standing})
+    update: dict[str, object] = {"units": units, "standing_orders": standing}
+    if state.config.economy is not None:
+        # A world player's stocks and base are private: other players appear with
+        # an empty economy, which the view documents as unknown, not as zero.
+        update["players"] = [
+            p if p.id == viewer else Player(id=p.id) for p in state.players
+        ]
+    return state.model_copy(update=update)
 
 
 def filter_events(
@@ -132,6 +146,17 @@ def _event_scope(
     if isinstance(event, TravelEnded):
         # The order is private intent: only its owner learns that it ended.
         return {event.owner}, set()
+    if isinstance(
+        event,
+        StocksResolved
+        | ConstructionStarted
+        | ConstructionCompleted
+        | ConstructionVoided,
+    ):
+        # A world player's economy and base are private, with no place on the map.
+        return {event.player}, set()
+    if isinstance(event, UnitDisbanded | WorldUnitRecruited):
+        return {event.owner}, {event.coord}
     if isinstance(event, RecruitmentVoided):
         # Private to the requester, with NO location: a voided recruit changes
         # nothing on the board, and gating on the city hex would leak the enemy's
