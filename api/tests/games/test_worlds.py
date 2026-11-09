@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import pytest
 
-from app.engine.hex_coords import neighbors
-from app.engine.models import MoveOrder
+from app.engine.hex_coords import Axial, neighbors
+from app.engine.models import GameState, MoveOrder, Unit
+from app.games.repo import GameRecord
 from app.games.service import (
     WORLD_BOT_POLICY,
     GameFull,
@@ -128,3 +131,86 @@ def test_human_orders_are_resolved_at_the_tick(
     after = repo.get_game(game_id)
     assert after is not None
     assert next(u for u in after.state.units if u.id == unit.id).coord == target
+
+
+class _RacingRepo(FakeGameRepo):
+    """A fake whose next state write is beaten by ``intrude`` (run just before it).
+
+    Simulates a concurrent writer: the intrusion lands after the service read
+    the game but before its compare-and-set.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.intrude: Callable[[], object] | None = None
+
+    def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
+        intrude, self.intrude = self.intrude, None
+        if intrude is not None:
+            intrude()
+        super().set_game_state(game, state, status)
+
+
+def test_a_join_during_a_tick_survives_the_tick() -> None:
+    repo = _RacingRepo()
+    service = GameService(repo)
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    repo.intrude = lambda: service.join_world(game_id, "user-1")
+
+    result = service.tick_world(game_id)
+
+    game = repo.get_game(game_id)
+    assert game is not None and result.turn == 1 and game.state.turn == 1
+    assert "s003" in {p.id for p in game.state.players}
+    assert any(u.owner == "s003" for u in game.state.units)
+    assert repo.get_turn(game_id, 0) is not None
+
+
+def test_simultaneous_joiners_get_different_slots() -> None:
+    repo = _RacingRepo()
+    service = GameService(repo)
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    repo.intrude = lambda: service.join_world(game_id, "user-1")
+
+    late = service.join_world(game_id, "user-2")
+
+    assert late.slot == "s004"
+    first = repo.get_player(game_id, "user-1")
+    assert first is not None and first.slot == "s003"
+
+
+def test_a_world_player_can_revise_orders_before_the_tick(
+    repo: FakeGameRepo, service: GameService
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=1)
+    service.join_world(game_id, "user-1")
+    player = repo.get_player(game_id, "user-1")
+    game = repo.get_game(game_id)
+    assert player is not None and game is not None
+    state = game.state
+
+    def free_plains(unit: Unit) -> list[Axial]:
+        return [
+            c
+            for c in neighbors(unit.coord)
+            if c in state.map.index
+            and state.map.index[c].terrain == "plains"
+            and state.unit_at(c) is None
+        ]
+
+    unit = next(
+        u
+        for u in state.units
+        if u.owner == player.slot
+        and state.map.index[u.coord].terrain != "city"
+        and len(free_plains(u)) >= 2
+    )
+    first, second = free_plains(unit)[:2]
+
+    service.submit_orders(player, [MoveOrder(unit_id=unit.id, path=[first])], [])
+    service.submit_orders(player, [MoveOrder(unit_id=unit.id, path=[second])], [])
+    service.tick_world(game_id)
+
+    after = repo.get_game(game_id)
+    assert after is not None
+    assert next(u for u in after.state.units if u.id == unit.id).coord == second

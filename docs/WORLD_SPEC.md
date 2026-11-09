@@ -344,8 +344,13 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   every bot from its fogged view (personalities seeded from the game id), adds the
   humans' stored submissions, and resolves. A world submission is stored but never
   resolves the turn itself. Measured on local Supabase with 200 slots, 100 bots and
-  one human: ~1.1 s per tick, 1.8 s on a cold process. Still open: optimistic
-  concurrency on `games.state`, so a join landing during a tick can't be lost.
+  one human: ~1.1 s per tick, 1.8 s on a cold process. Every state write is a
+  compare-and-set on `games.revision` (`StaleGame` on a lost race). Joins and ticks
+  retry from a fresh read up to 3 times, and a tick writes the state before its
+  `turns` row, so a lost race leaves nothing behind. World players may revise their
+  orders until the tick (an upsert on `turn_orders`). Known gap: a submission that
+  lands during the ~1 s tick is stored for the turn that just resolved and is
+  ignored.
   Planned route: `POST /internal/worlds/{id}/tick`, authenticated by OIDC from a Cloud
   Scheduler service account. Bots plan, missing human orders become "no order" (standing
   travel continues), the turn resolves, and the `(game_id, turn)` unique constraint on

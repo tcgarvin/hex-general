@@ -38,6 +38,14 @@ class RepoError(RuntimeError):
     """A persistence invariant was violated (e.g. an expected row was missing)."""
 
 
+class StaleGame(Exception):
+    """A state write lost a race: the game changed since its record was read.
+
+    Not a broken invariant but a normal outcome of concurrent writers (a join
+    landing during a tick). The caller re-reads the game and tries again.
+    """
+
+
 class GameRecord(BaseModel):
     """A games row with its canonical state parsed back into a `GameState`.
 
@@ -54,6 +62,7 @@ class GameRecord(BaseModel):
     state: GameState
     invite_token: str
     map_id: str | None = None
+    revision: int = 0
 
     @property
     def is_world(self) -> bool:
@@ -152,7 +161,11 @@ class GameRepo(Protocol):
     def get_game(self, game_id: str) -> GameRecord | None: ...
 
     def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
-        """Replace ``game``'s canonical state (map stored apart if it has a map_id)."""
+        """Replace ``game``'s canonical state (map stored apart if it has a map_id).
+
+        A compare-and-set on ``game.revision``: raises `StaleGame` if the game
+        was written since ``game`` was read.
+        """
         ...
 
     def create_player(
@@ -170,6 +183,12 @@ class GameRepo(Protocol):
     def record_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
     ) -> None: ...
+
+    def replace_orders(
+        self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
+    ) -> None:
+        """Store the player's submission for ``turn``, replacing any earlier one."""
+        ...
 
     def list_turn_orders(self, game_id: str, turn: int) -> list[OrdersRecord]: ...
 
@@ -339,6 +358,7 @@ class SupabaseGameRepo:
             state=join_state(row["state"], self._map_for(row["map_id"])),
             invite_token=row["invite_token"],
             map_id=row["map_id"],
+            revision=row["revision"],
         )
 
     def create_game(
@@ -369,7 +389,7 @@ class SupabaseGameRepo:
     def get_game(self, game_id: str) -> GameRecord | None:
         response = (
             self._client.table("games")
-            .select("id, scenario, status, state, invite_token, map_id")
+            .select("id, scenario, status, state, invite_token, map_id, revision")
             .eq("id", game_id)
             .execute()
         )
@@ -386,12 +406,16 @@ class SupabaseGameRepo:
                 {
                     "state": state_blob(state, game.map_id),
                     "status": status,
+                    "revision": game.revision + 1,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
             .eq("id", game.id)
+            .eq("revision", game.revision)
             .execute()
         )
+        if not _rows(response):
+            raise StaleGame(f"game {game.id} changed since revision {game.revision}")
         _one_row(response, "set_game_state")
 
     def create_player(
@@ -501,6 +525,26 @@ class SupabaseGameRepo:
             .execute()
         )
         _one_row(response, "record_orders")
+
+    def replace_orders(
+        self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
+    ) -> None:
+        response = (
+            self._client.table("turn_orders")
+            .upsert(
+                {
+                    "game_id": game_id,
+                    "player_id": player_id,
+                    "turn": turn,
+                    "orders": orders,
+                    "locked": True,
+                    "submitted_at": datetime.now(timezone.utc).isoformat(),
+                },
+                on_conflict="game_id,player_id,turn",
+            )
+            .execute()
+        )
+        _one_row(response, "replace_orders")
 
     def list_turn_orders(self, game_id: str, turn: int) -> list[OrdersRecord]:
         response = (

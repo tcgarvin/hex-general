@@ -20,6 +20,7 @@ from app.games.repo import (
     OrdersRecord,
     PlayerRecord,
     RepoError,
+    StaleGame,
     TurnRecord,
     UserGameRecord,
     join_state,
@@ -88,8 +89,14 @@ class FakeGameRepo:
 
     def set_game_state(self, game: GameRecord, state: GameState, status: str) -> None:
         stored = self._games[game.id]
+        if stored.revision != game.revision:
+            raise StaleGame(f"game {game.id} changed since revision {game.revision}")
         self._games[game.id] = stored.model_copy(
-            update={"state": self._stored(state, game.map_id), "status": status}
+            update={
+                "state": self._stored(state, game.map_id),
+                "status": status,
+                "revision": stored.revision + 1,
+            }
         )
 
     def create_player(
@@ -164,6 +171,12 @@ class FakeGameRepo:
         key = (game_id, turn, player_id)
         if key in self._orders:
             raise RepoError(f"orders already recorded for {key}")
+        self._orders[key] = OrdersRecord(player_id=player_id, turn=turn, orders=orders)
+
+    def replace_orders(
+        self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
+    ) -> None:
+        key = (game_id, turn, player_id)
         self._orders[key] = OrdersRecord(player_id=player_id, turn=turn, orders=orders)
 
     def list_turn_orders(self, game_id: str, turn: int) -> list[OrdersRecord]:

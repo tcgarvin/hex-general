@@ -23,7 +23,9 @@ import dataclasses
 import re
 import secrets
 import uuid
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
 
 from pydantic import TypeAdapter
 
@@ -37,7 +39,7 @@ from app.engine.models import GameState, Order, Recruitment
 from app.engine.visibility import visible_hexes
 from app.engine.scenario import load_scenario_file
 from app.engine.victory import VictoryStatus, victory_status
-from app.games.repo import GameRecord, GameRepo, PlayerRecord, TurnRecord
+from app.games.repo import GameRecord, GameRepo, PlayerRecord, StaleGame, TurnRecord
 from app.games.schemas import (
     DEFAULT_BOT_POLICY,
     ActiveGame,
@@ -64,6 +66,7 @@ _SCENARIO_NAME = re.compile(r"^[a-z0-9_]+$")
 _ORDERS = TypeAdapter(list[Order])
 _RECRUITMENTS = TypeAdapter(list[Recruitment])
 _EVENTS = TypeAdapter(list[Event])
+_T = TypeVar("_T")
 
 WORLD_SCENARIO = "world"
 """The ``games.scenario`` label of a generated world."""
@@ -276,27 +279,24 @@ class GameService:
         validate_submission(game.state, player.slot, orders, recruitments)
 
         turn = game.state.turn
+        submission = {
+            "orders": [o.model_dump(mode="json") for o in orders],
+            "recruitments": [r.model_dump(mode="json") for r in recruitments],
+        }
+        if game.is_world:
+            # A world player may revise their plan until the tick resolves it.
+            self._repo.replace_orders(game.id, player.id, turn, submission)
+            return SubmitResult(
+                locked=True, executed=False, turn=turn, status=game.status
+            )
         already = {o.player_id for o in self._repo.list_turn_orders(game.id, turn)}
         if player.id in already:
             raise AlreadySubmitted(
                 f"{player.slot!r} already submitted orders for turn {turn}"
             )
 
-        self._repo.record_orders(
-            game.id,
-            player.id,
-            turn,
-            {
-                "orders": [o.model_dump(mode="json") for o in orders],
-                "recruitments": [r.model_dump(mode="json") for r in recruitments],
-            },
-        )
+        self._repo.record_orders(game.id, player.id, turn, submission)
 
-        if game.is_world:
-            # A world resolves on its clock (`tick_world`), not when all lock.
-            return SubmitResult(
-                locked=True, executed=False, turn=turn, status=game.status
-            )
         players = self._repo.list_players(game.id)
         self._submit_bot_orders(game, players, turn)
         submissions = self._repo.list_turn_orders(game.id, turn)
@@ -339,19 +339,14 @@ class GameService:
     def join_world(self, game_id: str, user_id: str) -> PlayerCredentials:
         """Seat ``user_id`` in the world's first open slot (WORLD_SPEC §10.1).
 
-        The players row is written first: its ``(game_id, slot)`` uniqueness is
-        what stops two simultaneous joiners from taking the same slot.
+        The seated state is written first, as a compare-and-set: two people
+        joining at once, or a join during a tick, can't take the same slot or
+        lose a write. The loser re-reads and seats in the next open slot.
         """
-        game = self._require_world(game_id)
+        self._require_world(game_id)
         self._require_no_active_game(user_id)
-        try:
-            state, slot = seat_player(
-                game.state, self._repo.get_map_slots(_map_id(game))
-            )
-        except WorldFull as exc:
-            raise GameFull(f"world {game_id} has no open slot") from exc
+        game, slot = _retry_stale(lambda: self._seat(game_id))
         player = self._repo.create_player(game.id, slot, user_id)
-        self._repo.set_game_state(game, state, game.status)
         return PlayerCredentials(
             game_id=game.id,
             slot=player.slot,
@@ -359,18 +354,25 @@ class GameService:
             invite_token=game.invite_token,
         )
 
+    def _seat(self, game_id: str) -> tuple[GameRecord, str]:
+        """One attempt at seating a newcomer in a fresh read of the world."""
+        game = self._require_world(game_id)
+        try:
+            state, slot = seat_player(
+                game.state, self._repo.get_map_slots(_map_id(game))
+            )
+        except WorldFull as exc:
+            raise GameFull(f"world {game_id} has no open slot") from exc
+        self._repo.set_game_state(game, state, game.status)
+        return game, slot
+
     def tick_world(self, game_id: str) -> SubmitResult:
         """Resolve the world's current turn now (WORLD_SPEC §10.1).
 
         Bots plan from their fogged views. A human who sent no orders simply has
         none this turn: their standing travel orders still continue.
         """
-        game = self._require_world(game_id)
-        if game.status != "active":
-            raise GameNotActive(f"world {game_id} is {game.status}; cannot tick")
-        players = self._repo.list_players(game.id)
-        bot_orders = self._world_bot_orders(game, players)
-        next_state, status = self._resolve_turn(game, players, extra=bot_orders)
+        next_state, status = _retry_stale(lambda: self._tick_once(game_id))
         return SubmitResult(
             locked=True, executed=True, turn=next_state.turn, status=status
         )
@@ -407,6 +409,15 @@ class GameService:
         return WorldReplay(
             turn=record.turn, events=events, state_after=WorldState.of(fogged)
         )
+
+    def _tick_once(self, game_id: str) -> tuple[GameState, str]:
+        """One attempt at resolving a fresh read of the world's turn."""
+        game = self._require_world(game_id)
+        if game.status != "active":
+            raise GameNotActive(f"world {game_id} is {game.status}; cannot tick")
+        players = self._repo.list_players(game.id)
+        bot_orders = self._world_bot_orders(game, players)
+        return self._resolve_turn(game, players, extra=bot_orders)
 
     def _world_bot_orders(
         self, game: GameRecord, players: list[PlayerRecord]
@@ -545,6 +556,9 @@ class GameService:
         victory = victory_status(next_state)
         status = "finished" if victory.decided else "active"
 
+        # State first: it is the compare-and-set, so a turn that lost a race
+        # leaves no turns row behind and can be retried.
+        self._repo.set_game_state(game, next_state, status)
         self._repo.record_turn(
             game,
             turn,
@@ -552,7 +566,6 @@ class GameService:
             next_state,
             victory,
         )
-        self._repo.set_game_state(game, next_state, status)
         return next_state, status
 
     def _require_game(self, game_id: str) -> GameRecord:
@@ -574,6 +587,24 @@ class GameService:
             raise GameAlreadyActive(
                 f"user already holds slot {existing.slot!r} in game {existing.game_id}"
             )
+
+
+_STALE_ATTEMPTS = 3
+"""How many times a world write is tried against fresh reads before giving up."""
+
+
+def _retry_stale(attempt: Callable[[], _T]) -> _T:
+    """Run ``attempt``, re-running it from scratch if it lost a write race.
+
+    Each attempt re-reads the game, so a retry plans against the state that
+    won. After `_STALE_ATTEMPTS` lost races the `StaleGame` propagates.
+    """
+    for _ in range(_STALE_ATTEMPTS - 1):
+        try:
+            return attempt()
+        except StaleGame:
+            continue
+    return attempt()
 
 
 def _map_id(game: GameRecord) -> str:
