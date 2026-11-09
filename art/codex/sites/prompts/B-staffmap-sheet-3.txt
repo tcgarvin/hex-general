@@ -1,0 +1,15 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image: a legend sheet of 12 printed symbols from a WWII army operations map (staff map legend), arranged in a strict grid of 4 columns x 3 rows, square canvas, each symbol centred in its own equal cell with generous empty white margin. Background: plain, flat, pure white (#FFFFFF), completely uniform, no paper texture, no grid lines, no cell borders, no text, no letters, no numbers, no labels anywhere.
+
+Style: crisp letterpress-printed cartographic symbols in solid black ink only, flat fills, no shading, no gradients, no grey, no 3D. Bold, simple pictograms with thick strokes so each one stays legible at 24 pixels. All 12 the same overall size and the same stroke weight.
+
+The sheet is SIX symbol designs, each shown twice side by side: on the left the bare pictogram, on the right the SAME pictogram drawn smaller inside a bold black circular ring frame (a ring of the same stroke weight). So each row contains two designs: [design A bare] [design A in ring] [design B bare] [design B in ring].
+
+Row 1: design A = MILITARY BASE / HEADQUARTERS: a swallow-tailed pennant flag on a straight staff, the staff standing on a short solid horizontal bar (ground line). Design B = CITY: a solid city-skyline silhouette of three blocky buildings with one pointed church spire in the middle, standing on a ground line (no gears, no circles inside).
+
+Row 2: design C = FARM: a single bold ear of wheat (grain stalk with paired kernels), upright. Design D = OIL FIELD: a solid triangular lattice oil derrick tower with an oil drop beside it.
+
+Row 3: design E = STEEL MILL: a solid steel I-beam girder seen end-on (a fat capital-I shape with wide top and bottom flanges) with one smokestack rising behind it emitting a small flame. Design F = TANK FACTORY: a side-view WWII tank silhouette (hull, turret, gun barrel, road wheels) sitting on top of half a gear wheel.
+
+Each of the six designs must be clearly different in silhouette from all the others. Do not use a gear on anything except the tank factory.

@@ -1,0 +1,25 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image: a legend sheet of 12 printed military map symbols in the style of a WWII army operations / staff map legend, arranged in a strict grid of 4 columns x 3 rows, square canvas, each symbol centred in its own equal cell with generous empty white margin around it. Background: plain, flat, pure white (#FFFFFF), completely uniform, with no paper texture, no grid lines, no borders between cells, no text, no letters, no numbers, no labels anywhere.
+
+Style: crisp printed cartographic symbology, solid black ink only (single colour), bold confident line weights that stay legible when shrunk to 24 pixels, flat fills, no shading, no gradients, no grey tones, no 3D. Simple geometric pictograms, like letterpress-printed map legend glyphs. Every symbol the same visual size and the same stroke weight. Each symbol is a single compact shape, roughly as wide as it is tall.
+
+Row 1, left to right:
+1. MILITARY BASE (HQ): a flag on a staff rising from a small solid square (the classic headquarters symbol).
+2. MILITARY BASE (HQ), variant: a pennant flag on a staff planted in the centre of a bold square frame, inside a heavy outlined rectangle like a military unit symbol.
+3. CITY: a cluster of three solid building silhouettes of different heights with one church spire, standing on a baseline.
+4. CITY, variant: a bold circle containing a solid filled dot surrounded by a ring of small crenellations, like a fortified-city map marker.
+
+Row 2, left to right:
+5. FARM: a solid barn silhouette (gambrel roof) beside a sheaf of wheat.
+6. FARM, variant: a single bold wheat sheaf / ear of grain inside a bold circle frame.
+7. OIL FIELD: a solid lattice oil derrick tower silhouette with a single oil drop beside it.
+8. OIL FIELD, variant: a bold solid oil drop shape inside a bold circle frame, with a small derrick inside the drop cut out in white.
+
+Row 3, left to right:
+9. STEEL MILL: a solid steel I-beam (girder) cross-section with two smokestacks behind it.
+10. STEEL MILL, variant: a solid ladle / crucible pouring a stream, inside a bold circle frame.
+11. TANK FACTORY: a sawtooth-roof factory silhouette with a gear wheel in front of it.
+12. TANK FACTORY, variant: a side-view solid tank silhouette inside a bold gear-wheel outline.
+
+Make the oil field, steel mill and tank factory clearly distinguishable from each other at a glance by silhouette.

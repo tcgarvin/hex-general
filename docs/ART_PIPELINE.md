@@ -5,6 +5,72 @@
 > contract for the NBP foundry that produced the shipped tiles, and for reproducing
 > them. The asset spec and the user-ratification gate still apply to Codex-made art.
 
+## Codex recipe (2026-11-10)
+
+How to drive Codex's built-in image generation non-interactively. First proven on
+the site-kind icon candidates; prompts, raw sheets, cuts and provenance are in
+`art/codex/sites/` (`manifest.json`, `README.md`).
+
+**Prerequisites.** `~/.local/bin/codex` (v0.165.0), logged in with ChatGPT
+(`codex login status` should print `Logged in using ChatGPT`). No API key needed.
+The `image_generation` feature is on by default (`codex features list`).
+
+**Invocation.** Run from an empty scratch directory outside the repo, read-only
+sandbox, prompt on stdin, JSONL events on stdout:
+
+```bash
+wd=$(mktemp -d)          # scratch dir: Codex never sees the repo
+cd "$wd"
+codex exec --skip-git-repo-check -s read-only -C "$wd" --json - \
+  < art/codex/<set>/prompts/<name>.txt > run.jsonl 2> run.err
+tid=$(head -1 run.jsonl | python3 -c 'import json,sys;print(json.load(sys.stdin)["thread_id"])')
+cp ~/.codex/generated_images/$tid/*.png <dest>.png
+```
+
+- `-s read-only` is enough: image generation is a built-in tool, not a shell
+  command, so the sandbox doesn't block it, and Codex can't write files anywhere.
+  `--skip-git-repo-check` is needed because the scratch dir isn't a git repo.
+- **Output location:** `~/.codex/generated_images/<thread_id>/exec-<uuid>.png`,
+  one file per generated image. The thread id is in the first JSONL event
+  (`{"type":"thread.started","thread_id":...}`). Codex does not copy the image
+  anywhere else, so copy it yourself, and record the thread id in the manifest.
+- **Format:** 8-bit **RGB PNG, no alpha.** Square requests come back
+  1254x1254; earlier landscape/portrait requests came back 1536x1024 / 1024x1536.
+  You can't get transparency from Codex directly, so key the background yourself
+  (below).
+- **Time:** 48-76 s wall per call (one image) end to end, including Codex
+  start-up. Several calls can run in parallel (three at once worked fine).
+- `run.err` shows harmless `failed to refresh available models: request timed
+  out` lines; the generation still succeeds (exit 0, final agent message "Done.").
+
+**Prompt tips.**
+- Open with an explicit instruction so Codex makes the image and nothing else:
+  *"Use your built-in image generation tool to create ONE image. Do not write
+  code, do not run shell commands, do not edit any files. Just generate the
+  image and then reply with one line saying it is done."*
+- For a set, ask for **one sheet in a strict grid** (e.g. 4 columns x 3 rows, one
+  subject per cell, generous margins, no grid lines, no text). That gives a much
+  more consistent set (scale, lighting, palette) than separate calls, and 12
+  icons cost one ~60 s call. Expect uneven cell spacing; cut at the widest gaps,
+  not on a fixed grid.
+- **Backgrounds to key:** painted art on flat pure magenta `#FF00FF` (comes back
+  about (251,2,251)); ink/line art on flat pure white. Say "no gradient, no
+  texture, no shadows on the background".
+- Palette: Codex drifts warm and golden by default. To match the board, say
+  "soft overcast cool daylight, neutral colour balance, NOT sepia, golden,
+  warm-yellow or orange-tinted; greens stay cool olive". Sheet 3 of the sites set
+  (`art/codex/sites/prompts/A-painted-sheet-3.txt`) is the reference wording.
+- Spell out each subject's silhouette, and say which motifs must not be reused
+  (a "city" variant came back as a gear and clashed with the factory until the
+  prompt said "do not use a gear on anything except the tank factory").
+
+**Cut and key.** `art/codex/sites/cut_sheet.py <raw.png> --key magenta|white
+--out-dir <dir>` → 12 x 128x128 RGBA PNGs, subject fitted to 120 px and centred.
+Magenta keying: alpha from `min(r,b) - g`, colour unmixed against the sampled
+background, then despilled. White keying: alpha = `1 - min(rgb)/255`, unmixed
+from white. Clean edges, no visible fringe. Rendering the review images:
+`art/codex/sites/review_renders.py`, then `scripts/review-page.py`.
+
 The review artifact for how terrain hex art gets made, now that the loop is
 proven on plains, woods, hills, and city. It defines the **contract**: what
 art direction goes in, what assets come out, and where human judgment sits.

@@ -1,0 +1,25 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image: a game-asset sprite sheet of 12 small painted map icons for a WWII-era strategy wargame, arranged in a strict grid of 4 columns x 3 rows, square canvas, each icon centred in its own equal cell with generous empty margin around it. The background of the WHOLE image must be one flat, uniform, pure magenta colour (#FF00FF) with no gradient, no texture, no shadows on the background, no grid lines, no borders between cells, and no text or labels anywhere.
+
+Style: hand-painted miniature in a naturalistic painterly style, like a detailed oil-and-gouache board-game piece seen from a steep top-down view (about 60 degrees from horizontal, close to the straight-down view of a map board). Cool, neutral midday daylight, slightly desaturated, matching a naturalistic painted map board. Palette: olive and moss greens, terracotta red roof tiles, slate blue-grey roofs, warm stone beige, soot dark grey, a little brass. NOT sepia, NOT golden-hour, NOT orange or yellow tinted overall, greens should be cool olive not yellow, NOT cartoon, NOT flat vector. Each icon is a compact round badge-like vignette: the subject sits on a small circular patch of ground (grass/earth) with a soft dark outline around the whole vignette so it reads clearly at very small size. Strong, simple silhouette for each one; few large shapes rather than many tiny details. All 12 the same scale and lighting (light from upper left).
+
+Row 1, left to right:
+1. MILITARY BASE (HQ): a sandbagged command bunker with a flagpole flying a plain flag, a radio mast, and a small tent - clearly a military headquarters, not a town.
+2. MILITARY BASE (HQ), variant: a fortified compound with a concrete blockhouse, a tall flagpole with flag, and a ring of sandbags.
+3. CITY: a dense cluster of tall European city buildings with a church spire and a clock tower, terracotta and slate roofs.
+4. CITY, variant: a compact walled city block with a central domed town hall and tall rowhouses.
+
+Row 2, left to right:
+5. FARM: a red barn with a grain silo next to a patch of golden wheat field rows.
+6. FARM, variant: a farmhouse with a haystack, a windmill-style water pump and green crop rows.
+7. OIL FIELD: a black steel oil derrick tower with a nodding-donkey pumpjack and a couple of dark oil barrels on brown earth.
+8. OIL FIELD, variant: two lattice oil derricks with a cylindrical storage tank, black oil stains on the ground.
+
+Row 3, left to right:
+9. STEEL MILL: a blast furnace with tall sooty smokestacks, a glowing orange molten-metal glow at its base, and a stack of steel girders / I-beams in front.
+10. STEEL MILL, variant: a large crucible pouring bright molten steel, with a tall smokestack and a pile of steel ingots.
+11. TANK FACTORY: a long sawtooth-roof factory hall with a large open door and a green WWII tank rolling out of it.
+12. TANK FACTORY, variant: a factory building with a big gear wheel emblem on its wall and a green tank parked in front.
+
+Make the oil field, steel mill and tank factory clearly distinguishable from each other by silhouette: derrick tower vs glowing furnace + girders vs tank.

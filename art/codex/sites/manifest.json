@@ -1,0 +1,187 @@
+{
+  "generated": "2026-11-09",
+  "generator": "codex-cli 0.165.0, codex exec, built-in image_generation tool (ChatGPT login)",
+  "status": "candidates only, not ratified, not applied",
+  "first_pass_picks": {
+    "A-painted": "A-painted/sheet-3",
+    "B-staffmap": "B-staffmap/sheet-3 (variant 1 = bare glyph, variant 2 = glyph in ring)"
+  },
+  "cut": "python3 cut_sheet.py raw/<sheet>.png --key magenta|white --out-dir <cut_dir>  (128x128 RGBA, subject longest side 120 px, centred)",
+  "review": "python3 review_renders.py <cut_dir> --prefix <out-prefix> [--full-bg paper] [--halo] [--light-ink-on-dark], then scripts/review-page.py",
+  "sheets": [
+    {
+      "sheet": "A-painted-sheet-1",
+      "prompt": "prompts/A-painted-sheet-1.txt",
+      "raw": "raw/A-painted-sheet-1.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "raw_mode": "RGB",
+      "codex_thread": "01a1c1ed-274b-73a2-8191-d173f6e42b1e",
+      "codex_source": "/home/timg/.codex/generated_images/01a1c1ed-274b-73a2-8191-d173f6e42b1e/exec-06a5da12-e408-4576-93c8-d60f18569c32.png",
+      "wall_seconds": 73,
+      "key": "magenta",
+      "cut_dir": "A-painted/sheet-1",
+      "cells_row_major": [
+        "base-1",
+        "base-2",
+        "city-1",
+        "city-2",
+        "farm-1",
+        "farm-2",
+        "oil_field-1",
+        "oil_field-2",
+        "steel_mill-1",
+        "steel_mill-2",
+        "factory-1",
+        "factory-2"
+      ]
+    },
+    {
+      "sheet": "A-painted-sheet-2",
+      "prompt": "prompts/A-painted-sheet-2.txt",
+      "raw": "raw/A-painted-sheet-2.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "raw_mode": "RGB",
+      "codex_thread": "01a1c1ee-e017-7430-b69d-fc92db4bd1f2",
+      "codex_source": "/home/timg/.codex/generated_images/01a1c1ee-e017-7430-b69d-fc92db4bd1f2/exec-f0289e0d-f709-4328-8d38-473a2936a5bc.png",
+      "wall_seconds": 65,
+      "key": "magenta",
+      "cut_dir": "A-painted/sheet-2",
+      "cells_row_major": [
+        "base-1",
+        "base-2",
+        "city-1",
+        "city-2",
+        "farm-1",
+        "farm-2",
+        "oil_field-1",
+        "oil_field-2",
+        "steel_mill-1",
+        "steel_mill-2",
+        "factory-1",
+        "factory-2"
+      ]
+    },
+    {
+      "sheet": "A-painted-sheet-3",
+      "prompt": "prompts/A-painted-sheet-3.txt",
+      "raw": "raw/A-painted-sheet-3.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "raw_mode": "RGB",
+      "codex_thread": "01a1c1f0-76f8-71b0-bda7-f94edd0f0fc3",
+      "codex_source": "/home/timg/.codex/generated_images/01a1c1f0-76f8-71b0-bda7-f94edd0f0fc3/exec-51be4f32-c88a-491c-8d9a-ddc3544b6411.png",
+      "wall_seconds": 76,
+      "key": "magenta",
+      "cut_dir": "A-painted/sheet-3",
+      "cells_row_major": [
+        "base-1",
+        "base-2",
+        "city-1",
+        "city-2",
+        "farm-1",
+        "farm-2",
+        "oil_field-1",
+        "oil_field-2",
+        "steel_mill-1",
+        "steel_mill-2",
+        "factory-1",
+        "factory-2"
+      ]
+    },
+    {
+      "sheet": "B-staffmap-sheet-1",
+      "prompt": "prompts/B-staffmap-sheet-1.txt",
+      "raw": "raw/B-staffmap-sheet-1.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "raw_mode": "RGB",
+      "codex_thread": "01a1c1ee-e018-7702-a559-0fd80cc7ae40",
+      "codex_source": "/home/timg/.codex/generated_images/01a1c1ee-e018-7702-a559-0fd80cc7ae40/exec-c499a300-c44a-4b96-8156-13b2565305c1.png",
+      "wall_seconds": 56,
+      "key": "white",
+      "cut_dir": "B-staffmap/sheet-1",
+      "cells_row_major": [
+        "base-1",
+        "base-2",
+        "city-1",
+        "city-2",
+        "farm-1",
+        "farm-2",
+        "oil_field-1",
+        "oil_field-2",
+        "steel_mill-1",
+        "steel_mill-2",
+        "factory-1",
+        "factory-2"
+      ]
+    },
+    {
+      "sheet": "B-staffmap-sheet-2",
+      "prompt": "prompts/B-staffmap-sheet-2.txt",
+      "raw": "raw/B-staffmap-sheet-2.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "raw_mode": "RGB",
+      "codex_thread": "01a1c1ee-e013-7240-afab-5370fb802099",
+      "codex_source": "/home/timg/.codex/generated_images/01a1c1ee-e013-7240-afab-5370fb802099/exec-4dad06bc-33c5-4805-a127-2f2379217422.png",
+      "wall_seconds": 57,
+      "key": "white",
+      "cut_dir": "B-staffmap/sheet-2",
+      "cells_row_major": [
+        "base-1",
+        "base-2",
+        "city-1",
+        "city-2",
+        "farm-1",
+        "farm-2",
+        "oil_field-1",
+        "oil_field-2",
+        "steel_mill-1",
+        "steel_mill-2",
+        "factory-1",
+        "factory-2"
+      ]
+    },
+    {
+      "sheet": "B-staffmap-sheet-3",
+      "prompt": "prompts/B-staffmap-sheet-3.txt",
+      "raw": "raw/B-staffmap-sheet-3.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "raw_mode": "RGB",
+      "codex_thread": "01a1c1f0-76f9-72d3-8ea7-49c38adb5ad7",
+      "codex_source": "/home/timg/.codex/generated_images/01a1c1f0-76f9-72d3-8ea7-49c38adb5ad7/exec-590f194a-2730-4331-b314-5f8055866b16.png",
+      "wall_seconds": 48,
+      "key": "white",
+      "cut_dir": "B-staffmap/sheet-3",
+      "cells_row_major": [
+        "base-1",
+        "base-2",
+        "city-1",
+        "city-2",
+        "farm-1",
+        "farm-2",
+        "oil_field-1",
+        "oil_field-2",
+        "steel_mill-1",
+        "steel_mill-2",
+        "factory-1",
+        "factory-2"
+      ]
+    }
+  ]
+}

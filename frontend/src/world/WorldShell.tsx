@@ -37,6 +37,7 @@ import {
   type OrderKind,
   type WorldOrder,
 } from "./plan";
+import { siteIconUrl } from "./siteArt";
 import { useWorld, type WorldView } from "./useWorld";
 import { useWorldPlan, type PlannedRoute, type WorldPlanning } from "./useWorldPlan";
 import { WorldBoard } from "./WorldBoard";
@@ -582,10 +583,13 @@ function HexPanel({
   const reasons = [...new Set(options.flatMap((o) => (o.blocked === null || staged?.type === o.type ? [] : [o.blocked])))];
   return (
     <Panel title={site !== undefined ? SITE_LABEL[site.kind] : (cell?.terrain ?? "Hex")} onClose={onClose}>
-      <p className="font-data text-xs text-wood-500">
-        ({hex.q}, {hex.r}) · {cell?.terrain}
-        {cell?.road ? " · road" : ""}
-      </p>
+      <div className="flex items-center gap-2">
+        {site !== undefined && <img src={siteIconUrl(site.kind)} alt="" className="h-12 w-12 shrink-0" />}
+        <p className="font-data text-xs text-wood-500">
+          ({hex.q}, {hex.r}) · {cell?.terrain}
+          {cell?.road ? " · road" : ""}
+        </p>
+      </div>
       {site !== undefined && (
         <div className="mt-1 flex flex-col gap-0.5">
           {site.kind !== "base" && <span>Produces {stocksText(economy.siteIncome[site.kind])} a turn.</span>}

@@ -26,6 +26,7 @@ import type { LoadedUnits } from "@/board/units";
 import type { components } from "@/lib/api/schema";
 
 import { NEUTRAL_OWNER, ownerColor } from "./colors";
+import type { LoadedSites } from "./siteArt";
 import { visibleCells, worldPixelBounds, type WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -84,6 +85,11 @@ export class WorldRenderer {
   private readonly fogLayer = new Container();
   private readonly overview: Sprite;
   private readonly sites = new Graphics();
+  private readonly siteLayer = new Container();
+  private readonly siteSprites = new Map<string, Sprite>();
+  private siteArt: LoadedSites | null = null;
+  /** Hexes where a player's (not a garrison's) unit stands; refreshed per scene. */
+  private armyHexes = new Set<string>();
   private readonly unitLayer = new Container();
   private readonly overlay = new Graphics();
   private readonly selection = new Graphics();
@@ -125,7 +131,16 @@ export class WorldRenderer {
     this.overview.position.set(-HEX_SIZE, -HEX_SIZE);
     this.fogTexture = hexTexture(app);
 
-    this.world.addChild(this.overview, this.tileLayer, this.fogLayer, this.sites, this.overlay, this.unitLayer, this.selection);
+    this.world.addChild(
+      this.overview,
+      this.tileLayer,
+      this.fogLayer,
+      this.siteLayer,
+      this.sites,
+      this.overlay,
+      this.unitLayer,
+      this.selection,
+    );
     app.stage.addChild(this.world, this.minimap);
     this.buildMinimap(overviewTexture);
 
@@ -147,9 +162,10 @@ export class WorldRenderer {
     this.app.destroy(true, { children: true });
   }
 
-  setTextures(tiles: LoadedTiles | null, units: LoadedUnits | null): void {
+  setTextures(tiles: LoadedTiles | null, units: LoadedUnits | null, sites: LoadedSites | null): void {
     this.tiles = tiles;
     this.units = units;
+    this.siteArt = sites;
     for (const sprite of this.tileSprites.values()) this.releaseTile(sprite);
     this.tileSprites.clear();
     this.refresh();
@@ -157,6 +173,9 @@ export class WorldRenderer {
 
   setScene(scene: WorldScene): void {
     this.scene = scene;
+    this.armyHexes = new Set(
+      scene.state.units.filter((u) => u.owner !== NEUTRAL_OWNER).map((u) => hexKey(u.coord.q, u.coord.r)),
+    );
     this.drawMinimapSites();
     this.refresh();
   }
@@ -356,6 +375,9 @@ export class WorldRenderer {
     for (const s of scene.state.settlements) control.set(hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null);
     const scale = this.world.scale.x;
     const radius = HEX_SIZE * 0.92;
+    const art = tileMode ? this.siteArt : null;
+    this.siteLayer.visible = art !== null;
+    const shown = new Set<string>();
     for (const site of this.map.sites) {
       const { col, row } = { col: site.coord.q, row: site.coord.r + (site.coord.q - (site.coord.q & 1)) / 2 };
       if (col < range.col0 || col > range.col1 || row < range.row0 || row > range.row1) continue;
@@ -364,6 +386,10 @@ export class WorldRenderer {
       const owner = control.get(key) ?? null;
       const { x, y } = axialToPixel(site.coord.q, site.coord.r, HEX_SIZE);
       const color = ownerColor(owner, scene.viewer);
+      if (art !== null) {
+        shown.add(key);
+        this.placeSiteIcon(key, art[site.kind], x, y, this.armyHexes.has(key));
+      }
       if (tileMode) {
         g.poly(hexCornerPoints(x, y, radius)).stroke({ color, width: owner === null ? 2 : 4, alpha: 0.95 });
       } else if (owner === null) {
@@ -374,6 +400,31 @@ export class WorldRenderer {
         g.circle(x, y, r).fill({ color }).stroke({ color: 0x101114, width: 1 / scale });
       }
     }
+    for (const [key, sprite] of this.siteSprites) {
+      if (!shown.has(key)) {
+        sprite.destroy();
+        this.siteSprites.delete(key);
+      }
+    }
+  }
+
+  /**
+   * A site's painted icon: across most of the hex when it's empty or only a
+   * garrison holds it, shrunk to a corner badge when a player's unit stands there
+   * so the unit stays readable.
+   */
+  private placeSiteIcon(key: string, texture: Texture, x: number, y: number, underUnit: boolean): void {
+    let sprite = this.siteSprites.get(key);
+    if (sprite === undefined) {
+      sprite = new Sprite(texture);
+      sprite.anchor.set(0.5);
+      this.siteLayer.addChild(sprite);
+      this.siteSprites.set(key, sprite);
+    }
+    sprite.texture = texture;
+    const size = underUnit ? HEX_SIZE * 0.7 : HEX_SIZE * 1.3;
+    sprite.scale.set(size / texture.width);
+    sprite.position.set(underUnit ? x - HEX_SIZE * 0.5 : x, underUnit ? y - HEX_SIZE * 0.5 : y);
   }
 
   private drawUnits(
@@ -401,6 +452,16 @@ export class WorldRenderer {
       const { x, y } = axialToPixel(lead.coord.q, lead.coord.r, HEX_SIZE);
       const color = ownerColor(lead.owner, scene.viewer);
       const columns = list.filter((u) => u.posture === "column").length;
+      if (tileMode && lead.owner === NEUTRAL_OWNER && this.siteArt !== null) {
+        // A garrison: a slate badge in the corner with one pip per defender, so
+        // the site's icon stays the main read.
+        const bx = x + HEX_SIZE * 0.5;
+        const by = y + HEX_SIZE * 0.48;
+        tokens.circle(bx, by, HEX_SIZE * 0.26).fill(color).stroke({ color: 0xd9d4c4, width: 1.5 });
+        const n = Math.min(list.length, 4);
+        for (let k = 0; k < n; k++) tokens.circle(bx + (k - (n - 1) / 2) * 4.2, by, 1.5).fill(0xf2e6c8);
+        continue;
+      }
       if (tileMode && units !== null && lead.posture !== "column" && lead.owner !== NEUTRAL_OWNER) {
         const pair = units[lead.type];
         const s = (1.5 * HEX_SIZE) / pair.base.width;
