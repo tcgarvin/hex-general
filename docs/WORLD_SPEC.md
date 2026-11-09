@@ -314,6 +314,30 @@ The real gate is the user playing a live world on the real clock for a week.
 - Whole-world resolution in one call is fine at 12 slots (~180 units). Splitting
   resolution into independent contact clusters waits until measurements demand it.
 
+### 10.1 Proposed W5 design (drafted 2026-11-09; needs the user's go-ahead)
+
+Sizes measured on a 200-slot world: the full `GameState` JSON is ~7 MB, almost all of
+it map. Embedding that in every `games.state` and `turns.state_after` row would cost
+~14 MB per turn.
+
+- **`game_maps` table:** `id`, `width`, `height`, generator `params` (jsonb, so a map can
+  be regenerated), and the hexes in the compact scenario grid encoding (one terrain char
+  per hex, plus a road grid): ~250 KB for 349².
+- **`games`** gains `kind` (`match` | `world`), `map_id` (nullable for v0.1 matches),
+  `clock` (`manual` | `twice_daily`) and `next_tick_at`. For a world, `games.state` and
+  `turns.state_after` hold the state *without* its map. The repo rejoins the cached map
+  on load, so the engine still sees one `GameState`.
+- **Slots:** `players` rows for every filled slot (bots carry `bot_policy`); a human
+  joining takes the next slot in `fill_order`.
+- **Tick:** `POST /internal/worlds/{id}/tick`, authenticated by OIDC from a Cloud
+  Scheduler service account. Bots plan, missing human orders become "no order" (standing
+  travel continues), the turn resolves, and the `(game_id, turn)` unique constraint on
+  `turns` makes a retried tick a no-op. Dev worlds use `POST /dev/worlds/{id}/resolve`.
+- **Client payloads:** the world view fetches the map once (`GET /worlds/{id}/map`,
+  cacheable), then per-turn redacted states without the map.
+- **Infra** (confirm before applying): a scheduler job per world, at 01:00 and 13:00
+  America/New_York, and an invoker binding for the scheduler's service account.
+
 ## 11. Frontend world view
 
 - **Camera:** pan/zoom over a world-size board with chunked, culled rendering, plus
