@@ -161,6 +161,11 @@ Seeded accounts (same password for all):
 An account can hold only one active game or world, so checks that need a new world
 use `dev3` rather than resigning a playtest on `dev1` or `dev2`.
 
+Local worlds are disposable: do not add dev accounts to get a fresh world. Run
+`scripts/game-setup.sh clear <email>` (resigns a match, deletes a world) or
+`scripts/game-setup.sh delete-world <id> [email]` (calls the dev-only
+`DELETE /dev/worlds/{id}`, which removes the world's game, players, turns and map).
+
 To add or rename accounts, edit `DEV_USER_EMAILS` in `api/app/dev_seed.py` and
 re-run `./scripts/dev.sh up` (re-seeding is idempotent).
 

@@ -252,3 +252,15 @@ class FakeGameRepo:
 
     def get_turn(self, game_id: str, turn: int) -> TurnRecord | None:
         return self._turns.get((game_id, turn))
+
+    def delete_world(self, game_id: str, map_id: str) -> None:
+        del self._games[game_id]
+        self._created_at.pop(game_id)
+        player_ids = {p.id for p in self._players.values() if p.game_id == game_id}
+        for player_id in player_ids:
+            del self._players[player_id]
+        self._orders = {k: v for k, v in self._orders.items() if k[0] != game_id}
+        self._turns = {k: v for k, v in self._turns.items() if k[0] != game_id}
+        if not any(g.map_id == map_id for g in self._games.values()):
+            del self._maps[map_id]
+            del self._map_slots[map_id]

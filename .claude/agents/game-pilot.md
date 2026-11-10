@@ -65,7 +65,7 @@ diagnostics go to stderr, JSON to stdout.
 ./scripts/game-setup.sh reset                  # clear active + start a fresh vs-bot game  ← "clear and start new"
 ./scripts/game-setup.sh reset --bot search     # same, vs the "Sage" (lookahead) bot
 ./scripts/game-setup.sh new                     # start a vs-bot game (errors if one is already active)
-./scripts/game-setup.sh clear                   # resign the active game (if any)
+./scripts/game-setup.sh clear                   # resign a match / delete a world (if any); errors if one remains
 ./scripts/game-setup.sh history                 # caller's game history
 ./scripts/game-setup.sh token dev2@hex.local    # raw bearer token (for ad-hoc curl)
 ```

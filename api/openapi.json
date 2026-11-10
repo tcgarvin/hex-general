@@ -3182,6 +3182,74 @@
         ]
       }
     },
+    "/dev/worlds/{game_id}": {
+      "delete": {
+        "description": "Delete a world and its players, orders, turns and map (dev-only).",
+        "operationId": "delete_world_dev_worlds__game_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete World",
+        "tags": [
+          "worlds"
+        ]
+      }
+    },
     "/dev/worlds/{game_id}/tick": {
       "post": {
         "description": "Resolve the world's current turn now: the dev manual clock.",

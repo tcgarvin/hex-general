@@ -254,6 +254,11 @@ class GameRepo(Protocol):
 
     def get_turn(self, game_id: str, turn: int) -> TurnRecord | None: ...
 
+    def delete_world(self, game_id: str, map_id: str) -> None:
+        """Delete a world game (its players, orders and turns cascade) and, once
+        no other game uses it, its ``map_id`` map."""
+        ...
+
 
 def _rows(response: Any) -> list[dict[str, Any]]:
     """Cast a Supabase response's loosely-typed ``data`` to a list of row dicts.
@@ -317,6 +322,10 @@ class MapCache:
         self._maps.move_to_end(map_id)
         while len(self._maps) > self._capacity:
             self._maps.popitem(last=False)
+
+    def evict(self, map_id: str) -> None:
+        """Drop ``map_id`` from the cache (a no-op if it is not cached)."""
+        self._maps.pop(map_id, None)
 
 
 MAP_CACHE = MapCache()
@@ -703,3 +712,13 @@ class SupabaseGameRepo:
             ),
             victory=VictoryStatus.model_validate(row["victory"]),
         )
+
+    def delete_world(self, game_id: str, map_id: str) -> None:
+        # players, turn_orders and turns cascade from games (on delete cascade).
+        self._client.table("games").delete().eq("id", game_id).execute()
+        still_used = (
+            self._client.table("games").select("id").eq("map_id", map_id).limit(1)
+        )
+        if not _rows(still_used.execute()):
+            self._client.table("game_maps").delete().eq("id", map_id).execute()
+            self._maps.evict(map_id)

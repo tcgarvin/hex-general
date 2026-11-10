@@ -490,6 +490,11 @@ class GameService:
             locked=True, executed=True, turn=next_state.turn, status=status
         )
 
+    def delete_world(self, game_id: str) -> None:
+        """Delete a world and everything stored for it (dev-only teardown)."""
+        game = self._require_world(game_id)
+        self._repo.delete_world(game.id, _map_id(game))
+
     def get_world_view(self, player: PlayerRecord) -> WorldView:
         """``player``'s fogged view of their world, without the map."""
         game = self._require_world(player.game_id)

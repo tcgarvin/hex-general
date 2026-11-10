@@ -8,8 +8,9 @@ Thin adapter over `GameService`'s world operations, like `app.games.routes`:
 - ``GET /worlds/{id}/map``: the static map in the compact grid encoding. It never
   changes, so the response is marked cacheable for a year.
 - ``GET /worlds/{id}/turns/{turn}``: the caller's replay of a resolved turn.
-- ``POST /dev/worlds`` and ``POST /dev/worlds/{id}/tick``: dev-only world
-  creation and a manual clock.
+- ``POST /dev/worlds``, ``POST /dev/worlds/{id}/tick`` and
+  ``DELETE /dev/worlds/{id}``: dev-only world creation, a manual clock and
+  teardown.
 - ``POST /internal/clock``: the turn clock. Cloud Scheduler calls it at 01:00 and
   13:00 New York time with a Google OIDC token (`app.games.scheduler_auth`); it
   resolves every scheduled world that is due. ``POST /dev/clock`` runs the same
@@ -163,6 +164,25 @@ def tick_world(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except GameNotActive as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@dev_router.delete("/{game_id}", status_code=204)
+def delete_world(
+    game_id: str,
+    _dev: AuthIdentity = Depends(require_dev),
+    service: GameService = Depends(get_service),
+) -> Response:
+    """Delete a world and its players, orders, turns and map (dev-only)."""
+    try:
+        service.delete_world(game_id)
+    except GameNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except NotAWorld as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{exc}; resign a match instead of deleting it",
+        ) from exc
+    return Response(status_code=204)
 
 
 def require_scheduler(authorization: str | None = Header(default=None)) -> None:

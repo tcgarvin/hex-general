@@ -13,10 +13,12 @@
 #   scripts/game-setup.sh active [email]                caller's active game (JSON)
 #   scripts/game-setup.sh history [email]               caller's game history (JSON)
 #   scripts/game-setup.sh new [--bot P] [--scenario S] [email]   start a vs-bot game
-#   scripts/game-setup.sh clear [email]                 resign the active game (if any)
+#   scripts/game-setup.sh clear [email]                 leave the active game: resigns a match, deletes a world
+#   scripts/game-setup.sh delete-world <game_id> [email] delete a world outright (dev-only API route)
 #   scripts/game-setup.sh reset [--bot P] [--scenario S] [email] clear + new (fresh board)
 #   scripts/game-setup.sh token [email]                 print a bearer token (for curl)
 #
+# `clear` and `delete-world` exit non-zero if the account still has an active game.
 # --bot is the bot_policy (default: scripted; the other authored one is `search`).
 # --scenario defaults to the API's default (twin_rivers). email defaults to
 # dev1@hex.local; dev2@hex.local is side B. On `new`/`reset` it prints the created
@@ -69,15 +71,34 @@ api_post() {  # $1 = path, $2 = JSON body (defaults to an empty object)
 }
 
 active_game_id() { api_get /games/active | json_get active_game.game_id; }
+active_game_kind() { api_get /games/active | json_get active_game.kind; }
 
-do_clear() {  # resign the active game if there is one; no-op otherwise
+delete_world() {  # $1 = world game id; dev-only route, deletes game + map
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$API/dev/worlds/$1" \
+    -H "Authorization: Bearer $TOKEN")"
+  [ "$code" = "204" ] || die "delete world $1 failed (HTTP $code)"
+  echo "deleted world $1" >&2
+}
+
+require_no_active_game() {
+  local left; left="$(active_game_id)"
+  [ -z "$left" ] || die "account still has active game $left after clearing"
+}
+
+do_clear() {  # leave the active game if there is one: resign a match, delete a world
   local gid; gid="$(active_game_id)"
-  if [ -n "$gid" ]; then
-    api_post "/games/$gid/resign" >/dev/null
-    echo "cleared active game $gid" >&2
-  else
+  if [ -z "$gid" ]; then
     echo "no active game to clear" >&2
+    return
   fi
+  if [ "$(active_game_kind)" = "world" ]; then
+    delete_world "$gid"
+  else
+    api_post "/games/$gid/resign" >/dev/null
+    echo "resigned active game $gid" >&2
+  fi
+  require_no_active_game
 }
 
 do_new() {  # create a vs-bot game; prints the create response JSON
@@ -91,13 +112,15 @@ do_new() {  # create a vs-bot game; prints the create response JSON
 
 # --- arg parsing ---------------------------------------------------------------
 CMD="${1:-}"; shift || true
-BOT="scripted"; SCENARIO=""; EMAIL="$DEFAULT_EMAIL"
+BOT="scripted"; SCENARIO=""; WORLD_ID=""; EMAIL="$DEFAULT_EMAIL"
 while [ $# -gt 0 ]; do
   case "$1" in
     --bot)      BOT="${2:?--bot needs a value}"; shift 2 ;;
     --scenario) SCENARIO="${2:?--scenario needs a value}"; shift 2 ;;
     -*)         die "unknown option: $1" ;;
-    *)          EMAIL="$1"; shift ;;
+    *)
+      if [ "$CMD" = "delete-world" ] && [ -z "$WORLD_ID" ]; then WORLD_ID="$1"; else EMAIL="$1"; fi
+      shift ;;
   esac
 done
 
@@ -106,9 +129,13 @@ case "$CMD" in
   active)  TOKEN="$(mint_token "$EMAIL")"; api_get /games/active   | python3 -m json.tool ;;
   history) TOKEN="$(mint_token "$EMAIL")"; api_get /games/history  | python3 -m json.tool ;;
   clear)   TOKEN="$(mint_token "$EMAIL")"; do_clear ;;
+  delete-world)
+    [ -n "$WORLD_ID" ] || die "usage: game-setup.sh delete-world <game_id> [email]"
+    TOKEN="$(mint_token "$EMAIL")"; delete_world "$WORLD_ID"
+    [ "$(active_game_id)" != "$WORLD_ID" ] || die "account still in world $WORLD_ID" ;;
   new)     TOKEN="$(mint_token "$EMAIL")"; do_new ;;
   reset)   TOKEN="$(mint_token "$EMAIL")"; do_clear; do_new ;;
   ""|-h|--help|help)
-    sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
-  *) die "unknown command: $CMD (try: active history new clear reset token)" ;;
+    sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
+  *) die "unknown command: $CMD (try: active history new clear delete-world reset token)" ;;
 esac
