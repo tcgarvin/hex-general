@@ -1,0 +1,16 @@
+; r1 terrain review board (scripts/board-mock.py), 12x8 flat-top odd-q.
+;   .  plains   w woods   h hills   t town   c city
+; No rivers or roads (those classes are made separately). Features:
+; 7-hex forest at col 2 row 2 (flower), 3-hex wood at cols 6-7 rows 1-2,
+; single woods at (10,1) and (4,6); single hills at (9,4); ranges at
+; (0-2, row 5) and (8-10, row 6); town at (5,4); single city at (11,3);
+; 3-hex city at (7,3) (8,3) (8,4).
+[terrain]
+............
+.www..ww..w.
+.www..w.....
+..w....cc..c
+.....t..ch..
+hhh.........
+....w...hhh.
+............
