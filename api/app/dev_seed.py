@@ -35,10 +35,13 @@ DEV_PASSWORD = "devpass123"
 
 # The roster of playtest identities. Two is enough to drive both sides of a match
 # via the dev switcher; emails share the @hex.local domain so `app.accounts`
-# already surfaces them in the switcher.
+# already surfaces them in the switcher. dev3 is a spare for automated checks: an
+# account can hold only one active game or world, so a check that needs a fresh
+# world uses dev3 instead of resigning a playtest held by dev1 or dev2.
 DEV_USER_EMAILS: tuple[str, ...] = (
     f"dev1{DEV_EMAIL_DOMAIN}",
     f"dev2{DEV_EMAIL_DOMAIN}",
+    f"dev3{DEV_EMAIL_DOMAIN}",
 )
 
 # list_users paginates; mirror app.accounts' generous page size.

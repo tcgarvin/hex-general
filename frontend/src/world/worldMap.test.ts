@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { axialToOffset, decodeWorldMap, offsetToAxial, visibleCells } from "./worldMap";
+import { axialToOffset, decodeWorldMap, offsetToAxial, visibleCells, type CompactMap } from "./worldMap";
+import { staticSiteTiles } from "./worldTiles";
 
 describe("world map", () => {
   it("round-trips offset and axial coordinates like the server", () => {
@@ -24,6 +25,33 @@ describe("world map", () => {
     expect(map.siteAt(c.q, c.r)?.kind).toBe("city");
     expect(map.hexAt(5, 5)).toBeUndefined();
     expect(map.siteAt(0, 0)).toBeUndefined();
+  });
+
+  it("decodes a cached pre-level map with every site at level 1", () => {
+    // An old payload as the browser may still hold it: sites without `level`.
+    const cached = {
+      width: 2,
+      height: 1,
+      terrain: "..",
+      roads: "..",
+      sites: [{ coord: offsetToAxial(1, 0), kind: "farm", garrison: 1 }],
+    } as unknown as CompactMap;
+    const map = decodeWorldMap(cached);
+    expect(map.sites.map((s) => s.level)).toEqual([1]);
+    const tiles = staticSiteTiles(map.sites);
+    expect(tiles.size).toBe(1);
+    expect([...tiles.values()][0].key).toContain("/farm/l1_");
+  });
+
+  it("still rejects a present but out-of-range site level", () => {
+    const bad = decodeWorldMap({
+      width: 2,
+      height: 1,
+      terrain: "..",
+      roads: "..",
+      sites: [{ coord: offsetToAxial(1, 0), kind: "farm", garrison: 1, level: 7 }],
+    });
+    expect(() => staticSiteTiles(bad.sites)).toThrow(/level out of range/);
   });
 
   it("rejects malformed grids", () => {

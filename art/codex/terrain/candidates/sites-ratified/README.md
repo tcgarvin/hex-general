@@ -35,9 +35,11 @@ level (the mock chooses by coordinate hash). Base stage dirs are variants `a` an
 
 Stage N covers N hexes, in axial offsets from the anchor (`hex.ts` convention):
 stage 1 `(0,0)`; stage 2 adds `(1,0)`; stage 3 adds `(0,1)`; stage 4 adds `(1,1)`.
-`h<i>.png` is the hex at `positions.json` entry `h<i>`. The user confirmed this
-footprint (2026-11-10); the engine keeps all four hexes of every base plot clear
-(`BASE_FOOTPRINT` in `frontend/src/world/siteTiles.ts`).
+`h<i>.png` is the hex at `positions.json` entry `h<i>`. The user asked for four
+hexes kept clear per base (2026-11-10); this particular shape and fill order were
+proposed by the art pass and built without objection, not explicitly chosen. The
+engine keeps all four hexes of every base plot clear (`BASE_FOOTPRINT` in
+`api/app/engine/models.py`, mirrored in `frontend/src/world/siteTiles.ts`).
 
 ## Tile format
 

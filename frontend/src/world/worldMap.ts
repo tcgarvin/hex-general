@@ -67,7 +67,11 @@ export function decodeWorldMap(compact: CompactMap): WorldMap {
     if (t === undefined) throw new Error(`unknown terrain char ${terrain[i]} at ${i}`);
     hexes[i] = { coord: offsetToAxial(i % width, Math.floor(i / width)), terrain: t, road: roads[i] === ROAD_CHAR };
   }
-  const sites = compact.sites ?? [];
+  // Maps the browser cached before 2026-11-10 (served `immutable`, kept for a year)
+  // predate site levels, so their sites have no `level`. The generated type says it
+  // is always present; the server fills the default 1, and so do we here, at the
+  // boundary, so internal code can keep treating `level` as a real number.
+  const sites = (compact.sites ?? []).map((s) => ((s as { level?: number }).level === undefined ? { ...s, level: 1 } : s));
   const siteIndex = new Map<number, MapSite>();
   const indexOf = (q: number, r: number): number => {
     const { col, row } = axialToOffset({ q, r });

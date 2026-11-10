@@ -546,7 +546,8 @@ over 1-4 hexes) are ratified and committed with provenance in
 are met (2026-11-10, WORLD_SPEC §6): (1) sites stand on their own plains hexes beside
 towns or roads, (2) `MapSite.level` (1-3) is on the map the renderer fetches, (3) every
 base slot has the four-hex footprint `(0,0)`, `+(1,0)`, `+(0,1)`, `+(1,1)` kept clear
-(`BASE_FOOTPRINT`, confirmed by the user). **Wired in (2026-11-10):** the world
+(`BASE_FOOTPRINT`; the user asked for four clear hexes, the shape itself was
+proposed and built without objection, not explicitly chosen). **Wired in (2026-11-10):** the world
 renderer draws a site's painted tile in place of its terrain tile
 (`frontend/src/world/siteTiles.ts`, choice in `worldTiles.ts`), a founded base draws
 its tile (a vacant slot keeps plains), and the round emblem stays only on cities and

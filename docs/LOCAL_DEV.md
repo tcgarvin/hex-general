@@ -150,12 +150,16 @@ freshly rendered montage is immediately reachable at
 3. Create a game as `dev1`, then use the **dev-profile switcher** to act as
    `dev2@hex.local`, claim the open slot, and submit orders for both sides.
 
-Seeded accounts (same password for both):
+Seeded accounts (same password for all):
 
-| Email            | Role in a match           |
-| ---------------- | ------------------------- |
-| `dev1@hex.local` | side A (create the game)  |
-| `dev2@hex.local` | side B (join, via switch) |
+| Email            | Role                                                        |
+| ---------------- | ----------------------------------------------------------- |
+| `dev1@hex.local` | side A (create the game)                                    |
+| `dev2@hex.local` | side B (join, via switch)                                   |
+| `dev3@hex.local` | spare for automated checks that need a fresh game or world  |
+
+An account can hold only one active game or world, so checks that need a new world
+use `dev3` rather than resigning a playtest on `dev1` or `dev2`.
 
 To add or rename accounts, edit `DEV_USER_EMAILS` in `api/app/dev_seed.py` and
 re-run `./scripts/dev.sh up` (re-seeding is idempotent).

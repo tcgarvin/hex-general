@@ -89,16 +89,15 @@ def test_seeds_missing_accounts_on_an_empty_stack() -> None:
 
 def test_is_idempotent_when_accounts_already_exist() -> None:
     existing = [
-        _FakeUser("u-dev1", DEV_USER_EMAILS[0]),
-        _FakeUser("u-dev2", DEV_USER_EMAILS[1]),
+        _FakeUser(f"u-dev{n}", email) for n, email in enumerate(DEV_USER_EMAILS, 1)
     ]
     client = _FakeClient(existing)
 
     results = seed_dev_users(client)  # type: ignore[arg-type]
 
     assert results == [
-        SeededUser(email=DEV_USER_EMAILS[0], user_id="u-dev1", created=False),
-        SeededUser(email=DEV_USER_EMAILS[1], user_id="u-dev2", created=False),
+        SeededUser(email=email, user_id=f"u-dev{n}", created=False)
+        for n, email in enumerate(DEV_USER_EMAILS, 1)
     ]
     # Nothing was created the second time around.
     assert client.auth.admin.created == []
@@ -110,5 +109,7 @@ def test_creates_only_the_missing_account() -> None:
     results = seed_dev_users(client)  # type: ignore[arg-type]
 
     assert results[0] == SeededUser(DEV_USER_EMAILS[0], "u-dev1", created=False)
-    assert results[1].email == DEV_USER_EMAILS[1] and results[1].created is True
-    assert [a["email"] for a in client.auth.admin.created] == [DEV_USER_EMAILS[1]]
+    missing = list(DEV_USER_EMAILS[1:])
+    assert [r.email for r in results[1:]] == missing
+    assert all(r.created for r in results[1:])
+    assert [a["email"] for a in client.auth.admin.created] == missing
