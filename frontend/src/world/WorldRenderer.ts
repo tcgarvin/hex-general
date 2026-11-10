@@ -29,7 +29,7 @@ import {
   type JoinPlacement,
   type LoadedJoins,
 } from "@/board/joins";
-import { ROAD_COLOR, TERRAIN_FILL } from "@/board/palette";
+import { ROAD_COLOR } from "@/board/palette";
 import { riverCourseEdges } from "@/board/riverTiles";
 import { roadTileRefs, type RoadTileRef } from "@/board/roadTiles";
 import type { LoadedTiles } from "@/board/tiles";
@@ -45,6 +45,7 @@ import {
   baseSiteTiles,
   changedBaseTiles,
   hexTileChoice,
+  overviewHexFill,
   staticSiteTiles,
   type SiteTileMap,
 } from "./worldTiles";
@@ -901,7 +902,7 @@ export function drawOverview(map: WorldMap): HTMLCanvasElement {
       const hex = pixelToAxial(wx, wy, OVERVIEW_HEX);
       const cell = map.hexAt(hex.q, hex.r);
       if (cell === undefined) continue;
-      let color = TERRAIN_FILL[cell.terrain];
+      let color = overviewHexFill(map, hex.q, hex.r);
       if (cell.road && cell.terrain !== "river") {
         const c = axialToPixel(hex.q, hex.r, OVERVIEW_HEX);
         if (Math.abs(c.x - wx) < 0.9 && Math.abs(c.y - wy) < 0.9) color = ROAD_COLOR;

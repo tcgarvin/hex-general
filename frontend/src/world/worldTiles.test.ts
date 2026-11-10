@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { hexKey } from "@/board/hex";
+import { TERRAIN_FILL } from "@/board/palette";
 
 import { baseTileKeys, siteTileKey } from "./siteTiles";
 import { decodeWorldMap, offsetToAxial, type MapSite } from "./worldMap";
-import { baseSiteTiles, baseStageOf, changedBaseTiles, hexTileChoice, staticSiteTiles } from "./worldTiles";
+import { overviewHexFill, SITE_OVERVIEW_FILL, baseSiteTiles, baseStageOf, changedBaseTiles, hexTileChoice, staticSiteTiles } from "./worldTiles";
 
 // A 4x3 world: plains everywhere except a town at (1,0) offset and a city at (3,2).
 const FARM = offsetToAxial(0, 0);
@@ -77,5 +78,21 @@ describe("world hex tile choice", () => {
     const fallen = baseSiteTiles(map, settlements.filter((s) => hexKey(s.coord.q, s.coord.r) !== hexKey(BASE.q, BASE.r)));
     expect(changedBaseTiles(baseTiles, fallen)).toEqual([BASE]);
     expect(changedBaseTiles(baseTiles, baseSiteTiles(map, settlements))).toEqual([]);
+  });
+});
+
+describe("overview fill", () => {
+  it("colours each capturable kind with its site fill, even on an old town hex", () => {
+    expect(overviewHexFill(map, FARM.q, FARM.r)).toBe(SITE_OVERVIEW_FILL.farm);
+    expect(overviewHexFill(map, OLD_FARM.q, OLD_FARM.r)).toBe(SITE_OVERVIEW_FILL.farm);
+    expect(overviewHexFill(map, FACTORY.q, FACTORY.r)).toBe(SITE_OVERVIEW_FILL.factory);
+    expect(new Set(Object.values(SITE_OVERVIEW_FILL)).size).toBe(4);
+  });
+
+  it("keeps terrain fills for cities, bases and plain hexes", () => {
+    expect(overviewHexFill(map, CITY.q, CITY.r)).toBe(TERRAIN_FILL.city);
+    expect(overviewHexFill(map, BASE.q, BASE.r)).toBe(TERRAIN_FILL.plains);
+    expect(overviewHexFill(map, VACANT.q, VACANT.r)).toBe(TERRAIN_FILL.plains);
+    expect(overviewHexFill(map, PLAIN.q, PLAIN.r)).toBe(TERRAIN_FILL.plains);
   });
 });

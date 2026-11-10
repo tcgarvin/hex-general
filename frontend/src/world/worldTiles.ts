@@ -9,9 +9,10 @@
 // their terrain tile.
 
 import { hexKey, type Axial } from "@/board/hex";
+import { TERRAIN_FILL } from "@/board/palette";
 import type { components } from "@/lib/api/schema";
 
-import { baseTileKeys, SITE_TILE_KINDS, siteTileKey, type BaseStage } from "./siteTiles";
+import { baseTileKeys, SITE_TILE_KINDS, siteTileKey, type BaseStage, type SiteTileKind } from "./siteTiles";
 import type { MapSite, WorldMap } from "./worldMap";
 
 type Settlement = components["schemas"]["Settlement"];
@@ -95,4 +96,30 @@ export function changedBaseTiles(before: SiteTileMap, after: SiteTileMap): Axial
     if (!before.has(key)) out.push(placed.coord);
   }
   return out;
+}
+
+/**
+ * Overview-map fill per capturable site kind, muted toward the painted art's
+ * dominant colour so a site's kind reads at a glance when tiles are not drawn.
+ * `Record` over the kind union: a new kind is a compile error until coloured.
+ */
+export const SITE_OVERVIEW_FILL: Record<SiteTileKind, number> = {
+  farm: 0xb39a4a, // wheat
+  oil_field: 0x26221c, // oil black
+  steel_mill: 0x8a4a2e, // furnace rust
+  factory: 0x6f6257, // brick grey
+};
+
+/**
+ * The flat overview colour of hex `(q, r)`: the site fill for a farm, oil field,
+ * steel mill or factory (even on an old map's town hex), else the terrain fill.
+ * Cities and bases keep their terrain fill (owned dots already mark bases).
+ * `(q, r)` must be on the map.
+ */
+export function overviewHexFill(map: Pick<WorldMap, "hexAt" | "siteAt">, q: number, r: number): number {
+  const site = map.siteAt(q, r);
+  if (site !== undefined && (SITE_TILE_KINDS as readonly string[]).includes(site.kind)) {
+    return SITE_OVERVIEW_FILL[site.kind as SiteTileKind];
+  }
+  return TERRAIN_FILL[map.hexAt(q, r)!.terrain];
 }
