@@ -328,8 +328,8 @@ follow the same pipeline.
 river and bridge shapes, plains roads including all twelve forks) has been
 replaced by the Codex paint-in set (`art/codex/terrain/`, "Paint-in recipe" in
 `docs/ART_PIPELINE.md`), and woods/city seams get join sprites in both renderers.
-Roads on hills and on settlements have no baked art yet; the 2-player board draws
-the vector road there (the world view draws the base tile). The NBP tiles
+Roads on hills are baked (Codex paint-in, 2026-11-10); roads on settlements have no
+baked art yet; the 2-player board draws the vector road there (the world view draws the base tile). The NBP tiles
 described below are superseded; their provenance stays in `art/foundry/`.
 
 **Orientation decision (applies to rivers/bridges/road-tiles):** no 60° rotation

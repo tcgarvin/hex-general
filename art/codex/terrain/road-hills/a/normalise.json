@@ -1,0 +1,194 @@
+{
+ "hills_straight_v_00": {
+  "mean_before": [
+   164.8,
+   134.2,
+   90.4
+  ],
+  "offset": [
+   -3.1,
+   4.6,
+   4.5
+  ]
+ },
+ "hills_straight_v_01": {
+  "mean_before": [
+   166.4,
+   135.2,
+   90.9
+  ],
+  "offset": [
+   -4.3,
+   3.9,
+   4.1
+  ]
+ },
+ "hills_straight_d_00": {
+  "mean_before": [
+   170.8,
+   137.5,
+   93.2
+  ],
+  "offset": [
+   -7.8,
+   2.0,
+   2.2
+  ]
+ },
+ "hills_straight_d_01": {
+  "mean_before": [
+   166.2,
+   134.6,
+   90.7
+  ],
+  "offset": [
+   -4.2,
+   4.3,
+   4.3
+  ]
+ },
+ "hills_turn_n_se_00": {
+  "mean_before": [
+   169.7,
+   137.4,
+   93.3
+  ],
+  "offset": [
+   -6.9,
+   2.0,
+   2.2
+  ]
+ },
+ "hills_turn_s_nw_00": {
+  "mean_before": [
+   171.5,
+   137.8,
+   93.8
+  ],
+  "offset": [
+   -8.4,
+   1.8,
+   1.8
+  ]
+ },
+ "hills_turn_se_sw_00": {
+  "mean_before": [
+   168.7,
+   137.0,
+   92.8
+  ],
+  "offset": [
+   -6.2,
+   2.4,
+   2.6
+  ]
+ },
+ "hills_turn_ne_nw_00": {
+  "mean_before": [
+   174.6,
+   140.9,
+   96.3
+  ],
+  "offset": [
+   -10.9,
+   -0.7,
+   -0.3
+  ]
+ },
+ "hills_end_n_00": {
+  "mean_before": [
+   172.3,
+   138.7,
+   95.2
+  ],
+  "offset": [
+   -9.0,
+   1.1,
+   0.7
+  ]
+ },
+ "hills_end_s_00": {
+  "mean_before": [
+   169.1,
+   136.8,
+   92.8
+  ],
+  "offset": [
+   -6.5,
+   2.6,
+   2.5
+  ]
+ },
+ "hills_end_se_00": {
+  "mean_before": [
+   166.9,
+   134.6,
+   90.5
+  ],
+  "offset": [
+   -4.7,
+   4.3,
+   4.4
+  ]
+ },
+ "hills_end_ne_00": {
+  "mean_before": [
+   173.3,
+   140.7,
+   96.6
+  ],
+  "offset": [
+   -9.9,
+   -0.6,
+   -0.4
+  ]
+ },
+ "hills_fork_ne_n_s_00": {
+  "mean_before": [
+   169.9,
+   137.8,
+   93.7
+  ],
+  "offset": [
+   -7.1,
+   1.8,
+   1.8
+  ]
+ },
+ "hills_fork_ne_nw_s_00": {
+  "mean_before": [
+   167.7,
+   135.7,
+   91.6
+  ],
+  "offset": [
+   -5.4,
+   3.4,
+   3.6
+  ]
+ },
+ "hills_fork_se_ne_nw_00": {
+  "mean_before": [
+   168.7,
+   136.8,
+   92.9
+  ],
+  "offset": [
+   -6.2,
+   2.5,
+   2.5
+  ]
+ },
+ "hills_fork_se_ne_s_00": {
+  "mean_before": [
+   168.3,
+   136.3,
+   92.0
+  ],
+  "offset": [
+   -5.8,
+   2.9,
+   3.2
+  ]
+ }
+}

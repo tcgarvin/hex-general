@@ -1,0 +1,45 @@
+{
+ "raw": "art/codex/terrain/road-hills/d/raw/road-hills-d.png",
+ "scale": 0.99940635904637,
+ "tx": -0.004134122360568426,
+ "ty": -0.6743182768681919,
+ "output_size": [
+  1254,
+  1254
+ ],
+ "background_level": 247.0,
+ "max_residual_tile_px": 0.0536313053912194,
+ "min_iou": 0.996579995315062,
+ "cells": {
+  "hills_fork_se_nw_sw_00_d0": {
+   "name": "hills_fork_se_nw_sw_00_d0",
+   "expected": [
+    156.90266424791952,
+    156.23248009341188
+   ],
+   "measured": [
+    157.00911988685365,
+    156.24508202458952
+   ],
+   "width_ratio": 1.0002166995843047,
+   "residual_px": 0.10719893530386018,
+   "residual_tile_px": 0.05363130539120695,
+   "iou": 0.996579995315062
+  },
+  "hills_fork_se_nw_sw_00_d1": {
+   "name": "hills_fork_se_nw_sw_00_d1",
+   "expected": [
+    469.7168546294333,
+    156.23248009341188
+   ],
+   "measured": [
+    469.61039899049916,
+    156.21987816223427
+   ],
+   "width_ratio": 0.9997833004156954,
+   "residual_px": 0.10719893530388507,
+   "residual_tile_px": 0.0536313053912194,
+   "iou": 0.9967868283415813
+  }
+ }
+}

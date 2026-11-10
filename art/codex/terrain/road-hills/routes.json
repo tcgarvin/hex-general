@@ -1,0 +1,122 @@
+{
+ "hills_straight_v_00": {
+  "base": "h01.png",
+  "seed": 9,
+  "rock_cost": 0.372
+ },
+ "hills_straight_v_01": {
+  "base": "h03.png",
+  "seed": 7,
+  "rock_cost": 0.402
+ },
+ "hills_straight_d_00": {
+  "base": "h01.png",
+  "seed": 3,
+  "rock_cost": 0.373
+ },
+ "hills_straight_d_01": {
+  "base": "h02.png",
+  "seed": 8,
+  "rock_cost": 0.474
+ },
+ "hills_turn_n_se_00": {
+  "base": "h03.png",
+  "seed": 9,
+  "rock_cost": 0.429
+ },
+ "hills_turn_s_nw_00": {
+  "base": "h01.png",
+  "seed": 4,
+  "rock_cost": 0.275
+ },
+ "hills_turn_se_sw_00": {
+  "base": "h02.png",
+  "seed": 6,
+  "rock_cost": 0.448
+ },
+ "hills_turn_ne_nw_00": {
+  "base": "h03.png",
+  "seed": 5,
+  "rock_cost": 0.184
+ },
+ "hills_end_n_00": {
+  "base": "h03.png",
+  "seed": 1,
+  "rock_cost": 0.299
+ },
+ "hills_end_s_00": {
+  "base": "h01.png",
+  "seed": 0,
+  "rock_cost": 0.345
+ },
+ "hills_end_se_00": {
+  "base": "h02.png",
+  "seed": 1,
+  "rock_cost": 0.439
+ },
+ "hills_end_ne_00": {
+  "base": "h03.png",
+  "seed": 8,
+  "rock_cost": 0.29
+ },
+ "hills_fork_ne_n_s_00": {
+  "base": "h03.png",
+  "seed": 5,
+  "rock_cost": 0.428
+ },
+ "hills_fork_ne_nw_s_00": {
+  "base": "h03.png",
+  "seed": 5,
+  "rock_cost": 0.435
+ },
+ "hills_fork_se_ne_nw_00": {
+  "base": "h02.png",
+  "seed": 1,
+  "rock_cost": 0.497
+ },
+ "hills_fork_se_ne_s_00": {
+  "base": "h02.png",
+  "seed": 6,
+  "rock_cost": 0.477
+ },
+ "hills_fork_se_n_nw_00": {
+  "base": "h01.png",
+  "seed": 2,
+  "rock_cost": 0.471
+ },
+ "hills_fork_se_n_s_00": {
+  "base": "h01.png",
+  "seed": 9,
+  "rock_cost": 0.45
+ },
+ "hills_fork_se_n_sw_00": {
+  "base": "h00.png",
+  "seed": 9,
+  "rock_cost": 0.547
+ },
+ "hills_fork_se_nw_s_00": {
+  "base": "h01.png",
+  "seed": 3,
+  "rock_cost": 0.428
+ },
+ "hills_fork_se_nw_sw_00": {
+  "base": "h01.png",
+  "seed": 3,
+  "rock_cost": 0.555
+ },
+ "hills_fork_se_sw_s_00": {
+  "base": "h00.png",
+  "seed": 9,
+  "rock_cost": 0.534
+ },
+ "hills_fork_ne_n_nw_00": {
+  "base": "h03.png",
+  "seed": 6,
+  "rock_cost": 0.388
+ },
+ "hills_fork_se_ne_n_00": {
+  "base": "h03.png",
+  "seed": 5,
+  "rock_cost": 0.571
+ }
+}

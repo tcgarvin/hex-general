@@ -1,0 +1,170 @@
+{
+ "hills_end_n_00.png": {
+  "cell": "hills_end_n_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "9ac3edee61a8a6d65141e82d92127167ea63e49bd9c419c1214753b369c742bd",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_end_ne_00.png": {
+  "cell": "hills_end_ne_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "52cd76a35f7e2ad0ab09bbeab52c3804d49b280b1fb29366c662d6323fda3939",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_end_s_00.png": {
+  "cell": "hills_end_s_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h01.png",
+  "sha256": "728a3d4f1b890981a1c78d6efd23811d52eb17cab37e4e83792d1ee8fa61b5a3",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_end_se_00.png": {
+  "cell": "hills_end_se_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h02.png",
+  "sha256": "0f7fef177d5ed7a9d679e995ec1f3ae1e29199be3bdfc6907d9d5de31419b4a5",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_fork_ne_n_nw_00.png": {
+  "cell": "hills_fork_ne_n_nw_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "021448eb2e2621ea07acac8fb18a61244fe8bb262db6cf933a48265c8c87c814",
+  "sheet": "art/codex/terrain/road-hills/b/road-hills-b.sheet.png",
+  "work": "road-hills/b"
+ },
+ "hills_fork_ne_n_s_00.png": {
+  "cell": "hills_fork_ne_n_s_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "5e0bb8d6dea0a8ec75a216b055af4b97d3b7c16ea48a4f95972c157e1f9f5b27",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_fork_ne_nw_s_00.png": {
+  "cell": "hills_fork_ne_nw_s_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "fa3947af7d8663087371da9baa55c4b1bad8979ef964c07e3e6e96c81e610264",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_fork_se_n_nw_00.png": {
+  "cell": "hills_fork_se_n_nw_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h01.png",
+  "sha256": "91a8ec6c79833e9b90d213147ad39595e62d2e9198dc482ae618a6dc5b265b84",
+  "sheet": "art/codex/terrain/road-hills/b/road-hills-b.sheet.png",
+  "work": "road-hills/b"
+ },
+ "hills_fork_se_n_s_00.png": {
+  "cell": "hills_fork_se_n_s_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h01.png",
+  "sha256": "d8bae3784bd5c6c3b81888759701fd61e5d832fc7e58fe9c106605d5eb13d2a7",
+  "sheet": "art/codex/terrain/road-hills/b/road-hills-b.sheet.png",
+  "work": "road-hills/b"
+ },
+ "hills_fork_se_n_sw_00.png": {
+  "cell": "hills_fork_se_n_sw_00_t0",
+  "hills_base": "art/codex/terrain/road-hills/bases/h00.png",
+  "sha256": "c3863f09cad36d16e78e7d31fd4b182277e81736f85f2b2c7af0d81e819d080f",
+  "sheet": "art/codex/terrain/road-hills/c/road-hills-c.sheet.png",
+  "work": "road-hills/c"
+ },
+ "hills_fork_se_ne_n_00.png": {
+  "cell": "hills_fork_se_ne_n_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "f56fc40ee8506faa7cdf89abbeea3b5dc55b72ccb811c889689ed244109b2285",
+  "sheet": "art/codex/terrain/road-hills/b/road-hills-b.sheet.png",
+  "work": "road-hills/b"
+ },
+ "hills_fork_se_ne_nw_00.png": {
+  "cell": "hills_fork_se_ne_nw_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h02.png",
+  "sha256": "9cb88d393fd8e825a257abb69dc77db82f1769187320266022d2137c369baa5d",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_fork_se_ne_s_00.png": {
+  "cell": "hills_fork_se_ne_s_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h02.png",
+  "sha256": "cf0c01b7c6458a89b9bbea74e3d8c23229de04b5be7e72e79deed4e157f95b37",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_fork_se_nw_s_00.png": {
+  "cell": "hills_fork_se_nw_s_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h01.png",
+  "sha256": "9b33d63c04c7a2e944ca94530db34d488ca96c852d5b8288fe0bf93475ecf284",
+  "sheet": "art/codex/terrain/road-hills/b/road-hills-b.sheet.png",
+  "work": "road-hills/b"
+ },
+ "hills_fork_se_nw_sw_00.png": {
+  "cell": "hills_fork_se_nw_sw_00_e2",
+  "hills_base": "art/codex/terrain/road-hills/bases/h02.png",
+  "sha256": "1ab00bd06364db8a9e3195992764f231dc4daee49cd351854972a512e48ceed5",
+  "sheet": "art/codex/terrain/road-hills/e/road-hills-e.sheet.png",
+  "work": "road-hills/e"
+ },
+ "hills_fork_se_sw_s_00.png": {
+  "cell": "hills_fork_se_sw_s_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h00.png",
+  "sha256": "ee64de562aa90e55fa1a026a69adbba6351872702e997dadff93e9ab3f85b09c",
+  "sheet": "art/codex/terrain/road-hills/b/road-hills-b.sheet.png",
+  "work": "road-hills/b"
+ },
+ "hills_straight_d_00.png": {
+  "cell": "hills_straight_d_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h01.png",
+  "sha256": "16734330345a8df98f88ba8f7301fc6a35579dcbd4e5b433b8da27f7b8c759a4",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_straight_d_01.png": {
+  "cell": "hills_straight_d_01",
+  "hills_base": "art/codex/terrain/road-hills/bases/h02.png",
+  "sha256": "c86de68c300b34f7d1d475b2fa814d603885798058989f215d2a461e3720bdc3",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_straight_v_00.png": {
+  "cell": "hills_straight_v_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h01.png",
+  "sha256": "b235bd1bbde93c95462853bcdb45cf8e8a2e47ce7e36a43eba1386ab625b01e7",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_straight_v_01.png": {
+  "cell": "hills_straight_v_01",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "7c4047fdca1bd65c262399bf1c78a580b1acd3941ed4d45912f1e521cfb0450f",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_turn_n_se_00.png": {
+  "cell": "hills_turn_n_se_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "21ceeae943a288c57c9157a4d4c491ef38a9625c13c88d6b347b257b60182cb3",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_turn_ne_nw_00.png": {
+  "cell": "hills_turn_ne_nw_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h03.png",
+  "sha256": "70f66d15ffa1ad1b60905c878aee0920345e0cb8c0979459dd45b69d9f9bbbeb",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_turn_s_nw_00.png": {
+  "cell": "hills_turn_s_nw_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h01.png",
+  "sha256": "b68da9d81c0d9f60b199441cbcdbb28be359f602d3f58f280dcc51f8af3576f5",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ },
+ "hills_turn_se_sw_00.png": {
+  "cell": "hills_turn_se_sw_00",
+  "hills_base": "art/codex/terrain/road-hills/bases/h02.png",
+  "sha256": "f600cb1d2e7c085953bc6f710a573a6747db8475a51057503b01230725dd0971",
+  "sheet": "art/codex/terrain/road-hills/a/road-hills-a.sheet.png",
+  "work": "road-hills/a"
+ }
+}

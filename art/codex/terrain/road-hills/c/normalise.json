@@ -1,0 +1,50 @@
+{
+ "hills_fork_se_n_sw_00_t0": {
+  "mean_before": [
+   161.8,
+   135.5,
+   86.4
+  ],
+  "offset": [
+   -0.6,
+   3.6,
+   7.7
+  ]
+ },
+ "hills_fork_se_n_sw_00_t1": {
+  "mean_before": [
+   162.4,
+   136.0,
+   86.8
+  ],
+  "offset": [
+   -1.2,
+   3.2,
+   7.3
+  ]
+ },
+ "hills_fork_se_nw_sw_00_t0": {
+  "mean_before": [
+   159.7,
+   133.1,
+   83.9
+  ],
+  "offset": [
+   1.0,
+   5.5,
+   9.7
+  ]
+ },
+ "hills_fork_se_nw_sw_00_t1": {
+  "mean_before": [
+   161.1,
+   134.2,
+   85.2
+  ],
+  "offset": [
+   -0.1,
+   4.6,
+   8.7
+  ]
+ }
+}

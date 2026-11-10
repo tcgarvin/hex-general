@@ -1,0 +1,192 @@
+{
+ "tool": "scripts/tile-foundry/paintin.py",
+ "version": 1,
+ "job": "art/codex/terrain/road-hills/c/job.json",
+ "job_sha256": "a2bb1e5f0bc986f33bd0dbf042775df605a759644096f34c72148d35cfa73880",
+ "name": "road-hills-c",
+ "sheet": "art/codex/terrain/road-hills/c/road-hills-c.sheet.png",
+ "sheet_sha256": "1e76dcb80dbc9f73ebf31a96a1f03e2dde5d9bc5af0f613be10b698446ca3fc2",
+ "canvas": [
+  1254,
+  1254
+ ],
+ "layout": {
+  "canvas": 1254,
+  "cols": 4,
+  "rows": 4,
+  "hex_width": 256
+ },
+ "background": [
+  255,
+  0,
+  255
+ ],
+ "tile_px": 128,
+ "profile": {
+  "path": "/home/timg/code/hex-general/art/codex/terrain/road/profile.json"
+ },
+ "pin": {
+  "restore": false,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   161,
+   140,
+   96
+  ],
+  "tone_sigma": 6.0,
+  "paint_region_px": 5.0
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0,
+  "feature_lum": 141.0,
+  "feature_sat": 0.4
+ },
+ "cells": [
+  {
+   "name": "hills_fork_se_n_sw_00_t0",
+   "slot": 0,
+   "cx": 157.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/road-hills/bases/h00.png",
+   "base_sha256": "bfce21838afc70e513e66312815ce1974abbe2294e9bed8f7326ff130af07abe",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     2,
+     4
+    ],
+    "width": 11.5,
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "marker": null,
+    "meander": 5.0,
+    "breathe": 0.0,
+    "ragged": 0.4,
+    "round_px": 3.0,
+    "pond": 0.0,
+    "seed": 9,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "hills_fork_se_n_sw_00_t0.png"
+  },
+  {
+   "name": "hills_fork_se_n_sw_00_t1",
+   "slot": 1,
+   "cx": 470.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/road-hills/bases/h00.png",
+   "base_sha256": "bfce21838afc70e513e66312815ce1974abbe2294e9bed8f7326ff130af07abe",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     2,
+     4
+    ],
+    "width": 11.5,
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "marker": null,
+    "meander": 5.0,
+    "breathe": 0.0,
+    "ragged": 0.4,
+    "round_px": 3.0,
+    "pond": 0.0,
+    "seed": 9,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "hills_fork_se_n_sw_00_t1.png"
+  },
+  {
+   "name": "hills_fork_se_nw_sw_00_t0",
+   "slot": 2,
+   "cx": 784.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/road-hills/bases/h01.png",
+   "base_sha256": "9e9a575a8f143afe8084986974c1c930f374ed0d97221e545c6213a070250cc6",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "width": 11.5,
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "marker": null,
+    "meander": 5.0,
+    "breathe": 0.0,
+    "ragged": 0.4,
+    "round_px": 3.0,
+    "pond": 0.0,
+    "seed": 3,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "hills_fork_se_nw_sw_00_t0.png"
+  },
+  {
+   "name": "hills_fork_se_nw_sw_00_t1",
+   "slot": 3,
+   "cx": 1097.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/road-hills/bases/h01.png",
+   "base_sha256": "9e9a575a8f143afe8084986974c1c930f374ed0d97221e545c6213a070250cc6",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "width": 11.5,
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "marker": null,
+    "meander": 5.0,
+    "breathe": 0.0,
+    "ragged": 0.4,
+    "round_px": 3.0,
+    "pond": 0.0,
+    "seed": 3,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "hills_fork_se_nw_sw_00_t1.png"
+  }
+ ]
+}

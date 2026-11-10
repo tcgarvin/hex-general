@@ -104,6 +104,30 @@ in `ground/G2/set.json`.
 | `bridge/straight_v_00.png` | `art/codex/terrain/bridge/a` | `art/codex/terrain/bridge/a/raw/bridge-a-v2.png` | straight_v_t0 |  |
 | `bridge/turn_ne_nw_00.png` | `art/codex/terrain/bridge/a` | `art/codex/terrain/bridge/a/raw/bridge-a-v2.png` | turn_ne_nw_t1 |  |
 | `bridge/turn_se_sw_00.png` | `art/codex/terrain/bridge/a` | `art/codex/terrain/bridge/a/raw/bridge-a-v2.png` | turn_se_sw_t0 |  |
+| `road/hills_end_n_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_end_n_00 |  |
+| `road/hills_end_ne_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_end_ne_00 |  |
+| `road/hills_end_s_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_end_s_00 |  |
+| `road/hills_end_se_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_end_se_00 |  |
+| `road/hills_fork_ne_n_nw_00.png` | `art/codex/terrain/road-hills/b` | `art/codex/terrain/road-hills/b/raw/road-hills-b.png` | hills_fork_ne_n_nw_00 |  |
+| `road/hills_fork_ne_n_s_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_fork_ne_n_s_00 |  |
+| `road/hills_fork_ne_nw_s_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_fork_ne_nw_s_00 |  |
+| `road/hills_fork_se_n_nw_00.png` | `art/codex/terrain/road-hills/b` | `art/codex/terrain/road-hills/b/raw/road-hills-b.png` | hills_fork_se_n_nw_00 |  |
+| `road/hills_fork_se_n_s_00.png` | `art/codex/terrain/road-hills/b` | `art/codex/terrain/road-hills/b/raw/road-hills-b.png` | hills_fork_se_n_s_00 |  |
+| `road/hills_fork_se_n_sw_00.png` | `art/codex/terrain/road-hills/c` | `art/codex/terrain/road-hills/c/raw/road-hills-c.png` | hills_fork_se_n_sw_00_t0 |  |
+| `road/hills_fork_se_ne_n_00.png` | `art/codex/terrain/road-hills/b` | `art/codex/terrain/road-hills/b/raw/road-hills-b.png` | hills_fork_se_ne_n_00 |  |
+| `road/hills_fork_se_ne_nw_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_fork_se_ne_nw_00 |  |
+| `road/hills_fork_se_ne_s_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_fork_se_ne_s_00 |  |
+| `road/hills_fork_se_nw_s_00.png` | `art/codex/terrain/road-hills/b` | `art/codex/terrain/road-hills/b/raw/road-hills-b.png` | hills_fork_se_nw_s_00 |  |
+| `road/hills_fork_se_nw_sw_00.png` | `art/codex/terrain/road-hills/e` | `art/codex/terrain/road-hills/e/raw/road-hills-e.png` | hills_fork_se_nw_sw_00_e2 |  |
+| `road/hills_fork_se_sw_s_00.png` | `art/codex/terrain/road-hills/b` | `art/codex/terrain/road-hills/b/raw/road-hills-b.png` | hills_fork_se_sw_s_00 |  |
+| `road/hills_straight_d_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_straight_d_00 |  |
+| `road/hills_straight_d_01.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_straight_d_01 |  |
+| `road/hills_straight_v_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_straight_v_00 |  |
+| `road/hills_straight_v_01.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_straight_v_01 |  |
+| `road/hills_turn_n_se_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_turn_n_se_00 |  |
+| `road/hills_turn_ne_nw_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_turn_ne_nw_00 |  |
+| `road/hills_turn_s_nw_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_turn_s_nw_00 |  |
+| `road/hills_turn_se_sw_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_turn_se_sw_00 |  |
 
 ## Join sprites
 

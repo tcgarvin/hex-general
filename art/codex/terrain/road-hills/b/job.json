@@ -1,0 +1,211 @@
+{
+ "name": "road-hills-b",
+ "layout": "4x4",
+ "cells": [
+  {
+   "name": "hills_fork_se_n_nw_00",
+   "base": "../bases/h01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     2,
+     3
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 2
+   },
+   "slot": 0
+  },
+  {
+   "name": "hills_fork_se_n_s_00",
+   "base": "../bases/h01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     2,
+     5
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 9
+   },
+   "slot": 1
+  },
+  {
+   "name": "hills_fork_se_n_sw_00",
+   "base": "../bases/h00.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     2,
+     4
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 9
+   },
+   "slot": 2
+  },
+  {
+   "name": "hills_fork_se_nw_s_00",
+   "base": "../bases/h01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     5
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 3
+   },
+   "slot": 3
+  },
+  {
+   "name": "hills_fork_se_nw_sw_00",
+   "base": "../bases/h01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 3
+   },
+   "slot": 4
+  },
+  {
+   "name": "hills_fork_se_sw_s_00",
+   "base": "../bases/h00.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     4,
+     5
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 9
+   },
+   "slot": 5
+  },
+  {
+   "name": "hills_fork_ne_n_nw_00",
+   "base": "../bases/h03.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     1,
+     2,
+     3
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 6
+   },
+   "slot": 6
+  },
+  {
+   "name": "hills_fork_se_ne_n_00",
+   "base": "../bases/h03.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     1,
+     2
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 9.5,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 5
+   },
+   "slot": 7
+  }
+ ],
+ "profile": {
+  "path": "../../road/profile.json"
+ },
+ "pin": {
+  "restore": false,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   161,
+   140,
+   96
+  ],
+  "tone_sigma": 6.0,
+  "paint_region_px": 5.0
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0,
+  "feature_lum": 141.0,
+  "feature_sat": 0.4
+ }
+}

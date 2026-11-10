@@ -81,6 +81,28 @@ def oriented_rows(terrain: str) -> list[tuple[str, str, str, str, str]]:
     return rows
 
 
+def hills_road_rows() -> list[tuple[str, str, str, str, str]]:
+    """Roads over hills: candidates/hills-roads/road/provenance.json, shipped in tiles/road/.
+
+    The work dir (road-hills/) also holds manifest.json and picks.json; each cell
+    must be listed in picks.json so the pick trail is complete.
+    """
+    base = TERRAIN / "candidates" / "hills-roads" / "road"
+    picks = json.loads((TERRAIN / "road-hills" / "picks.json").read_text())
+    require("art/codex/terrain/road-hills/manifest.json", "hills-road manifest")
+    rows = []
+    for name, e in sorted(json.loads((base / "provenance.json").read_text()).items()):
+        shipped = SHIPPED_TILES / "road" / name
+        if sha256(shipped) != e["sha256"]:
+            raise ProvenanceError(f"road/{name}: shipped file != hills-roads provenance.json sha256")
+        if picks[name]["cell"] != e["cell"]:
+            raise ProvenanceError(f"road/{name}: picks.json cell != provenance.json cell")
+        sheet = rel(e["sheet"])
+        raw = require(raw_for_sheet(sheet), f"road/{name} raw")
+        rows.append((f"road/{name}", e["work"] and f"art/codex/terrain/{e['work']}", raw, e["cell"], ""))
+    return rows
+
+
 def plains_rows() -> list[tuple[str, str, str, str, str]]:
     """Plains are 1:1 cuts of the recoloured G2 meadow (ground/G2/set.json)."""
     s = json.loads((TERRAIN / "ground" / "G2" / "set.json").read_text())
@@ -112,6 +134,7 @@ def main() -> int:
         rows += picked_rows(terrain)
     for terrain in ("river", "road", "bridge"):
         rows += oriented_rows(terrain)
+    rows += hills_road_rows()
     shipped = {str(p.relative_to(SHIPPED_TILES)) for p in SHIPPED_TILES.glob("*/*.png")}
     traced = {r[0] for r in rows}
     if shipped != traced:

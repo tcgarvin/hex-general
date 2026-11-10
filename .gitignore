@@ -59,6 +59,7 @@ art/codex/terrain/ground/*/plains/
 art/codex/terrain/candidates/**/*.png
 !art/codex/terrain/candidates/review1/**/*.png
 !art/codex/terrain/candidates/review1-joins/**/*.png
+!art/codex/terrain/candidates/hills-roads/**/*.png
 art/codex/terrain/**/raw/*.png
 !art/codex/terrain/raw/G2-meadow-crop-bare.png
 !art/codex/terrain/woods/r2-d/raw/woods-r2-d.png
@@ -72,3 +73,7 @@ art/codex/terrain/**/raw/*.png
 !art/codex/terrain/road/b/raw/road-b.png
 !art/codex/terrain/road/c/raw/road-c.png
 !art/codex/terrain/bridge/a/raw/bridge-a-v2.png
+!art/codex/terrain/road-hills/a/raw/road-hills-a.png
+!art/codex/terrain/road-hills/b/raw/road-hills-b.png
+!art/codex/terrain/road-hills/c/raw/road-hills-c.png
+!art/codex/terrain/road-hills/e/raw/road-hills-e.png

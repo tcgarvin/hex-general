@@ -1,0 +1,702 @@
+{
+ "sheet": "art/codex/terrain/road-hills/c/road-hills-c.sheet.png",
+ "registration": {
+  "scale": 1.0008043469808587,
+  "tx": -0.5913736506605972,
+  "ty": -0.6959276693466588,
+  "max_residual_tile_px": 0.04885035674337569,
+  "min_iou": 0.9867089493074663
+ },
+ "pin": {
+  "rim_exact_px": 1.5,
+  "rim_ramp_px": 6.0,
+  "cross_exact_px": 3.0,
+  "cross_ramp_px": 12.0,
+  "restore": false,
+  "restore_sigma": 0.75,
+  "restore_lo": 14.0,
+  "restore_hi": 26.0,
+  "restore_close_px": 4,
+  "restore_grow_px": 2,
+  "restore_feather_px": 1.2,
+  "restore_tone": true,
+  "restore_tone_sigma": 8.0,
+  "restore_tone_span": 20.0,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   161.0,
+   140.0,
+   96.0
+  ],
+  "hold_feather_px": 3.0,
+  "tone_sigma": 6.0,
+  "tone_feature_grow_px": 2,
+  "paint_region_px": 5.0,
+  "paint_region_feather_px": 2.0
+ },
+ "tiles": {
+  "hills_fork_se_n_sw_00_t0": {
+   "passed": true,
+   "colour": {
+    "lum": 104.46,
+    "hue": 56.25,
+    "sat": 0.545
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0375,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.04 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9901,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.990 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": -0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.12 (limit 3.0), width 11.0 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": -0.25,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e2",
+     "value": 0.5,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.50 (limit 3.0), width 8.8 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e2",
+     "value": -0.25,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 0.75), width 9.2 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e4",
+     "value": 0.375,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.38 (limit 3.0), width 9.0 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e4",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": 7.3,
+     "limit": 6.0,
+     "passed": false,
+     "hard": false,
+     "detail": "road lum 148.3 vs anchor 141.0 (+7.30, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.018,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "road sat 0.418 vs anchor 0.4 (+0.02, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": 7.76,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 104.5 vs anchor 96.7 (+7.8, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -5.75,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 56.2 vs anchor 62.0 (-5.8, tol 6.0)"
+    }
+   ]
+  },
+  "hills_fork_se_n_sw_00_t1": {
+   "passed": true,
+   "colour": {
+    "lum": 104.4,
+    "hue": 56.13,
+    "sat": 0.545
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0319,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.03 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9867,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.987 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": 0.0,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 3.0), width 11.2 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": -0.25,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e2",
+     "value": 0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.12 (limit 3.0), width 8.5 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e2",
+     "value": -0.25,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 0.75), width 9.2 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e4",
+     "value": 0.625,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.62 (limit 3.0), width 9.2 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e4",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": 7.0,
+     "limit": 6.0,
+     "passed": false,
+     "hard": false,
+     "detail": "road lum 148.0 vs anchor 141.0 (+7.00, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.026,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "road sat 0.426 vs anchor 0.4 (+0.03, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": 7.7,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 104.4 vs anchor 96.7 (+7.7, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -5.87,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 56.1 vs anchor 62.0 (-5.9, tol 6.0)"
+    }
+   ]
+  },
+  "hills_fork_se_nw_sw_00_t0": {
+   "passed": false,
+   "colour": {
+    "lum": 100.42,
+    "hue": 57.97,
+    "sat": 0.545
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0489,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.05 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9869,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.987 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": 0.5,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.50 (limit 3.0), width 8.0 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": -0.375,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.38 (limit 0.75), width 9.5 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": 0.0,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 3.0), width 8.2 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": -0.25,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e4",
+     "value": 1.375,
+     "limit": 3.0,
+     "passed": false,
+     "hard": true,
+     "detail": "centre +1.38 (limit 3.0), width 6.0 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e4",
+     "value": -0.125,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.12 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": 6.4,
+     "limit": 6.0,
+     "passed": false,
+     "hard": false,
+     "detail": "road lum 147.4 vs anchor 141.0 (+6.40, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.024,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "road sat 0.424 vs anchor 0.4 (+0.02, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": 3.72,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 100.4 vs anchor 96.7 (+3.7, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -4.03,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 58.0 vs anchor 62.0 (-4.0, tol 6.0)"
+    }
+   ]
+  },
+  "hills_fork_se_nw_sw_00_t1": {
+   "passed": false,
+   "colour": {
+    "lum": 100.51,
+    "hue": 57.97,
+    "sat": 0.545
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0438,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.04 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9884,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.988 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": 0.375,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.38 (limit 3.0), width 8.2 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": -0.375,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.38 (limit 0.75), width 9.5 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": 0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.12 (limit 3.0), width 9.0 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": -0.25,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e4",
+     "value": 1.375,
+     "limit": 3.0,
+     "passed": false,
+     "hard": true,
+     "detail": "centre +1.38 (limit 3.0), width 6.2 vs 9.8 (tol 3.4) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e4",
+     "value": -0.125,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.12 (limit 0.75), width 9.8 vs 9.8 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": 6.0,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "road lum 147.0 vs anchor 141.0 (+6.00, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.023,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "road sat 0.423 vs anchor 0.4 (+0.02, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": 3.81,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 100.5 vs anchor 96.7 (+3.8, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -4.03,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 58.0 vs anchor 62.0 (-4.0, tol 6.0)"
+    }
+   ]
+  }
+ },
+ "passed": false,
+ "codex_follow": {
+  "hills_fork_se_n_sw_00_t0": {
+   "guide_width": 11.5,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.12,
+      "width": 7.75
+     },
+     "handover": {
+      "centre": -0.12,
+      "width": 11.0
+     }
+    },
+    "2": {
+     "edge": {
+      "centre": 0.5,
+      "width": 8.75
+     },
+     "handover": {
+      "centre": 0.88,
+      "width": 8.0
+     }
+    },
+    "4": {
+     "edge": {
+      "centre": 0.5,
+      "width": 8.5
+     },
+     "handover": {
+      "centre": 0.5,
+      "width": 9.0
+     }
+    }
+   }
+  },
+  "hills_fork_se_n_sw_00_t1": {
+   "guide_width": 11.5,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.0,
+      "width": 7.5
+     },
+     "handover": {
+      "centre": 0.0,
+      "width": 11.25
+     }
+    },
+    "2": {
+     "edge": {
+      "centre": 0.88,
+      "width": 8.0
+     },
+     "handover": {
+      "centre": 0.5,
+      "width": 7.75
+     }
+    },
+    "4": {
+     "edge": {
+      "centre": 0.75,
+      "width": 8.25
+     },
+     "handover": {
+      "centre": 0.62,
+      "width": 9.25
+     }
+    }
+   }
+  },
+  "hills_fork_se_nw_sw_00_t0": {
+   "guide_width": 11.5,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.0,
+      "width": 6.25
+     },
+     "handover": {
+      "centre": 0.5,
+      "width": 8.0
+     }
+    },
+    "3": {
+     "edge": {
+      "centre": 0.62,
+      "width": 8.0
+     },
+     "handover": {
+      "centre": 0.5,
+      "width": 6.5
+     }
+    },
+    "4": {
+     "edge": {
+      "centre": -2.38,
+      "width": 3.25
+     },
+     "handover": {
+      "centre": 1.06,
+      "width": 1.75
+     }
+    }
+   }
+  },
+  "hills_fork_se_nw_sw_00_t1": {
+   "guide_width": 11.5,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.12,
+      "width": 7.0
+     },
+     "handover": {
+      "centre": 0.38,
+      "width": 8.25
+     }
+    },
+    "3": {
+     "edge": {
+      "centre": 0.62,
+      "width": 7.5
+     },
+     "handover": {
+      "centre": 0.88,
+      "width": 7.25
+     }
+    },
+    "4": {
+     "edge": {
+      "centre": 0.38,
+      "width": 7.0
+     },
+     "handover": {
+      "centre": 3.38,
+      "width": 2.0
+     }
+    }
+   }
+  }
+ }
+}

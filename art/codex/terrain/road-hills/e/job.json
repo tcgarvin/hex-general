@@ -1,0 +1,119 @@
+{
+ "name": "road-hills-e",
+ "layout": "4x4",
+ "cells": [
+  {
+   "name": "hills_fork_se_nw_sw_00_e0",
+   "slot": 0,
+   "base": "../bases/h01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 13.0,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 3
+   }
+  },
+  {
+   "name": "hills_fork_se_nw_sw_00_e1",
+   "slot": 1,
+   "base": "../bases/h01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 13.0,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 3
+   }
+  },
+  {
+   "name": "hills_fork_se_nw_sw_00_e2",
+   "slot": 2,
+   "base": "../bases/h02.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 13.0,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 1
+   }
+  },
+  {
+   "name": "hills_fork_se_nw_sw_00_e3",
+   "slot": 3,
+   "base": "../bases/h02.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "color": [
+     222,
+     208,
+     168
+    ],
+    "width": 13.0,
+    "meander": 5.0,
+    "ragged": 0.4,
+    "round_px": 3,
+    "seed": 1
+   }
+  }
+ ],
+ "profile": {
+  "path": "../../road/profile.json"
+ },
+ "pin": {
+  "restore": false,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   161,
+   140,
+   96
+  ],
+  "tone_sigma": 6.0,
+  "paint_region_px": 5.0
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0,
+  "feature_lum": 141.0,
+  "feature_sat": 0.4
+ }
+}
