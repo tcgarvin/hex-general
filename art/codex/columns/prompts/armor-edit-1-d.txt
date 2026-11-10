@@ -1,0 +1,12 @@
+Use your built-in image generation tool to EDIT the attached image and produce ONE new image. Do not write code, do not run shell commands, do not edit any files. Just generate the edited image and then reply with one line saying it is done.
+
+The attached image is a painted game sprite of a WWII medium tank on a flat pure magenta background. The tank faces RIGHT: the gun points to the right, the sloped front hull is on the right, and the rear engine deck (with the grille) is on the LEFT.
+
+Keep the tank EXACTLY the same: same hull, tracks, road wheels, turret, gun, proportions, size, position in the frame, viewing angle, cobalt-blue paint and its shading, dark outline, lighting and painterly style. Do not redraw, restyle, recolour, resize, move or rotate the tank. The gun stays pointing forward to the right, exactly as it is. Do not add a ground, road, shadow, dust or anything else.
+
+Only ADD these, painted in the same style and at the same scale as the tank (a man's head is about the size of the turret's round hatch ring):
+1. The round turret hatch on top of the turret is popped open (hatch lid standing up), and a tank commander's head and shoulders stick out of it: steel helmet painted the same cobalt blue as the tank, khaki uniform, natural skin.
+2. Two infantrymen riding on the tank, SITTING on the rear engine deck on the LEFT end of the hull (behind the turret), side by side, seen from the side, knees up, facing right toward the front, one holding his rifle upright between his knees. Their steel helmets are the same cobalt blue as the tank; their uniforms are khaki-drab with khaki backpacks; rifles slung or held upright, not aimed.
+Nothing else on these men is blue. No other changes.
+
+The background of the WHOLE image must stay one flat, uniform, pure magenta colour (#FF00FF): no gradient, no texture, no shadows, no text. Soft neutral cool light as in the original; NOT sepia, golden or warm-tinted.

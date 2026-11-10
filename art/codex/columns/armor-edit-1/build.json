@@ -1,0 +1,34 @@
+{
+ "arm-edit-a": {
+  "target_bbox_w": 89,
+  "bbox_wh": [
+   89,
+   54
+  ],
+  "coverage": 0.532
+ },
+ "arm-edit-b": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   53
+  ],
+  "coverage": 0.561
+ },
+ "arm-edit-c": {
+  "target_bbox_w": 92,
+  "bbox_wh": [
+   92,
+   55
+  ],
+  "coverage": 0.54
+ },
+ "arm-edit-d": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   54
+  ],
+  "coverage": 0.563
+ }
+}

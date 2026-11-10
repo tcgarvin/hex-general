@@ -1,0 +1,49 @@
+{
+ "sheet": "raw/armor-edit-1-{a,b,c,d}.png (one edit per call)",
+ "cells": [
+  {
+   "cell": 0,
+   "file": "arm-edit-a.png",
+   "crop_xyxy": [
+    257,
+    254,
+    1278,
+    873
+   ],
+   "sheet": "raw/armor-edit-1-a.png"
+  },
+  {
+   "cell": 1,
+   "file": "arm-edit-b.png",
+   "crop_xyxy": [
+    251,
+    273,
+    1278,
+    873
+   ],
+   "sheet": "raw/armor-edit-1-b.png"
+  },
+  {
+   "cell": 2,
+   "file": "arm-edit-c.png",
+   "crop_xyxy": [
+    232,
+    247,
+    1277,
+    873
+   ],
+   "sheet": "raw/armor-edit-1-c.png"
+  },
+  {
+   "cell": 3,
+   "file": "arm-edit-d.png",
+   "crop_xyxy": [
+    246,
+    250,
+    1277,
+    872
+   ],
+   "sheet": "raw/armor-edit-1-d.png"
+  }
+ ]
+}

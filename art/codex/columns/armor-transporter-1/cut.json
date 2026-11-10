@@ -1,0 +1,97 @@
+{
+ "sheet": "raw/armor-transporter-1-{a,b,c,d}.png (one edit per call; -w120 crops are symlinks of -w90)",
+ "cells": [
+  {
+   "cell": 0,
+   "file": "arm-tt-a-w90.png",
+   "crop_xyxy": [
+    47,
+    223,
+    1726,
+    766
+   ],
+   "sheet": "raw/armor-transporter-1-a.png"
+  },
+  {
+   "cell": 1,
+   "file": "arm-tt-a-w120.png",
+   "crop_xyxy": [
+    47,
+    223,
+    1726,
+    766
+   ],
+   "sheet": "raw/armor-transporter-1-a.png",
+   "source_symlink_of": "arm-tt-a-w90.png"
+  },
+  {
+   "cell": 2,
+   "file": "arm-tt-b-w90.png",
+   "crop_xyxy": [
+    96,
+    90,
+    2123,
+    656
+   ],
+   "sheet": "raw/armor-transporter-1-b.png"
+  },
+  {
+   "cell": 3,
+   "file": "arm-tt-b-w120.png",
+   "crop_xyxy": [
+    96,
+    90,
+    2123,
+    656
+   ],
+   "sheet": "raw/armor-transporter-1-b.png",
+   "source_symlink_of": "arm-tt-b-w90.png"
+  },
+  {
+   "cell": 4,
+   "file": "arm-tt-c-w90.png",
+   "crop_xyxy": [
+    61,
+    240,
+    1473,
+    811
+   ],
+   "sheet": "raw/armor-transporter-1-c.png"
+  },
+  {
+   "cell": 5,
+   "file": "arm-tt-c-w120.png",
+   "crop_xyxy": [
+    61,
+    240,
+    1473,
+    811
+   ],
+   "sheet": "raw/armor-transporter-1-c.png",
+   "source_symlink_of": "arm-tt-c-w90.png"
+  },
+  {
+   "cell": 6,
+   "file": "arm-tt-d-w90.png",
+   "crop_xyxy": [
+    38,
+    193,
+    1735,
+    745
+   ],
+   "sheet": "raw/armor-transporter-1-d.png"
+  },
+  {
+   "cell": 7,
+   "file": "arm-tt-d-w120.png",
+   "crop_xyxy": [
+    38,
+    193,
+    1735,
+    745
+   ],
+   "sheet": "raw/armor-transporter-1-d.png",
+   "source_symlink_of": "arm-tt-d-w90.png"
+  }
+ ]
+}

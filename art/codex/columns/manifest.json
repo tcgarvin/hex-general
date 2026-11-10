@@ -1,0 +1,561 @@
+{
+ "generated": "2026-11-09",
+ "generator": "codex-cli 0.165.0, codex exec, built-in image_generation tool (ChatGPT login)",
+ "status": "candidates only, not ratified, not applied",
+ "first_pass_picks": {
+  "infantry": "infantry-sheet-1/inf-truck-2 (alt: infantry-sheet-1/inf-march-2, inf-open-3)",
+  "artillery": "artillery-sheet-1/art-tractor-1 (alt: mixed-sheet-2/art-tractor-2, artillery-sheet-1/art-truck-2)",
+  "armor": "armor-transporter-1/arm-tt-c-w120 (the shipped tank on a compact Dragon-Wagon-style transporter, 120 px footprint; per user direction 2026-11-09). Earlier: armor-edit-1/arm-edit-b (riders), armor-sheet-3/arm-riders-1 (rejected: 'a different tank all told')."
+ },
+ "cut": "python3 cut_sheet.py raw/<sheet>.png --names <12 comma-separated, row-major> --out-dir <sheet>/src  (hi-res RGBA crops, despilled colour re-composited over the sampled bg, unit.py load_crop contract)",
+ "build": "python3 build_pairs.py <sheet-dir>...  (scripts/tile-foundry/unit.py build_unit, classify+rim from art/foundry/manifest.json units; mirror=false; target_bbox_w 90 vehicles / 81 marching files; coverage band open [0.02,0.98]) -> <sheet>/<name>_{base,mask}.png + <sheet>/build.json",
+ "review": "python3 review_renders.py <sheet-dir>... --picks infantry=<sheet>/<name>,artillery=...,armor=...  -> review/, then scripts/review-page.py",
+ "sheets": [
+  {
+   "sheet": "infantry-sheet-1",
+   "prompt": "prompts/infantry-sheet-1.txt",
+   "raw": "raw/infantry-sheet-1.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c236-566b-71c3-8d0e-2ca5b94318b2",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c236-566b-71c3-8d0e-2ca5b94318b2/exec-506cfb5a-992c-4589-a2d8-96c67c87d5b9.png",
+   "wall_seconds": 56,
+   "key": "magenta",
+   "cut_dir": "infantry-sheet-1/src",
+   "pairs_dir": "infantry-sheet-1",
+   "cells_row_major": [
+    "inf-truck-1",
+    "inf-truck-2",
+    "inf-truck-3",
+    "inf-truck-4",
+    "inf-march-1",
+    "inf-march-2",
+    "inf-march-3",
+    "inf-march-4",
+    "inf-open-1",
+    "inf-open-2",
+    "inf-open-3",
+    "inf-open-4"
+   ],
+   "gate_failures": {}
+  },
+  {
+   "sheet": "artillery-sheet-1",
+   "prompt": "prompts/artillery-sheet-1.txt",
+   "raw": "raw/artillery-sheet-1.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c236-566d-76c1-aff6-6302971b35f8",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c236-566d-76c1-aff6-6302971b35f8/exec-d0039ef1-ae47-47d3-a132-6e7240c91b85.png",
+   "wall_seconds": 67,
+   "key": "magenta",
+   "cut_dir": "artillery-sheet-1/src",
+   "pairs_dir": "artillery-sheet-1",
+   "cells_row_major": [
+    "art-truck-1",
+    "art-truck-2",
+    "art-truck-3",
+    "art-truck-4",
+    "art-tractor-1",
+    "art-tractor-2",
+    "art-tractor-3",
+    "art-tractor-4",
+    "art-halftrack-1",
+    "art-halftrack-2",
+    "art-halftrack-3",
+    "art-halftrack-4"
+   ],
+   "gate_failures": {
+    "art-halftrack-3": "art-halftrack-3: 1 cobalt-residue pixels in the base",
+    "art-tractor-2": "art-tractor-2: 1 cobalt-residue pixels in the base"
+   }
+  },
+  {
+   "sheet": "armor-sheet-1",
+   "prompt": "prompts/armor-sheet-1.txt",
+   "raw": "raw/armor-sheet-1.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c236-5674-7d12-85ba-da0b3b70e075",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c236-5674-7d12-85ba-da0b3b70e075/exec-79cc5235-cdfa-4d8c-ba53-e2a87fb8bb95.png",
+   "wall_seconds": 72,
+   "key": "magenta",
+   "cut_dir": "armor-sheet-1/src",
+   "pairs_dir": "armor-sheet-1",
+   "cells_row_major": [
+    "arm-reversed-1",
+    "arm-reversed-2",
+    "arm-reversed-3",
+    "arm-reversed-4",
+    "arm-transporter-1",
+    "arm-transporter-2",
+    "arm-transporter-3",
+    "arm-transporter-4",
+    "arm-tarp-1",
+    "arm-tarp-2",
+    "arm-tarp-3",
+    "arm-tarp-4"
+   ],
+   "gate_failures": {}
+  },
+  {
+   "sheet": "mixed-sheet-2",
+   "prompt": "prompts/mixed-sheet-2.txt",
+   "raw": "raw/mixed-sheet-2.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c237-e11e-7b62-935c-b384bceb4156",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c237-e11e-7b62-935c-b384bceb4156/exec-d647463b-c9cc-410e-ab90-d929cd473840.png",
+   "wall_seconds": 68,
+   "key": "magenta",
+   "cut_dir": "mixed-sheet-2/src",
+   "pairs_dir": "mixed-sheet-2",
+   "cells_row_major": [
+    "inf-march-1",
+    "inf-march-2",
+    "inf-open-1",
+    "inf-open-2",
+    "art-tractor-1",
+    "art-tractor-2",
+    "art-truck-1",
+    "art-truck-2",
+    "arm-reversed-1",
+    "arm-reversed-2",
+    "arm-transporter-1",
+    "arm-transporter-2"
+   ],
+   "gate_failures": {
+    "art-tractor-1": "art-tractor-1: 1 cobalt-residue pixels in the base",
+    "art-truck-1": "art-truck-1: 1 cobalt-residue pixels in the base",
+    "inf-march-1": "inf-march-1: 1 cobalt-residue pixels in the base"
+   }
+  },
+  {
+   "sheet": "armor-sheet-3",
+   "prompt": "prompts/armor-sheet-3.txt",
+   "raw": "raw/armor-sheet-3.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c23b-4117-7552-952c-d2ca864b0493",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c23b-4117-7552-952c-d2ca864b0493/exec-2477743e-28d3-4b2b-91b3-4948026a4526.png",
+   "wall_seconds": 67,
+   "key": "magenta",
+   "cut_dir": "armor-sheet-3/src",
+   "pairs_dir": "armor-sheet-3",
+   "cells_row_major": [
+    "arm-riders-1",
+    "arm-riders-2",
+    "arm-riders-3",
+    "arm-riders-4",
+    "arm-transporter-1",
+    "arm-transporter-2",
+    "arm-transporter-3",
+    "arm-transporter-4",
+    "arm-reversed-1",
+    "arm-reversed-2",
+    "arm-reversed-3",
+    "arm-reversed-4"
+   ],
+   "gate_failures": {}
+  }
+ ],
+ "edits": {
+  "armor-edit-1": {
+   "what": "image EDITS of the shipped deployed tank (codex exec -i): same tank, turret hatch open with a commander's head and shoulders out, two infantry riders on the rear deck",
+   "reference": "armor-edit-1/ref.png = art/foundry/units/gens/extracted/v3r1-tank-r2c0.png (the ratified hi-res cobalt source, native EAST facing) scaled 1.25x, centred low on a 1200x800 flat #FF00FF canvas",
+   "orientation": "kept east like the source; mirror=true exactly as the shipped armor entry",
+   "scale": "register_edit.py: per-edit target_bbox_w so the track run lands at the shipped armor's scale (k = edit/source track width, ~1.605-1.609; Codex returns 1536x1024 = 1.28 x the 1200x800 ref)",
+   "build": "python3 register_edit.py armor-edit-1 --unit armor && python3 build_pairs.py armor-edit-1",
+   "review": "python3 review_edit.py armor-edit-1 --unit armor -> review/armor-edit-1-{side,board,overlay,tint}.png + armor-edit-1-metrics.json",
+   "calls": [
+    {
+     "sheet": "armor-edit-1-a",
+     "prompt": "prompts/armor-edit-1-a.txt",
+     "reference": "armor-edit-1/ref.png",
+     "raw": "raw/armor-edit-1-a.png",
+     "raw_size": [
+      1536,
+      1024
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c249-2139-7de1-a790-93b0299fdea7",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c249-2139-7de1-a790-93b0299fdea7/exec-c0f4d22a-9d56-4ea7-a45a-5b979ee0d7d5.png",
+     "wall_seconds": 45,
+     "key": "magenta",
+     "cut": "armor-edit-1/src/arm-edit-a.png (cut_sheet.py --grid 1x1)",
+     "candidate": "arm-edit-a",
+     "target": {
+      "target_bbox_w": 89,
+      "mirror": true,
+      "k": 1.6067
+     },
+     "build": {
+      "target_bbox_w": 89,
+      "bbox_wh": [
+       89,
+       54
+      ],
+      "coverage": 0.532
+     },
+     "hull_match": {
+      "track_offset_as_built_px": [
+       0,
+       2
+      ],
+      "iou_as_built": 0.864,
+      "iou_aligned": 0.922,
+      "iou_aligned_hull_rows": 0.986,
+      "mean_abs_diff_aligned_0_255": 22.9,
+      "mean_abs_diff_as_built_0_255": 43.1
+     }
+    },
+    {
+     "sheet": "armor-edit-1-b",
+     "prompt": "prompts/armor-edit-1-b.txt",
+     "reference": "armor-edit-1/ref.png",
+     "raw": "raw/armor-edit-1-b.png",
+     "raw_size": [
+      1536,
+      1024
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c249-213e-78c3-81c3-cf7437e9b10c",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c249-213e-78c3-81c3-cf7437e9b10c/exec-caf49681-5bf7-4e43-b23d-9e871df53962.png",
+     "wall_seconds": 35,
+     "key": "magenta",
+     "cut": "armor-edit-1/src/arm-edit-b.png (cut_sheet.py --grid 1x1)",
+     "candidate": "arm-edit-b",
+     "target": {
+      "target_bbox_w": 90,
+      "mirror": true,
+      "k": 1.6047
+     },
+     "build": {
+      "target_bbox_w": 90,
+      "bbox_wh": [
+       90,
+       53
+      ],
+      "coverage": 0.561
+     },
+     "hull_match": {
+      "track_offset_as_built_px": [
+       0,
+       2
+      ],
+      "iou_as_built": 0.879,
+      "iou_aligned": 0.947,
+      "iou_aligned_hull_rows": 0.993,
+      "mean_abs_diff_aligned_0_255": 16.8,
+      "mean_abs_diff_as_built_0_255": 40.7
+     }
+    },
+    {
+     "sheet": "armor-edit-1-c",
+     "prompt": "prompts/armor-edit-1-c.txt",
+     "reference": "armor-edit-1/ref.png",
+     "raw": "raw/armor-edit-1-c.png",
+     "raw_size": [
+      1536,
+      1024
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c249-2139-71d3-8185-9f3b502b3a08",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c249-2139-71d3-8185-9f3b502b3a08/exec-8a995250-e4a9-4ee2-8635-7fa027891eab.png",
+     "wall_seconds": 39,
+     "key": "magenta",
+     "cut": "armor-edit-1/src/arm-edit-c.png (cut_sheet.py --grid 1x1)",
+     "candidate": "arm-edit-c",
+     "target": {
+      "target_bbox_w": 92,
+      "mirror": true,
+      "k": 1.6047
+     },
+     "build": {
+      "target_bbox_w": 92,
+      "bbox_wh": [
+       92,
+       55
+      ],
+      "coverage": 0.54
+     },
+     "hull_match": {
+      "track_offset_as_built_px": [
+       -1,
+       2
+      ],
+      "iou_as_built": 0.868,
+      "iou_aligned": 0.93,
+      "iou_aligned_hull_rows": 0.996,
+      "mean_abs_diff_aligned_0_255": 17.7,
+      "mean_abs_diff_as_built_0_255": 42.8
+     }
+    },
+    {
+     "sheet": "armor-edit-1-d",
+     "prompt": "prompts/armor-edit-1-d.txt",
+     "reference": "armor-edit-1/ref.png",
+     "raw": "raw/armor-edit-1-d.png",
+     "raw_size": [
+      1536,
+      1024
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c249-2139-7c50-9ef5-84bd58482e5e",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c249-2139-7c50-9ef5-84bd58482e5e/exec-a5715eb5-94ae-4368-9840-fecf162bb8c5.png",
+     "wall_seconds": 39,
+     "key": "magenta",
+     "cut": "armor-edit-1/src/arm-edit-d.png (cut_sheet.py --grid 1x1)",
+     "candidate": "arm-edit-d",
+     "target": {
+      "target_bbox_w": 90,
+      "mirror": true,
+      "k": 1.6086
+     },
+     "build": {
+      "target_bbox_w": 90,
+      "bbox_wh": [
+       90,
+       54
+      ],
+      "coverage": 0.563
+     },
+     "hull_match": {
+      "track_offset_as_built_px": [
+       -1,
+       2
+      ],
+      "iou_as_built": 0.86,
+      "iou_aligned": 0.916,
+      "iou_aligned_hull_rows": 0.985,
+      "mean_abs_diff_aligned_0_255": 22.9,
+      "mean_abs_diff_as_built_0_255": 41.1
+     }
+    }
+   ]
+  },
+  "armor-transporter-1": {
+   "what": "image EDITS (codex exec -i) putting the exact shipped tank on a WW2 tank transporter (tractor truck + multi-axle low-loader); hatches closed, no riders (d: commander's head out)",
+   "reference": "armor-transporter-1/ref.png = art/foundry/units/gens/extracted/v3r1-tank-r2c0.png at native size, at (90,260) on a 1200x800 flat #FF00FF canvas with the right ~40% left empty for the tractor",
+   "note": "Codex returned non-standard aspect ratios for these edits (1774x887, 2172x724, 1536x1024)",
+   "orientation": "rig faces east like the source; mirror=true as the shipped armor, so WEST in game",
+   "footprints": "each rig built twice by build_pairs.py via targets.json: whole-rig solid bbox 90 px (-w90) and 120 px (-w120)",
+   "match": "match_tank.py: FFT registration of the source's cobalt panels over the edit's, coarse-to-fine scale search -> k, offset, cobalt IoU, silhouette IoU (rows above the track band), tank width on the 128 canvas",
+   "build": "python3 match_tank.py armor-transporter-1 --unit armor && python3 build_pairs.py armor-transporter-1",
+   "review": "python3 review_transporter.py armor-transporter-1 -> review/armor-transporter-1-{side,board,tint,match}.png",
+   "calls": [
+    {
+     "sheet": "armor-transporter-1-a",
+     "variant": "Diamond T 980-style bonneted tractor, compact trailer",
+     "prompt": "prompts/armor-transporter-1-a.txt",
+     "reference": "armor-transporter-1/ref.png",
+     "raw": "raw/armor-transporter-1-a.png",
+     "raw_size": [
+      1774,
+      887
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c261-17eb-7a83-a3b4-b09673f997a0",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c261-17eb-7a83-a3b4-b09673f997a0/exec-988d50b9-43e3-449e-ae39-13ac2c3df688.png",
+     "wall_seconds": 45,
+     "key": "magenta",
+     "cut": "armor-transporter-1/src/arm-tt-a-w90.png (cut_sheet.py --grid 1x1; arm-tt-a-w120.png is a symlink to it)",
+     "builds": {
+      "w90": {
+       "target_bbox_w": 90,
+       "bbox_wh": [
+        90,
+        29
+       ],
+       "coverage": 0.36
+      },
+      "w120": {
+       "target_bbox_w": 120,
+       "bbox_wh": [
+        120,
+        38
+       ],
+       "coverage": 0.359
+      }
+     },
+     "tank_match": {
+      "k": 1.102,
+      "offset": [
+       128,
+       0
+      ],
+      "cobalt_iou": 0.898,
+      "silhouette_iou": 0.935,
+      "rig_over_tank_width": 2.38,
+      "tank_w_in_canvas": {
+       "w90": 37.7,
+       "w120": 50.3
+      }
+     }
+    },
+    {
+     "sheet": "armor-transporter-1-b",
+     "variant": "Diamond T 980-style bonneted tractor, longer trailer with folded ramp",
+     "prompt": "prompts/armor-transporter-1-b.txt",
+     "reference": "armor-transporter-1/ref.png",
+     "raw": "raw/armor-transporter-1-b.png",
+     "raw_size": [
+      2172,
+      724
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c261-17e7-73c0-bd83-63dbb1285e36",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c261-17e7-73c0-bd83-63dbb1285e36/exec-e56ee07f-6b60-4796-b9d3-f2f6c370fb54.png",
+     "wall_seconds": 45,
+     "key": "magenta",
+     "cut": "armor-transporter-1/src/arm-tt-b-w90.png (cut_sheet.py --grid 1x1; arm-tt-b-w120.png is a symlink to it)",
+     "builds": {
+      "w90": {
+       "target_bbox_w": 90,
+       "bbox_wh": [
+        90,
+        25
+       ],
+       "coverage": 0.347
+      },
+      "w120": {
+       "target_bbox_w": 120,
+       "bbox_wh": [
+        120,
+        33
+       ],
+       "coverage": 0.347
+      }
+     },
+     "tank_match": {
+      "k": 1.206,
+      "offset": [
+       210,
+       0
+      ],
+      "cobalt_iou": 0.894,
+      "silhouette_iou": 0.929,
+      "rig_over_tank_width": 2.63,
+      "tank_w_in_canvas": {
+       "w90": 34.2,
+       "w120": 45.6
+      }
+     }
+    },
+    {
+     "sheet": "armor-transporter-1-c",
+     "variant": "M26 Dragon Wagon-style armoured-cab tractor, compact trailer",
+     "prompt": "prompts/armor-transporter-1-c.txt",
+     "reference": "armor-transporter-1/ref.png",
+     "raw": "raw/armor-transporter-1-c.png",
+     "raw_size": [
+      1536,
+      1024
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c261-17e9-7e03-a005-e549ee0df9fc",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c261-17e9-7e03-a005-e549ee0df9fc/exec-322f1957-54f0-4f66-aae1-ccd9ae212598.png",
+     "wall_seconds": 47,
+     "key": "magenta",
+     "cut": "armor-transporter-1/src/arm-tt-c-w90.png (cut_sheet.py --grid 1x1; arm-tt-c-w120.png is a symlink to it)",
+     "builds": {
+      "w90": {
+       "target_bbox_w": 90,
+       "bbox_wh": [
+        90,
+        35
+       ],
+       "coverage": 0.441
+      },
+      "w120": {
+       "target_bbox_w": 120,
+       "bbox_wh": [
+        120,
+        48
+       ],
+       "coverage": 0.442
+      }
+     },
+     "tank_match": {
+      "k": 1.228,
+      "offset": [
+       58,
+       0
+      ],
+      "cobalt_iou": 0.884,
+      "silhouette_iou": 0.927,
+      "rig_over_tank_width": 1.8,
+      "tank_w_in_canvas": {
+       "w90": 50.1,
+       "w120": 66.7
+      }
+     }
+    },
+    {
+     "sheet": "armor-transporter-1-d",
+     "variant": "M26 Dragon Wagon-style armoured-cab tractor, longer trailer with ramp, commander's head out",
+     "prompt": "prompts/armor-transporter-1-d.txt",
+     "reference": "armor-transporter-1/ref.png",
+     "raw": "raw/armor-transporter-1-d.png",
+     "raw_size": [
+      1774,
+      887
+     ],
+     "raw_mode": "RGB",
+     "codex_thread": "01a1c261-17e3-7cd2-8191-b5b2a5663925",
+     "codex_source": "/home/timg/.codex/generated_images/01a1c261-17e3-7cd2-8191-b5b2a5663925/exec-a8b44af3-11a7-45ae-8d2f-e212a0403f3e.png",
+     "wall_seconds": 53,
+     "key": "magenta",
+     "cut": "armor-transporter-1/src/arm-tt-d-w90.png (cut_sheet.py --grid 1x1; arm-tt-d-w120.png is a symlink to it)",
+     "builds": {
+      "w90": {
+       "target_bbox_w": 90,
+       "bbox_wh": [
+        90,
+        29
+       ],
+       "coverage": 0.34
+      },
+      "w120": {
+       "target_bbox_w": 120,
+       "bbox_wh": [
+        120,
+        39
+       ],
+       "coverage": 0.34
+      }
+     },
+     "tank_match": {
+      "k": 1.08,
+      "offset": [
+       220,
+       30
+      ],
+      "cobalt_iou": 0.863,
+      "silhouette_iou": 0.944,
+      "rig_over_tank_width": 2.46,
+      "tank_w_in_canvas": {
+       "w90": 36.6,
+       "w120": 48.8
+      }
+     }
+    }
+   ]
+  }
+ }
+}

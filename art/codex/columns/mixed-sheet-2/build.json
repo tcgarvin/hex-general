@@ -1,0 +1,83 @@
+{
+ "arm-reversed-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   74
+  ],
+  "coverage": 0.437
+ },
+ "arm-reversed-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   76
+  ],
+  "coverage": 0.434
+ },
+ "arm-transporter-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   54
+  ],
+  "coverage": 0.373
+ },
+ "arm-transporter-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   54
+  ],
+  "coverage": 0.349
+ },
+ "art-tractor-1": {
+  "gate_failure": "art-tractor-1: 1 cobalt-residue pixels in the base"
+ },
+ "art-tractor-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   52
+  ],
+  "coverage": 0.448
+ },
+ "art-truck-1": {
+  "gate_failure": "art-truck-1: 1 cobalt-residue pixels in the base"
+ },
+ "art-truck-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   51
+  ],
+  "coverage": 0.48
+ },
+ "inf-march-1": {
+  "gate_failure": "inf-march-1: 1 cobalt-residue pixels in the base"
+ },
+ "inf-march-2": {
+  "target_bbox_w": 81,
+  "bbox_wh": [
+   81,
+   58
+  ],
+  "coverage": 0.311
+ },
+ "inf-open-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   74
+  ],
+  "coverage": 0.507
+ },
+ "inf-open-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   91,
+   76
+  ],
+  "coverage": 0.495
+ }
+}

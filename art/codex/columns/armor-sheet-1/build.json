@@ -1,0 +1,98 @@
+{
+ "arm-reversed-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   64
+  ],
+  "coverage": 0.518
+ },
+ "arm-reversed-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   91,
+   65
+  ],
+  "coverage": 0.448
+ },
+ "arm-reversed-3": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   64
+  ],
+  "coverage": 0.445
+ },
+ "arm-reversed-4": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   65
+  ],
+  "coverage": 0.481
+ },
+ "arm-tarp-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   72
+  ],
+  "coverage": 0.275
+ },
+ "arm-tarp-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   91,
+   72
+  ],
+  "coverage": 0.277
+ },
+ "arm-tarp-3": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   72
+  ],
+  "coverage": 0.298
+ },
+ "arm-tarp-4": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   72
+  ],
+  "coverage": 0.274
+ },
+ "arm-transporter-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   46
+  ],
+  "coverage": 0.425
+ },
+ "arm-transporter-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   91,
+   46
+  ],
+  "coverage": 0.426
+ },
+ "arm-transporter-3": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   46
+  ],
+  "coverage": 0.403
+ },
+ "arm-transporter-4": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   46
+  ],
+  "coverage": 0.419
+ }
+}

@@ -1,0 +1,58 @@
+{
+ "arm-tt-a": {
+  "k": 1.102,
+  "offset": [
+   128,
+   0
+  ],
+  "cobalt_iou": 0.898,
+  "silhouette_iou": 0.935,
+  "rig_over_tank_width": 2.38,
+  "tank_w_in_canvas": {
+   "w90": 37.7,
+   "w120": 50.3
+  }
+ },
+ "arm-tt-b": {
+  "k": 1.206,
+  "offset": [
+   210,
+   0
+  ],
+  "cobalt_iou": 0.894,
+  "silhouette_iou": 0.929,
+  "rig_over_tank_width": 2.63,
+  "tank_w_in_canvas": {
+   "w90": 34.2,
+   "w120": 45.6
+  }
+ },
+ "arm-tt-c": {
+  "k": 1.228,
+  "offset": [
+   58,
+   0
+  ],
+  "cobalt_iou": 0.884,
+  "silhouette_iou": 0.927,
+  "rig_over_tank_width": 1.8,
+  "tank_w_in_canvas": {
+   "w90": 50.1,
+   "w120": 66.7
+  }
+ },
+ "arm-tt-d": {
+  "k": 1.08,
+  "offset": [
+   220,
+   30
+  ],
+  "cobalt_iou": 0.863,
+  "silhouette_iou": 0.944,
+  "rig_over_tank_width": 2.46,
+  "tank_w_in_canvas": {
+   "w90": 36.6,
+   "w120": 48.8
+  }
+ }
+}

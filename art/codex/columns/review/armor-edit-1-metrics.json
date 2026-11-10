@@ -1,0 +1,46 @@
+{
+ "arm-edit-a": {
+  "track_offset_as_built_px": [
+   0,
+   2
+  ],
+  "iou_as_built": 0.864,
+  "iou_aligned": 0.922,
+  "iou_aligned_hull_rows": 0.986,
+  "mean_abs_diff_aligned_0_255": 22.9,
+  "mean_abs_diff_as_built_0_255": 43.1
+ },
+ "arm-edit-b": {
+  "track_offset_as_built_px": [
+   0,
+   2
+  ],
+  "iou_as_built": 0.879,
+  "iou_aligned": 0.947,
+  "iou_aligned_hull_rows": 0.993,
+  "mean_abs_diff_aligned_0_255": 16.8,
+  "mean_abs_diff_as_built_0_255": 40.7
+ },
+ "arm-edit-c": {
+  "track_offset_as_built_px": [
+   -1,
+   2
+  ],
+  "iou_as_built": 0.868,
+  "iou_aligned": 0.93,
+  "iou_aligned_hull_rows": 0.996,
+  "mean_abs_diff_aligned_0_255": 17.7,
+  "mean_abs_diff_as_built_0_255": 42.8
+ },
+ "arm-edit-d": {
+  "track_offset_as_built_px": [
+   -1,
+   2
+  ],
+  "iou_as_built": 0.86,
+  "iou_aligned": 0.916,
+  "iou_aligned_hull_rows": 0.985,
+  "mean_abs_diff_aligned_0_255": 22.9,
+  "mean_abs_diff_as_built_0_255": 41.1
+ }
+}

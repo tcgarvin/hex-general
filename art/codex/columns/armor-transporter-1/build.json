@@ -1,0 +1,66 @@
+{
+ "arm-tt-a-w120": {
+  "target_bbox_w": 120,
+  "bbox_wh": [
+   120,
+   38
+  ],
+  "coverage": 0.359
+ },
+ "arm-tt-a-w90": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   29
+  ],
+  "coverage": 0.36
+ },
+ "arm-tt-b-w120": {
+  "target_bbox_w": 120,
+  "bbox_wh": [
+   120,
+   33
+  ],
+  "coverage": 0.347
+ },
+ "arm-tt-b-w90": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   25
+  ],
+  "coverage": 0.347
+ },
+ "arm-tt-c-w120": {
+  "target_bbox_w": 120,
+  "bbox_wh": [
+   120,
+   48
+  ],
+  "coverage": 0.442
+ },
+ "arm-tt-c-w90": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   35
+  ],
+  "coverage": 0.441
+ },
+ "arm-tt-d-w120": {
+  "target_bbox_w": 120,
+  "bbox_wh": [
+   120,
+   39
+  ],
+  "coverage": 0.34
+ },
+ "arm-tt-d-w90": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   29
+  ],
+  "coverage": 0.34
+ }
+}

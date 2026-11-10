@@ -1,0 +1,22 @@
+{
+ "arm-edit-a": {
+  "target_bbox_w": 89,
+  "mirror": true,
+  "k": 1.6067
+ },
+ "arm-edit-b": {
+  "target_bbox_w": 90,
+  "mirror": true,
+  "k": 1.6047
+ },
+ "arm-edit-c": {
+  "target_bbox_w": 92,
+  "mirror": true,
+  "k": 1.6047
+ },
+ "arm-edit-d": {
+  "target_bbox_w": 90,
+  "mirror": true,
+  "k": 1.6086
+ }
+}

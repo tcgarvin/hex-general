@@ -1,0 +1,13 @@
+Use your built-in image generation tool to EDIT the attached image and produce ONE new image. Do not write code, do not run shell commands, do not edit any files. Just generate the edited image and then reply with one line saying it is done.
+
+The attached image is a painted game sprite of a WWII medium tank on a flat pure magenta background. The tank faces RIGHT: the gun points to the right, the sloped front hull is on the right, the rear engine deck is on the left.
+
+Turn it into the SAME tank riding on a WWII tank transporter, seen from the same side view:
+- Keep the tank EXACTLY the same: same hull, tracks, road wheels, turret, gun, proportions, size, viewing angle, cobalt-blue paint and its shading, dark outline, lighting and painterly style. Do not redraw, restyle, recolour, shrink, enlarge or rotate the tank. The gun still points forward to the RIGHT. All hatches closed, nobody on the tank.
+- Under the tank: a heavy multi-axle low-loader trailer. The tank's tracks rest on the trailer's flat deck. Trailer deck, frame, wheels, tyres and chains are dark steel grey and black, with a little khaki; NO blue on the trailer.
+- In FRONT of the tank, on the RIGHT, coupled to the front of the trailer: a WWII Diamond T 980-style heavy tractor truck: long bonnet (hood) with a big upright radiator grille at the front, open-topped or soft-top cab behind the bonnet, two rear driven axles, a spare tyre behind the cab. The tractor's cab and bonnet/hood panels are painted the same cobalt blue as the tank; its wheels, tyres, bumper, chassis and winch are dark steel grey and black, no blue. Windows are dark grey glass, never pink or magenta.
+- The whole rig drives to the RIGHT. The trailer is a little longer than the tank, with a sloped loading ramp folded up at its rear end (left). Fit the whole rig inside the image with a clear margin of magenta all round; if needed, place the rig so that the tank keeps its current size.
+
+Same painterly style for the truck and trailer as the tank: dark outline, soft overcast cool daylight from the upper left, neutral colour balance, NOT sepia, golden, warm-yellow or orange-tinted. No other blue, cyan or purple anywhere. No ground, no road, no shadow, no dust.
+
+The background of the WHOLE image must stay one flat, uniform, pure magenta colour (#FF00FF): no gradient, no texture, no text.

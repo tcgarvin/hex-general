@@ -1,0 +1,34 @@
+{
+ "arm-tt-a-w90": {
+  "target_bbox_w": 90,
+  "mirror": true
+ },
+ "arm-tt-a-w120": {
+  "target_bbox_w": 120,
+  "mirror": true
+ },
+ "arm-tt-b-w90": {
+  "target_bbox_w": 90,
+  "mirror": true
+ },
+ "arm-tt-b-w120": {
+  "target_bbox_w": 120,
+  "mirror": true
+ },
+ "arm-tt-c-w90": {
+  "target_bbox_w": 90,
+  "mirror": true
+ },
+ "arm-tt-c-w120": {
+  "target_bbox_w": 120,
+  "mirror": true
+ },
+ "arm-tt-d-w90": {
+  "target_bbox_w": 90,
+  "mirror": true
+ },
+ "arm-tt-d-w120": {
+  "target_bbox_w": 120,
+  "mirror": true
+ }
+}

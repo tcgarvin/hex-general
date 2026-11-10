@@ -1,0 +1,88 @@
+{
+ "art-halftrack-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   36
+  ],
+  "coverage": 0.423
+ },
+ "art-halftrack-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   36
+  ],
+  "coverage": 0.414
+ },
+ "art-halftrack-3": {
+  "gate_failure": "art-halftrack-3: 1 cobalt-residue pixels in the base"
+ },
+ "art-halftrack-4": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   91,
+   36
+  ],
+  "coverage": 0.437
+ },
+ "art-tractor-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   46
+  ],
+  "coverage": 0.454
+ },
+ "art-tractor-2": {
+  "gate_failure": "art-tractor-2: 1 cobalt-residue pixels in the base"
+ },
+ "art-tractor-3": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   91,
+   45
+  ],
+  "coverage": 0.481
+ },
+ "art-tractor-4": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   43
+  ],
+  "coverage": 0.493
+ },
+ "art-truck-1": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   48
+  ],
+  "coverage": 0.592
+ },
+ "art-truck-2": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   47
+  ],
+  "coverage": 0.564
+ },
+ "art-truck-3": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   91,
+   46
+  ],
+  "coverage": 0.557
+ },
+ "art-truck-4": {
+  "target_bbox_w": 90,
+  "bbox_wh": [
+   90,
+   47
+  ],
+  "coverage": 0.6
+ }
+}
