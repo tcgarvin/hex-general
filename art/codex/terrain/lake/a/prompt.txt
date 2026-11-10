@@ -1,0 +1,26 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive meadow grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). In every description below, north is up, east is right. On every hexagon a flat dark slate blob marks exactly where the open water of a small lake lies.
+
+Image 2 is the target painted wargame map: an all-meadow countryside map. Image 3 is a close-up of the small lake on that map: copy how its still water and its low earth shore are painted. Image 4 shows three finished river hexagons from the same game: the lake water must be EXACTLY the same water as these rivers (same colour, same darkness, same ripples), and the shore must be the same low bank as their banks, so a river flowing into the lake reads as the same water. Ignore everything else in images 2, 3 and 4: units, icons, panels, forests, roads, the magenta, and the thin hex grid lines.
+
+Edit image 1: in every hexagon, repaint the blob as a calm natural lake on a meadow, seen from straight above.
+- Water: dark slate grey with a cool blue-teal cast, clearly darker than the grass, desaturated, NOT bright blue, NOT green, NOT pale, NOT shiny, exactly like the river water in image 4. Still and calm: slightly darker water along the shore, a few faint, broken, lighter grey-blue ripples and soft reflections scattered across the open water as in images 3 and 4, a little lighter and quieter toward the middle. No waves, no foam, no white highlights.
+- Shore: the open water fills the whole blob; the shore sits just outside it on the grass, the same all round, like the river banks in image 4. Right at the water a very thin, broken dark brown undercut shadow (not a continuous outline); above it a few broken, patchy pale khaki spots of dry earth and a little pale gravel (not a continuous stripe); here and there a small grass tuft overhangs the water. The shoreline is softly irregular with small bays and points of different sizes: never a smooth circle, never straight, and NOT a regular sawtooth, zigzag or scalloped edge.
+- A FEW small details on the shore only, as described per hexagon below: a small clump of dark olive reeds standing in the shallows, or two or three small grey stones at the water's edge. Each detail is small (a reed clump about one-twentieth of the hexagon's width) and sits at the shore, never out in the open water and never near the hexagon's edge.
+- The grass between the lake and the hexagon's edge keeps exactly the same colour, texture and brightness as the rest of the hexagon: no darker halo, no shadow band, no mud ring, no path around the lake.
+
+Each hexagon is the same kind of lake but with its own shore details:
+1. One clump of reeds on the north-west shore; two small stones on the south-east shore.
+2. Two small clumps of reeds close together on the south shore; a patch of pale gravel beach on the north-east shore.
+3. One clump of reeds on the east shore; three small stones on the west shore.
+4. One clump of reeds on the north shore and one on the south-west shore; nothing else.
+5. A patch of pale gravel beach on the west shore; two small stones on the north-east shore.
+6. One clump of reeds on the south-east shore; a small grassy point reaching a little into the water on the north-west shore.
+7. Two small stones on the north shore; one clump of reeds on the east shore.
+8. One clump of reeds on the west shore; a patch of pale gravel beach on the south shore.
+9. One clump of reeds on the north-east shore; two small stones on the south-west shore.
+
+EVERY HEXAGON MUST LOOK DIFFERENT, following its own numbered description above and its own blob outline. Do not repeat one layout across the sheet.
+
+Keep EXACTLY as they are: the grass everywhere away from the lake (same colour, same fine texture, same brightness), every hexagon's position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add anything else: no trees, no bushes, no houses, no huts, no boats, no piers, no jetties, no bridges, no roads, no paths, no islands, no lily pads, no animals, no outlines, no borders, no grid lines, no labels, no text, nothing on the magenta. Seen from straight above. Light from the upper left (west-north-west). Soft overcast daylight, muted natural colours, the same palette as image 2: hand-painted with a fine dry-brush grain of short strokes, NOT bright, NOT glossy, NOT airbrushed.

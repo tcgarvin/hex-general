@@ -11,8 +11,10 @@ previewed before and after.
 The selection logic is a line-for-line port of the frontend (keep in step):
 
     frontend/src/board/tiles.ts       discovery, variant groups, variantIndex
-    frontend/src/board/riverTiles.ts  connectedEdges, riverCourseEdges, orientedRiverTile
-    frontend/src/board/roadTiles.ts   roadConnectedEdges, roadTileRefs
+    frontend/src/board/courseGraph.ts courseGraphEdges (local junction pruning), shapePenalty
+    frontend/src/board/riverTiles.ts  connectedEdges, riverOutletDirection, riverCourseEdges,
+                                      orientedRiverTile
+    frontend/src/board/roadTiles.ts   roadConnectedEdges, roadCourseEdges, roadTileRefs
     frontend/src/board/hexTile.ts     per-hex texture + mirror choice
     frontend/src/board/hex.ts         flat-top axial -> pixel (via tile-foundry/hexgeom.py)
     frontend/src/board/Board.tsx      draw order: base fill, tile sprite, grid, vector roads
@@ -35,7 +37,7 @@ Options:
 
 ASCII map format: one terrain character per hex in the scenario alphabet
 (``.`` plains, ``w`` woods, ``h`` hills, ``~`` river, ``=`` bridge, ``t`` town,
-``c`` city), rows top to bottom, authored in the scenario's flat-top odd-q offset
+``c`` city, ``o`` lake), rows top to bottom, authored in the scenario's flat-top odd-q offset
 grid. Optionally a ``[roads]`` section follows with a same-sized grid of ``#``
 (road) / ``.`` (none); the terrain section may be headed ``[terrain]``. Lines
 starting with ``;`` and blank lines are ignored.
@@ -43,6 +45,16 @@ starting with ``;`` and blank lines are ignored.
 Prints the tile file used for each (terrain, shape) group and lists every hex
 that fell back to ``--fallback``, to a generic ``00`` tile, or to a vector road,
 so missing art is obvious. Raises on malformed maps or tile sets.
+
+Lakes (``o``) are cosmetic-variant terrain (``lake/NN.png``, hashed like woods)
+and, until lake art ships, draw as their flat base fill when no tile set has
+any. They are not river-like, except for the **mouth rule** (``mouth_direction``):
+a river or bridge hex that ends at a lake gains one edge toward it, so its
+oriented tile runs water to that shore, and ``--joins`` draws a ``lake/mouth_*``
+sprite on that edge (plus lake-lake ``edge_*``/``vert_*`` joins like woods).
+The **edge rule** (``edge_direction``, below the mouth rule) does the same for a
+river or bridge hex on the map border: its course runs off the map instead of
+ending in a cap.
 """
 
 from __future__ import annotations
@@ -82,10 +94,14 @@ TERRAIN_CHARS: dict[str, str] = {
     "=": "bridge",
     "t": "town",
     "c": "city",
+    "o": "lake",
 }
 ROAD_CHAR = "#"
 NO_ROAD_CHAR = "."
-COSMETIC_TERRAINS = ("plains", "woods", "hills", "town", "city")
+COSMETIC_TERRAINS = ("plains", "woods", "hills", "town", "city", "lake")
+# Terrains that may have no art at all yet: their hexes draw only the flat base
+# fill (TERRAIN_FILL) instead of raising. Lake art is still a candidate set.
+FILL_ONLY_OK_TERRAINS = ("lake",)
 # Opt-in site overlay (``[sites]`` map section + ``--sites <dir>``): economic site
 # tiles drawn in place of a plains hex's tile, from ``<dir>/<kind>/l<level>_<nn>.png``.
 SITE_KINDS = ("base", "farm", "oil_field", "steel_mill", "factory")
@@ -101,6 +117,7 @@ BASE_STAGES: dict[int, tuple[tuple[int, int], ...]] = {
     4: ((0, 0), (1, 0), (0, 1), (1, 1)),
 }
 RIVER_LIKE = ("river", "bridge")
+LAKE = "lake"
 
 # --- render constants (frontend/src/board/{hex,palette}.ts, Board.tsx) --------
 
@@ -142,6 +159,7 @@ TERRAIN_FILL: dict[str, int] = {
     "bridge": 0x877353,
     "town": 0x8F7150,
     "city": 0x5A4636,
+    "lake": 0x41504C,  # the river fill: one water colour
 }
 
 
@@ -248,11 +266,14 @@ def build_map(
 
 
 def _validate_river_bridges(game_map: GameMap) -> None:
-    """The loader's SPEC §3.4 rules: no road on river; a bridge is a road on a river."""
+    """The loader's SPEC §3.4 rules: no road on river; a bridge is a road on a
+    river. A lake is impassable open water, so it carries no road either."""
     for h in game_map.hexes:
         where = f"col={h.col}, row={h.row}"
         if h.terrain == "river" and h.road:
             raise MapError(f"road runs over river at {where}; use a bridge ('=')")
+        if h.terrain == LAKE and h.road:
+            raise MapError(f"road runs over lake at {where}; lakes are impassable")
         if h.terrain == "bridge":
             if not h.road:
                 raise MapError(f"bridge at {where} has no road; mark it '#' in roads")
@@ -440,11 +461,13 @@ def join_variant_index(q: int, r: int, code: int, count: int) -> int:
     """Join-sprite variant: ``variant_index`` with a third hash term.
 
     ``code`` is the edge direction 0 (SE), 1 (NE), 2 (N) from hex ``(q, r)``, or
-    3 + i for the vertex shared by ``(q, r)``, its d_i and d_(i+1) neighbours.
-    The frontend port is ``joinVariantIndex`` in frontend/src/board/joins.ts.
+    3 + i for the vertex shared by ``(q, r)``, its d_i and d_(i+1) neighbours, or
+    5 + d for a river mouth from river hex ``(q, r)`` toward its lake in
+    direction d (0..5). The frontend port is ``joinVariantIndex`` in
+    frontend/src/board/joins.ts (codes 0..4 today; mouths are not ported yet).
     """
-    if code not in range(5):
-        raise ValueError(f"join code must be 0..4, got {code}")
+    if code not in range(len(JOIN_KINDS)):
+        raise ValueError(f"join code must be 0..{len(JOIN_KINDS) - 1}, got {code}")
     if count <= 1:
         return 0
     h_float = (
@@ -485,7 +508,7 @@ def connected_edges(q: int, r: int, terrain_at: TerrainProbe) -> list[int]:
 
 
 def shape_penalty(edges: Sequence[int]) -> int:
-    """``riverTiles.ts shapePenalty``: awkwardness of a connected-edge set."""
+    """``courseGraph.ts shapePenalty``: awkwardness of a connected-edge set."""
     n = len(edges)
     if n == 0:
         return 0
@@ -502,6 +525,8 @@ def shape_penalty(edges: Sequence[int]) -> int:
     return [5, 9, 14, 20][n - 3]
 
 
+# Most chords one junction cluster may have and still be searched exhaustively
+# (2^k subsets); a bigger cluster is a blob and keeps its raw masks.
 MAX_CHORD_CANDIDATES = 16
 
 
@@ -509,92 +534,322 @@ def _hex_key(q: int, r: int) -> str:
     return f"{q},{r}"
 
 
-def river_course_edges(
-    coords: Iterable[tuple[int, int]], terrain_at: TerrainProbe
-) -> dict[str, list[int]]:
-    """``riverTiles.ts riverCourseEdges``: raw river adjacency, junction chords pruned.
+class _DisjointSets:
+    """Union-find over ``0..size-1`` (``courseGraph.ts DisjointSets``)."""
 
-    Keys are ``hex.ts hexKey`` strings (``"q,r"``) because the TS breaks score ties
-    by the lexicographic order of those strings; reproducing the tie-break needs
-    the same keys.
+    def __init__(self, size: int) -> None:
+        self.parent = list(range(size))
+
+    def find(self, x: int) -> int:
+        p = self.parent
+        while p[x] != x:
+            p[x] = p[p[x]]
+            x = p[x]
+        return x
+
+    def union(self, a: int, b: int) -> None:
+        ra, rb = self.find(a), self.find(b)
+        if ra != rb:
+            self.parent[ra] = rb
+
+
+@dataclass(frozen=True)
+class _Chord:
+    """A junction-triangle edge: id ``"keyA|keyB"`` (keyA < keyB), node ends."""
+
+    id: str
+    a: int
+    b: int
+
+
+def course_graph_edges(
+    coords: Iterable[tuple[int, int]], carries: Callable[[int, int], bool]
+) -> dict[str, list[int]]:
+    """``courseGraph.ts courseGraphEdges``: per-hex connected edges of the course
+    graph over the carrying hexes among ``coords``, junction chords pruned locally.
+
+    Raw adjacency over-connects junctions (the hexes around a join are mutually
+    adjacent: hex-grid triangles). Every edge on such a triangle is a chord.
+    Chords are clustered (chords sharing a hex share a cluster); each cluster of
+    at most ``MAX_CHORD_CANDIDATES`` chords is solved alone by exhaustive search
+    over its chord subsets: lowest summed ``shape_penalty`` over the cluster's
+    hexes, then fewest drops, then the first (lowest) mask over the chord ids
+    sorted as strings. A subset is valid when every dropped chord's ends stay
+    connected through B (the non-chord edges, map-wide) plus the cluster's kept
+    chords. Keys are ``"q,r"``; values ascending directions. ``coords`` must hold
+    every carrying neighbour of a carrying hex in it, else ``ValueError``.
     """
-    nodes: dict[str, tuple[int, int, list[int]]] = {}
+    keys: list[str] = []
+    nodes: list[tuple[int, int]] = []
+    index_of: dict[str, int] = {}
+    for q, r in coords:
+        if not carries(q, r):
+            continue
+        key = _hex_key(q, r)
+        if key in index_of:
+            continue
+        index_of[key] = len(keys)
+        keys.append(key)
+        nodes.append((q, r))
+    n = len(keys)
+
+    neighbour = [[-1] * 6 for _ in range(n)]
+    for i, (q, r) in enumerate(nodes):
+        for d, (dq, dr) in enumerate(AXIAL_DIRECTIONS):
+            j = index_of.get(_hex_key(q + dq, r + dr))
+            if j is not None:
+                neighbour[i][d] = j
+            elif carries(q + dq, r + dr):
+                raise ValueError(
+                    f"course graph: carrying hex ({q + dq}, {r + dr}) next to {keys[i]} "
+                    "is not among the coords"
+                )
+
+    def edge_number(a: int, b: int) -> int:
+        return a * n + b if a < b else b * n + a
+
+    chord_index: dict[int, int] = {}
+    chords: list[_Chord] = []
+
+    def add_chord(a: int, b: int) -> None:
+        e = edge_number(a, b)
+        if e in chord_index:
+            return
+        chord_index[e] = len(chords)
+        if keys[a] < keys[b]:
+            chords.append(_Chord(f"{keys[a]}|{keys[b]}", a, b))
+        else:
+            chords.append(_Chord(f"{keys[b]}|{keys[a]}", b, a))
+
+    for a in range(n):
+        for d in range(6):
+            b = neighbour[a][d]
+            c = neighbour[a][(d + 1) % 6]
+            if b >= 0 and c >= 0:
+                add_chord(a, b)
+                add_chord(a, c)
+                add_chord(b, c)
+
+    dropped: set[int] = set()
+    if chords:
+        plain = _DisjointSets(n)  # B: components over the non-chord edges
+        by_chord = _DisjointSets(n)  # clusters: hexes joined by chords
+        for a in range(n):
+            for b in neighbour[a]:
+                if b > a and edge_number(a, b) not in chord_index:
+                    plain.union(a, b)
+        for ch in chords:
+            by_chord.union(ch.a, ch.b)
+        clusters: dict[int, list[_Chord]] = {}
+        for ch in chords:
+            clusters.setdefault(by_chord.find(ch.a), []).append(ch)
+        for cluster in clusters.values():
+            if len(cluster) > MAX_CHORD_CANDIDATES:
+                continue
+            cluster.sort(key=lambda ch: ch.id)
+            for ch in _solve_cluster(cluster, neighbour, plain, edge_number):
+                dropped.add(edge_number(ch.a, ch.b))
+
+    return {
+        keys[a]: [
+            d
+            for d in range(6)
+            if neighbour[a][d] >= 0 and edge_number(a, neighbour[a][d]) not in dropped
+        ]
+        for a in range(n)
+    }
+
+
+def _solve_cluster(
+    cluster: Sequence[_Chord],
+    neighbour: Sequence[Sequence[int]],
+    plain: _DisjointSets,
+    edge_number: Callable[[int, int], int],
+) -> list[_Chord]:
+    """``courseGraph.ts solveCluster``: the chords of one cluster to drop."""
+    local = {edge_number(ch.a, ch.b): bit for bit, ch in enumerate(cluster)}
+    hexes = list(dict.fromkeys(h for ch in cluster for h in (ch.a, ch.b)))
+    hex_dirs: list[list[tuple[int, int]]] = []  # per hex: (direction, chord bit or -1)
+    for h in hexes:
+        hex_dirs.append(
+            [
+                (d, local.get(edge_number(h, nb), -1))
+                for d, nb in enumerate(neighbour[h])
+                if nb >= 0
+            ]
+        )
+
+    labels: dict[int, int] = {}
+
+    def label(h: int) -> int:
+        return labels.setdefault(plain.find(h), len(labels))
+
+    end_a = [label(ch.a) for ch in cluster]
+    end_b = [label(ch.b) for ch in cluster]
+
+    def connected_without(mask: int) -> bool:
+        sets = _DisjointSets(len(labels))
+        for j in range(len(cluster)):
+            if not mask & (1 << j):
+                sets.union(end_a[j], end_b[j])
+        return all(
+            sets.find(end_a[j]) == sets.find(end_b[j])
+            for j in range(len(cluster))
+            if mask & (1 << j)
+        )
+
+    best_mask, best_score, best_size = 0, math.inf, math.inf
+    for mask in range(1 << len(cluster)):
+        score = sum(
+            shape_penalty([d for d, bit in dirs if bit < 0 or not mask & (1 << bit)])
+            for dirs in hex_dirs
+        )
+        size = bin(mask).count("1")
+        # lower score, then fewer drops; masks ascend, so the first such wins
+        if score > best_score or (score == best_score and size >= best_size):
+            continue
+        if not connected_without(mask):
+            continue
+        best_mask, best_score, best_size = mask, score, size
+    return [ch for j, ch in enumerate(cluster) if best_mask & (1 << j)]
+
+
+def calm_outlet(river_dirs: Sequence[int], options: Sequence[int]) -> int | None:
+    """The one outlet direction a river hex at the end of its course runs to.
+
+    Shared by the mouth rule (``options`` = lake directions) and the edge rule
+    (``options`` = off-map directions). ``river_dirs`` are the hex's directions
+    (0..5) to river-like neighbours. Two or more means mid-course: ``None``. No
+    options: ``None``. No river-like neighbour: the lowest option. One, in
+    direction ``p``: straight (opposite ``p``) beats a gentle turn (two steps
+    from ``p``); a sharp turn (next to ``p``) is never taken, so sharp-only gives
+    ``None``; ties go to the lowest direction.
+    """
+    ranked = sorted(options)
+    if len(river_dirs) > 1 or not ranked:
+        return None
+    if not river_dirs:
+        return ranked[0]
+    p = river_dirs[0]
+    best: tuple[int, int] | None = None  # (rank: 0 straight, 1 gentle; direction)
+    for d in ranked:
+        gap = min((d - p) % 6, (p - d) % 6)
+        if gap == 1:
+            continue  # a sharp turn
+        rank = 0 if gap == 3 else 1
+        if best is None or rank < best[0]:
+            best = (rank, d)
+    return None if best is None else best[1]
+
+
+def mouth_direction(river_dirs: Sequence[int], lake_dirs: Sequence[int]) -> int | None:
+    """The mouth rule: which lake neighbour a river hex's course runs into.
+
+    ``river_dirs`` are the hex's directions (0..5, ``AXIAL_DIRECTIONS``) to
+    river-like (river/bridge) neighbours, ``lake_dirs`` its directions to lake
+    neighbours. A hex with two or more river-like neighbours is mid-course and
+    gets no mouth; neither does one with no lake neighbour. Otherwise:
+
+    - no river-like neighbour (a lone river hex on the shore): the lowest lake
+      direction;
+    - one river-like neighbour in direction ``p``: the lake direction ``d`` that
+      gives the calmest course ``{p, d}``: straight (``d`` opposite ``p``) beats a
+      gentle turn (``d`` two steps from ``p``); a sharp turn (``d`` next to ``p``)
+      is never taken, so if only sharp options exist there is no mouth. Ties go
+      to the lowest direction.
+
+    Returns the chosen direction, or ``None`` for "no mouth".
+    """
+    return calm_outlet(river_dirs, lake_dirs)
+
+
+def edge_direction(river_dirs: Sequence[int], off_map_dirs: Sequence[int]) -> int | None:
+    """The edge rule: which off-map direction a river hex on the map border runs
+    out through, so the river leaves the map instead of ending in a cap.
+
+    Same choice as the mouth rule (``calm_outlet``) over the hex's off-map
+    directions. It ranks below the mouth rule: callers skip hexes that already
+    have a mouth (``map_edge_outlets``). ``None`` = no outlet (mid-course, not on
+    the border, or only sharp options: the hex keeps its end cap).
+    """
+    return calm_outlet(river_dirs, off_map_dirs)
+
+
+def lake_mouths(
+    coords: Iterable[tuple[int, int]], terrain_at: TerrainProbe
+) -> dict[str, int]:
+    """River-mouth directions by hex key (``"q,r"``) for every river-like hex
+    the mouth rule (``mouth_direction``) connects to a lake."""
+    mouths: dict[str, int] = {}
     for q, r in coords:
         if terrain_at(q, r) not in RIVER_LIKE:
             continue
-        nodes[_hex_key(q, r)] = (q, r, connected_edges(q, r, terrain_at))
-
-    def edge_id(a: str, b: str) -> str:
-        return f"{a}|{b}" if a < b else f"{b}|{a}"
-
-    def neighbor_key(key: str, direction: int) -> str:
-        q, r, _ = nodes[key]
-        dq, dr = AXIAL_DIRECTIONS[direction]
-        return _hex_key(q + dq, r + dr)
-
-    chord_ids: set[str] = set()
-    for key in nodes:
-        for i in range(6):
-            b = neighbor_key(key, i)
-            c = neighbor_key(key, (i + 1) % 6)
-            if b in nodes and c in nodes:
-                chord_ids.add(edge_id(key, b))
-                chord_ids.add(edge_id(key, c))
-                chord_ids.add(edge_id(b, c))
-
-    def kept(key: str, dropped: set[str]) -> list[int]:
-        return [
-            d
-            for d in nodes[key][2]
-            if edge_id(key, neighbor_key(key, d)) not in dropped
+        lake_dirs = [
+            i
+            for i, (dq, dr) in enumerate(AXIAL_DIRECTIONS)
+            if terrain_at(q + dq, r + dr) == LAKE
         ]
+        d = mouth_direction(connected_edges(q, r, terrain_at), lake_dirs)
+        if d is not None:
+            mouths[_hex_key(q, r)] = d
+    return mouths
 
-    def result(dropped: set[str]) -> dict[str, list[int]]:
-        return {key: kept(key, dropped) for key in nodes}
 
-    if not chord_ids or len(chord_ids) > MAX_CHORD_CANDIDATES:
-        return result(set())
-
-    def component_signature(dropped: set[str]) -> str:
-        seen: set[str] = set()
-        labels: list[str] = []
-        for start in nodes:
-            if start in seen:
-                continue
-            member: list[str] = []
-            stack = [start]
-            seen.add(start)
-            while stack:
-                k = stack.pop()
-                member.append(k)
-                for d in nodes[k][2]:
-                    nb = neighbor_key(k, d)
-                    if nb not in seen and edge_id(k, nb) not in dropped:
-                        seen.add(nb)
-                        stack.append(nb)
-            labels.append(",".join(sorted(member)))
-        return ";".join(sorted(labels))
-
-    # JS default sort / string `<` compare UTF-16 code units; for these ASCII keys
-    # that is Python's ordinal str ordering.
-    chords = sorted(chord_ids)
-    affected: set[str] = set()
-    for cid in chords:
-        a, b = cid.split("|")
-        affected.update((a, b))
-    raw_signature = component_signature(set())
-
-    best: set[str] = set()
-    best_score = math.inf
-    best_size = math.inf
-    for mask in range(1 << len(chords)):
-        dropped = {chords[i] for i in range(len(chords)) if mask & (1 << i)}
-        if component_signature(dropped) != raw_signature:
+def map_edge_outlets(
+    coords: Iterable[tuple[int, int]],
+    terrain_at: TerrainProbe,
+    mouths: dict[str, int],
+) -> dict[str, int]:
+    """Edge-rule directions by hex key for every river-like hex on the map
+    border that the edge rule (``edge_direction``) lets run off the map. Hexes
+    with a mouth are skipped: the mouth rule wins."""
+    outlets: dict[str, int] = {}
+    for q, r in coords:
+        if terrain_at(q, r) not in RIVER_LIKE or _hex_key(q, r) in mouths:
             continue
-        score = sum(shape_penalty(kept(key, dropped)) for key in affected)
-        if score < best_score or (score == best_score and len(dropped) < best_size):
-            best, best_score, best_size = dropped, score, len(dropped)
-    return result(best)
+        off_map = [
+            i
+            for i, (dq, dr) in enumerate(AXIAL_DIRECTIONS)
+            if terrain_at(q + dq, r + dr) is None
+        ]
+        d = edge_direction(connected_edges(q, r, terrain_at), off_map)
+        if d is not None:
+            outlets[_hex_key(q, r)] = d
+    return outlets
+
+
+def with_outlets(
+    river_course: dict[str, list[int]], outlets: dict[str, int]
+) -> dict[str, list[int]]:
+    """The river course with each outlet's edge (a lake mouth or a map-border
+    exit) added, ascending as ``orientedRiverTile`` expects. An outlet hex has
+    at most one river-like neighbour, so no junction chord was pruned from it,
+    and a hex has at most one outlet."""
+    return {
+        key: sorted([*edges, outlets[key]]) if key in outlets else edges
+        for key, edges in river_course.items()
+    }
+
+
+def river_course_edges(
+    coords: Iterable[tuple[int, int]], terrain_at: TerrainProbe
+) -> dict[str, list[int]]:
+    """``riverTiles.ts riverCourseEdges``: the river course graph
+    (``course_graph_edges`` over river/bridge hexes) plus each hex's outlet edge
+    (``lake_mouths`` first, then ``map_edge_outlets``). Keys are ``"q,r"``."""
+    coord_list = list(coords)
+    mouths = lake_mouths(coord_list, terrain_at)
+    outlets = {**map_edge_outlets(coord_list, terrain_at, mouths), **mouths}
+    course = course_graph_edges(coord_list, lambda q, r: terrain_at(q, r) in RIVER_LIKE)
+    return with_outlets(course, outlets)
+
+
+def road_course_edges(hexes: Iterable[Hex], hex_at: HexProbe) -> dict[str, list[int]]:
+    """``roadTiles.ts roadCourseEdges``: the road course graph
+    (``course_graph_edges`` over road-flagged and bridge hexes)."""
+    return course_graph_edges(
+        [(h.q, h.r) for h in hexes], lambda q, r: _is_road_like(hex_at(q, r))
+    )
 
 
 @dataclass(frozen=True)
@@ -684,13 +939,17 @@ class RoadTileRef:
     mirror: bool
 
 
-def road_tile_refs(hexes: Iterable[Hex], hex_at: HexProbe) -> dict[str, RoadTileRef]:
-    """``roadTiles.ts roadTileRefs``: baked-road refs for handled road masks."""
+def road_tile_refs(
+    hexes: Iterable[Hex], road_course: dict[str, list[int]]
+) -> dict[str, RoadTileRef]:
+    """``roadTiles.ts roadTileRefs``: baked-road refs for every road hex whose
+    course-graph mask (``road_course``, from ``road_course_edges`` over the same
+    map) is a handled shape."""
     refs: dict[str, RoadTileRef] = {}
     for h in hexes:
         if not h.road or h.terrain in RIVER_LIKE:
             continue
-        oriented = oriented_river_tile(road_connected_edges(h.q, h.r, hex_at))
+        oriented = oriented_river_tile(road_course[_hex_key(h.q, h.r)])
         if oriented is None:
             continue
         refs[_hex_key(h.q, h.r)] = RoadTileRef(
@@ -875,11 +1134,14 @@ def choose_tile(
     library: TileLibrary,
     river_course: dict[str, list[int]],
     road_tiles: dict[str, RoadTileRef],
-    hex_at: HexProbe,
-) -> TileChoice:
+    road_course: dict[str, list[int]],
+) -> TileChoice | None:
     """``hexTile.ts hexTileRef``: river/bridge oriented art, baked road, cosmetic.
 
-    ``hex_at`` is only used to label an unhandled road mask in the report.
+    ``road_course`` (``road_course_edges``) is only used to label an unhandled
+    road mask in the report.
+    ``None`` means the hex draws no tile, only its flat base fill: its terrain
+    is in ``FILL_ONLY_OK_TERRAINS`` and no tile set has any art for it.
     """
     key = _hex_key(h.q, h.r)
     primary = library.sets[0]
@@ -923,10 +1185,12 @@ def choose_tile(
             )
         road_notes.append(f"no {ref.lookup} art -> base tile + vector road")
     elif h.road:
-        edges = road_connected_edges(h.q, h.r, hex_at)
+        edges = road_course[key]
         road_notes.append(f"unhandled road {shape_label(edges)} -> vector road")
 
     group = library.terrain(h.terrain)
+    if group is None and h.terrain in FILL_ONLY_OK_TERRAINS:
+        return None
     if group is None:
         raise TileSetError(
             f"no tile set has any {h.terrain}/*.png (needed at col={h.col}, "
@@ -1210,8 +1474,24 @@ def drift_gain(canvas: Canvas, amount: float) -> np.ndarray:
 
 
 # Join kind -> code: edges by direction from A, vertices 3 + i (triangle A,
-# A + d_i, A + d_(i+1); the vertex is A's corner at VERTEX_ANGLES[i] degrees).
-JOIN_KINDS = {"edge_se": 0, "edge_ne": 1, "edge_n": 2, "vert_e": 3, "vert_ne": 4}
+# A + d_i, A + d_(i+1); the vertex is A's corner at VERTEX_ANGLES[i] degrees),
+# river mouths 5 + d (d = direction from the river hex R to its lake; the sprite
+# is anchored on that edge's midpoint and hashed with R's coordinates).
+JOIN_KINDS = {
+    "edge_se": 0,
+    "edge_ne": 1,
+    "edge_n": 2,
+    "vert_e": 3,
+    "vert_ne": 4,
+    "mouth_se": 5,
+    "mouth_ne": 6,
+    "mouth_n": 7,
+    "mouth_nw": 8,
+    "mouth_sw": 9,
+    "mouth_s": 10,
+}
+MOUTH_CODE_BASE = 5
+AXIAL_DIRECTION_NAMES = ("se", "ne", "n", "nw", "sw", "s")
 VERTEX_ANGLES = (0.0, 300.0)
 
 
@@ -1273,11 +1553,15 @@ def _same_terrain_group(
 
 
 def choose_joins(
-    game_map: GameMap, shown: Sequence[Hex], joins: JoinSet
+    game_map: GameMap,
+    shown: Sequence[Hex],
+    joins: JoinSet,
+    mouths: dict[str, int] | None = None,
 ) -> list[JoinChoice]:
     """Every same-terrain edge (pair) and vertex (triangle) touching a shown hex
     whose terrain has join art, in draw order: edges by (A.r, A.q, dir), then
-    vertices by (A.r, A.q, i)."""
+    vertices by (A.r, A.q, i), then river mouths (``lake_mouths``, river hex R ->
+    direction d) by (R.r, R.q, d) when the set has ``lake/mouth_*`` art."""
     shown_keys = {(h.q, h.r) for h in shown}
     ordered = sorted(game_map.hexes, key=lambda h: (h.r, h.q))
     edges: list[JoinChoice] = []
@@ -1307,7 +1591,24 @@ def choose_joins(
             (edges if code < 3 else vertices).append(
                 JoinChoice(group, code, anchor, path)
             )
-    return edges + vertices
+    mouth_joins: list[JoinChoice] = []
+    for a in ordered:
+        d = (mouths or {}).get(_hex_key(a.q, a.r))
+        if d is None:
+            continue
+        dq, dr = AXIAL_DIRECTIONS[d]
+        lake = game_map.by_axial[(a.q + dq, a.r + dr)]
+        if not any((h.q, h.r) in shown_keys for h in (a, lake)):
+            continue
+        code = MOUTH_CODE_BASE + d
+        files = joins.groups.get((LAKE, code))
+        if files is None:
+            continue
+        ax, ay = axial_to_pixel(a.q, a.r, HEX_SIZE)
+        bx, by = axial_to_pixel(lake.q, lake.r, HEX_SIZE)
+        path = files[join_variant_index(a.q, a.r, code, len(files))]
+        mouth_joins.append(JoinChoice((a, lake), code, ((ax + bx) / 2, (ay + by) / 2), path))
+    return edges + vertices + mouth_joins
 
 
 def parse_crop(spec: str) -> tuple[int, int, int, int]:
@@ -1334,6 +1635,9 @@ class RenderReport:
     vector_roads: list[Hex]
     joins: list[JoinChoice] = field(default_factory=list)
     sites: list[tuple[Hex, Path]] = field(default_factory=list)
+    fill_only: list[Hex] = field(default_factory=list)  # no art: flat base fill
+    mouths: dict[str, int] = field(default_factory=dict)  # mouth rule results
+    edge_outlets: dict[str, int] = field(default_factory=dict)  # edge rule results
 
 
 def render(
@@ -1372,10 +1676,12 @@ def render(
                 f"{game_map.height} map"
             )
 
-    river_course = river_course_edges(
-        ((h.q, h.r) for h in game_map.hexes), game_map.terrain_at
-    )
-    road_tiles = road_tile_refs(game_map.hexes, game_map.hex_at)
+    coords = [(h.q, h.r) for h in game_map.hexes]
+    mouths = lake_mouths(coords, game_map.terrain_at)
+    edge_outlets = map_edge_outlets(coords, game_map.terrain_at, mouths)
+    river_course = river_course_edges(coords, game_map.terrain_at)
+    road_course = road_course_edges(game_map.hexes, game_map.hex_at)
+    road_tiles = road_tile_refs(game_map.hexes, road_course)
 
     # hex.ts mapPixelBounds: centre bbox padded by one hex radius.
     centres = [axial_to_pixel(h.q, h.r, HEX_SIZE) for h in shown]
@@ -1398,6 +1704,7 @@ def render(
         canvas.composite(sprites.fill(h.terrain), *canvas.to_screen(x, y), terrain=True)
 
     choices: list[tuple[Hex, TileChoice]] = []
+    fill_only: list[Hex] = []
     site_choices: list[tuple[Hex, Path]] = []
     site_tiles: dict[tuple[int, int], Path] = {}
     if sites is not None:
@@ -1406,7 +1713,10 @@ def render(
             for (dq, dr), tile in sites.footprint_tiles(anchor, kind, level).items():
                 site_tiles[(aq + dq, ar + dr)] = tile
     for h, (x, y) in zip(shown, centres):
-        choice = choose_tile(h, library, river_course, road_tiles, game_map.hex_at)
+        choice = choose_tile(h, library, river_course, road_tiles, road_course)
+        if choice is None:
+            fill_only.append(h)
+            continue
         choices.append((h, choice))
         path, mirror = choice.path, choice.mirror
         if (h.q, h.r) in site_tiles:
@@ -1420,7 +1730,7 @@ def render(
 
     join_choices: list[JoinChoice] = []
     if joins is not None:
-        join_choices = choose_joins(game_map, shown, joins)
+        join_choices = choose_joins(game_map, shown, joins, mouths)
         for join in join_choices:
             canvas.composite(
                 sprites.join(join.path, joins.hex_width),
@@ -1459,15 +1769,16 @@ def render(
         if not draw_vector_roads or not draws_vector_road(h, library, river_course, road_tiles):
             continue
         vector_roads.append(h)
-        for dq, dr in AXIAL_DIRECTIONS:
-            n = game_map.hex_at(h.q + dq, h.r + dr)
-            if n is None or not _is_road_like(n):
-                continue
-            nx, ny = axial_to_pixel(n.q, n.r, HEX_SIZE)
+        # stubs follow the road course graph, pruned like the baked tiles
+        for direction in road_course[_hex_key(h.q, h.r)]:
+            dq, dr = AXIAL_DIRECTIONS[direction]
+            nx, ny = axial_to_pixel(h.q + dq, h.r + dr, HEX_SIZE)
             road_segments.append(((x, y), ((x + nx) / 2, (y + ny) / 2)))
     canvas.stroke(road_segments, ROAD_WIDTH, ROAD_COLOR, extend=False)
 
-    return canvas.image(), RenderReport(choices, vector_roads, join_choices, site_choices)
+    return canvas.image(), RenderReport(
+        choices, vector_roads, join_choices, site_choices, fill_only, mouths, edge_outlets
+    )
 
 
 # ==============================================================================
@@ -1511,9 +1822,29 @@ def format_report(report: RenderReport) -> str:
         listed = ", ".join(f"{f} x{n}" for f, n in sorted(site_usage.items()))
         lines.append(f"  sites   {len(report.sites)} hexes: {listed}")
 
+    if report.mouths:
+        listed = ", ".join(
+            f"({key}) -> {AXIAL_DIRECTION_NAMES[d]}" for key, d in sorted(report.mouths.items())
+        )
+        lines.append(f"  mouths  {len(report.mouths)} river hexes run into a lake: {listed}")
+    if report.edge_outlets:
+        listed = ", ".join(
+            f"({key}) -> {AXIAL_DIRECTION_NAMES[d]}"
+            for key, d in sorted(report.edge_outlets.items())
+        )
+        lines.append(
+            f"  exits   {len(report.edge_outlets)} river hexes run off the map: {listed}"
+        )
+
     degraded = [(h, c) for h, c in report.choices if c.notes]
     vector = {(h.q, h.r) for h in report.vector_roads}
     lines.append("")
+    if report.fill_only:
+        terrains = sorted({h.terrain for h in report.fill_only})
+        lines.append(
+            f"flat fill only (no {'/'.join(terrains)} art in any tile set): "
+            f"{len(report.fill_only)} hexes"
+        )
     if not degraded and not vector:
         lines.append(
             "fallbacks: none (every hex drew its own art from the primary set)"

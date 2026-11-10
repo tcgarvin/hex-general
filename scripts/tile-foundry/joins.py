@@ -25,7 +25,17 @@ Routes:
     patch   (deterministic) cut the lens from dense interior art of the terrain's
             own tiles, unrotated, feathered. Several variants per kind use
             different source tiles and offsets; offsets are ranked to avoid
-            landmarks (a church, a square) so they are not visibly cloned.
+            landmarks (a church, a square; for lakes anything that is not open
+            water: reeds, stones, banks) so they are not visibly cloned.
+    mouth   (lake only, deterministic) where a river course ends at a lake (the
+            board's mouth rule), the river tile runs its water to the shared edge
+            but the lake tile has grass there. ``mouth_<dir>`` sprites (dir = the
+            direction from the river hex to the lake: se, ne, n, nw, sw, s) carry
+            the river across that edge into the lake: the river's own crossing
+            profile (``--river-profile``, the colours every river tile is pinned
+            to at an edge) extruded into the lake hex, widening as it goes and
+            blending into open lake water cut from the lake tiles. Same anchor as
+            the edge lenses: canvas centre on the edge midpoint.
 
 Usage:
     python3 scripts/tile-foundry/joins.py \\
@@ -52,6 +62,8 @@ from PIL import Image, ImageDraw, ImageFilter
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from hexgeom import AXIAL_DIRECTIONS, axial_to_pixel, corner_points  # noqa: E402
+from paintin_geom import edge_tangent, smoothstep  # noqa: E402
+from paintin_pin import CrossProfile, water_mask  # noqa: E402
 
 HEX_WIDTH = 128  # native px per hex, point to point (same as the tiles)
 HEX_SIZE = HEX_WIDTH / 2
@@ -100,12 +112,19 @@ DEFAULT_PARAMS: dict[str, LensParams] = {
     "woods": LensParams(half_width=19.0, half_length=27.0, feather=7.0),
     "city": LensParams(half_width=17.0, half_length=26.0, feather=5.0),
     "hills": LensParams(half_width=24.0, half_length=27.0, feather=9.0),
+    # lake shores sit 8-14 px inside each edge: the lens must reach past both,
+    # and water wants a crisper edge than canopy
+    "lake": LensParams(half_width=25.0, half_length=30.0, feather=3.0),
 }
 VERTEX_PARAMS: dict[str, VertexParams] = {
     "woods": VertexParams(radius=24.0, feather=9.0),
     "city": VertexParams(radius=22.0, feather=6.0),
     "hills": VertexParams(radius=24.0, feather=10.0),
+    "lake": VertexParams(radius=29.0, feather=4.0),
 }
+LAKE = "lake"
+# Mouth kind name -> direction from the river hex to the lake (AXIAL_DIRECTIONS).
+MOUTHS: dict[str, int] = {"se": 0, "ne": 1, "n": 2, "nw": 3, "sw": 4, "s": 5}
 
 
 def edge_frame(orientation: str) -> tuple[np.ndarray, np.ndarray]:
@@ -228,10 +247,28 @@ def landmark_mask(tile: Image.Image) -> np.ndarray:
     return np.asarray(opened, dtype=np.float64) / 255
 
 
-def rank_offsets(tile: Image.Image, weight: np.ndarray) -> list[tuple[int, int]]:
+def lake_landmark_mask(tile: Image.Image) -> np.ndarray:
+    """Everything in a lake tile that is not open water (reeds, stones, the bank,
+    the grass rim), in [0, 1]: the parts whose clones would show."""
+    rgba = np.asarray(tile.convert("RGBA"), dtype=np.float64)
+    water = water_mask(rgba[..., :3]) * (rgba[..., 3] / 255)
+    # grow the non-water a little so a window never grazes a reed clump
+    solid = Image.fromarray(np.round((1 - water) * 255).astype(np.uint8), "L")
+    grown = solid.filter(ImageFilter.MaxFilter(5))
+    return np.asarray(grown, dtype=np.float64) / 255
+
+
+def terrain_landmarks(terrain: str, tile: Image.Image) -> np.ndarray:
+    """The landmark mask that ranks patch offsets for a terrain."""
+    return lake_landmark_mask(tile) if terrain == LAKE else landmark_mask(tile)
+
+
+def rank_offsets(
+    tile: Image.Image, weight: np.ndarray, terrain: str = "woods"
+) -> list[tuple[int, int]]:
     """Candidate window offsets, best first: least landmark under ``weight`` (the
     sprite alpha), then nearest the tile centre. Deterministic."""
-    landmarks = np.pad(landmark_mask(tile), CANVAS // 2)
+    landmarks = np.pad(terrain_landmarks(terrain, tile), CANVAS // 2)
     scored: list[tuple[float, float, tuple[int, int]]] = []
     for oy in range(-OFFSET_RADIUS, OFFSET_RADIUS + 1, OFFSET_STEP):
         for ox in range(-OFFSET_RADIUS, OFFSET_RADIUS + 1, OFFSET_STEP):
@@ -303,17 +340,189 @@ def build_patch_joins(
         for k in range(variants):
             # Walk sources so kinds and variants do not share a window.
             s_index = (k + kind_index) % len(tiles)
-            ranked = rank_offsets(tiles[s_index], alpha)
+            ranked = rank_offsets(tiles[s_index], alpha, terrain)
             offset = ranked[(k // len(tiles) + kind_index) % min(3, len(ranked))]
             patch = cut_patch(tiles[s_index], offset)
             rgba = patch.copy()
             rgba[..., 3] = patch[..., 3] * alpha
+            if terrain == LAKE and kind.startswith("edge_"):
+                rgba = over(
+                    rgba, lake_lens_bank(kind[len("edge_") :], seed=31 * kind_index + k)
+                )
             name = f"{kind}_{k:02d}.png"
             Image.fromarray(np.round(rgba).astype(np.uint8), "RGBA").save(
                 out_dir / terrain / name
             )
             records.append(
                 JoinRecord(f"{terrain}/{name}", "patch", str(sources[s_index]), offset)
+            )
+    return records
+
+
+# Lake lens bank: where two lakes meet beside land, the lens's tips cross the
+# grass rim and become the outer shore, so they get the tiles' bank (measured on
+# the lake candidates: dark undercut at the water, broken pale khaki lip above).
+LAKE_BANK_DARK = (60.0, 60.0, 48.0)
+LAKE_BANK_LIP = (146.0, 135.0, 76.0)
+LAKE_BANK_OVER_GRASS = (9.0, 15.0)  # lens edge this near the edge line: over grass
+
+
+def lake_lens_bank(orientation: str, seed: int, canvas: int = CANVAS) -> np.ndarray:
+    """Float RGBA (0..255) bank ring just outside a lake lens, faded out where the
+    lens edge lies over open water (near the midpoint, where its edge is further
+    from the shared edge than any lake tile's shore)."""
+    params = DEFAULT_PARAMS[LAKE]
+    normal, along = edge_frame(orientation)
+    xs, ys = _pixel_grid(canvas)
+    t = xs * along[0] + ys * along[1]
+    p = xs * normal[0] + ys * normal[1]
+    width = params.half_width * np.clip(1 - (t / params.half_length) ** 2, 0, None)
+    outside = np.abs(p) - (
+        width - params.feather / 2
+    )  # 0 on the lens's half-alpha line
+    over_grass = 1 - smoothstep(*LAKE_BANK_OVER_GRASS, width)
+    rng = np.random.default_rng(seed)
+    # broken lip: smooth noise along the edge, thresholded into patches
+    k = np.arange(1, 6)
+    phases = rng.uniform(0, 2 * math.pi, size=(2, len(k)))
+    side = (p >= 0).astype(int)  # each bank of the lens gets its own pattern
+    noise = sum(
+        np.sin(2 * math.pi * t * f / 23.0 + phases[side, i]) / f
+        for i, f in enumerate(k)
+    )
+    lip_on = smoothstep(-0.2, 0.4, noise)
+    dark = (1 - smoothstep(0.6, 1.8, np.abs(outside - 0.6))) * 0.85
+    lip = (1 - smoothstep(0.8, 1.6, np.abs(outside - 2.6))) * 0.7 * lip_on
+    alpha = np.maximum(dark, lip) * over_grass * (width > 0)
+    alpha *= pair_union_mask(orientation, canvas)
+    rgb = np.where((dark >= lip)[..., None], LAKE_BANK_DARK, LAKE_BANK_LIP)
+    out = np.empty((canvas, canvas, 4))
+    out[..., :3] = rgb
+    out[..., 3] = 255 * alpha
+    return out
+
+
+def over(top: np.ndarray, below: np.ndarray) -> np.ndarray:
+    """Straight-alpha float RGBA ``top`` composited over ``below`` (0..255)."""
+    at = top[..., 3:4] / 255
+    ab = below[..., 3:4] / 255
+    a = at + ab * (1 - at)
+    rgb = (top[..., :3] * at + below[..., :3] * ab * (1 - at)) / np.maximum(a, 1e-9)
+    return np.concatenate([rgb, 255 * a], axis=-1)
+
+
+# Mouth channel, native px along the depth p into the lake hex (p = 0 on the
+# shared edge): the river's crossing profile, stretched laterally from its own
+# width at the edge to MOUTH_FLARE times that, so the river opens into the lake.
+MOUTH_FLARE = 1.6
+MOUTH_FLARE_DEPTH = 18.0  # depth by which the channel has reached full flare
+MOUTH_BANK_FADE = (6.0, 11.0)  # banks fade out over this depth (the lake shore)
+MOUTH_WATER_FADE = (15.0, 23.0)  # the channel's water fades into the lake's
+MOUTH_TEXTURE_BLEND = (1.0, 9.0)  # profile colour -> lake water texture
+MOUTH_BACK_PX = 1.5  # the sprite starts this far back inside the river hex
+MOUTH_RAGGED_PX = 1.2  # bank wobble amplitude, so the banks are not ruled lines
+
+
+def mouth_frame(direction: int) -> tuple[np.ndarray, np.ndarray]:
+    """(unit normal river -> lake, canonical edge tangent) for a mouth direction."""
+    dq, dr = AXIAL_DIRECTIONS[direction]
+    bx, by = axial_to_pixel(dq, dr, HEX_SIZE)
+    normal = np.array([bx, by]) / math.hypot(bx, by)
+    return normal, np.asarray(edge_tangent(direction))
+
+
+def _bank_wobble(t: np.ndarray, seed: int) -> np.ndarray:
+    """Smooth deterministic wobble (px) along the depth coordinate."""
+    rng = np.random.default_rng(seed)
+    out = np.zeros_like(t)
+    for wavelength in (9.0, 5.0):
+        out += 0.5 * np.sin(2 * math.pi * t / wavelength + rng.uniform(0, 2 * math.pi))
+    return MOUTH_RAGGED_PX * out
+
+
+def mouth_sprite(
+    direction: int,
+    profile: CrossProfile,
+    water: np.ndarray,
+    seed: int,
+    canvas: int = CANVAS,
+) -> np.ndarray:
+    """One mouth sprite (float RGBA 0..255, ``canvas`` square, anchored on the
+    edge midpoint): the river's crossing profile extruded into the lake hex.
+
+    ``water`` is an unrotated ``canvas``-square patch of open lake water (RGBA).
+    At the edge the sprite equals the profile, so it continues the river tile's
+    pinned crossing without a seam; deeper in it widens, its banks fade where
+    the lake shore takes over, and its water blends into the lake's own.
+    """
+    normal, tangent = mouth_frame(direction)
+    xs, ys = _pixel_grid(canvas)
+    p = xs * normal[0] + ys * normal[1]  # depth into the lake hex
+    t = xs * tangent[0] + ys * tangent[1]  # canonical tangent (as the profile)
+    depth = np.clip(p, 0, None)
+    spread = 1 + (MOUTH_FLARE - 1) * smoothstep(0.0, MOUTH_FLARE_DEPTH, depth)
+    side = np.sign(t)
+    wobble = np.where(
+        side >= 0, _bank_wobble(depth, seed), _bank_wobble(depth, seed + 1)
+    )
+    wobble *= smoothstep(1.0, 6.0, depth)  # straight where it meets the river tile
+    t_profile = t / spread - side * wobble / spread
+    rgb, alpha = profile.sample(t_profile)
+    half_water = profile.feature_width / 2
+    in_water = 1 - smoothstep(half_water - 1.0, half_water + 1.0, np.abs(t_profile))
+    texture_w = smoothstep(*MOUTH_TEXTURE_BLEND, depth) * in_water
+    rgb = rgb * (1 - texture_w[..., None]) + water[..., :3] * texture_w[..., None]
+    bank_keep = 1 - smoothstep(*MOUTH_BANK_FADE, depth)
+    alpha = alpha * (in_water + (1 - in_water) * bank_keep)
+    alpha = alpha * (1 - smoothstep(*MOUTH_WATER_FADE, depth))
+    alpha = alpha * smoothstep(-MOUTH_BACK_PX, 0.0, p) * (water[..., 3] / 255)
+    alpha = alpha * pair_union_mask_dir(direction, canvas)
+    out = np.empty((canvas, canvas, 4))
+    out[..., :3] = rgb
+    out[..., 3] = 255 * alpha
+    return out
+
+
+def pair_union_mask_dir(direction: int, canvas: int = CANVAS) -> np.ndarray:
+    """Coverage of the river hex union the lake hex, edge-anchored."""
+    normal, _ = mouth_frame(direction)
+    centres = [
+        (sign * normal[0] * APOTHEM, sign * normal[1] * APOTHEM) for sign in (-1, 1)
+    ]
+    return _union_mask(centres, canvas)
+
+
+def build_mouth_joins(
+    tiles_dir: Path, profile_path: Path, out_dir: Path, variants: int
+) -> list[JoinRecord]:
+    """Mouth sprites for every direction from the lake tiles' open water."""
+    sources = sorted((tiles_dir / LAKE).glob("[0-9][0-9].png"))
+    if not sources:
+        raise JoinError(f"no {LAKE}/NN.png tiles under {tiles_dir}")
+    if not profile_path.is_file():
+        raise JoinError(f"river crossing profile not found: {profile_path}")
+    profile = CrossProfile.load(profile_path)
+    tiles = []
+    for source in sources:
+        with Image.open(source) as im:
+            tiles.append(im.convert("RGBA"))
+    # rank windows by how much non-water a full-canvas disc would pick up
+    weight = np.clip(1 - np.hypot(*_pixel_grid(CANVAS)) / (CANVAS / 2), 0, 1)
+    records: list[JoinRecord] = []
+    (out_dir / LAKE).mkdir(parents=True, exist_ok=True)
+    for kind_index, (name, direction) in enumerate(MOUTHS.items()):
+        for k in range(variants):
+            s_index = (k + kind_index) % len(tiles)
+            ranked = rank_offsets(tiles[s_index], weight, LAKE)
+            offset = ranked[(k // len(tiles) + kind_index) % min(3, len(ranked))]
+            water = cut_patch(tiles[s_index], offset)
+            sprite = mouth_sprite(direction, profile, water, seed=97 * kind_index + k)
+            fname = f"mouth_{name}_{k:02d}.png"
+            Image.fromarray(
+                np.clip(np.round(sprite), 0, 255).astype(np.uint8), "RGBA"
+            ).save(out_dir / LAKE / fname)
+            records.append(
+                JoinRecord(f"{LAKE}/{fname}", "mouth", str(sources[s_index]), offset)
             )
     return records
 
@@ -353,6 +562,16 @@ two adjacent hexes of the same terrain, so a forest or city reads as one mass.
 
 Terrains: {terrains}. Per-sprite provenance (route, source tile, offset) is in
 `joins.json`.
+{mouths}"""
+
+MOUTH_README = """
+- **Mouth kinds** (lake only) `mouth_se`, `mouth_ne`, `mouth_n`, `mouth_nw`,
+  `mouth_sw`, `mouth_s`: a river hex R whose course the mouth rule ends at a lake
+  neighbour L = R + `AXIAL_DIRECTIONS[d]`, named by d (0..5). Draw on that edge;
+  **anchor:** canvas centre on the edge midpoint (mean of the two centres).
+  Variant: `joinVariantIndex(R.q, R.r, 5 + d, count)`. Draw after the vertex
+  fills, sorted by (R.r, R.q, d). The sprite carries the river's crossing
+  profile from the edge into L, widening, and fades into L's open water.
 """
 
 
@@ -365,6 +584,7 @@ def write_manifest(out_dir: Path, tiles_dir: Path, records: list[JoinRecord]) ->
         "anchor": "canvas centre = shared edge midpoint (edge_*) or vertex (vert_*)",
         "edge_kinds": {f"edge_{o}": d for o, d in ORIENTATIONS.items()},
         "vertex_kinds": {f"vert_{v}": i for v, i in VERTICES.items()},
+        "mouth_kinds": {f"mouth_{m}": 5 + d for m, d in MOUTHS.items()},
         "draw_order": "after base tiles: edges by (r, q, dir), then vertices by "
         "(r, q, i); before grid and overlays",
         "tiles": str(tiles_dir),
@@ -384,6 +604,7 @@ def write_manifest(out_dir: Path, tiles_dir: Path, records: list[JoinRecord]) ->
             canvas=CANVAS,
             hex_width=HEX_WIDTH,
             terrains=", ".join(terrains),
+            mouths=MOUTH_README if any(r.route == "mouth" for r in records) else "",
         )
     )
 
@@ -396,6 +617,17 @@ def main(argv: list[str] | None = None) -> int:
         "--terrains", nargs="+", default=["woods", "city"], choices=DEFAULT_PARAMS
     )
     parser.add_argument("--variants", type=int, default=3)
+    parser.add_argument(
+        "--river-profile",
+        type=Path,
+        default=Path(__file__).resolve().parents[2]
+        / "art"
+        / "codex"
+        / "terrain"
+        / "river"
+        / "profile.json",
+        help="river crossing profile for the lake mouth sprites",
+    )
     args = parser.parse_args(argv)
     if args.variants < 1:
         parser.error("--variants must be >= 1")
@@ -405,6 +637,10 @@ def main(argv: list[str] | None = None) -> int:
     records: list[JoinRecord] = []
     for terrain in args.terrains:
         records += build_patch_joins(args.tiles, terrain, args.out, args.variants)
+        if terrain == LAKE:
+            records += build_mouth_joins(
+                args.tiles, args.river_profile, args.out, args.variants
+            )
     write_manifest(args.out, args.tiles, records)
     print(f"{len(records)} join sprites -> {args.out}")
     return 0

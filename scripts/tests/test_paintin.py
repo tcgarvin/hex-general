@@ -549,6 +549,25 @@ def test_pond_is_inside_the_hex_and_touches_no_edge():
     assert 0.08 < band.mean() < 0.2
 
 
+@pytest.mark.parametrize("seed", [11, 13, 17, 31, 44])
+def test_lake_fills_most_of_the_hex_and_keeps_its_rim(seed):
+    band = geom.render_guide_mask(natural((), seed=seed, lake_margin=10.0, ragged=0.9), 128, 128.0)
+    d = geom.tile_distance()
+    water = band > 0.5
+    assert water[64, 64]
+    assert d[water].min() > 8.0  # the leak gate's 8 px band stays grass
+    ys, xs = np.nonzero(water)
+    reach = np.hypot(xs + 0.5 - 64, ys + 0.5 - 64).max() / geom.apothem()
+    assert 0.8 <= reach <= 0.95
+    assert abs(xs.mean() + 0.5 - 64) < 3 and abs(ys.mean() + 0.5 - 64) < 3  # centred
+
+
+def test_lake_shapes_differ_by_seed():
+    a = geom.render_guide_mask(natural((), seed=1, lake_margin=10.0), 128, 128.0) > 0.5
+    b = geom.render_guide_mask(natural((), seed=2, lake_margin=10.0), 128, 128.0) > 0.5
+    assert (a ^ b).sum() > 150
+
+
 def test_marker_centre_and_rotation():
     m = geom.Marker("bridge", (2, 5), 40.0, 10.0, (0, 0, 0), (64.0, 80.0), 90.0)
     mask = geom.render_marker_mask(m, 128, 128.0) > 0.5

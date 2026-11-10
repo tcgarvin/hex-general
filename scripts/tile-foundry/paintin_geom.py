@@ -254,6 +254,9 @@ class Guide:
     `ragged` (bank jitter amplitude, tile px, independent per bank), `round_px`
     (radius of the rounded fill where a tributary meets its main course), and
     `pond` (diameter of a still-water blob for a river guide with no edges).
+    `lake_margin` (tile px) turns a river guide with no edges into a lake: a
+    sheet of water that fills most of the hex (see `_lake_strokes`), keeping at
+    least about that much grass inside the hex boundary.
     `seed` picks the meander / jitter draw. `hold_edges` + `hold_half` are for
     painting over a finished tile (bridges over a river tile): across those
     edges the pin keeps the base's own crossing, `hold_half` px either side of
@@ -270,6 +273,7 @@ class Guide:
     ragged: float = 0.0
     round_px: float = 0.0
     pond: float = 0.0
+    lake_margin: float = 0.0
     seed: int = 0
     hold_edges: tuple[int, ...] = ()
     hold_half: float = 0.0
@@ -293,6 +297,7 @@ class Guide:
             or self.ragged > 0
             or self.round_px > 0
             or self.pond > 0
+            or self.lake_margin > 0
             or not self.edges
         )
 
@@ -501,7 +506,8 @@ def hex_coverage(
 #   at full width over the pin zone, then a damped S-curve narrowing concavely
 #   to a thread past the hex centre; a road end runs to just past the centre
 #   and tapers softly;
-# - a river guide with no edges is a pond (`pond` = mean diameter).
+# - a river guide with no edges is a pond (`pond` = mean diameter), or with
+#   `lake_margin` a lake that fills most of the hex (`_lake_strokes`).
 #
 # Coverage is computed from distances to the stroke centrelines, so banks keep
 # real concavities (stamped discs would fill every dip).
@@ -825,6 +831,61 @@ def _pond_strokes(guide: Guide, rng: np.random.Generator) -> list[Stroke]:
     return [Stroke(pts, np.zeros(len(pts)), np.ones(len(pts)))]
 
 
+LAKE_HARMONICS: tuple[tuple[int, float], ...] = (
+    # (lobes, max relative amplitude): low orders shape the body, higher ones
+    # make bays and points; 6 is left out so the shore never echoes the hex
+    (2, 0.07),
+    (3, 0.07),
+    (4, 0.05),
+    (5, 0.045),
+    (7, 0.03),
+    (9, 0.02),
+)
+LAKE_HEX_BLEND = 0.35  # 0 = round lake, 1 = follows the hex outline
+LAKE_MEAN_INSET_PX = 3.0  # the mean shore sits this far inside the margin...
+LAKE_CLIP_SLACK_PX = 1.0  # ...and may bulge this far past it...
+LAKE_CLIP_SOFT_PX = 2.0  # ...through a soft minimum this wide (no flat facets)
+
+
+def hex_inset_radius(
+    theta: np.ndarray, inset: float, hex_width: float = HEX_WIDTH
+) -> np.ndarray:
+    """Centre-to-outline distance along screen angle `theta` of the flat-top hex
+    shrunk by `inset` px (every point of that outline is `inset` px from the
+    nearest edge of the hex)."""
+    # edge normals sit at 30 + 60k degrees (EDGE_THETA_DEG)
+    delta = theta % (np.pi / 3.0) - np.pi / 6.0
+    radius: np.ndarray = (apothem(hex_width) - inset) / np.cos(delta)
+    return radius
+
+
+def _lake_strokes(guide: Guide, rng: np.random.Generator) -> list[Stroke]:
+    """A lake: a closed outline that fills most of the hex, as a pond stroke.
+
+    The mean shore is a blend of a circle and the hex outline, both
+    `lake_margin` inside the boundary, so the water reaches further toward the
+    corners than toward the edge midpoints but never reads as a hexagon. Seeded
+    harmonics (no first order, so the body stays centred and join sprites line
+    up) give bays and points; a soft minimum keeps the shore within
+    `lake_margin - LAKE_CLIP_SLACK_PX` of every edge.
+    """
+    theta = np.linspace(0.0, 2.0 * np.pi, 721)
+    margin = guide.lake_margin
+    inset = margin + LAKE_MEAN_INSET_PX
+    mean = LAKE_HEX_BLEND * hex_inset_radius(theta, inset) + (1.0 - LAKE_HEX_BLEND) * (
+        apothem() - inset
+    )
+    wobble = np.ones_like(theta)
+    for k, amp in LAKE_HARMONICS:
+        wobble += amp * rng.uniform(0.4, 1.0) * np.cos(k * theta + rng.uniform(0, 2 * np.pi))
+    r = mean * wobble
+    cap = hex_inset_radius(theta, margin - LAKE_CLIP_SLACK_PX)
+    soft = LAKE_CLIP_SOFT_PX
+    r = -soft * np.logaddexp(-r / soft, -cap / soft)  # smooth min(r, cap)
+    pts = np.stack([64.0 + r * np.cos(theta), 64.0 + r * np.sin(theta)], axis=-1)
+    return [Stroke(pts, np.zeros(len(pts)), np.ones(len(pts)))]
+
+
 def _approach_stroke(guide: Guide) -> Stroke:
     """A road guide with no edges and a marker: short approaches either side of
     the marker along its long axis, tapering out (a free-standing bridge)."""
@@ -846,8 +907,10 @@ def natural_strokes(guide: Guide) -> list[Stroke]:
     edges = guide.edges
     if not edges:
         if guide.kind == "river":
+            if guide.lake_margin > 0:
+                return _lake_strokes(guide, rng)
             if guide.pond <= 0:
-                raise ValueError("a river guide with no edges needs pond > 0")
+                raise ValueError("a river guide with no edges needs pond > 0 or lake_margin > 0")
             return _pond_strokes(guide, rng)
         return [_approach_stroke(guide)]
     if len(edges) == 1:
@@ -965,6 +1028,7 @@ GUIDE_STYLE_LIMITS: dict[str, tuple[float, float]] = {
     "ragged": (0.0, 3.0),
     "round_px": (0.0, 12.0),
     "pond": (0.0, 80.0),
+    "lake_margin": (0.0, 30.0),
     "hold_half": (0.0, 40.0),
     "end_taper": (0.2, 1.0),
 }

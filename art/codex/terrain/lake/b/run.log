@@ -1,0 +1,35 @@
+calling Codex with ['art/codex/terrain/lake/b/lake-b.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/direction/refs/ref_river_lake_3x.png', 'art/codex/terrain/lake/refs/river-tiles-256.png'] ...
+codex thread 01a1c7ad-048a-7290-9bb6-bfe26d3bff21, 44 s
+PASS lake_00
+    warn lum: lum 86.8 vs anchor 96.7 (-9.9, tol 8.0)
+PASS lake_01
+    warn lum: lum 86.0 vs anchor 96.7 (-10.7, tol 8.0)
+PASS lake_02
+    warn lum: lum 86.9 vs anchor 96.7 (-9.8, tol 8.0)
+PASS lake_03
+    warn lum: lum 86.8 vs anchor 96.7 (-9.9, tol 8.0)
+PASS lake_04
+    warn lum: lum 86.3 vs anchor 96.7 (-10.4, tol 8.0)
+PASS lake_05
+    warn lum: lum 86.7 vs anchor 96.7 (-10.0, tol 8.0)
+PASS lake_06
+    warn lum: lum 86.9 vs anchor 96.7 (-9.8, tol 8.0)
+PASS lake_07
+    warn lum: lum 87.3 vs anchor 96.7 (-9.4, tol 8.0)
+PASS lake_08
+    warn lum: lum 87.5 vs anchor 96.7 (-9.2, tol 8.0)
+PASS lake_09
+    warn lum: lum 85.7 vs anchor 96.7 (-11.0, tol 8.0)
+PASS lake_10
+    warn lum: lum 87.0 vs anchor 96.7 (-9.7, tol 8.0)
+PASS lake_11
+    warn lum: lum 87.0 vs anchor 96.7 (-9.7, tol 8.0)
+PASS lake_12
+    warn lum: lum 86.6 vs anchor 96.7 (-10.1, tol 8.0)
+PASS lake_13
+    warn lum: lum 86.2 vs anchor 96.7 (-10.5, tol 8.0)
+PASS lake_14
+    warn lum: lum 87.4 vs anchor 96.7 (-9.3, tol 8.0)
+PASS lake_15
+    warn lum: lum 87.0 vs anchor 96.7 (-9.7, tol 8.0)
+wrote art/codex/terrain/lake/b/report.json, art/codex/terrain/lake/review/sheets/lake-b.montage.png

@@ -1,0 +1,82 @@
+{
+ "picks": [
+  {
+   "file": "lake/00.png",
+   "source_tile": "art/codex/terrain/lake/b/tiles/lake_00.png",
+   "sheet": "lake-b",
+   "cell": "lake_00",
+   "raw": "art/codex/terrain/lake/b/raw/lake-b.png",
+   "guide_seed": 31,
+   "gates_passed": true,
+   "warnings": [
+    "lum 86.8 vs anchor 96.7 (-9.9, tol 8.0)"
+   ],
+   "sha256": "7264e384cb309e9c9c380895ab067b513658d482b3c02f819ff4d1a44c421cba"
+  },
+  {
+   "file": "lake/01.png",
+   "source_tile": "art/codex/terrain/lake/b/tiles/lake_02.png",
+   "sheet": "lake-b",
+   "cell": "lake_02",
+   "raw": "art/codex/terrain/lake/b/raw/lake-b.png",
+   "guide_seed": 33,
+   "gates_passed": true,
+   "warnings": [
+    "lum 86.9 vs anchor 96.7 (-9.8, tol 8.0)"
+   ],
+   "sha256": "06b1c6e4118d9b441b5988a06a36c9812f886b294268684f5f52bdd1c78321b7"
+  },
+  {
+   "file": "lake/02.png",
+   "source_tile": "art/codex/terrain/lake/b/tiles/lake_07.png",
+   "sheet": "lake-b",
+   "cell": "lake_07",
+   "raw": "art/codex/terrain/lake/b/raw/lake-b.png",
+   "guide_seed": 38,
+   "gates_passed": true,
+   "warnings": [
+    "lum 87.3 vs anchor 96.7 (-9.4, tol 8.0)"
+   ],
+   "sha256": "54976aa29db33082841344020e905b65a26dabe526168bda5775b99c2a8ed325"
+  },
+  {
+   "file": "lake/03.png",
+   "source_tile": "art/codex/terrain/lake/b/tiles/lake_09.png",
+   "sheet": "lake-b",
+   "cell": "lake_09",
+   "raw": "art/codex/terrain/lake/b/raw/lake-b.png",
+   "guide_seed": 40,
+   "gates_passed": true,
+   "warnings": [
+    "lum 85.7 vs anchor 96.7 (-11.0, tol 8.0)"
+   ],
+   "sha256": "8924233fd08c798005d30ee46ee41274ff96f2fa94ffce5ffb4cbaf6b1543e84"
+  },
+  {
+   "file": "lake/04.png",
+   "source_tile": "art/codex/terrain/lake/b/tiles/lake_12.png",
+   "sheet": "lake-b",
+   "cell": "lake_12",
+   "raw": "art/codex/terrain/lake/b/raw/lake-b.png",
+   "guide_seed": 43,
+   "gates_passed": true,
+   "warnings": [
+    "lum 86.6 vs anchor 96.7 (-10.1, tol 8.0)"
+   ],
+   "sha256": "81df78465923f7431259388b209af76795eeb3951c45dc2b168e1c6a9295e16b"
+  },
+  {
+   "file": "lake/05.png",
+   "source_tile": "art/codex/terrain/lake/b/tiles/lake_15.png",
+   "sheet": "lake-b",
+   "cell": "lake_15",
+   "raw": "art/codex/terrain/lake/b/raw/lake-b.png",
+   "guide_seed": 46,
+   "gates_passed": true,
+   "warnings": [
+    "lum 87.0 vs anchor 96.7 (-9.7, tol 8.0)"
+   ],
+   "sha256": "2df4fe813ed8d858218dbbbad8e04c47c1cd502728240c562b470e6f0832a565"
+  }
+ ]
+}

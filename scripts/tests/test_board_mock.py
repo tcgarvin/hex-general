@@ -261,8 +261,20 @@ def test_oriented_river_tile_fork_spot_checks(
 # --- riverTiles.test.ts: riverCourseEdges --------------------------------------
 
 
+def padded(cells: dict[tuple[int, int], str]) -> dict[tuple[int, int], str]:
+    """``cells`` with every unlisted neighbour as plains (riverTiles.test.ts
+    ``world``), so no listed river hex is on the map edge and the edge rule stays
+    out of tests about something else."""
+    out = dict(cells)
+    for q, r in cells:
+        for dq, dr in DIRS:
+            out.setdefault((q + dq, r + dr), "plains")
+    return out
+
+
 def course(cells: dict[tuple[int, int], str]) -> dict[str, list[int]]:
-    return bm.river_course_edges(cells.keys(), terrain_probe(cells))
+    world = padded(cells)
+    return bm.river_course_edges(world.keys(), terrain_probe(world))
 
 
 def test_river_course_leaves_triangle_free_course_untouched() -> None:
@@ -324,7 +336,7 @@ def test_road_connected_edges_ignores_non_road_and_off_map() -> None:
 
 def refs_for(centre, dirs: list[int], terrain: str = "plains"):
     hexes = [centre, *road_neighbours(dirs, terrain, True)]
-    return bm.road_tile_refs(hexes, hex_probe(hexes))
+    return bm.road_tile_refs(hexes, bm.road_course_edges(hexes, hex_probe(hexes)))
 
 
 def test_road_tile_refs_straight() -> None:
@@ -343,7 +355,11 @@ def test_road_tile_refs_keyed_by_own_terrain() -> None:
 
 
 def test_road_tile_refs_omit_unhandled_masks() -> None:
-    assert "0,0" not in refs_for(make_hex(0, 0, "plains", True), [0, 1, 3, 4])
+    # A solid road blob (radius-2 disc, 42 chords) is past the pruning cap and
+    # keeps its raw masks: the centre's six edges are unmodelled.
+    hexes = [make_hex(q, r, "plains", True) for q, r in disc(2)]
+    refs = bm.road_tile_refs(hexes, bm.road_course_edges(hexes, hex_probe(hexes)))
+    assert "0,0" not in refs
 
 
 def test_road_tile_refs_omit_river_and_bridge() -> None:
@@ -369,7 +385,9 @@ def test_ascii_grid_neighbours_are_axial_neighbours() -> None:
     # (edge 0), odd col 1 reaches col 0 via NW (3) and col 2 via NE (1), even col
     # 2 reaches col 1 via SW (4).
     m = bm.parse_ascii("~~~\n...\n", "t")
-    result = bm.river_course_edges(((h.q, h.r) for h in m.hexes), m.terrain_at)
+    result = bm.course_graph_edges(
+        ((h.q, h.r) for h in m.hexes), lambda q, r: m.terrain_at(q, r) in bm.RIVER_LIKE
+    )
     by_col = {h.col: result[f"{h.q},{h.r}"] for h in m.hexes if h.row == 0}
     assert by_col == {0: [0], 1: [1, 3], 2: [4]}
 
@@ -450,10 +468,11 @@ def choices_for(game_map, library):
     course = bm.river_course_edges(
         ((h.q, h.r) for h in game_map.hexes), game_map.terrain_at
     )
-    refs = bm.road_tile_refs(game_map.hexes, game_map.hex_at)
+    road_course = bm.road_course_edges(game_map.hexes, game_map.hex_at)
+    refs = bm.road_tile_refs(game_map.hexes, road_course)
     return (
         {
-            (h.col, h.row): bm.choose_tile(h, library, course, refs, game_map.hex_at)
+            (h.col, h.row): bm.choose_tile(h, library, course, refs, road_course)
             for h in game_map.hexes
         },
         course,
@@ -466,7 +485,9 @@ def test_tile_library_prefers_primary_then_fallback_then_generic(tile_sets) -> N
     library = bm.TileLibrary(primary, fallback)
     # col 1: a vertical river (straight_v at row 1) whose row-2 hex turns SE
     # (turn_n_se) into col 2 row 3 (odd col 1's SE neighbour is (2, row + 1)).
-    m = bm.parse_ascii("[terrain]\n.~.\n.~.\n.~.\n..~\n", "t")
+    # The map is one column and one row wider than the river so (2, 3) is an
+    # inland end cap (on the border the edge rule would run it off the map).
+    m = bm.parse_ascii("[terrain]\n.~..\n.~..\n.~..\n..~.\n....\n", "t")
     choices, _, _ = choices_for(m, library)
     assert choices[(1, 1)].group.tile_set is primary
     assert choices[(1, 1)].path.name == "straight_v_00.png"
@@ -662,3 +683,351 @@ def test_staged_base_footprint_is_validated(tmp_path: Path) -> None:
     write_stage(sites_dir, "stage2_a", [(0, 0), (0, 1)], [(1, 1, 1), (2, 2, 2)])
     with pytest.raises(bm.TileSetError, match="footprint"):
         bm.SiteSet.discover(sites_dir)
+
+
+# --- lakes and the river-mouth rule -------------------------------------------
+
+# mouth_direction(river_dirs, lake_dirs) -> expected lake direction or None.
+MOUTH_CASES = [
+    # straight beats gentle, whatever the direction order
+    ([2], [0, 4, 5], 5),
+    ([5], [0, 2, 3], 2),
+    # gentle when no straight option; ties go to the lowest direction
+    ([2], [0, 4], 0),
+    ([0], [2, 4], 2),
+    ([3], [1], 1),
+    # sharp turns are never taken
+    ([2], [1, 3], None),
+    ([0], [1], None),
+    ([0], [1, 3], 3),
+    # no river-like neighbour: the lowest lake direction
+    ([], [4, 1, 3], 1),
+    # mid-course hexes and hexes with no lake neighbour get no mouth
+    ([1, 4], [0], None),
+    ([2], [], None),
+    ([], [], None),
+]
+
+
+@pytest.mark.parametrize(("river_dirs", "lake_dirs", "expected"), MOUTH_CASES)
+def test_mouth_direction(river_dirs: list[int], lake_dirs: list[int], expected) -> None:
+    assert bm.mouth_direction(river_dirs, lake_dirs) == expected
+
+
+def test_lake_is_not_river_like_for_the_course() -> None:
+    # a river running past a lake (two river neighbours) does not connect to it
+    cells = {(0, 0): "river", DIRS[2]: "river", DIRS[5]: "river", DIRS[0]: "lake"}
+    probe = terrain_probe(cells)
+    assert course(cells)["0,0"] == [2, 5]
+    assert bm.lake_mouths(cells, probe) == {}
+    assert bm.connected_edges(0, 0, probe) == [2, 5]
+
+
+def test_lake_mouths_extend_the_course_to_the_lake() -> None:
+    # river course from the north ends at (0,0); lakes S and SE of it
+    cells = {(0, 0): "river", DIRS[2]: "river", DIRS[5]: "lake", DIRS[0]: "lake"}
+    probe = terrain_probe(padded(cells))
+    mouths = bm.lake_mouths(cells, probe)
+    assert mouths == {"0,0": 5}
+    full = bm.river_course_edges(padded(cells), probe)
+    assert full["0,0"] == [2, 5]
+    assert bm.oriented_river_tile(full["0,0"]) == bm.OrientedTile("straight_v", False)
+    # the upstream hex is unchanged: its own lake-free course
+    assert full["0,-1"] == [5]
+
+
+def test_lake_mouth_on_a_lone_river_hex_is_an_end_cap() -> None:
+    cells = {(0, 0): "river", DIRS[3]: "lake", DIRS[1]: "lake"}
+    probe = terrain_probe(padded(cells))
+    mouths = bm.lake_mouths(cells, probe)
+    assert mouths == {"0,0": 1}
+    full = bm.river_course_edges(padded(cells), probe)
+    assert bm.oriented_river_tile(full["0,0"]) == bm.OrientedTile("end_ne", False)
+
+
+def test_parse_ascii_reads_lake_and_rejects_roads_on_it() -> None:
+    m = bm.parse_ascii("o.\n..\n", "t")
+    assert m.terrain_at(0, 0) == "lake"
+    with pytest.raises(bm.MapError, match="lake"):
+        bm.parse_ascii("o.\n..\n[roads]\n#.\n..\n", "t")
+
+
+def test_lake_without_art_renders_flat_fill(tile_sets) -> None:
+    primary, _ = tile_sets
+    m = bm.parse_ascii("o\n", "t")
+    image, report = bm.render(m, bm.TileLibrary(primary, None), 64, False, None)
+    assert report.choices == []
+    assert [(h.col, h.row) for h in report.fill_only] == [(0, 0)]
+    px = np.asarray(image)
+    fill = bm.TERRAIN_FILL["lake"]
+    assert tuple(px[px.shape[0] // 2, px.shape[1] // 2]) == (
+        (fill >> 16) & 0xFF,
+        (fill >> 8) & 0xFF,
+        fill & 0xFF,
+    )
+    assert "flat fill only" in bm.format_report(report)
+
+
+def test_lake_variants_use_the_cosmetic_hash(tmp_path: Path) -> None:
+    root = tmp_path / "tiles"
+    write_tile(root / "plains" / "00.png", (0, 200, 0))
+    for i in range(3):
+        write_tile(root / "lake" / f"0{i}.png", (0, 0, 100 + i))
+    library = bm.TileLibrary(bm.TileSet.discover(root, "tiles"), None)
+    m = bm.parse_ascii("ooo\nooo\n", "t")
+    _, report = bm.render(m, library, 64, False, None)
+    for h, choice in report.choices:
+        assert choice.kind == "terrain"
+        assert choice.path.name == f"0{bm.variant_index(h.q, h.r, 3)}.png"
+
+
+def write_joins(root: Path, files: list[str]) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "joins.json").write_text('{"hex_width": 128}')
+    for name in files:
+        write_tile(root / name, (10, 20, 30), size=64)
+
+
+def test_lake_joins_and_mouth_sprite_are_chosen(tmp_path: Path) -> None:
+    root = tmp_path / "tiles"
+    write_tile(root / "plains" / "00.png", (0, 200, 0))
+    write_tile(root / "river" / "00.png", (0, 0, 200))
+    joins_dir = tmp_path / "joins"
+    write_joins(joins_dir, ["lake/edge_n_00.png", "lake/mouth_s_00.png", "lake/mouth_n_00.png"])
+    joins = bm.JoinSet.load(joins_dir)
+    # col 0: river rows 0-1 flowing south into lake rows 2-3
+    m = bm.parse_ascii("~.\n~.\no.\no.\n", "t")
+    _, report = bm.render(m, bm.TileLibrary(bm.TileSet.discover(root, "tiles"), None), 64, False, None, joins=joins)
+    assert report.mouths == {"0,1": 5}
+    kinds = [(j.path.name, tuple((h.col, h.row) for h in j.hexes)) for j in report.joins]
+    # lake-lake edge (A = lower lake, its N neighbour) first, then the mouth
+    assert kinds == [("edge_n_00.png", ((0, 3), (0, 2))), ("mouth_s_00.png", ((0, 1), (0, 2)))]
+    mouth = report.joins[-1]
+    assert mouth.code == bm.MOUTH_CODE_BASE + 5
+    r_hex, lake = mouth.hexes
+    rx, ry = bm.axial_to_pixel(r_hex.q, r_hex.r, bm.HEX_SIZE)
+    lx, ly = bm.axial_to_pixel(lake.q, lake.r, bm.HEX_SIZE)
+    assert mouth.anchor == pytest.approx(((rx + lx) / 2, (ry + ly) / 2))
+
+
+def test_join_set_rejects_unknown_kinds(tmp_path: Path) -> None:
+    write_joins(tmp_path, ["lake/mouth_up_00.png"])
+    with pytest.raises(bm.TileSetError, match="kind must be one of"):
+        bm.JoinSet.load(tmp_path)
+
+
+# --- the map-edge rule ----------------------------------------------------------
+
+EDGE_CASES = [
+    ([2], [5, 0, 4], 5),  # straight preferred
+    ([2], [0, 4], 0),  # gentle fallback, lowest of the ties
+    ([5], [3], 3),  # gentle
+    ([2], [1, 3], None),  # sharp only: stays an end cap
+    ([], [4, 2], 2),  # no river neighbour: lowest off-map direction
+    ([1, 3], [2], None),  # mid-course hex on the edge: unchanged
+    ([2], [], None),  # interior hex: unchanged
+]
+
+
+@pytest.mark.parametrize(("river_dirs", "off_map", "expected"), EDGE_CASES)
+def test_edge_direction(river_dirs: list[int], off_map: list[int], expected) -> None:
+    assert bm.edge_direction(river_dirs, off_map) == expected
+
+
+def edge_outlets_of(text: str) -> tuple[dict[str, int], dict[str, int]]:
+    m = bm.parse_ascii(text, "t")
+    coords = [(h.q, h.r) for h in m.hexes]
+    mouths = bm.lake_mouths(coords, m.terrain_at)
+    return mouths, bm.map_edge_outlets(coords, m.terrain_at, mouths)
+
+
+def test_edge_rule_runs_a_border_river_off_the_map() -> None:
+    # col 1 (odd) runs top to bottom: top hex (1,0) exits N, bottom (1,2) exits S
+    mouths, outlets = edge_outlets_of(".~.\n.~.\n.~.\n")
+    assert mouths == {}
+    assert outlets == {"1,0": 2, "1,2": 5}
+
+
+def test_edge_rule_leaves_interior_caps_and_mid_course_hexes_alone() -> None:
+    # interior spring at (2,2) flowing north to the border at (2,0)
+    _, outlets = edge_outlets_of(".....\n..~..\n..~..\n.....\n.....\n")
+    assert outlets == {}
+    # a river along the top border: the middle hex has two river neighbours
+    _, outlets = edge_outlets_of("~~~\n...\n")
+    assert "1,0" not in outlets
+
+
+def test_mouth_rule_wins_over_the_edge_rule() -> None:
+    # (1,0) is on the top border and touches the lake below it
+    mouths, outlets = edge_outlets_of(".~.\n.o.\n...\n")
+    assert mouths == {"1,0": 5}
+    assert outlets == {}
+
+
+def test_render_draws_edge_exits_instead_of_end_caps(tmp_path: Path) -> None:
+    root = tmp_path / "tiles"
+    write_tile(root / "plains" / "00.png", (0, 200, 0))
+    write_tile(root / "river" / "00.png", (0, 0, 9))
+    write_tile(root / "river" / "straight_v_00.png", (0, 0, 200))
+    library = bm.TileLibrary(bm.TileSet.discover(root, "tiles"), None)
+    _, report = bm.render(bm.parse_ascii(".~.\n.~.\n.~.\n", "t"), library, 64, False, None)
+    shapes = {(h.col, h.row): c.shape for h, c in report.choices if h.terrain == "river"}
+    assert shapes == {(1, 0): "straight_v", (1, 1): "straight_v", (1, 2): "straight_v"}
+    assert report.edge_outlets == {"1,0": 2, "1,2": 5}
+
+
+
+# --- courseGraph.ts: local junction pruning (riverTiles/roadTiles tests) ---------
+
+
+def disc(radius: int) -> list[tuple[int, int]]:
+    """Every axial coord within ``radius`` of the origin."""
+    return [
+        (q, r)
+        for q in range(-radius, radius + 1)
+        for r in range(max(-radius, -q - radius), min(radius, -q + radius) + 1)
+    ]
+
+
+def ray(at: tuple[int, int], direction: int, steps: int) -> list[tuple[int, int]]:
+    dq, dr = DIRS[direction]
+    return [(at[0] + dq * (i + 1), at[1] + dr * (i + 1)) for i in range(steps)]
+
+
+def road_map(area, roads) -> list:
+    on_road = set(roads)
+    return [make_hex(q, r, "plains", (q, r) in on_road) for q, r in area]
+
+
+def course_triangles(course: dict[str, list[int]]) -> int:
+    """Triangles whose three edges all survive, counted once per corner."""
+    count = 0
+    for key, edges in course.items():
+        q, r = map(int, key.split(","))
+        for d in range(6):
+            e = (d + 1) % 6
+            if d in edges and e in edges:
+                bq, br = DIRS[d]
+                if (d + 2) % 6 in course[f"{q + bq},{r + br}"]:
+                    count += 1
+    return count
+
+
+def components(edges: dict[str, list[int]]) -> str:
+    seen: set[str] = set()
+    groups: list[str] = []
+    for start in edges:
+        if start in seen:
+            continue
+        members, stack = [], [start]
+        seen.add(start)
+        while stack:
+            k = stack.pop()
+            members.append(k)
+            q, r = map(int, k.split(","))
+            for d in edges[k]:
+                n = f"{q + DIRS[d][0]},{r + DIRS[d][1]}"
+                if n not in seen:
+                    seen.add(n)
+                    stack.append(n)
+        groups.append(" ".join(sorted(members)))
+    return " | ".join(sorted(groups))
+
+
+def junction_cells(dq: int) -> dict[tuple[int, int], str]:
+    """The twin_rivers tributary junction, shifted by ``dq`` columns."""
+    return {
+        (q + dq, r): "river"
+        for q, r in ((0, 0), (1, 0), (-1, 1), (0, 1), (2, -1), (-2, 1), (0, 2))
+    }
+
+
+def test_far_apart_junctions_are_all_pruned() -> None:
+    # Four junctions of five chords each: 20 chords map-wide, over the old
+    # whole-map cap of 16, but each cluster is small.
+    cells: dict[tuple[int, int], str] = {}
+    for dq in (0, 20, 40, 60):
+        cells.update(junction_cells(dq))
+    result = course(cells)
+    for dq in (0, 20, 40, 60):
+        assert result[f"{dq},0"] == [0, 4, 5]
+        assert result[f"{dq + 1},0"] == [1, 3]
+        assert result[f"{dq - 1},1"] == [1, 3]
+        assert result[f"{dq},1"] == [2, 5]
+
+
+def test_road_t_junction_prunes_to_one_fork() -> None:
+    # A N/S road through the origin; a branch leaves east from (1,0), which also
+    # touches (0,1): the raw masks make a triangle loop at the join.
+    roads = [(0, 0), *ray((0, 0), 2, 3), *ray((0, 0), 5, 3), *ray((0, 0), 0, 3)]
+    hexes = road_map(disc(5), roads)
+    road_course = bm.road_course_edges(hexes, hex_probe(hexes))
+    assert course_triangles(road_course) == 0
+    assert road_course["0,0"] == [0, 2, 5]
+    assert road_course["0,1"] == [2, 5]
+    assert road_course["1,0"] == [0, 3]
+    refs = bm.road_tile_refs(hexes, road_course)
+    assert refs["0,0"] == bm.RoadTileRef("road/plains_fork_se_n_s", False)
+
+
+def test_three_road_meeting_keeps_every_arm() -> None:
+    a, b, c = (0, 0), (1, 0), (0, 1)
+    roads = [a, b, c, *ray(a, 2, 3), *ray(b, 0, 3), *ray(c, 4, 3)]
+    hexes = road_map(disc(5), roads)
+    road_course = bm.road_course_edges(hexes, hex_probe(hexes))
+    assert course_triangles(road_course) == 0
+    assert len(components(road_course).split(" | ")) == 1
+    assert 2 in road_course["0,0"]
+    assert 0 in road_course["1,0"]
+    assert 4 in road_course["0,1"]
+
+
+def test_road_y_meeting_without_triangles_is_untouched() -> None:
+    roads = [(0, 0), *ray((0, 0), 0, 3), *ray((0, 0), 2, 3), *ray((0, 0), 4, 3)]
+    hexes = road_map(disc(5), roads)
+    assert bm.road_course_edges(hexes, hex_probe(hexes))["0,0"] == [0, 2, 4]
+
+
+def test_road_pruning_never_changes_connectivity() -> None:
+    rng = np.random.default_rng(0x5EED)
+    area = disc(4)
+    for _ in range(60):
+        density = 0.25 + rng.random() * 0.35
+        hexes = [
+            make_hex(q, r, "bridge" if rng.random() < 0.1 else "plains", bool(rng.random() < density))
+            for q, r in area
+        ]
+        probe = hex_probe(hexes)
+        raw = {
+            f"{h.q},{h.r}": bm.road_connected_edges(h.q, h.r, probe)
+            for h in hexes
+            if h.road or h.terrain == "bridge"
+        }
+        pruned = bm.road_course_edges(hexes, probe)
+        assert sorted(pruned) == sorted(raw)
+        assert components(pruned) == components(raw)
+        for key, edges in pruned.items():
+            assert set(edges) <= set(raw[key])
+            q, r = map(int, key.split(","))
+            for d in edges:
+                assert (d + 3) % 6 in pruned[f"{q + DIRS[d][0]},{r + DIRS[d][1]}"]
+
+
+def test_course_graph_rejects_missing_carrying_neighbours() -> None:
+    cells = {(0, 0): "river", (0, 1): "river"}
+    with pytest.raises(ValueError, match="not among the coords"):
+        bm.course_graph_edges([(0, 0)], lambda q, r: cells.get((q, r)) == "river")
+
+
+def test_render_draws_road_stubs_along_the_pruned_course(tmp_path: Path) -> None:
+    root = tmp_path / "tiles"
+    write_tile(root / "plains" / "00.png", (0, 200, 0))
+    library = bm.TileLibrary(bm.TileSet.discover(root, "tiles"), None)
+    # no baked road art: every road hex draws vector stubs
+    m = bm.parse_ascii(".....\n.....\n.....\n.....\n[roads]\n..#..\n..##.\n..#..\n..#..\n", "t")
+    _, report = bm.render(m, library, 64, False, None)
+    road_course = bm.road_course_edges(m.hexes, m.hex_at)
+    assert course_triangles(road_course) == 0
+    assert {(h.col, h.row) for h in report.vector_roads} == {
+        (h.col, h.row) for h in m.hexes if h.road
+    }

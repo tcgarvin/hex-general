@@ -1,0 +1,187 @@
+{
+ "name": "lake-a",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "lake_00",
+   "slot": 0,
+   "base": "../../r1-bases/00.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 11
+   }
+  },
+  {
+   "name": "lake_01",
+   "slot": 1,
+   "base": "../../r1-bases/01.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 12
+   }
+  },
+  {
+   "name": "lake_02",
+   "slot": 2,
+   "base": "../../r1-bases/02.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 13
+   }
+  },
+  {
+   "name": "lake_03",
+   "slot": 3,
+   "base": "../../r1-bases/03.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 14
+   }
+  },
+  {
+   "name": "lake_04",
+   "slot": 4,
+   "base": "../../r1-bases/04.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 15
+   }
+  },
+  {
+   "name": "lake_05",
+   "slot": 5,
+   "base": "../../r1-bases/05.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 16
+   }
+  },
+  {
+   "name": "lake_06",
+   "slot": 6,
+   "base": "../../r1-bases/00.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 17
+   }
+  },
+  {
+   "name": "lake_07",
+   "slot": 7,
+   "base": "../../r1-bases/01.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 18
+   }
+  },
+  {
+   "name": "lake_08",
+   "slot": 8,
+   "base": "../../r1-bases/02.png",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "ragged": 0.9,
+    "lake_margin": 10,
+    "seed": 19
+   }
+  }
+ ],
+ "profile": {
+  "path": "../../river/profile.json"
+ },
+ "pin": {
+  "restore": true,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   67,
+   81,
+   77
+  ]
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0,
+  "feature_lum": 76.0,
+  "feature_sat": 0.17
+ }
+}

@@ -61,6 +61,12 @@ the unit sprites, and `scripts/tile-foundry/selftest.py` keeps verifying it.
 variant montage; use the **`verify-board`** skill to render the local board in
 Chrome after an art/render change. See ART_PIPELINE.md + ROADMAP Phase 8.
 
+Lakes (`Terrain.LAKE`, map char `o`, generated worlds only, 2026-11-10) have **no
+ratified art yet**: the game draws a lake hex as a flat water fill until tiles land in
+`frontend/src/board/tiles/lake/` (candidates and provenance: `art/codex/terrain/lake/`,
+`art/codex/terrain/candidates/lake1*`). Road and river junctions are drawn from a pruned
+course graph (`frontend/src/board/courseGraph.ts`, ported in `scripts/board-mock.py`).
+
 The ratified site and base tiles (farm, oil field, steel mill, factory levels 1-3, base
 stages 1-4; 2026-11-10) are wired into the world renderer via
 `frontend/src/world/siteTiles.ts` (tile choice in `worldTiles.ts`): a site's painted

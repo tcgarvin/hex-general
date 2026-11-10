@@ -230,7 +230,7 @@ def test_join_variant_index_matches_js(
 
 def test_join_variant_index_rejects_bad_codes() -> None:
     with pytest.raises(ValueError):
-        bm.join_variant_index(0, 0, 5, 3)
+        bm.join_variant_index(0, 0, 11, 3)  # 0-4 joins, 5-10 river mouths
 
 
 def test_canonical_edge_names_each_edge_once() -> None:
@@ -378,3 +378,69 @@ def test_concept_grid_changes_only_the_grid(tmp_path: Path) -> None:
     assert (c[changed].sum(axis=1) > o[changed].sum(axis=1) + 60).any()
     with pytest.raises(ValueError):
         bm.render(m, library, 128, True, None, grid_style="bold")
+
+
+# --- lake joins and river mouths -------------------------------------------------
+
+PROFILE = SCRIPTS.parent / "art" / "codex" / "terrain" / "river" / "profile.json"
+
+
+def flat_water() -> np.ndarray:
+    out = np.zeros((joins.CANVAS, joins.CANVAS, 4))
+    out[..., :3] = (60, 75, 72)
+    out[..., 3] = 255
+    return out
+
+
+@pytest.mark.parametrize("name", list(joins.MOUTHS))
+def test_mouth_sprite_continues_the_river_crossing(name: str) -> None:
+    """On the shared edge the sprite is the river profile; it reaches into the
+    lake hex only, and its water fades out before the canvas edge."""
+    direction = joins.MOUTHS[name]
+    profile = joins.CrossProfile.load(PROFILE)
+    sprite = joins.mouth_sprite(direction, profile, flat_water(), seed=0)
+    normal, tangent = joins.mouth_frame(direction)
+    xs, ys = joins._pixel_grid(joins.CANVAS)
+    p = xs * normal[0] + ys * normal[1]
+    t = xs * tangent[0] + ys * tangent[1]
+    alpha = sprite[..., 3] / 255
+    assert alpha[p < -joins.MOUTH_BACK_PX].max() == 0  # nothing inside the river hex
+    on_edge = (np.abs(p) < 0.8) & (np.abs(t) < 6)
+    rgb, _ = profile.sample(t[on_edge])
+    assert np.abs(sprite[..., :3][on_edge] - rgb).max() < 4
+    assert alpha[on_edge].min() > 0.4
+    assert alpha[p > joins.MOUTH_WATER_FADE[1]].max() == 0
+
+
+def test_lake_joins_build_every_kind(tmp_path: Path) -> None:
+    tiles = tmp_path / "tiles" / "lake"
+    tiles.mkdir(parents=True)
+    arr = np.zeros((128, 128, 4), dtype=np.uint8)
+    arr[...] = (60, 75, 72, 255)
+    for i in range(2):
+        Image.fromarray(arr, "RGBA").save(tiles / f"0{i}.png")
+    out = tmp_path / "joins"
+    assert (
+        joins.main(
+            [
+                "--tiles",
+                str(tmp_path / "tiles"),
+                "--out",
+                str(out),
+                "--terrains",
+                "lake",
+                "--variants",
+                "2",
+            ]
+        )
+        == 0
+    )
+    names = sorted(p.stem for p in (out / "lake").glob("*.png"))
+    kinds = sorted({n.rsplit("_", 1)[0] for n in names})
+    assert kinds == sorted(
+        ["edge_se", "edge_ne", "edge_n", "vert_e", "vert_ne"]
+        + [f"mouth_{m}" for m in joins.MOUTHS]
+    )
+    loaded = bm.JoinSet.load(out)
+    assert ("lake", bm.MOUTH_CODE_BASE + 5) in loaded.groups
+    assert "Mouth kinds" in (out / "README.md").read_text()

@@ -1,0 +1,343 @@
+{
+ "tool": "scripts/tile-foundry/paintin.py",
+ "version": 1,
+ "job": "art/codex/terrain/lake/a/job.json",
+ "job_sha256": "c6af52f67134e1fcdf2180a5dd9efbe72668b061b44dc369f21b0e906be4734d",
+ "name": "lake-a",
+ "sheet": "art/codex/terrain/lake/a/lake-a.sheet.png",
+ "sheet_sha256": "5e840d7331fec260212d0354c3c0667b1d6f997e9afe2b301619faaed378f4f4",
+ "canvas": [
+  1254,
+  1254
+ ],
+ "layout": {
+  "canvas": 1254,
+  "cols": 3,
+  "rows": 3,
+  "hex_width": 340
+ },
+ "background": [
+  255,
+  0,
+  255
+ ],
+ "tile_px": 128,
+ "profile": {
+  "path": "/home/timg/code/hex-general/art/codex/terrain/river/profile.json"
+ },
+ "pin": {
+  "restore": true,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   67,
+   81,
+   77
+  ]
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0,
+  "feature_lum": 76.0,
+  "feature_sat": 0.17
+ },
+ "cells": [
+  {
+   "name": "lake_00",
+   "slot": 0,
+   "cx": 209.0,
+   "cy": 209.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/00.png",
+   "base_sha256": "df0393a5a31ae788206c176ef898c0944f1953c2dbd68131c21bca2673bebb2c",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 11,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_00.png"
+  },
+  {
+   "name": "lake_01",
+   "slot": 1,
+   "cx": 627.0,
+   "cy": 209.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/01.png",
+   "base_sha256": "346d285b27f9a1d99958ea714d07a141738ac4928d8eac565bebc18212bac630",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 12,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_01.png"
+  },
+  {
+   "name": "lake_02",
+   "slot": 2,
+   "cx": 1045.0,
+   "cy": 209.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/02.png",
+   "base_sha256": "95eb7e41ad1154edcbfbc5b3071aecd791040c5cc64c723d740d92ab6f1fbea6",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 13,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_02.png"
+  },
+  {
+   "name": "lake_03",
+   "slot": 3,
+   "cx": 209.0,
+   "cy": 627.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/03.png",
+   "base_sha256": "ed90a220a15f680c2f50df56fb731cf32d5154065aba79df17049b8cbd883275",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 14,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_03.png"
+  },
+  {
+   "name": "lake_04",
+   "slot": 4,
+   "cx": 627.0,
+   "cy": 627.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/04.png",
+   "base_sha256": "b7dbc9af51f52234aeff16236e5ca73e4e765fb9738110b73fcc03f143de643a",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 15,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_04.png"
+  },
+  {
+   "name": "lake_05",
+   "slot": 5,
+   "cx": 1045.0,
+   "cy": 627.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/05.png",
+   "base_sha256": "5eb0fe72d399139bef5db3feb9b71a49c9efee7740f38f3ac259c33cacba0d1d",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 16,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_05.png"
+  },
+  {
+   "name": "lake_06",
+   "slot": 6,
+   "cx": 209.0,
+   "cy": 1045.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/00.png",
+   "base_sha256": "df0393a5a31ae788206c176ef898c0944f1953c2dbd68131c21bca2673bebb2c",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 17,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_06.png"
+  },
+  {
+   "name": "lake_07",
+   "slot": 7,
+   "cx": 627.0,
+   "cy": 1045.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/01.png",
+   "base_sha256": "346d285b27f9a1d99958ea714d07a141738ac4928d8eac565bebc18212bac630",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 18,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_07.png"
+  },
+  {
+   "name": "lake_08",
+   "slot": 8,
+   "cx": 1045.0,
+   "cy": 1045.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/r1-bases/02.png",
+   "base_sha256": "95eb7e41ad1154edcbfbc5b3071aecd791040c5cc64c723d740d92ab6f1fbea6",
+   "guide": {
+    "kind": "river",
+    "edges": [],
+    "width": 23.0,
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "marker": null,
+    "meander": 0.0,
+    "breathe": 0.0,
+    "ragged": 0.9,
+    "round_px": 0.0,
+    "pond": 0.0,
+    "lake_margin": 10.0,
+    "seed": 19,
+    "hold_edges": [],
+    "hold_half": 0.0,
+    "end_taper": 0.55
+   },
+   "anchors": {},
+   "output": "lake_08.png"
+  }
+ ]
+}

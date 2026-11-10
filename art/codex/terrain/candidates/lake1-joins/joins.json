@@ -1,0 +1,336 @@
+{
+ "hex_width": 128,
+ "canvas": 64,
+ "anchor": "canvas centre = shared edge midpoint (edge_*) or vertex (vert_*)",
+ "edge_kinds": {
+  "edge_se": 0,
+  "edge_ne": 1,
+  "edge_n": 2
+ },
+ "vertex_kinds": {
+  "vert_e": 0,
+  "vert_ne": 1
+ },
+ "mouth_kinds": {
+  "mouth_se": 5,
+  "mouth_ne": 6,
+  "mouth_n": 7,
+  "mouth_nw": 8,
+  "mouth_sw": 9,
+  "mouth_s": 10
+ },
+ "draw_order": "after base tiles: edges by (r, q, dir), then vertices by (r, q, i); before grid and overlays",
+ "tiles": "art/codex/terrain/candidates/lake1",
+ "params": {
+  "lake": {
+   "edge": {
+    "half_width": 25.0,
+    "half_length": 30.0,
+    "feather": 3.0
+   },
+   "vertex": {
+    "radius": 29.0,
+    "feather": 4.0
+   }
+  }
+ },
+ "sprites": [
+  {
+   "file": "lake/edge_se_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/00.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "lake/edge_se_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/01.png",
+   "offset": [
+    -3,
+    -3
+   ]
+  },
+  {
+   "file": "lake/edge_se_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/02.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "lake/edge_ne_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/01.png",
+   "offset": [
+    -3,
+    6
+   ]
+  },
+  {
+   "file": "lake/edge_ne_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/02.png",
+   "offset": [
+    -3,
+    6
+   ]
+  },
+  {
+   "file": "lake/edge_ne_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/03.png",
+   "offset": [
+    -3,
+    -9
+   ]
+  },
+  {
+   "file": "lake/edge_n_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/02.png",
+   "offset": [
+    6,
+    -9
+   ]
+  },
+  {
+   "file": "lake/edge_n_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/03.png",
+   "offset": [
+    -6,
+    -12
+   ]
+  },
+  {
+   "file": "lake/edge_n_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/04.png",
+   "offset": [
+    6,
+    0
+   ]
+  },
+  {
+   "file": "lake/vert_e_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/03.png",
+   "offset": [
+    6,
+    3
+   ]
+  },
+  {
+   "file": "lake/vert_e_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/04.png",
+   "offset": [
+    -6,
+    3
+   ]
+  },
+  {
+   "file": "lake/vert_e_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/05.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "lake/vert_ne_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/04.png",
+   "offset": [
+    3,
+    3
+   ]
+  },
+  {
+   "file": "lake/vert_ne_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/05.png",
+   "offset": [
+    6,
+    -6
+   ]
+  },
+  {
+   "file": "lake/vert_ne_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/lake1/lake/00.png",
+   "offset": [
+    9,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_se_00.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/00.png",
+   "offset": [
+    3,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_se_01.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/01.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_se_02.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/02.png",
+   "offset": [
+    3,
+    3
+   ]
+  },
+  {
+   "file": "lake/mouth_ne_00.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/01.png",
+   "offset": [
+    0,
+    9
+   ]
+  },
+  {
+   "file": "lake/mouth_ne_01.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/02.png",
+   "offset": [
+    3,
+    -6
+   ]
+  },
+  {
+   "file": "lake/mouth_ne_02.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/03.png",
+   "offset": [
+    -3,
+    -3
+   ]
+  },
+  {
+   "file": "lake/mouth_n_00.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/02.png",
+   "offset": [
+    -3,
+    9
+   ]
+  },
+  {
+   "file": "lake/mouth_n_01.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/03.png",
+   "offset": [
+    -3,
+    9
+   ]
+  },
+  {
+   "file": "lake/mouth_n_02.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/04.png",
+   "offset": [
+    -9,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_nw_00.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/03.png",
+   "offset": [
+    3,
+    3
+   ]
+  },
+  {
+   "file": "lake/mouth_nw_01.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/04.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_nw_02.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/05.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_sw_00.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/04.png",
+   "offset": [
+    9,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_sw_01.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/05.png",
+   "offset": [
+    9,
+    0
+   ]
+  },
+  {
+   "file": "lake/mouth_sw_02.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/00.png",
+   "offset": [
+    -6,
+    3
+   ]
+  },
+  {
+   "file": "lake/mouth_s_00.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/05.png",
+   "offset": [
+    0,
+    -9
+   ]
+  },
+  {
+   "file": "lake/mouth_s_01.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/00.png",
+   "offset": [
+    9,
+    -6
+   ]
+  },
+  {
+   "file": "lake/mouth_s_02.png",
+   "route": "mouth",
+   "source": "art/codex/terrain/candidates/lake1/lake/01.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  }
+ ]
+}

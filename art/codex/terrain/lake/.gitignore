@@ -1,0 +1,3 @@
+# Review renders and sheet montages regenerate from the scripts; not committed
+# (same convention as art/codex/terrain/review/ in the root .gitignore).
+review/

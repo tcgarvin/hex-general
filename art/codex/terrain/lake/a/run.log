@@ -1,0 +1,22 @@
+calling Codex with ['art/codex/terrain/lake/a/lake-a.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/direction/refs/ref_river_lake_3x.png', 'art/codex/terrain/lake/refs/river-tiles-340.png'] ...
+codex thread 01a1c7aa-66a8-7392-8666-9582fb5fe47b, 48 s
+PASS lake_00
+    warn lum: lum 85.6 vs anchor 96.7 (-11.1, tol 8.0)
+PASS lake_01
+    warn lum: lum 85.3 vs anchor 96.7 (-11.4, tol 8.0)
+PASS lake_02
+    warn lum: lum 85.9 vs anchor 96.7 (-10.8, tol 8.0)
+PASS lake_03
+    warn lum: lum 85.5 vs anchor 96.7 (-11.2, tol 8.0)
+PASS lake_04
+    warn lum: lum 85.6 vs anchor 96.7 (-11.1, tol 8.0)
+PASS lake_05
+    warn lum: lum 85.7 vs anchor 96.7 (-11.0, tol 8.0)
+PASS lake_06
+    warn lum: lum 85.6 vs anchor 96.7 (-11.1, tol 8.0)
+PASS lake_07
+    warn lum: lum 85.6 vs anchor 96.7 (-11.1, tol 8.0)
+PASS lake_08
+    warn lum: lum 85.8 vs anchor 96.7 (-10.9, tol 8.0)
+    warn hue: hue 69.9 vs anchor 62.0 (+7.9, tol 6.0)
+wrote art/codex/terrain/lake/a/report.json, art/codex/terrain/lake/review/sheets/lake-a.montage.png
