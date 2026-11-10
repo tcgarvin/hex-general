@@ -265,3 +265,19 @@ def test_deepcopy_base_does_not_leak() -> None:
     a = base_scenario()
     a["units"].clear()
     assert len(base_scenario()["units"]) == 2
+
+
+def test_lake_char_loads_as_lake_terrain() -> None:
+    scenario = base_scenario()
+    scenario["terrain"][1] = "o=~~"
+    state = load_scenario(scenario)
+    lake = next(h for h in state.map.hexes if h.coord == Axial(q=0, r=1))
+    assert lake.terrain is Terrain.LAKE
+
+
+def test_road_over_lake_raises() -> None:
+    scenario = base_scenario()
+    scenario["terrain"][2] = "o..h"
+    scenario["roads"][2] = "##.."
+    with pytest.raises(ScenarioError, match=r"road runs over lake at \(q=0, r=2\)"):
+        load_scenario(scenario)

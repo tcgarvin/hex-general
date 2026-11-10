@@ -1867,13 +1867,14 @@
         "type": "object"
       },
       "Terrain": {
-        "description": "Terrain of a hex (SPEC \u00a74.1).\n\nTown and City are terrain types in their own right \u2014 a settlement hex *is*\ntown/city terrain, not a marker layered on plains/woods. Their dynamic\nownership is tracked separately by `app.engine.models.Settlement`, but the\nterrain identity, defense bonus, and income all live here. Road, by\ncontrast, is a boolean modifier layered onto terrain (`Hex.road`).\n\nIn a world game ownership lives on sites instead (`MapSite`, VISION \u00a76): a\ntown there is terrain only, and a farm, oil field, steel mill, factory or base\nstands on its own plains hex. Rules that ask \"is this settlement ground?\" go\nthrough `GameState.settlement_ground`, which covers both.",
+        "description": "Terrain of a hex (SPEC \u00a74.1).\n\nTown and City are terrain types in their own right \u2014 a settlement hex *is*\ntown/city terrain, not a marker layered on plains/woods. Their dynamic\nownership is tracked separately by `app.engine.models.Settlement`, but the\nterrain identity, defense bonus, and income all live here. Road, by\ncontrast, is a boolean modifier layered onto terrain (`Hex.road`).\n\nIn a world game ownership lives on sites instead (`MapSite`, VISION \u00a76): a\ntown there is terrain only, and a farm, oil field, steel mill, factory or base\nstands on its own plains hex. Rules that ask \"is this settlement ground?\" go\nthrough `GameState.settlement_ground`, which covers both.\n\nLake is open water: impassable like a river, never bridged, never carries a road.",
         "enum": [
           "plains",
           "woods",
           "hills",
           "river",
           "bridge",
+          "lake",
           "town",
           "city"
         ],

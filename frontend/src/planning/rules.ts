@@ -74,6 +74,7 @@ export const TERRAIN_DEFENSE: Record<Terrain, number> = {
   hills: 1,
   river: 0,
   bridge: 0,
+  lake: 0,
   town: 2,
   city: 2,
 };
@@ -84,7 +85,7 @@ export function blocksLineOfSight(terrain: Terrain): boolean {
 }
 
 /** Terrain a unit can never enter (`TERRAIN_STATS[...].passable is False`). */
-const IMPASSABLE_TERRAIN: ReadonlySet<Terrain> = new Set<Terrain>(["river"]);
+const IMPASSABLE_TERRAIN: ReadonlySet<Terrain> = new Set<Terrain>(["river", "lake"]);
 
 /** Whether a unit may enter a hex of this terrain. */
 export function isPassable(terrain: Terrain): boolean {

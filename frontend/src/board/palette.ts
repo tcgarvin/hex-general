@@ -21,6 +21,7 @@ export const TERRAIN_FILL: Record<Terrain, number> = {
   hills: 0x9c8a5e,
   river: 0x41504c,
   bridge: 0x877353,
+  lake: 0x41504c,
   town: 0x8f7150,
   city: 0x5a4636,
 };

@@ -20,7 +20,7 @@ export const COLUMN_RULES = {
 } as const;
 
 /** `TERRAIN_STATS[terrain].passable` in `api/app/engine/stats.py`. */
-const IMPASSABLE_TERRAIN: ReadonlySet<string> = new Set(["river"]);
+const IMPASSABLE_TERRAIN: ReadonlySet<string> = new Set(["river", "lake"]);
 
 const CHEAPEST_STEP = Math.min(COLUMN_RULES.roadStepPulses, COLUMN_RULES.offroadStepPulses);
 

@@ -1573,9 +1573,11 @@ export interface components {
          *     town there is terrain only, and a farm, oil field, steel mill, factory or base
          *     stands on its own plains hex. Rules that ask "is this settlement ground?" go
          *     through `GameState.settlement_ground`, which covers both.
+         *
+         *     Lake is open water: impassable like a river, never bridged, never carries a road.
          * @enum {string}
          */
-        Terrain: "plains" | "woods" | "hills" | "river" | "bridge" | "town" | "city";
+        Terrain: "plains" | "woods" | "hills" | "river" | "bridge" | "lake" | "town" | "city";
         /**
          * TrafficJam
          * @description Friendly units collided on ``coord`` in the same pulse (SPEC §8.2).

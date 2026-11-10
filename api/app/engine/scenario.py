@@ -60,6 +60,7 @@ TERRAIN_CHARS: dict[str, Terrain] = {
     "h": Terrain.HILLS,
     "~": Terrain.RIVER,
     "=": Terrain.BRIDGE,
+    "o": Terrain.LAKE,
     "t": Terrain.TOWN,
     "c": Terrain.CITY,
 }
@@ -221,6 +222,7 @@ def _validate_river_bridges(hexes: list[Hex]) -> None:
     """Enforce the river/bridge/road rules of SPEC §3.4.
 
     - A road may not run over an (impassable) river hex — it must be a bridge.
+    - A road may not run over a lake hex at all (lakes are never bridged).
     - A bridge hex must carry a road (a bridge *is* a road crossing a river).
     - A bridge hex must sit on the river line (be adjacent to a river hex).
     """
@@ -231,6 +233,11 @@ def _validate_river_bridges(hexes: list[Hex]) -> None:
             raise ScenarioError(
                 f"road runs over impassable river at (q={coord.q}, r={coord.r}); "
                 "use a bridge instead"
+            )
+        if hex_.terrain is Terrain.LAKE and hex_.road:
+            raise ScenarioError(
+                f"road runs over lake at (q={coord.q}, r={coord.r}); "
+                "lakes are never bridged"
             )
         if hex_.terrain is Terrain.BRIDGE:
             if not hex_.road:

@@ -420,3 +420,22 @@ def test_order_for_unknown_unit_raises() -> None:
     state = build(["...."], [{"type": "armor", "owner": "blue", "q": 0, "r": 0}])
     with pytest.raises(EngineError, match="unknown unit"):
         resolve_movement(state, [move(99, (1, 0))])
+
+
+def test_lake_is_impassable_and_stops_unit() -> None:
+    state = build(
+        ["...", "ooo", "..."],
+        [{"type": "armor", "owner": "blue", "q": 1, "r": 0}],
+    )
+    new_state, events = resolve_movement(state, [move(1, (1, 1), (1, 2))])
+
+    assert at(new_state, 1, 0) == 1
+    assert events == [
+        MoveBlocked(
+            pulse=1,
+            unit_id=1,
+            origin=ax(1, 0),
+            target=ax(1, 1),
+            reason=MoveBlockedReason.IMPASSABLE,
+        )
+    ]

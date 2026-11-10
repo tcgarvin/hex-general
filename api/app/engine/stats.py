@@ -25,6 +25,8 @@ class Terrain(StrEnum):
     town there is terrain only, and a farm, oil field, steel mill, factory or base
     stands on its own plains hex. Rules that ask "is this settlement ground?" go
     through `GameState.settlement_ground`, which covers both.
+
+    Lake is open water: impassable like a river, never bridged, never carries a road.
     """
 
     PLAINS = "plains"
@@ -32,6 +34,7 @@ class Terrain(StrEnum):
     HILLS = "hills"
     RIVER = "river"
     BRIDGE = "bridge"
+    LAKE = "lake"
     TOWN = "town"
     CITY = "city"
 
@@ -115,6 +118,9 @@ TERRAIN_STATS: dict[Terrain, TerrainStats] = {
     ),
     Terrain.BRIDGE: TerrainStats(
         passable=True, defense_bonus=0, blocks_line_of_sight=False
+    ),
+    Terrain.LAKE: TerrainStats(
+        passable=False, defense_bonus=0, blocks_line_of_sight=False
     ),
     Terrain.TOWN: TerrainStats(
         passable=True,

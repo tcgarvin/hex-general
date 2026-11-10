@@ -14,7 +14,12 @@ from app.world.generate import WorldParams, generate
 
 
 def _offset_map(rows: list[str], roads: list[str]) -> GameMap:
-    chars = {".": Terrain.PLAINS, "w": Terrain.WOODS, "~": Terrain.RIVER}
+    chars = {
+        ".": Terrain.PLAINS,
+        "w": Terrain.WOODS,
+        "~": Terrain.RIVER,
+        "o": Terrain.LAKE,
+    }
     return GameMap(
         width=len(rows[0]),
         height=len(rows),
@@ -115,3 +120,10 @@ def test_compact_map_validates_shape_and_alphabet(
 ) -> None:
     with pytest.raises(ValidationError, match=message):
         CompactMap(width=3, height=1, terrain=terrain, roads=roads)
+
+
+def test_lake_round_trips_through_the_codec() -> None:
+    game_map = _offset_map([".o~", "w.."], ["...", ".#."])
+    compact = encode_map(game_map)
+    assert compact.terrain == ".o~w.."
+    assert decode_map(compact).model_dump() == game_map.model_dump()

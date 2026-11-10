@@ -12,6 +12,7 @@ import random
 from app.engine.hex_coords import Axial, neighbors
 from app.engine.models import GameMap
 from app.engine.routing import find_route, route_pulses, travel_eta
+from app.engine.stats import Terrain
 
 from engine.helpers import ax, build
 
@@ -150,3 +151,19 @@ def test_eta_loses_leftover_credit_at_turn_end() -> None:
     route = [ax(q, 0) for q in range(1, 18)]
     assert route_pulses(game_map, route) == 32
     assert travel_eta(game_map, route, packed=True) == 3
+
+
+def test_route_never_crosses_a_lake() -> None:
+    # A lake wall with no gap: lakes are never bridged, so there is no route.
+    game_map = _map(["..o..", "..o..", "..o.."])
+    assert find_route(game_map, ax(0, 1), ax(4, 1)) is None
+    assert find_route(game_map, ax(0, 1), ax(2, 1)) is None
+
+
+def test_route_detours_around_a_lake() -> None:
+    game_map = _map(["..o..", "..o..", "....."])
+    route = find_route(game_map, ax(0, 0), ax(4, 0))
+    assert route is not None
+    lakes = {h.coord for h in game_map.hexes if h.terrain is Terrain.LAKE}
+    assert lakes
+    assert not lakes.intersection(route)

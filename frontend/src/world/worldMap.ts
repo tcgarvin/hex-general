@@ -23,6 +23,7 @@ export const TERRAIN_BY_CHAR: Readonly<Record<string, Terrain>> = {
   h: "hills",
   "~": "river",
   "=": "bridge",
+  o: "lake",
   t: "town",
   c: "city",
 };
