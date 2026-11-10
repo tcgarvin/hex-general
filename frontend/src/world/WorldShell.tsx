@@ -39,13 +39,14 @@ import {
   type WorldOrder,
 } from "./plan";
 import { siteIconUrl } from "./siteArt";
+import { SITE_TILE_KINDS } from "./siteTiles";
 import { turnReport, turnTrails, unitBook, type ReportItem, type TurnTrails } from "./turnReport";
 import { useTurnReport, type ReportLoad } from "./useTurnReport";
 import { useWorld, type WorldView } from "./useWorld";
 import { useWorldPlan, type PlannedRoute, type WorldPlanning } from "./useWorldPlan";
 import { WorldBoard } from "./WorldBoard";
 import type { WorldOverlay } from "./WorldRenderer";
-import type { WorldMap } from "./worldMap";
+import type { MapSite, WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
 type Unit = components["schemas"]["Unit"];
@@ -683,6 +684,13 @@ const SITE_LABEL = {
 
 const TIER_LABEL = ["", "Militia", "Garrison", "Strongpoint", "Fortress"];
 
+/** A site's panel title: leveled sites (farm, oil field, steel mill, factory) add their level. */
+function siteTitle(site: MapSite): string {
+  return (SITE_TILE_KINDS as readonly string[]).includes(site.kind)
+    ? `${SITE_LABEL[site.kind]} · Level ${site.level}`
+    : SITE_LABEL[site.kind];
+}
+
 function HexPanel({
   map,
   state,
@@ -715,11 +723,13 @@ function HexPanel({
   );
   const reasons = [...new Set(options.flatMap((o) => (o.blocked === null || staged?.type === o.type ? [] : [o.blocked])))];
   return (
-    <Panel title={site !== undefined ? SITE_LABEL[site.kind] : (cell?.terrain ?? "Hex")} onClose={onClose}>
+    <Panel title={site !== undefined ? siteTitle(site) : (cell?.terrain ?? "Hex")} onClose={onClose}>
       <div className="flex items-center gap-2">
         {site !== undefined && <img src={siteIconUrl(site.kind)} alt="" className="h-12 w-12 shrink-0" />}
         <p className="font-data text-xs text-wood-500">
-          ({hex.q}, {hex.r}) · {cell?.terrain}
+          ({hex.q}, {hex.r})
+          {/* A non-city site stands on plains it is painted over; naming the terrain adds nothing. */}
+          {site === undefined || site.kind === "city" ? ` · ${cell?.terrain}` : ""}
           {cell?.road ? " · road" : ""}
         </p>
       </div>

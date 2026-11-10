@@ -4,9 +4,10 @@
 // 40×40 map but not for ~122k hexes. This renderer instead:
 //
 // * **close up** (tactical zoom) keeps a pool of tile sprites and shows only the
-//   hexes on screen, re-using sprites as the camera moves, with same-terrain join
-//   sprites over the woods/city seams among them (same culling, own pool) and fog
-//   over the hexes the player can't currently see;
+//   hexes on screen, re-using sprites as the camera moves (a site or founded base
+//   hex shows its painted tile instead of its terrain, `worldTiles.ts`), with
+//   same-terrain join sprites over the woods/city seams among them (same culling,
+//   own pool) and fog over the hexes the player can't currently see;
 // * **far out** (operational zoom) shows one prerendered overview texture of the
 //   whole map (terrain and roads, a few pixels per hex) instead of tiles;
 // * always draws site markers (owner colour) and unit tokens on top, and a minimap
@@ -38,7 +39,15 @@ import type { components } from "@/lib/api/schema";
 import { NEUTRAL_OWNER, ownerColor } from "./colors";
 import type { LoadedColumns } from "./columnArt";
 import type { LoadedSites } from "./siteArt";
+import { siteTileTexture } from "./siteTiles";
 import { axialToOffset, visibleCells, worldPixelBounds, type CellRange, type WorldMap } from "./worldMap";
+import {
+  baseSiteTiles,
+  changedBaseTiles,
+  hexTileChoice,
+  staticSiteTiles,
+  type SiteTileMap,
+} from "./worldTiles";
 
 type WorldState = components["schemas"]["WorldState"];
 type Unit = WorldState["units"][number];
@@ -145,6 +154,10 @@ export class WorldRenderer {
   private readonly fogTexture: Texture;
   private readonly roadTiles: Map<string, RoadTileRef>;
   private readonly riverCourse: Map<string, number[]>;
+  /** Painted tiles of the map's leveled sites (static). */
+  private readonly staticSiteTiles: SiteTileMap;
+  /** Painted tiles of the founded bases; recomputed per scene (`setScene`). */
+  private baseSiteTiles: SiteTileMap = new Map();
   private readonly overviewScale: number;
   private tiles: LoadedTiles | null = null;
   private joins: LoadedJoins | null = null;
@@ -164,6 +177,7 @@ export class WorldRenderer {
       map.hexes.filter((h) => h.terrain === "river" || h.terrain === "bridge").map((h) => h.coord),
       (q, r) => map.hexAt(q, r)?.terrain,
     );
+    this.staticSiteTiles = staticSiteTiles(map.sites);
 
     const overviewCanvas = drawOverview(map);
     const overviewTexture = Texture.from(overviewCanvas);
@@ -226,6 +240,10 @@ export class WorldRenderer {
 
   setScene(scene: WorldScene): void {
     this.scene = scene;
+    const bases = baseSiteTiles(this.map, scene.state.settlements);
+    const changed = changedBaseTiles(this.baseSiteTiles, bases);
+    this.baseSiteTiles = bases;
+    this.retileHexes(changed);
     this.armyHexes = new Set(
       scene.state.units.filter((u) => u.owner !== NEUTRAL_OWNER).map((u) => hexKey(u.coord.q, u.coord.r)),
     );
@@ -415,12 +433,15 @@ export class WorldRenderer {
   private joinsOwnedAt(index: number): readonly JoinPlacement[] {
     let owned = this.ownedJoins.get(index);
     if (owned === undefined) {
+      // A join never spans a hex painted with a site tile: that tile has a plains
+      // rim, so a woods/city seam into it would hang over the painting. Only old
+      // stored maps (sites on town/city hexes) have such joins at all.
       const found = joinsOwnedBy(
         this.map.hexes[index].coord,
         (q, r) => this.map.hexAt(q, r)?.terrain,
         JOIN_TERRAINS,
         HEX_SIZE,
-      );
+      ).filter((join) => !join.members.some((m) => this.staticSiteTiles.has(hexKey(m.q, m.r))));
       owned = found.length === 0 ? NO_JOINS : found;
       this.ownedJoins.set(index, owned);
     }
@@ -444,19 +465,42 @@ export class WorldRenderer {
   }
 
   private placeTile(hex: WorldMap["hexes"][number]): Sprite {
-    const tiles = this.tiles;
-    if (tiles === null) throw new Error("placeTile before textures loaded");
-    const ref = hexTileRef(hex, tiles, this.riverCourse, this.roadTiles);
     const sprite = this.spritePool.pop() ?? new Sprite();
-    sprite.texture = ref.tex;
+    this.textureTile(sprite, hex);
     sprite.anchor.set(0.5);
-    const scale = (2 * HEX_SIZE) / ref.tex.width;
-    sprite.scale.set(ref.mirror ? -scale : scale, scale);
     const { x, y } = axialToPixel(hex.coord.q, hex.coord.r, HEX_SIZE);
     sprite.position.set(x, y);
     sprite.visible = true;
     this.tileLayer.addChild(sprite);
     return sprite;
+  }
+
+  /** Give a tile sprite its hex's texture: a painted site/base tile, else its terrain. */
+  private textureTile(sprite: Sprite, hex: WorldMap["hexes"][number]): void {
+    const tiles = this.tiles;
+    if (tiles === null) throw new Error("tile texture asked for before textures loaded");
+    const choice = hexTileChoice(hex.coord.q, hex.coord.r, this.staticSiteTiles, this.baseSiteTiles);
+    // Site tiles are painted unmirrored at terrain-tile size.
+    const ref =
+      choice.kind === "site"
+        ? { tex: siteTileTexture(choice.key), mirror: false }
+        : hexTileRef(hex, tiles, this.riverCourse, this.roadTiles);
+    sprite.texture = ref.tex;
+    const scale = (2 * HEX_SIZE) / ref.tex.width;
+    sprite.scale.set(ref.mirror ? -scale : scale, scale);
+  }
+
+  /**
+   * Re-texture the live tile sprites of `hexes` (a base founded or gone). Hexes
+   * that are culled have no sprite; they pick the new tile up when next placed.
+   */
+  private retileHexes(hexes: readonly Axial[]): void {
+    for (const coord of hexes) {
+      const { col, row } = axialToOffset(coord);
+      const index = row * this.map.width + col;
+      const sprite = this.tileSprites.get(index);
+      if (sprite !== undefined) this.textureTile(sprite, this.map.hexes[index]);
+    }
   }
 
   private releaseTile(sprite: Sprite): void {
@@ -503,7 +547,9 @@ export class WorldRenderer {
       const owner = control.get(key) ?? null;
       const { x, y } = axialToPixel(site.coord.q, site.coord.r, HEX_SIZE);
       const color = ownerColor(owner, scene.viewer);
-      if (art !== null) {
+      // A painted site or base tile already says what the hex is; only cities
+      // (drawn with their city terrain tile) keep the round emblem.
+      if (art !== null && !this.paintedSite(key)) {
         shown.add(key);
         this.placeSiteIcon(key, art[site.kind], x, y, this.armyHexes.has(key));
       }
@@ -523,6 +569,11 @@ export class WorldRenderer {
         this.siteSprites.delete(key);
       }
     }
+  }
+
+  /** Whether the hex (by `hexKey`) is drawn with a painted site or base tile. */
+  private paintedSite(key: string): boolean {
+    return this.baseSiteTiles.has(key) || this.staticSiteTiles.has(key);
   }
 
   /**

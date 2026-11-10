@@ -538,17 +538,21 @@ isolation.
   the deterministic post-chain byte-replays (`roadfinish.py build --verify`, wired
   into `selftest.py`; regenerate the sources with `export-sources`).
 
-### Site and base art (ratified 2026-11-10, waiting on the game)
+### Site and base art (ratified 2026-11-10, in the world renderer)
 
 Farm, oil field, steel mill and factory (levels 1-3) and the army base (stages 1-4
 over 1-4 hexes) are ratified and committed with provenance in
-`art/codex/terrain/candidates/sites-ratified/` (`SITES.md`). Not wired in. The engine
-prerequisites are met (2026-11-10, WORLD_SPEC §6): (1) sites stand on their own plains
-hexes beside towns or roads, (2) `MapSite.level` (1-3) is on the map the renderer
-fetches, (3) every base slot has the four-hex footprint `(0,0)`, `+(1,0)`, `+(0,1)`,
-`+(1,1)` kept clear (`BASE_FOOTPRINT`, confirmed by the user). Base growth is
-deferred: every base is size one (stage 1) for now. Left: the renderer drawing site
-tiles in place of terrain. Known art shortfalls are listed in the set's README.
+`art/codex/terrain/candidates/sites-ratified/` (`SITES.md`). The engine prerequisites
+are met (2026-11-10, WORLD_SPEC §6): (1) sites stand on their own plains hexes beside
+towns or roads, (2) `MapSite.level` (1-3) is on the map the renderer fetches, (3) every
+base slot has the four-hex footprint `(0,0)`, `+(1,0)`, `+(0,1)`, `+(1,1)` kept clear
+(`BASE_FOOTPRINT`, confirmed by the user). **Wired in (2026-11-10):** the world
+renderer draws a site's painted tile in place of its terrain tile
+(`frontend/src/world/siteTiles.ts`, choice in `worldTiles.ts`), a founded base draws
+its tile (a vacant slot keeps plains), and the round emblem stays only on cities and
+in the panels. Base growth is deferred: every base is drawn at stage 1
+(`baseStageOf`); when stages arrive the renderer draws `baseTileKeys(anchor, stage)`
+over the footprint together. Known art shortfalls are listed in the set's README.
 
 ### Unit art (painterly sprites)
 

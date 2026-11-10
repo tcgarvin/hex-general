@@ -13,6 +13,7 @@ import { loadUnitTextures } from "@/board/units";
 
 import { loadColumnTextures } from "./columnArt";
 import { loadSiteTextures } from "./siteArt";
+import { loadSiteTileTextures } from "./siteTiles";
 import type { WorldView } from "./useWorld";
 import { WorldRenderer, type WorldOverlay } from "./WorldRenderer";
 import type { WorldMap } from "./worldMap";
@@ -65,6 +66,9 @@ export function WorldBoard({
           loadUnitTextures(),
           loadSiteTextures(),
           loadColumnTextures(),
+          // Painted site/base tiles: `WorldRenderer` looks them up by key, so they
+          // must be in before `setTextures` turns tile mode on.
+          loadSiteTileTextures(),
         ])
           .then(([tiles, joins, units, sites, columns]) => {
             if (!disposed) made?.setTextures(tiles, joins, units, sites, columns);

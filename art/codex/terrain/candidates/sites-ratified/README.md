@@ -1,9 +1,11 @@
 # Ratified site and base tiles (2026-11-10)
 
 The set the user approved after two review rounds (sites round 3 and round 4, see
-`art/codex/terrain/README.md`). **Not yet used by the game:** nothing under
-`frontend/` references it. It is kept here, with provenance, for the game work that
-will consume it. Provenance for every file: `picks.json` in each kind dir and the
+`art/codex/terrain/README.md`). **Used by the game:** byte copies live in
+`frontend/src/world/siteTiles/` and the world renderer draws them via
+`frontend/src/world/siteTiles.ts` (`scripts/tests/test_site_tiles_sync.py` keeps the
+copies in sync with this dir). Changing a tile here is hex art under the sign-off rule
+in the root `CLAUDE.md`. Provenance for every file: `picks.json` in each kind dir and the
 generated table `art/codex/terrain/SITES.md` (`sites_ratified_build.py` rebuilds
 both and fails on a missing source or a sha256 mismatch).
 
@@ -29,12 +31,13 @@ level (the mock chooses by coordinate hash). Base stage dirs are variants `a` an
 `b` of the same stage; the user chose the complete earth bank for stages 1-2 (the
 "building" flavour was not approved and is not here).
 
-## Base footprint (assumed, not explicitly confirmed)
+## Base footprint
 
 Stage N covers N hexes, in axial offsets from the anchor (`hex.ts` convention):
 stage 1 `(0,0)`; stage 2 adds `(1,0)`; stage 3 adds `(0,1)`; stage 4 adds `(1,1)`.
-`h<i>.png` is the hex at `positions.json` entry `h<i>`. This is the main agent's
-assumption; the user did not object in two reviews but never confirmed it.
+`h<i>.png` is the hex at `positions.json` entry `h<i>`. The user confirmed this
+footprint (2026-11-10); the engine keeps all four hexes of every base plot clear
+(`BASE_FOOTPRINT` in `frontend/src/world/siteTiles.ts`).
 
 ## Tile format
 
@@ -55,12 +58,14 @@ python3 scripts/board-mock.py --map scripts/board-mock-maps/sites1.txt \
 are `<col>,<row> <kind> <level>` (base level = stage 1-4). The mock raises if the
 sites dir lacks a tile a map asks for.
 
-## What the game needs before it can use these
+## How the game uses these
 
-1. Sites move off town hexes onto their own hexes (today a site is a town).
-2. A site level the renderer can read (1-3; base stage 1-4) so it picks `l<level>_*`.
-3. A four-hex base footprint in the engine (the base grows over 1-4 hexes, drawn as
-   one unit from the matching `stage<N>_*` dir).
+1. Farm, oil field, steel mill and factory sites stand on their own plains hexes;
+   the world renderer draws `l<MapSite.level>_*` in place of the terrain tile.
+2. A founded base (one with a settlement) draws the anchor's `stage1_*` tile; a vacant
+   base slot keeps its plains tile. Base growth is deferred, so stages 2-4 are not
+   drawn yet; when they are, all hexes of one `stage<N>_*` dir are drawn together.
+3. City sites keep their city terrain tile and round emblem.
 
 ## Known shortfalls
 

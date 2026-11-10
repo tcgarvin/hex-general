@@ -130,7 +130,7 @@ at board scale before anything is applied; the user still ratifies.
 and `refs.txt` refs) rebuilds a sheet's tiles without a Codex call; the raws of the
 sheets behind shipped tiles are committed, derived files are not.
 
-## Site tiles and cluster paint-in (ratified 2026-11-10, not yet in the game)
+## Site tiles and cluster paint-in (ratified 2026-11-10, in the world renderer)
 
 Economic sites (farm, oil field, steel mill, factory; levels 1-3) are single-hex
 paint-in on the plains bases like any terrain. A base grows over 1-4 hexes and must
@@ -141,9 +141,11 @@ pinned to plains and gated; internal edges stay exactly as painted (draw the hex
 together). Perimeter guide options (`"guide"` in the job: `margin`, `shape`
 hull/blob, `seed`, `jitter`, partial `arc`/`rest`) draw a faint line on the sheet
 only, to steer where the earth bank sits. The approved set, with file naming, the
-assumed base footprint, shortfalls and what the game needs, is
+base footprint and shortfalls, is
 `art/codex/terrain/candidates/sites-ratified/` (README there); every file's source is
-in `art/codex/terrain/SITES.md`. Preview with `board-mock.py --sites <dir>`.
+in `art/codex/terrain/SITES.md`. Preview with `board-mock.py --sites <dir>`. The game
+draws byte copies from `frontend/src/world/siteTiles/` (`siteTiles.ts`; bases at stage
+1 until growth is designed).
 
 ## NBP foundry (superseded for terrain; unit sprites)
 
