@@ -5,14 +5,19 @@ road travel, fast, stack up to 6 per hex, can't attack, defend badly), one per
 unit type (infantry, artillery, armor). They are meant to read as the same army
 as the deployed sprites in `frontend/src/board/units/`, but clearly on the march.
 
-**Status: candidates only.** Nothing is applied to `frontend/` and nothing is
-ratified; the user picks.
+**Status:** one pick per unit type is ratified and shipped (below); every other
+cell here remains an unratified candidate, kept as provenance.
 
 ## Ratified
 
 - **infantry** = troop truck (`infantry-sheet-1/inf-truck-2`), ratified 2026-11-09;
   shipped as `frontend/src/world/columns/infantry_{base,mask}.png`.
-- **armor** and **artillery**: pending the user's pick.
+- **armor** = armoured-cab tank transporter carrying the shipped tank, compact
+  trailer, 120 px footprint (`armor-transporter-1/arm-tt-c-w120`), ratified
+  2026-11-09; shipped as `frontend/src/world/columns/armor_{base,mask}.png`.
+- **artillery** = tracked tractor towing the field gun
+  (`artillery-sheet-1/art-tractor-1`), ratified 2026-11-09; shipped as
+  `frontend/src/world/columns/artillery_{base,mask}.png`.
 
 - `prompts/` - the exact prompt text sent to `codex exec` for each sheet.
 - `raw/` - the untouched 1254x1254 RGB sheets Codex returned (4x3 grid, magenta bg).

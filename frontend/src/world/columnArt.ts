@@ -5,7 +5,10 @@
 // Codex candidates (provenance: art/codex/columns/). Ratified per type, so the set
 // can be partial: a type without art keeps the plain column token.
 //
-// Ratified: infantry = troop truck (infantry-sheet-1/inf-truck-2), 2026-11-09.
+// Ratified (2026-11-09):
+//   infantry  = troop truck (infantry-sheet-1/inf-truck-2)
+//   armor     = armoured-cab tank transporter (armor-transporter-1/arm-tt-c-w120)
+//   artillery = tracked tractor towing the gun (artillery-sheet-1/art-tractor-1)
 
 import { Assets, type Texture } from "pixi.js";
 

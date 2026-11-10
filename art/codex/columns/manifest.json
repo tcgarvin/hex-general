@@ -1,7 +1,12 @@
 {
  "generated": "2026-11-09",
  "generator": "codex-cli 0.165.0, codex exec, built-in image_generation tool (ChatGPT login)",
- "status": "candidates only, not ratified, not applied",
+ "status": "ratified picks applied 2026-11-09 (see \"ratified\"); all other cells remain candidates",
+ "ratified": {
+  "infantry": {"source": "infantry-sheet-1/inf-truck-2", "date": "2026-11-09", "shipped": "frontend/src/world/columns/infantry_{base,mask}.png"},
+  "armor": {"source": "armor-transporter-1/arm-tt-c-w120", "date": "2026-11-09", "shipped": "frontend/src/world/columns/armor_{base,mask}.png"},
+  "artillery": {"source": "artillery-sheet-1/art-tractor-1", "date": "2026-11-09", "shipped": "frontend/src/world/columns/artillery_{base,mask}.png"}
+ },
  "first_pass_picks": {
   "infantry": "infantry-sheet-1/inf-truck-2 (alt: infantry-sheet-1/inf-march-2, inf-open-3)",
   "artillery": "artillery-sheet-1/art-tractor-1 (alt: mixed-sheet-2/art-tractor-2, artillery-sheet-1/art-truck-2)",
