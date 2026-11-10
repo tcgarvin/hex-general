@@ -1,0 +1,47 @@
+{
+ "name": "factory-s4-l2",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "l2_70",
+   "base": "../../../r1-bases/02.png"
+  },
+  {
+   "name": "l2_71",
+   "base": "../../../r1-bases/03.png"
+  },
+  {
+   "name": "l2_72",
+   "base": "../../../r1-bases/04.png"
+  },
+  {
+   "name": "l2_73",
+   "base": "../../../r1-bases/05.png"
+  },
+  {
+   "name": "l2_74",
+   "base": "../../../r1-bases/00.png"
+  },
+  {
+   "name": "l2_75",
+   "base": "../../../r1-bases/01.png"
+  },
+  {
+   "name": "l2_76",
+   "base": "../../../r1-bases/02.png"
+  },
+  {
+   "name": "l2_77",
+   "base": "../../../r1-bases/03.png"
+  },
+  {
+   "name": "l2_78",
+   "base": "../../../r1-bases/04.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

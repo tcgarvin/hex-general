@@ -1,0 +1,470 @@
+{
+ "kind": "oil_field",
+ "picks": [
+  {
+   "file": "l1_00.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_150.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l1/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.234,
+   "occupied_final_tile": 0.225,
+   "built": 0.171,
+   "L": 95.7,
+   "sha256": "af4e8fc13d6eff0d43fcc61d94fb03c5d65a192b76279d5197e853930d648563",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_150.png.tanks.json",
+    "repaint_cell": "l1_150",
+    "changed_px": 787,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l1_00.png",
+    "level": 1,
+    "source": "art/codex/terrain/sites/oil_field/s4-l1/tiles/l1_60.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l1/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l1/raw/oil_field-s4-l1.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.234,
+    "built": 0.168,
+    "L": 95.5,
+    "sha256": "f8dbff36d03f2044fcd25ee029220a4afceb4d02075c64280a1bcfeb22a0e598",
+    "grade": "none"
+   }
+  },
+  {
+   "file": "l1_01.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_151.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l1/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.203,
+   "occupied_final_tile": 0.195,
+   "built": 0.146,
+   "L": 96.1,
+   "sha256": "9e21add399f97d5f2d54de8704bf986eda65f59f36b1535c30df8a0116a96614",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_151.png.tanks.json",
+    "repaint_cell": "l1_151",
+    "changed_px": 809,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l1_01.png",
+    "level": 1,
+    "source": "art/codex/terrain/sites/oil_field/s4-l1/tiles_graded/l1_61.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l1/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l1/raw/oil_field-s4-l1.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.203,
+    "built": 0.146,
+    "L": 96.0,
+    "sha256": "f0f387db2dc3c89047a9e971df81aae65a49fd40c924fc667f9e2283b53eee33",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l1_02.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_152.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l1/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.228,
+   "occupied_final_tile": 0.217,
+   "built": 0.16,
+   "L": 96.0,
+   "sha256": "ee7620c06184fe305ab3a161d2ca7acd97fd6740bd45f857b510e4d3c62a192e",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_152.png.tanks.json",
+    "repaint_cell": "l1_152",
+    "changed_px": 577,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l1_02.png",
+    "level": 1,
+    "source": "art/codex/terrain/sites/oil_field/s4-l1/tiles_graded/l1_62.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l1/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l1/raw/oil_field-s4-l1.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.228,
+    "built": 0.159,
+    "L": 95.9,
+    "sha256": "7b2963817ac8a95a3c39ec98a7e69bd09ed6d774fbd52631da0bda4b663765ec",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l1_03.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_153.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l1/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.207,
+   "occupied_final_tile": 0.2,
+   "built": 0.151,
+   "L": 95.9,
+   "sha256": "d1dbdf5f16e9c30990c51c29723c610767a4321bedcb1c97bce58c6cfcbc22c2",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l1/final/l1_153.png.tanks.json",
+    "repaint_cell": "l1_153",
+    "changed_px": 772,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l1_03.png",
+    "level": 1,
+    "source": "art/codex/terrain/sites/oil_field/s4-l1/tiles_graded/l1_66.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l1/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l1/raw/oil_field-s4-l1.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.207,
+    "built": 0.15,
+    "L": 95.8,
+    "sha256": "4983817d4c53dcdbf31a3e831d3e4441eaaea5c433432aa177bc6c95ce8d292f",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l2_00.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_130.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l2/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.407,
+   "occupied_final_tile": 0.389,
+   "built": 0.296,
+   "L": 94.7,
+   "sha256": "8ea66074c7805132711b662449098665b8043d75d6b8fdd80144e5a5a6b4296e",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_130.png.tanks.json",
+    "repaint_cell": "l2_130",
+    "changed_px": 957,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l2_00.png",
+    "level": 2,
+    "source": "art/codex/terrain/sites/oil_field/s4-l2/tiles_graded/l2_70.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l2/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l2/raw/oil_field-s4-l2.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.407,
+    "built": 0.296,
+    "L": 95.0,
+    "sha256": "922ca236b5dacdf92c3c44356d427de1be5e984b39275c4af0f12408eb5e1703",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l2_01.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_131.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l2/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.423,
+   "occupied_final_tile": 0.391,
+   "built": 0.298,
+   "L": 94.9,
+   "sha256": "058e45ad74412933a3279e46f3a5abdefac07a7dd8f6d167a02202d32e1ea01b",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_131.png.tanks.json",
+    "repaint_cell": "l2_131",
+    "changed_px": 987,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l2_01.png",
+    "level": 2,
+    "source": "art/codex/terrain/sites/oil_field/s4-l2/tiles_graded/l2_71.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l2/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l2/raw/oil_field-s4-l2.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.423,
+    "built": 0.297,
+    "L": 95.2,
+    "sha256": "f8ffb2eb037d1f8288942830cb2218528488127701502945f3c4a47ec33f7b68",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l2_02.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_132.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l2/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.46,
+   "occupied_final_tile": 0.431,
+   "built": 0.328,
+   "L": 94.3,
+   "sha256": "2bcb19c096d68753a1dcc843deafd6ee51b1127dee4b35203822b6eb3882091d",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_132.png.tanks.json",
+    "repaint_cell": "l2_132",
+    "changed_px": 1121,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l2_02.png",
+    "level": 2,
+    "source": "art/codex/terrain/sites/oil_field/s4-l2/tiles/l2_73.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l2/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l2/raw/oil_field-s4-l2.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.46,
+    "built": 0.323,
+    "L": 94.6,
+    "sha256": "fec0a1fdf07f152446a29d4b0befe00914ed2ea8eab0a46e91780c1e961b322b",
+    "grade": "none"
+   }
+  },
+  {
+   "file": "l2_03.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_133.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l2/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.437,
+   "occupied_final_tile": 0.403,
+   "built": 0.299,
+   "L": 94.5,
+   "sha256": "7bced40eba052c4e944ed3676b1fc496293ebe4aaac98d718063813cd2dc34eb",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l2/final/l2_133.png.tanks.json",
+    "repaint_cell": "l2_133",
+    "changed_px": 1056,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l2_03.png",
+    "level": 2,
+    "source": "art/codex/terrain/sites/oil_field/s4-l2/tiles/l2_75.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l2/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l2/raw/oil_field-s4-l2.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.437,
+    "built": 0.296,
+    "L": 94.7,
+    "sha256": "605cbd8dbcdd4fe87d6d11c8584c81f0f0a6986892cef15ccb9778ac19c7bb87",
+    "grade": "none"
+   }
+  },
+  {
+   "file": "l3_00.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_140.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l3/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l3/raw/oil_field-s4-tanks-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.653,
+   "occupied_final_tile": 0.556,
+   "built": 0.35,
+   "L": 95.2,
+   "sha256": "d18b177238e891ea723714d7e35872a62792b42e898663a2b85967ced6ebbe05",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_140.png.tanks.json",
+    "repaint_cell": "l3_140",
+    "changed_px": 1216,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l3_00.png",
+    "level": 3,
+    "source": "art/codex/terrain/sites/oil_field/s4-l3d/tiles_graded/l3_110.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l3d/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l3d/raw/oil_field-s4-l3d.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.653,
+    "built": 0.354,
+    "L": 95.5,
+    "sha256": "7f50703e79e9039515adda92614e0edf5fdcadeb5680e5e289f18ac4945bfc4d",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l3_01.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_141.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l3/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l3/raw/oil_field-s4-tanks-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.676,
+   "occupied_final_tile": 0.613,
+   "built": 0.43,
+   "L": 93.5,
+   "sha256": "0ff5ae8185a622c88aa8c9ac2e580ca7ee0fe6f40bfbbb4c598442c43e811037",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_141.png.tanks.json",
+    "repaint_cell": "l3_141",
+    "changed_px": 1121,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l3_01.png",
+    "level": 3,
+    "source": "art/codex/terrain/sites/oil_field/s4-l3d/tiles_graded/l3_112.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l3d/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l3d/raw/oil_field-s4-l3d.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.676,
+    "built": 0.43,
+    "L": 94.1,
+    "sha256": "ecd120a26549b5b3f073238c15f522e6b7e67313d9b7e165bb5b5c9e713fc5df",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l3_02.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_142.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l3/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l3/raw/oil_field-s4-tanks-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.691,
+   "occupied_final_tile": 0.61,
+   "built": 0.408,
+   "L": 94.7,
+   "sha256": "51e056171e86fbe1ac6a5e1cf37b5d7ffab5901c442420bce630142113fa55d9",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_142.png.tanks.json",
+    "repaint_cell": "l3_142",
+    "changed_px": 1220,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l3_02.png",
+    "level": 3,
+    "source": "art/codex/terrain/sites/oil_field/s4-l3d/tiles_graded/l3_115.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l3d/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l3d/raw/oil_field-s4-l3d.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.691,
+    "built": 0.409,
+    "L": 95.1,
+    "sha256": "a8cf5e6692696a3002f98d424734c83daa504aced2b8400e9f845496c9b098d0",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  },
+  {
+   "file": "l3_03.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_143.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s4-tanks-l3/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s4-tanks-l3/raw/oil_field-s4-tanks-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.701,
+   "occupied_final_tile": 0.612,
+   "built": 0.377,
+   "L": 95.0,
+   "sha256": "9f4ebefa47e6b748dd5bb76f7b14717dae44e11f80f2feb1f582b24281ce185e",
+   "grade": "none",
+   "tank_repaint": {
+    "composite": "art/codex/terrain/sites/oil_field/s4-tanks-l3/final/l3_143.png.tanks.json",
+    "repaint_cell": "l3_143",
+    "changed_px": 1123,
+    "gates": "inherited: no pixel within the rim distance changed"
+   },
+   "before": {
+    "file": "l3_03.png",
+    "level": 3,
+    "source": "art/codex/terrain/sites/oil_field/s4-l3d/tiles_graded/l3_117.png",
+    "sheet_job": "art/codex/terrain/sites/oil_field/s4-l3d/job.json",
+    "raw": "art/codex/terrain/sites/oil_field/s4-l3d/raw/oil_field-s4-l3d.png",
+    "gate_passed": true,
+    "failed_checks": [],
+    "occupied": 0.701,
+    "built": 0.384,
+    "L": 95.3,
+    "sha256": "89176b7eb47965d3c6bc5c55b37eaf47a42ab41c09410257be06ad823e21b087",
+    "grade": {
+     "shade_mult": 0.8,
+     "shade_warm": "1.0,0.97,0.92",
+     "compress_above": 150.0,
+     "compress_k": 0.5
+    }
+   }
+  }
+ ]
+}

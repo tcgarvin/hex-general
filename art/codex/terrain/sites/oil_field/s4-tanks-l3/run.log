@@ -1,0 +1,12 @@
+calling Codex with ['art/codex/terrain/sites/oil_field/s4-tanks-l3/oil_field-s4-tanks-l3.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png'] ...
+codex thread 01a1c666-eaef-73b1-8dc8-e89744802a3a, 61 s
+PASS l3_140
+PASS l3_141
+PASS l3_142
+PASS l3_143
+PASS l3_144
+PASS l3_145
+PASS l3_146
+PASS l3_147
+PASS l3_148
+wrote art/codex/terrain/sites/oil_field/s4-tanks-l3/report.json, art/codex/terrain/review/sites4/sheets/oil_field-s4-tanks-l3.montage.png

@@ -1,0 +1,24 @@
+{
+ "cluster": "stage4_a",
+ "positions": {
+  "h0": [
+   0,
+   0
+  ],
+  "h1": [
+   1,
+   0
+  ],
+  "h2": [
+   0,
+   1
+  ],
+  "h3": [
+   1,
+   1
+  ]
+ },
+ "axial": "offsets from h0, hex.ts AXIAL_DIRECTIONS convention",
+ "source": "art/codex/terrain/sites/base/stages-a/tiles/stage4_a",
+ "footprint_note": "axial offsets from the anchor h0; hex.ts AXIAL_DIRECTIONS (0 SE (1,0), 5 S (0,1))"
+}

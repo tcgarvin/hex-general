@@ -1,0 +1,81 @@
+{
+ "runs": [
+  {
+   "name": "steel_mill-s2-a",
+   "when": "2026-11-09T23:11:04",
+   "job": "art/codex/terrain/sites/steel_mill/s2-a/job.json",
+   "job_sha256": "92b4a602d0968e55986f82d8ca5d7930eadc2739387c4f5611255016de3ea86d",
+   "prompt": "art/codex/terrain/sites/steel_mill/s2-a/prompt.txt",
+   "prompt_sha256": "38670dda965469d5078e37ce8d5ccb39d40ba0486ad6ac8be181eac1d098ca04",
+   "sheet": "art/codex/terrain/sites/steel_mill/s2-a/steel_mill-s2-a.sheet.png",
+   "raw": "art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png",
+   "raw_sha256": "d74bac44f66336046c56a2ca0ef04b608cd293f57a9bdf9bfc224a23dce39402",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c3a5-a791-7763-a843-c1702e688ecb",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c3a5-a791-7763-a843-c1702e688ecb/exec-e0aff82b-3cef-4a41-9e18-2d228736a846.png",
+    "wall_seconds": 86,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/sites/steel_mill/s2-a/steel_mill-s2-a.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/sites/steel_mill/s2-a/steel_mill-s2-a.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png"
+   ],
+   "registration": {
+    "scale": 1.0000428186468213,
+    "tx": 0.07382834552532283,
+    "ty": -0.4496519376968857,
+    "max_residual_tile_px": 0.040331790348654424,
+    "min_iou": 0.9986853288005949
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": true,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0,
+    "feature_strength": 0.0,
+    "feature_rgb": [],
+    "hold_feather_px": 3.0,
+    "tone_sigma": 0.0,
+    "tone_feature_grow_px": 2,
+    "paint_region_px": 0.0,
+    "paint_region_feather_px": 2.0
+   },
+   "gates": {},
+   "report": "art/codex/terrain/sites/steel_mill/s2-a/report.json",
+   "montage": "art/codex/terrain/review/sites2/sheets/steel_mill-s2-a.montage.png",
+   "passed": [
+    "l1_00",
+    "l1_01",
+    "l1_02",
+    "l2_00",
+    "l2_01",
+    "l2_02"
+   ],
+   "failed": [
+    "l3_00",
+    "l3_01",
+    "l3_02"
+   ]
+  }
+ ]
+}

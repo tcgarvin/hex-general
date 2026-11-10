@@ -1,0 +1,12 @@
+{
+ "name": "base-stages-b",
+ "canvas": [1536, 1024],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {"name": "stage4_b", "centre": [400, 512], "members": [[0, 0], [1, 0], [0, 1], [1, 1]], "ground_origin": [300, 650]},
+  {"name": "stage3_b", "centre": [1130, 512], "members": [[0, 0], [1, 0], [0, 1]], "ground_origin": [800, 650]}
+ ],
+ "pin": {"restore": true},
+ "gates": {}
+}

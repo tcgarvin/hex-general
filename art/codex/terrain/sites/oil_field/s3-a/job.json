@@ -1,0 +1,47 @@
+{
+ "name": "oil_field-s3-a",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "l1_30",
+   "base": "../../../r1-bases/00.png"
+  },
+  {
+   "name": "l1_31",
+   "base": "../../../r1-bases/01.png"
+  },
+  {
+   "name": "l1_32",
+   "base": "../../../r1-bases/02.png"
+  },
+  {
+   "name": "l2_30",
+   "base": "../../../r1-bases/03.png"
+  },
+  {
+   "name": "l2_31",
+   "base": "../../../r1-bases/04.png"
+  },
+  {
+   "name": "l2_32",
+   "base": "../../../r1-bases/05.png"
+  },
+  {
+   "name": "l3_30",
+   "base": "../../../r1-bases/00.png"
+  },
+  {
+   "name": "l3_31",
+   "base": "../../../r1-bases/01.png"
+  },
+  {
+   "name": "l3_32",
+   "base": "../../../r1-bases/02.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

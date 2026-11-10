@@ -1,0 +1,35 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+
+Image 3 is a close-up of image 2's village, showing the building style and scale to match; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint an ARMY CAMP, 1940s style, in the style and palette of image 2: neat rows of identical small khaki-canvas tents or drab timber barrack huts, a bare earth parade square, a motor pool of a few small drab trucks under a shelter, and in the bigger camps a perimeter of low earth banks and sandbags. Khaki, drab olive and earth colours only. No flags, no insignia, no people.
+
+1. A dozen small khaki tents in two neat rows north-west of centre.
+2. A dozen tents in three short rows south-east of centre.
+3. A dozen tents in two rows east of centre, with one small hut.
+4. A hutted camp west of centre: three rows of timber barrack huts, a bare parade square, a small motor pool.
+5. A hutted camp north of centre: huts in rows, parade square, motor pool to the east.
+6. A hutted camp south of centre: huts, parade square, motor pool, a few tents.
+7. A fortified base filling most of the hexagon: long barrack blocks in rows, depot sheds, a large parade square, a motor pool, all inside a ring of earth banks and sandbags that stays inside the grass band; heaviest toward the north-west.
+8. A fortified base: barracks, depot sheds and motor pool, parade square in the south-east, earth-bank perimeter.
+9. A fortified base: barrack blocks in the east, depot sheds in the west, parade square in the middle, earth-bank perimeter.
+
+The three ROWS are three SIZES of the same kind of place, and the size difference must be obvious at a glance:
+- Top row (hexagons 1-3), SMALL: the place occupies only about a quarter to a third of the hexagon; the rest is open grass.
+- Middle row (hexagons 4-6), ESTABLISHED: clearly bigger and fuller, about half of the hexagon.
+- Bottom row (hexagons 7-9), MAJOR: nearly fills the hexagon, about two-thirds to three-quarters of it, but still stopping short of the edge.
+
+Rules for every hexagon:
+- Seen from almost straight above, with only a slight tilt from the south so south walls and tall things show a little. Light from the upper left; short soft warm-umber shadows fall to the lower right.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-twelfth of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. No road, track or rail runs out to the edge; short yard tracks or sidings fade out before the grass band.
+
+EVERY HEXAGON follows its own numbered description; the three in a row are the same size but arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

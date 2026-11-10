@@ -1,0 +1,43 @@
+{
+ "runs": [
+  {
+   "name": "base-s3-a",
+   "when": "2026-11-09T23:32:54",
+   "job": "art/codex/terrain/sites/base/s3-a/job.json",
+   "job_sha256": "a815721b8ba9d3a9a7771a0ec79dbb5fe8e5a86393712f8aae14add90c4272df",
+   "prompt": "art/codex/terrain/sites/base/s3-a/prompt.txt",
+   "prompt_sha256": "987933d4463a8d2b9e0be8e240f7f08bab0b19bb8d0cdd775bd9c09f400969aa",
+   "sheet": "art/codex/terrain/sites/base/s3-a/base-s3-a.sheet.png",
+   "raw": "art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png",
+   "raw_sha256": "b8f99be8a0fac114765947129018bc774b125d60ba96a6386cb2434b11ffbc22",
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c3b9-d781-7d72-bffd-c89043026b95",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c3b9-d781-7d72-bffd-c89043026b95/exec-f1f25145-0f08-4d9b-b1fb-3348355b8542.png",
+    "wall_seconds": 74,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/sites/base/s3-a/base-s3-a.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/sites/base/s3-a/base-s3-a.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png"
+   ],
+   "registration": {
+    "scale": 0.9999519999258049,
+    "tx": 0.01057092080055011,
+    "ty": -0.5235127429058749,
+    "max_residual_tile_px": 0.006628415396129251,
+    "min_iou": 0.9962974277915402
+   },
+   "passed": [
+    "stage4_a",
+    "stage3_a"
+   ],
+   "failed": []
+  }
+ ]
+}

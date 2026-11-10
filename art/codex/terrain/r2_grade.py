@@ -16,6 +16,10 @@ Operations (all optional, applied in this order):
   --lightwarm-s S        light-warm feature pixels (L > 118, hue < 56) have
                          their HSV saturation capped toward S (keeps V)
   --sat-scale K          multiply HSV saturation of feature pixels by K
+  --compress-above T --compress-k K
+                         feature pixels with L > T are scaled (same RGB ratio)
+                         so L' = T + K (L - T): compresses highlights (sites2
+                         factory: pale roofs brighter than anything in the concept)
 
 usage: python3 art/codex/terrain/r2_grade.py --work <dir> --cell <name> --out <png> [ops]
 Writes <out> and <out>.grade.json (parameters + source hashes).
@@ -90,6 +94,8 @@ def main() -> int:
     ap.add_argument("--shade-warm", default="1.0,0.97,0.92")
     ap.add_argument("--lightwarm-s", type=float)
     ap.add_argument("--sat-scale", type=float)
+    ap.add_argument("--compress-above", type=float)
+    ap.add_argument("--compress-k", type=float, default=0.4)
     args = ap.parse_args()
     src = args.work / "tiles" / f"{args.cell}.png"
     tile = np.asarray(Image.open(src).convert("RGBA"))
@@ -114,6 +120,10 @@ def main() -> int:
             lw = (L > 118) & (h < 56) & (s > args.lightwarm_s)
             s = np.where(lw, args.lightwarm_s + (s - args.lightwarm_s) * 0.25, s)
         out = hsv_to_rgb(h, s, v)
+    if args.compress_above is not None:
+        L = lum(out)
+        target = np.where(L > args.compress_above, args.compress_above + args.compress_k * (L - args.compress_above), L)
+        out = out * (target / np.maximum(L, 1e-6))[..., None]
     final = rgb * (1 - f[..., None]) + out * f[..., None]
     res = tile.copy()
     res[..., :3] = np.clip(np.round(final), 0, 255).astype(np.uint8)

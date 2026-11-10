@@ -1,0 +1,122 @@
+{
+ "kind": "steel_mill",
+ "picks": [
+  {
+   "file": "l1_00.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/steel_mill/s1-a/tiles/l1_00.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-a/raw/steel_mill-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.191,
+   "built": 0.129,
+   "L": 96.6,
+   "sha256": "1fdc9d75a92c2d3a89aab07659d96585a541c267c99c6f689e89a42ec7ddd540"
+  },
+  {
+   "file": "l1_01.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/steel_mill/s1-a/tiles/l1_01.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-a/raw/steel_mill-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.204,
+   "built": 0.135,
+   "L": 97.0,
+   "sha256": "e0dd77ea9e15b1871869b4849a56a3686afd0b07addb251cd09b1ad45bafe5fb"
+  },
+  {
+   "file": "l1_02.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/steel_mill/s1-a/tiles/l1_02.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-a/raw/steel_mill-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.208,
+   "built": 0.119,
+   "L": 96.6,
+   "sha256": "7df1f2ee06bb90e993240cc4039c2665dd3222c225fbdf4a44a3d7314840b27f"
+  },
+  {
+   "file": "l2_00.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/steel_mill/s1-a/tiles/l2_00.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-a/raw/steel_mill-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.517,
+   "built": 0.38,
+   "L": 95.0,
+   "sha256": "b503a4b513632577bff141c60b6ec6544269a40af54df8fb53f505a72bddbd61"
+  },
+  {
+   "file": "l2_01.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/steel_mill/s1-a/tiles/l2_01.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-a/raw/steel_mill-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.532,
+   "built": 0.391,
+   "L": 94.5,
+   "sha256": "88fe3c1f1d92ae683c2d5c28b88f09643694bc1684ebe596ca5a4d3b309095d0"
+  },
+  {
+   "file": "l2_02.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/steel_mill/s1-a/tiles/l2_02.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-a/raw/steel_mill-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.455,
+   "built": 0.33,
+   "L": 95.8,
+   "sha256": "b72811fac58f562406e25a104a7cb6a229167cd60f3ddeb908ce26104d8c5afb"
+  },
+  {
+   "file": "l3_00.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/steel_mill/s1-l3/tiles/l3_10.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-l3/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-l3/raw/steel_mill-s1-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.742,
+   "built": 0.597,
+   "L": 91.1,
+   "sha256": "ec89a4f6451bf6f4d39f0ba5243df466c4552ce8c5973e29f061c870fdbb3e23"
+  },
+  {
+   "file": "l3_01.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/steel_mill/s1-l3/tiles/l3_12.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-l3/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-l3/raw/steel_mill-s1-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.723,
+   "built": 0.579,
+   "L": 90.8,
+   "sha256": "2b20393c4f0ba1ba6d67a0bdf2b15f47c3ee71b31bb0f1c5f16ad196f7316df6"
+  },
+  {
+   "file": "l3_02.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/steel_mill/s1-l3/tiles/l3_16.png",
+   "sheet_job": "art/codex/terrain/sites/steel_mill/s1-l3/job.json",
+   "raw": "art/codex/terrain/sites/steel_mill/s1-l3/raw/steel_mill-s1-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.739,
+   "built": 0.581,
+   "L": 92.9,
+   "sha256": "1f227eb4a327c906af0cece093e31d429a6bc1c0c5be8feb685426d9035cd5eb"
+  }
+ ]
+}

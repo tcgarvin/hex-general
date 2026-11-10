@@ -1,0 +1,35 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+
+Image 3 is a close-up of image 2's village, showing the building style and scale to match. Image 4 is a close-up of image 2's crop fields (bottom right of image 2): copy their furrowed strips and hedgerows; the thin light lines in images 3 and 4 are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint a FARM in the style of images 2-4: cultivated field strips with fine parallel furrows (dark olive furrows about #29321A between muted ochre-olive ridges about #6F6D33), each strip's furrows running in a different direction from its neighbours, separated by thin dark hedgerows with a few small trees; and farm buildings with cream walls and muted terracotta-brown roofs, always including a barn. Fields are muted and fairly dark, like image 4: dark olive furrows dominate, never bright yellow wheat, never saturated or light green. Fields may thin out toward the grass band.
+
+1. One small barn and a cottage north-west of centre, with two field strips beside them to the east (one north-south furrows, one east-west).
+2. One barn and a shed south of centre, with two field strips to their west.
+3. One barn east of centre, with two narrow field strips to its north-west and a hedge.
+4. A farmyard (barn, house, two outbuildings round a yard) west of centre, a small orchard, and three field strips just east of it; the eastern half of the hexagon stays open grass.
+5. A farmyard north-east of centre with a small orchard, and three or four field strips to its south; the western part of the hexagon stays open grass.
+6. A farmyard south of centre, a haystack and orchard, and three field strips to its north-west; the north-east stays open grass.
+7. An estate farm: a large farmyard with a big barn, several outbuildings and an orchard in the north-west, and a full patchwork of ten to twelve smaller field strips filling the whole hexagon apart from the grass band.
+8. An estate farm: farm buildings in the south-east, and a full patchwork of ten to twelve smaller strips with hedgerows across all the rest of the hexagon.
+9. An estate farm: two farmyards (north and south-west) and a full patchwork of ten to twelve strips with hedgerows and a few trees filling the whole hexagon apart from the grass band.
+
+The three ROWS are three SIZES of the same kind of place, and the size difference must be obvious at a glance:
+- Top row (hexagons 1-3), SMALL: the place occupies only about a quarter to a third of the hexagon; the rest is open grass.
+- Middle row (hexagons 4-6), ESTABLISHED: clearly bigger and fuller, but only about HALF of the hexagon; the other half is open grass.
+- Bottom row (hexagons 7-9), MAJOR: nearly fills the hexagon, about two-thirds to three-quarters of it, but still stopping short of the edge.
+
+Rules for every hexagon:
+- Seen from almost straight above, with only a slight tilt from the south so south walls and tall things show a little. Light from the upper left; short soft warm-umber shadows fall to the lower right.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-twelfth of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. No road, track or rail runs out to the edge; short yard tracks or sidings fade out before the grass band.
+
+EVERY HEXAGON follows its own numbered description; the three in a row are the same size but arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

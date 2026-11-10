@@ -1,0 +1,75 @@
+{
+ "name": "base-s2-d",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "stage4_d",
+   "centre": [
+    400,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "ground_origin": [
+    300,
+    300
+   ],
+   "guide": {
+    "margin": 16
+   }
+  },
+  {
+   "name": "stage3_d",
+   "centre": [
+    1130,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ],
+   "ground_origin": [
+    800,
+    650
+   ],
+   "guide": {
+    "margin": 16
+   }
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

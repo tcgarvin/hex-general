@@ -1,0 +1,15 @@
+{
+ "cluster": "stage2_a",
+ "positions": {
+  "h0": [
+   0,
+   0
+  ],
+  "h1": [
+   1,
+   0
+  ]
+ },
+ "axial": "offsets from h0, hex.ts AXIAL_DIRECTIONS convention",
+ "source": "art/codex/terrain/sites/base/s2-c/tiles/stage2_b"
+}

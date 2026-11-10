@@ -1,0 +1,69 @@
+{
+ "name": "base-stages-d",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "stage4_d",
+   "centre": [
+    400,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "ground_origin": [
+    560,
+    300
+   ]
+  },
+  {
+   "name": "stage3_d",
+   "centre": [
+    1130,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ],
+   "ground_origin": [
+    560,
+    650
+   ]
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

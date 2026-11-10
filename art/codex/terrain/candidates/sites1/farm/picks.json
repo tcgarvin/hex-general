@@ -1,0 +1,122 @@
+{
+ "kind": "farm",
+ "picks": [
+  {
+   "file": "l1_00.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l1_00.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.317,
+   "built": 0.121,
+   "L": 97.3,
+   "sha256": "8c1778c04b3ccb16444b6ce4e7e81f7534725edb82a274ce9cd981181525be6f"
+  },
+  {
+   "file": "l1_01.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l1_01.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.297,
+   "built": 0.124,
+   "L": 96.7,
+   "sha256": "9a8963453364c582e412ff6dffffaae963cb7a86638e76be3640baeac675897c"
+  },
+  {
+   "file": "l1_02.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l1_02.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.25,
+   "built": 0.111,
+   "L": 96.8,
+   "sha256": "87a445b922571d0e5fe6e7e6f518359c6fb85e17f380600fd75883008044a153"
+  },
+  {
+   "file": "l2_00.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l2_00.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.497,
+   "built": 0.234,
+   "L": 96.1,
+   "sha256": "c740ad2aaf5353298cda4f0968363c4397f7815da7eb01da2317156b0b1baedb"
+  },
+  {
+   "file": "l2_01.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l2_01.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.61,
+   "built": 0.274,
+   "L": 94.3,
+   "sha256": "2c186c1889cf87d78557de5f18058e81ac21e68f0ceba7fae551d342a1886b41"
+  },
+  {
+   "file": "l2_02.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l2_02.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.502,
+   "built": 0.268,
+   "L": 96.1,
+   "sha256": "3aeae335baddb900b717c8bfcc355e984fb370ae604f77e74bd05437520382b7"
+  },
+  {
+   "file": "l3_00.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l3_00.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.825,
+   "built": 0.404,
+   "L": 90.9,
+   "sha256": "fdbaf7e03ea3ec7bcad0efe850b71aaaa89b2eba5e4bede1e9fde688cbe28ff5"
+  },
+  {
+   "file": "l3_01.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l3_01.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.835,
+   "built": 0.44,
+   "L": 89.1,
+   "sha256": "ec720b0c7f3be27decf734fca543e694b34d94666d05e3f37e92fede4ead565c"
+  },
+  {
+   "file": "l3_02.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/farm/s1-b/tiles/l3_02.png",
+   "sheet_job": "art/codex/terrain/sites/farm/s1-b/job.json",
+   "raw": "art/codex/terrain/sites/farm/s1-b/raw/farm-s1-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.814,
+   "built": 0.464,
+   "L": 90.1,
+   "sha256": "5f8622b8a208b9565e4e966f4135277734d508932293b9741973111fc543b751"
+  }
+ ]
+}

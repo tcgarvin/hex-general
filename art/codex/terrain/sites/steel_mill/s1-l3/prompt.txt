@@ -1,0 +1,31 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+
+Image 3 is a close-up of image 2's village, showing the building style and scale to match; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint a STEEL MILL, 1940s style, in the style and palette of image 2: tall round brick chimneys (dark red-brown, each casting a long shadow to the lower right) with a short, small drift of grey smoke blowing to the east and staying well inside the hexagon; long dark soot-blackened sheds with dark roofs; black coal heaps and pale grey slag heaps; a short rail siding with a few dark wagons that stops inside the works; blackened, sooty ground. This is the darkest, sootiest kind of site. A small dull orange furnace glow is allowed in the bigger works. No green zinc roofs, no tidy yards.
+
+Every hexagon holds a MAJOR integrated steel works that nearly fills the hexagon (about two-thirds to three-quarters of it), but EVERYTHING - sheds, heaps, wagons, sidings, smoke - stays at least one-tenth of the hexagon's width inside the edge, so a clear band of plain grass shows all round:
+1. Furnace towers with a dull orange glow in the north-west, five chimneys in a row, long sheds to the south-east, coal and slag heaps in the south.
+2. Furnace towers in the south-east, five chimneys, long sheds across the north, a rail yard of short sidings in the west.
+3. Furnaces in the middle-east, five chimneys in a row, sheds and a rail yard in the west, heaps in the north.
+4. Two furnace towers in the north, chimneys along the east side, sheds and heaps in the south-west.
+5. Furnaces in the south-west, chimneys in the north-east, a rail yard of sidings in the south-east.
+6. A long line of sheds diagonally from north-west to south-east, furnaces and five chimneys beside it, heaps either side.
+7. Furnaces in the centre-west, chimneys to the north, a big slag heap and coal heap in the south-east, sidings in the south.
+8. Chimneys in a row across the south, furnaces north of them, sheds and heaps in the north-east.
+9. Furnaces in the east, chimneys and sheds in the west, rail yard in the north.
+
+Rules for every hexagon:
+- Seen from almost straight above, with only a slight tilt from the south so south walls and tall things show a little. Light from the upper left; short soft warm-umber shadows fall to the lower right.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-twelfth of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. No road, track or rail runs out to the edge; short yard tracks or sidings fade out before the grass band.
+
+EVERY HEXAGON follows its own numbered description; all nine are major works of about the same size, arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

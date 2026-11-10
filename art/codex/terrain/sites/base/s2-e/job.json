@@ -1,0 +1,57 @@
+{
+ "name": "base-s2-e",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "stage2_e",
+   "centre": [
+    400,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    300,
+    650
+   ]
+  },
+  {
+   "name": "stage2_f",
+   "centre": [
+    1130,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    800,
+    300
+   ]
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

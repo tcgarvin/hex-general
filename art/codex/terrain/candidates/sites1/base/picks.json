@@ -1,0 +1,173 @@
+[
+ {
+  "dir": "stage1_a",
+  "source": "art/codex/terrain/sites/base/stages-c/tiles/stage1_a",
+  "raw": "art/codex/terrain/sites/base/stages-c/raw/base-stages-c.png",
+  "registration": {
+   "width_ratio": 1.0026,
+   "residual_tile_px": 0.2933,
+   "iou": 0.9872
+  },
+  "gate_failures": [],
+  "seams_mean": [],
+  "sha256": {
+   "h0.png": "9ebb1d172cc0eeae7d90211b50e00c781b77225cd1e8b1f2412008b190b08cc0"
+  }
+ },
+ {
+  "dir": "stage1_b",
+  "source": "art/codex/terrain/sites/base/stages-c/tiles/stage1_b",
+  "raw": "art/codex/terrain/sites/base/stages-c/raw/base-stages-c.png",
+  "registration": {
+   "width_ratio": 1.0042,
+   "residual_tile_px": 0.5494,
+   "iou": 0.9836
+  },
+  "gate_failures": [],
+  "seams_mean": [],
+  "sha256": {
+   "h0.png": "663c6ba3492ae5198357046414bf44b95f4c4e1fa01af38906fca5fa26c83075"
+  }
+ },
+ {
+  "dir": "stage2_a",
+  "source": "art/codex/terrain/sites/base/stages-c/tiles/stage2_a",
+  "raw": "art/codex/terrain/sites/base/stages-c/raw/base-stages-c.png",
+  "registration": {
+   "width_ratio": 1.0131,
+   "residual_tile_px": 0.241,
+   "iou": 0.9775
+  },
+  "gate_failures": [
+   "h0:3.1% of the outer rim band painted over",
+   "h0:3 salient px within 4 px of the outer boundary"
+  ],
+  "seams_mean": [
+   1.65
+  ],
+  "sha256": {
+   "h0.png": "c94c467346134c6831c2717646681ba14b2f791e7f00ccc10676b79cccb86eed",
+   "h1.png": "df8b4585022d9ba10e1316c90e6ec8db88fc5f87967db4117328f7b967b5ef29"
+  }
+ },
+ {
+  "dir": "stage2_b",
+  "source": "art/codex/terrain/sites/base/stages-c/tiles/stage2_b",
+  "raw": "art/codex/terrain/sites/base/stages-c/raw/base-stages-c.png",
+  "registration": {
+   "width_ratio": 1.0158,
+   "residual_tile_px": 0.4769,
+   "iou": 0.973
+  },
+  "gate_failures": [
+   "h0:15 salient px within 4 px of the outer boundary"
+  ],
+  "seams_mean": [
+   3.08
+  ],
+  "sha256": {
+   "h0.png": "7dbcca61fae1c4879792a487de7a49f05a566a6eb52bfeacc8f89907fb5233c5",
+   "h1.png": "25803f2ba3461e2fd7abcc9715352f678eb95b75fdac7e7c1ca7f7fcd01cbe66"
+  }
+ },
+ {
+  "dir": "stage3_a",
+  "source": "art/codex/terrain/sites/base/stages-a/tiles/stage3_a",
+  "raw": "art/codex/terrain/sites/base/stages-a/raw/base-stages-a.png",
+  "registration": {
+   "width_ratio": 0.9996,
+   "residual_tile_px": 0.0384,
+   "iou": 0.9973
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   2.64,
+   1.76,
+   3.06
+  ],
+  "sha256": {
+   "h0.png": "b488d8e1697ff09236d5ea05e4c3dda91cbe5bf1242ecdd7170658245f695229",
+   "h1.png": "243a257ff7c3a311875a325ec1cc03ed152c65e3b089fb8e96c7158089bf132b",
+   "h2.png": "ec872cf58d5ca5f7e9754d6d39e401f45892e40a253a3ac5dde8e97b351c7861"
+  }
+ },
+ {
+  "dir": "stage3_b",
+  "source": "art/codex/terrain/sites/base/stages-d/tiles/stage3_d",
+  "raw": "art/codex/terrain/sites/base/stages-d/raw/base-stages-d.png",
+  "registration": {
+   "width_ratio": 1.0003,
+   "residual_tile_px": 0.0042,
+   "iou": 0.9951
+  },
+  "gate_failures": [
+   "h1:7.3% of the outer rim band painted over",
+   "h1:28 salient px within 4 px of the outer boundary"
+  ],
+  "seams_mean": [
+   2.79,
+   1.06,
+   2.47
+  ],
+  "sha256": {
+   "h0.png": "950fe95812734ac610ed17311219b5618791e32f3d4b9b56645bc77a581d8a46",
+   "h1.png": "e0fd6db2f6df1b7561acc36c182fbe8fb12271f3829d7d230f392c569e989467",
+   "h2.png": "1feb1f10800e180b21b093fdce9d7a01892c3e68915c61415c2164a0d4d48336"
+  }
+ },
+ {
+  "dir": "stage4_a",
+  "source": "art/codex/terrain/sites/base/stages-a/tiles/stage4_a",
+  "raw": "art/codex/terrain/sites/base/stages-a/raw/base-stages-a.png",
+  "registration": {
+   "width_ratio": 0.9997,
+   "residual_tile_px": 0.0384,
+   "iou": 0.9965
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   3.58,
+   1.52,
+   2.09,
+   2.78,
+   3.49
+  ],
+  "sha256": {
+   "h0.png": "0953df2296cf458a8c93ef86ddcede8a3098fb00de8f8ee976da75e11a6f728f",
+   "h1.png": "7ddecc69849f435b8d3257d72d3843bf449c326a6d165bf0258f337ccc034cc7",
+   "h2.png": "1eef340404759c0b69f72b281699179f96c9cabd16b261b6b4056e22c500198f",
+   "h3.png": "aa2e9fb068d9a1e21828007c359983880f32da53de03e5304a157c44e0bb71a8"
+  }
+ },
+ {
+  "dir": "stage4_b",
+  "source": "art/codex/terrain/sites/base/stages-d/tiles/stage4_d",
+  "raw": "art/codex/terrain/sites/base/stages-d/raw/base-stages-d.png",
+  "registration": {
+   "width_ratio": 1.001,
+   "residual_tile_px": 0.0042,
+   "iou": 0.995
+  },
+  "gate_failures": [
+   "h1:4.4% of the outer rim band painted over"
+  ],
+  "seams_mean": [
+   2.86,
+   1.92,
+   1.66,
+   2.42,
+   2.25
+  ],
+  "sha256": {
+   "h0.png": "a7c60805dcee5436ce3e212d269f3e97ae94851d0838ef17581df3383b00457f",
+   "h1.png": "12b7bfe28fbc6b8fb71d2dd7c9b0021e02bf104ae160497a3c868fc7f809b858",
+   "h2.png": "b1a61ab31f361e410e9577d6afcacfaef2477bc1d6c331dd28b6a264dd82c6c3",
+   "h3.png": "c8c0d78abdf473ae9589e646058bb84c0a623d0d94e32229efd0689a409366f7"
+  }
+ },
+ {
+  "dir": "stage1_c",
+  "source": "art/codex/terrain/sites/base/s1-a/tiles/l1_00.png",
+  "note": "single-hex level-1 tile from the first base sheet (paintin.py), kept as a stage-1 candidate"
+ }
+]

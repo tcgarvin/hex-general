@@ -1,0 +1,2 @@
+--ref art/codex/terrain/refs/r1/town_2x.png
+--ref art/codex/terrain/sites/oil_field/s4-l3d/ref-l2.png

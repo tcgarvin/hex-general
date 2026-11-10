@@ -1,0 +1,33 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village, showing the building scale to match; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint a FACTORY (a 1940s engineering works). Its signature building is the SAWTOOTH HALL: one rectangular workshop whose roof is a row of parallel sawtooth (north-light) ridges. Brick halls have soot-stained DARK SLATE GREY sawtooth roofs and walls of RED-BROWN BRICK; the yard is cinder-grey trampled earth and cinders. NO pale or clean roofs, NO beige, NO white concrete. Not sooty like a steel works: no slag, no glow.
+
+COUNTING MATTERS MOST. The player tells the size of the works by COUNTING ITS SAWTOOTH HALLS, so every hexagon has EXACTLY the number of sawtooth halls written for it. Each hall is a separate building standing apart, with a clear strip of yard or lane between it and the next hall, so each roof is easy to count; halls are never joined into one roof mass and never touch. Every other building (sheds, offices, stores, boiler house) is much SMALLER than a hall and has a FLAT or plain two-sided roof, never a sawtooth roof, so it cannot be mistaken for another hall.
+
+Hexagons 1-9 are all LEVEL 2, ESTABLISHED: exactly TWO brick sawtooth halls (two, not three), parallel, with a clear strip of cinder yard between them, one SHORT brick chimney, a small round water tower on legs, a small flat-roofed office, a fenced cinder yard with crates and a worn track inside. The works and its yard fill about ONE HALF of the hexagon, gathered on one side; the other half is plain open grass.
+1. Works in the west half, the two halls one above the other; the east half open grass.
+2. Works in the north half, the two halls side by side; the south half open grass.
+3. Works in the south-east half; the north-west half open grass.
+4. Works in the north-east half; the south-west half open grass.
+5. Works in the south half, the two halls side by side; the north half open grass.
+6. Works in the east half, the two halls one above the other; the west half open grass.
+7. Works in the south-west half; the north-east half open grass.
+8. Works in the north-west half; the south-east half open grass.
+9. Works across the middle from west to east, the halls end to end with the yard between; grass north and south.
+
+Rules for every hexagon:
+- Seen from almost straight DOWN, with only a slight tilt from the south: buildings show only a thin sliver of their south wall. Tall things (derricks, chimneys, water towers) look SHORT in the picture: painted no taller than one and a half village houses, because we look down on them from above; their height is told by a long thin cast shadow falling to the lower right, not by a tall side view. Light from the upper left.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- The place sits IN the ground, not on it: a worn apron of trodden earth, cinders, mud or stubble around and between the buildings, feathering out irregularly into the grass. No building stands on clean lawn, and no yard has a straight, ruler-edged border against the grass.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-EIGHTH of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. A short service track or siding inside the place is fine, but it fades out before the grass band; no road, track or rail runs out to the edge.
+
+EVERY HEXAGON follows its own numbered description; all nine hexagons are the same level and about the same size, but each is arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

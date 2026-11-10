@@ -538,6 +538,16 @@ isolation.
   the deterministic post-chain byte-replays (`roadfinish.py build --verify`, wired
   into `selftest.py`; regenerate the sources with `export-sources`).
 
+### Site and base art (ratified 2026-11-10, waiting on the game)
+
+Farm, oil field, steel mill and factory (levels 1-3) and the army base (stages 1-4
+over 1-4 hexes) are ratified and committed with provenance in
+`art/codex/terrain/candidates/sites-ratified/` (`SITES.md`). Not wired in. Needs
+first: (1) sites on their own hexes instead of town hexes, (2) a site level the
+renderer can read, (3) a four-hex base footprint in the engine (assumed footprint:
+`(0,0)`, `+(1,0)`, `+(0,1)`, `+(1,1)`; not explicitly confirmed). Known art
+shortfalls are listed in the set's README.
+
 ### Unit art (painterly sprites)
 
 Replace the vector unit markers (`UnitMarker` in `Board.tsx`: tinted

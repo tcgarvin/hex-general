@@ -1,0 +1,11 @@
+{
+ "cluster": "stage1_full_a",
+ "positions": {
+  "h0": [
+   0,
+   0
+  ]
+ },
+ "axial": "offsets from h0, hex.ts AXIAL_DIRECTIONS convention",
+ "source": "/home/timg/code/hex-general/art/codex/terrain/sites/base/s4-mix-s1/tiles/full_h"
+}

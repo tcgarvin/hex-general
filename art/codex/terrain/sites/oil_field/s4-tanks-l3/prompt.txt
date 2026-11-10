@@ -1,0 +1,15 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons on a flat magenta (#FF00FF) background, in 3 rows of 3. Each hexagon is a FINISHED oil-field game tile, already painted. Number the hexagons 1 to 9: left to right, top row first. North is up, east is right.
+
+Image 2 is the target game map: its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village, showing the building scale; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: change ONLY the STORAGE TANKS and the RECTANGULAR FENCE around them, in every hexagon. Keep every other pixel exactly as it is: the derricks (same number, same positions, same height, same colour, same shadows), the brick pump house, the black oil-mud patches, the tracks, any wagons, the grass, the hexagon outlines and the flat magenta background.
+
+In every hexagon:
+- REMOVE the rectangular fence around the tanks completely. Where it was, paint trodden dark earth and black oil mud that matches the ground around it.
+- Repaint the tanks, keeping EXACTLY THREE tanks (THREE, not four) roughly where they are now, as weathered 1940s steel oil storage tanks seen from almost straight above: DULL grey-ochre and rust-stained steel tops, NOT cream, NOT white, NOT pale, no brighter than a dirt track; a darker rim; rust streaks; a small hatch or a ladder on each. Each tank is lit on its upper-left side and shaded on its lower-right side and casts its own short dark shadow to the lower right, so it reads as a solid squat cylinder, not a flat disc.
+- Make the tanks look built, not drawn: slightly DIFFERENT sizes, staggered or clustered in a loose group (never in a straight, evenly spaced row), standing on the dark mud or inside a low IRREGULAR earth bund (a soft, ragged umber ridge of heaped earth, NOT a rectangle, no fence, no crisp outline), with one or two thin dark pipes wandering from the tanks to the pump house.
+
+Do not add anything else: no new buildings, no new derricks, no new tanks, no fences, no roads. Muted colours only, no text, no labels, no outlines. The tanks must NOT look like icons or interface elements (no clean circles in a box). Same framing and size as image 1. NOT bright, NOT glossy, NOT airbrushed.

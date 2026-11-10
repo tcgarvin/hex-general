@@ -1,0 +1,122 @@
+{
+ "kind": "factory",
+ "picks": [
+  {
+   "file": "l1_00.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/factory/s1-a/tiles/l1_00.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-a/raw/factory-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.19,
+   "built": 0.142,
+   "L": 97.4,
+   "sha256": "6d26dcc2bb1b4b9d62ab16673e62b29a3f94b52ecbd70738cae36c67b95da863"
+  },
+  {
+   "file": "l1_01.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/factory/s1-a/tiles/l1_01.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-a/raw/factory-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.202,
+   "built": 0.149,
+   "L": 97.2,
+   "sha256": "39a908cc2cdd0cc0e63ebf333012db71f0d720c8886f5ce7bc9d262c9a75dbc2"
+  },
+  {
+   "file": "l1_02.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/factory/s1-a/tiles/l1_02.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-a/raw/factory-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.219,
+   "built": 0.168,
+   "L": 97.3,
+   "sha256": "f9ed2a508ef51b4be5a82c16f603a9cc30719362c7c269c0c282e23228582401"
+  },
+  {
+   "file": "l2_00.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/factory/s1-a/tiles/l2_00.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-a/raw/factory-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.482,
+   "built": 0.396,
+   "L": 96.9,
+   "sha256": "2a2890d41d8469aa69d0c74c85e927778562bb8268f066d3a4d53ceebc3988bc"
+  },
+  {
+   "file": "l2_01.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/factory/s1-a/tiles/l2_01.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-a/raw/factory-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.49,
+   "built": 0.415,
+   "L": 97.5,
+   "sha256": "437f9360da4c761921e7dcea65fa022552d0506146036a8f6969d93cb9ecc730"
+  },
+  {
+   "file": "l2_02.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/factory/s1-a/tiles/l2_02.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-a/raw/factory-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.467,
+   "built": 0.395,
+   "L": 98.3,
+   "sha256": "d5bb8e7ad277ed71297a027fb5801024a9a9ad72a61e21ffb737c87cdad8ec0b"
+  },
+  {
+   "file": "l3_00.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/factory/s1-l3/tiles/l3_10.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-l3/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-l3/raw/factory-s1-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.709,
+   "built": 0.617,
+   "L": 98.9,
+   "sha256": "0657d1924a95802bfaea5562f8313e958a1cc98a0fddb24415e8493eda10eb8b"
+  },
+  {
+   "file": "l3_01.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/factory/s1-l3/tiles/l3_12.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-l3/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-l3/raw/factory-s1-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.69,
+   "built": 0.604,
+   "L": 99.3,
+   "sha256": "d1c848af21e34f716f9a312559dad0364cb64f1f7828f56a9e47eeb536456db3"
+  },
+  {
+   "file": "l3_02.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/factory/s1-l3/tiles/l3_14.png",
+   "sheet_job": "art/codex/terrain/sites/factory/s1-l3/job.json",
+   "raw": "art/codex/terrain/sites/factory/s1-l3/raw/factory-s1-l3.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.746,
+   "built": 0.66,
+   "L": 102.0,
+   "sha256": "8b9682902ad33604b64d7dbb1219330abb7a747259fe9972f02189c2a61deaf2"
+  }
+ ]
+}

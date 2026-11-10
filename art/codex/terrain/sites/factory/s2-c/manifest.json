@@ -1,0 +1,81 @@
+{
+ "runs": [
+  {
+   "name": "factory-s2-c",
+   "when": "2026-11-09T23:19:45",
+   "job": "art/codex/terrain/sites/factory/s2-c/job.json",
+   "job_sha256": "20273bc4a68b264ac0e207f6d1e3a75da033d288fb8d36b7e24373469c78c20a",
+   "prompt": "art/codex/terrain/sites/factory/s2-c/prompt.txt",
+   "prompt_sha256": "177bcc5081e1ded755210fc93f1a948be643677d406b417b0a2f1c95dfbe81e5",
+   "sheet": "art/codex/terrain/sites/factory/s2-c/factory-s2-c.sheet.png",
+   "raw": "art/codex/terrain/sites/factory/s2-c/raw/factory-s2-c.png",
+   "raw_sha256": "97ad269edbe0a2e42efc243cebb7911baf7869bd0ea807e0a9c0f8603fc2273a",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c3ad-d5c3-7591-a8e4-1f63adbb4369",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c3ad-d5c3-7591-a8e4-1f63adbb4369/exec-8e4dd73c-3003-494c-ae93-a399906510f8.png",
+    "wall_seconds": 71,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/sites/factory/s2-c/factory-s2-c.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/sites/factory/s2-c/factory-s2-c.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png"
+   ],
+   "registration": {
+    "scale": 1.0003870068174632,
+    "tx": -0.12337962132647357,
+    "ty": -0.5111718580152234,
+    "max_residual_tile_px": 0.03722801433708307,
+    "min_iou": 0.9953291490293388
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": true,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0,
+    "feature_strength": 0.0,
+    "feature_rgb": [],
+    "hold_feather_px": 3.0,
+    "tone_sigma": 0.0,
+    "tone_feature_grow_px": 2,
+    "paint_region_px": 0.0,
+    "paint_region_feather_px": 2.0
+   },
+   "gates": {},
+   "report": "art/codex/terrain/sites/factory/s2-c/report.json",
+   "montage": "art/codex/terrain/review/sites2/sheets/factory-s2-c.montage.png",
+   "passed": [
+    "l2_20",
+    "l2_21",
+    "l1_20",
+    "l1_21",
+    "l1_22"
+   ],
+   "failed": [
+    "l2_22",
+    "l2_23",
+    "l2_24",
+    "l2_25"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,137 @@
+{
+ "kind": "oil_field",
+ "picks": [
+  {
+   "file": "l1_00.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s3-c/tiles/l1_50.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-c/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-c/raw/oil_field-s3-c.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.248,
+   "built": 0.179,
+   "L": 95.5,
+   "sha256": "c98764031d1d8854c536912cf090cb1d6a826b05cabfa13e8394fed8819d9cd8",
+   "grade": "none"
+  },
+  {
+   "file": "l1_01.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s3-c/tiles/l1_51.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-c/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-c/raw/oil_field-s3-c.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.238,
+   "built": 0.172,
+   "L": 95.7,
+   "sha256": "4d38d40d91ad25ad0ecf4e0e18e5b4f50068ae7387d22dbf70a0b2d9e05909aa",
+   "grade": "none"
+  },
+  {
+   "file": "l2_00.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s3-a/tiles/l2_30.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-a/raw/oil_field-s3-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.435,
+   "built": 0.29,
+   "L": 95.9,
+   "sha256": "2ddc5fbee4dcb79543b73652204fd816528634f2d2dc7ebf4b3877100dd1d4cc",
+   "grade": "none"
+  },
+  {
+   "file": "l2_01.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s3-b/tiles_graded/l2_41.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-b/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-b/raw/oil_field-s3-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.49,
+   "built": 0.292,
+   "L": 95.6,
+   "sha256": "b70b22ebe83162ffba88840cf824ffdbd246b288ffa3a9ba44b77bbe3e479c8d",
+   "grade": {
+    "shade_mult": 0.8,
+    "shade_warm": "1.0,0.97,0.92",
+    "compress_above": 150.0,
+    "compress_k": 0.5
+   }
+  },
+  {
+   "file": "l2_02.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s3-b/tiles_graded/l2_42.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-b/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-b/raw/oil_field-s3-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.464,
+   "built": 0.276,
+   "L": 95.9,
+   "sha256": "0db462b20908244cc078fc6bee8ad234641bf7c27f329a7e2c0bd953c8a68bea",
+   "grade": {
+    "shade_mult": 0.8,
+    "shade_warm": "1.0,0.97,0.92",
+    "compress_above": 150.0,
+    "compress_k": 0.5
+   }
+  },
+  {
+   "file": "l3_00.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s3-a/tiles/l3_30.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-a/raw/oil_field-s3-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.715,
+   "built": 0.543,
+   "L": 92.6,
+   "sha256": "4129e99c67cafa529931d67afb660db8bf1feff38eba000d198c727493a0c266",
+   "grade": "none"
+  },
+  {
+   "file": "l3_01.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s3-a/tiles_graded/l3_31.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-a/raw/oil_field-s3-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.689,
+   "built": 0.491,
+   "L": 93.1,
+   "sha256": "911011ce152cd8a6944fc74fbe2403ea92391557c438cec52da92ba6eade8685",
+   "grade": {
+    "shade_mult": 0.8,
+    "shade_warm": "1.0,0.97,0.92",
+    "compress_above": 150.0,
+    "compress_k": 0.5
+   }
+  },
+  {
+   "file": "l3_02.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s3-b/tiles_graded/l3_41.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s3-b/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s3-b/raw/oil_field-s3-b.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.732,
+   "built": 0.551,
+   "L": 94.1,
+   "sha256": "6de4c4e7734261fe122c66dbe3879e65dc64c5655409796c1821cd5f9ecbbcc7",
+   "grade": {
+    "shade_mult": 0.8,
+    "shade_warm": "1.0,0.97,0.92",
+    "compress_above": 150.0,
+    "compress_k": 0.5
+   }
+  }
+ ]
+}

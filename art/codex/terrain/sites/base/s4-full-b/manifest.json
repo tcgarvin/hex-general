@@ -1,0 +1,47 @@
+{
+ "runs": [
+  {
+   "name": "base-s4-full-b",
+   "when": "2026-11-10T06:34:12",
+   "job": "art/codex/terrain/sites/base/s4-full-b/job.json",
+   "job_sha256": "5dc91c62433b3f64fef33a02911a6ef1d57dba24c665f723449b568af702d623",
+   "prompt": "art/codex/terrain/sites/base/s4-full-b/prompt.txt",
+   "prompt_sha256": "d3eca3a755aed01f716318261eb2954e289987691043e2ab0f4e7b1b5c6f5b43",
+   "sheet": "art/codex/terrain/sites/base/s4-full-b/base-s4-full-b.sheet.png",
+   "raw": "art/codex/terrain/sites/base/s4-full-b/raw/base-s4-full-b.png",
+   "raw_sha256": "05a8100708eb7572ea13c9df9f5e47d538a184494af572f1b0d0d2991b096c3e",
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c53b-7936-7613-a941-cd2a55657bf5",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c53b-7936-7613-a941-cd2a55657bf5/exec-5fd41e18-9250-4c86-86cb-fd6821da87de.png",
+    "wall_seconds": 79,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/sites/base/s4-full-b/base-s4-full-b.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png",
+     "/home/timg/code/hex-general/art/codex/terrain/sites/base/s4-ref/stage3_bank_ref.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/sites/base/s4-full-b/base-s4-full-b.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png",
+    "art/codex/terrain/sites/base/s4-ref/stage3_bank_ref.png"
+   ],
+   "registration": {
+    "scale": 1.0002859610636252,
+    "tx": -0.22342101425086403,
+    "ty": -0.6503750240717673,
+    "max_residual_tile_px": 0.12374601662964062,
+    "min_iou": 0.9926282093854185
+   },
+   "passed": [],
+   "failed": [
+    "stage2_c",
+    "stage2_d",
+    "stage1_c",
+    "stage1_d"
+   ]
+  }
+ ]
+}

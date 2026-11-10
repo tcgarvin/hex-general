@@ -1,0 +1,158 @@
+[
+ {
+  "dir": "stage1_a",
+  "source": "art/codex/terrain/sites/base/s2-c/tiles/stage1_a",
+  "raw": "art/codex/terrain/sites/base/s2-c/raw/base-s2-c.png",
+  "registration": {
+   "width_ratio": 1.0001726130205184,
+   "residual_tile_px": 0.08482318929293867,
+   "iou": 0.9967336750139416
+  },
+  "gate_failures": [],
+  "seams_mean": [],
+  "sha256": {
+   "h0.png": "d272411486484c107fc0f7420c03cc39e64130e70701c56d5528f99c3773b651"
+  }
+ },
+ {
+  "dir": "stage1_b",
+  "source": "art/codex/terrain/sites/base/s2-c/tiles/stage1_b",
+  "raw": "art/codex/terrain/sites/base/s2-c/raw/base-s2-c.png",
+  "registration": {
+   "width_ratio": 1.0003481783293007,
+   "residual_tile_px": 0.11554981855610223,
+   "iou": 0.9958468234170161
+  },
+  "gate_failures": [],
+  "seams_mean": [],
+  "sha256": {
+   "h0.png": "ac448391ac3269fb462b09c2d56b7f7a09b5169e063a77b4e5488e6c98db01a7"
+  }
+ },
+ {
+  "dir": "stage2_a",
+  "source": "art/codex/terrain/sites/base/s2-c/tiles/stage2_b",
+  "raw": "art/codex/terrain/sites/base/s2-c/raw/base-s2-c.png",
+  "registration": {
+   "width_ratio": 1.0013562218312575,
+   "residual_tile_px": 0.0830341640199387,
+   "iou": 0.9966621321211719
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   2.59
+  ],
+  "sha256": {
+   "h0.png": "62474908fe8ba9082bb6d0ad3907310597100fda525209e550ec02a699aa0534",
+   "h1.png": "1cd63a3b08196314f76cf7a40de65d05cdce60af8b2f8e889570508a9af59a6b"
+  }
+ },
+ {
+  "dir": "stage2_b",
+  "source": "art/codex/terrain/sites/base/s2-e/tiles/stage2_f",
+  "raw": "art/codex/terrain/sites/base/s2-e/raw/base-s2-e.png",
+  "registration": {
+   "width_ratio": 1.0020796875946811,
+   "residual_tile_px": 0.016016457555323185,
+   "iou": 0.9985068386788508
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   1.87
+  ],
+  "sha256": {
+   "h0.png": "5082291a9ae1a105aafdbe9511069b7f7859a2f43cdbf931fa07c52e38d988c1",
+   "h1.png": "862375abf081740d726da81f9efd1703fa228af9df697ed7de9b959b2693f14b"
+  }
+ },
+ {
+  "dir": "stage3_a",
+  "source": "art/codex/terrain/sites/base/s3-a/tiles/stage3_a",
+  "raw": "art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png",
+  "registration": {
+   "width_ratio": 1.0004466680836377,
+   "residual_tile_px": 0.006628415396129251,
+   "iou": 0.9989853788214444
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   2.54,
+   1.13,
+   3.08
+  ],
+  "sha256": {
+   "h0.png": "1b40fb8f86038bb03b12a2c918bbf6e7b8c3d54718792bc32544c34dde568571",
+   "h1.png": "3ad8dd3d0c9d9a2898de7b9feadc859902c59989657b4b83af7745584b92da14",
+   "h2.png": "dfd6e3e6edb01fe767586468b0872194aa0bdba6041cd81dbd904b7d5b75b15a"
+  }
+ },
+ {
+  "dir": "stage3_b",
+  "source": "art/codex/terrain/sites/base/s3-b/tiles/stage3_b",
+  "raw": "art/codex/terrain/sites/base/s3-b/raw/base-s3-b.png",
+  "registration": {
+   "width_ratio": 1.0001947383915901,
+   "residual_tile_px": 0.010263865486612294,
+   "iou": 0.998298083571188
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   2.99,
+   1.3,
+   3.75
+  ],
+  "sha256": {
+   "h0.png": "f9e6e660c63a7a0ae17b4f8735da3b8c714246713ad8faea81d737294418fc73",
+   "h1.png": "bc61eea70fe1ce7666ce0ca39930f671f9e37c550c0e9ca6ddaeddc6d729f5ac",
+   "h2.png": "e77c648a76c7560219f2eaa066123d8e3ddfc2d69921977a7ed000d492d4a381"
+  }
+ },
+ {
+  "dir": "stage4_a",
+  "source": "art/codex/terrain/sites/base/s3-a/tiles/stage4_a",
+  "raw": "art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png",
+  "registration": {
+   "width_ratio": 1.0003233836094803,
+   "residual_tile_px": 0.006628415395979445,
+   "iou": 0.9962974277915402
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   2.63,
+   1.31,
+   1.58,
+   2.84,
+   2.79
+  ],
+  "sha256": {
+   "h0.png": "e8ee5b91b81ee2bc105858b28ddc30430b5aa21ab8cf94648359b05f404ea425",
+   "h1.png": "ef87f0b82a52251449cbb15c994b97c81527e641a3f4410cf6829bda579cdd87",
+   "h2.png": "2bec37904b01416a9d45956e09afe7b1bd71fa666bbbd36e96f7d9d2ba987434",
+   "h3.png": "49e950911131d3d3b4dba4fcbcdf2c4ddc80f00947ba2c1c123f3c1e8cc6fb7e"
+  }
+ },
+ {
+  "dir": "stage4_b",
+  "source": "art/codex/terrain/sites/base/s3-c/tiles/stage4_c",
+  "raw": "art/codex/terrain/sites/base/s3-c/raw/base-s3-c.png",
+  "registration": {
+   "width_ratio": 1.0006225565296338,
+   "residual_tile_px": 0.036120228147713984,
+   "iou": 0.9971749161770076
+  },
+  "gate_failures": [],
+  "seams_mean": [
+   2.86,
+   1.91,
+   1.58,
+   3.56,
+   4.06
+  ],
+  "sha256": {
+   "h0.png": "38fcf98af1f3693910ef857f6d4ab200d14dad9c9b74467aff87b7d6db3a79a5",
+   "h1.png": "786d40e325ab4d1afe16dc35f91a513ba66b5a3a9471023ef4127e003cf470db",
+   "h2.png": "5117c4320064307460e894d976e5c80e1b133e0861fdbd3cae9835145b45bd96",
+   "h3.png": "4f77594484bc3769228c541335524b62725682d7c8980c9133252f46c223665b"
+  }
+ }
+]

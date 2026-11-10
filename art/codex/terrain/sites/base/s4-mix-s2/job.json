@@ -1,0 +1,141 @@
+{
+ "name": "base-s4-mix-s2",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "full_g",
+   "centre": [
+    400,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    850,
+    150
+   ],
+   "guide": {
+    "margin": 14,
+    "shape": "blob",
+    "seed": 81,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "full_h",
+   "centre": [
+    1130,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    850,
+    480
+   ],
+   "guide": {
+    "margin": 14,
+    "shape": "blob",
+    "seed": 82,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "bld_g",
+   "centre": [
+    400,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1150,
+    150
+   ],
+   "guide": {
+    "margin": 14,
+    "shape": "blob",
+    "seed": 83,
+    "jitter": 0.2,
+    "arc": 0.75,
+    "start_deg": 75,
+    "rest": "dashed",
+    "rest_rgb": [
+     200,
+     172,
+     116
+    ],
+    "rest_alpha": 0.8
+   }
+  },
+  {
+   "name": "bld_h",
+   "centre": [
+    1130,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1150,
+    480
+   ],
+   "guide": {
+    "margin": 14,
+    "shape": "blob",
+    "seed": 84,
+    "jitter": 0.2,
+    "arc": 0.75,
+    "start_deg": 70,
+    "rest": "dashed",
+    "rest_rgb": [
+     200,
+     172,
+     116
+    ],
+    "rest_alpha": 0.8
+   }
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

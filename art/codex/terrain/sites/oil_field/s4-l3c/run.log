@@ -1,0 +1,14 @@
+calling Codex with ['art/codex/terrain/sites/oil_field/s4-l3c/oil_field-s4-l3c.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png'] ...
+codex thread 01a1c535-f007-7ee1-b142-315108483037, 73 s
+PASS l3_100
+PASS l3_101
+PASS l3_102
+PASS l3_103
+FAIL l3_104
+    FAIL rim_touch: 3 salient px within 4 px of the boundary (limit 2)
+FAIL l3_105
+    FAIL rim_touch: 4 salient px within 4 px of the boundary (limit 2)
+PASS l3_106
+PASS l3_107
+PASS l3_108
+wrote art/codex/terrain/sites/oil_field/s4-l3c/report.json, art/codex/terrain/review/sites4/sheets/oil_field-s4-l3c.montage.png

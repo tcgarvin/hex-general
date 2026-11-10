@@ -1,0 +1,18 @@
+codex thread 01a1c53d-e4a0-7540-afcd-d1c630272cdc, 68 s
+Traceback (most recent call last):
+  File "/home/timg/code/hex-general/scripts/tile-foundry/paintin_cluster.py", line 1172, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/timg/code/hex-general/scripts/tile-foundry/paintin_cluster.py", line 1168, in main
+    return run(args)
+           ^^^^^^^^^
+  File "/home/timg/code/hex-general/scripts/tile-foundry/paintin_cluster.py", line 1117, in run
+    report = process(sidecar, raw, work)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/timg/code/hex-general/scripts/tile-foundry/paintin_cluster.py", line 1037, in process
+    reg = register_clusters(out_rgb, sidecar, gates.max_residual_tile_px, min_iou=gates.min_iou)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/timg/code/hex-general/scripts/tile-foundry/paintin_cluster.py", line 898, in register_clusters
+    raise RegistrationError("cluster registration failed: " + "; ".join(failures))
+paintin_sheet.RegistrationError: cluster registration failed: stage2_c: IoU 0.964 < 0.97; stage2_d: residual 0.82 tile px; stage2_d: IoU 0.953 < 0.97
+exit 1

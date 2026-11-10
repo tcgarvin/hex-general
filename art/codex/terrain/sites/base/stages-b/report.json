@@ -1,0 +1,430 @@
+{
+ "raw": "art/codex/terrain/sites/base/stages-b/raw/base-stages-b.png",
+ "registration": {
+  "scale": 0.9997940142773302,
+  "tx": 0.4707017940262657,
+  "ty": -0.5531767373385081,
+  "background_level": 247.0,
+  "max_residual_tile_px": 0.014335017096914201,
+  "min_iou": 0.9957721339754904,
+  "clusters": {
+   "stage4_b": {
+    "name": "stage4_b",
+    "expected": [
+     400.38830750495833,
+     511.34135857265454
+    ],
+    "measured": [
+     400.3883075049585,
+     511.3032890268894
+    ],
+    "width_ratio": 0.9991211918408731,
+    "residual_tile_px": 0.014335017096914201,
+    "iou": 0.9957721339754904
+   },
+   "stage3_b": {
+    "name": "stage3_b",
+    "expected": [
+     1130.2379379274093,
+     511.34135857265454
+    ],
+    "measured": [
+     1130.2379379274091,
+     511.37942811841947
+    ],
+    "width_ratio": 0.9993288633368465,
+    "residual_tile_px": 0.014335017096828584,
+    "iou": 0.9960412806213372
+   }
+  }
+ },
+ "pin": {
+  "rim_exact_px": 1.5,
+  "rim_ramp_px": 6.0,
+  "cross_exact_px": 3.0,
+  "cross_ramp_px": 12.0,
+  "restore": true,
+  "restore_sigma": 0.75,
+  "restore_lo": 14.0,
+  "restore_hi": 26.0,
+  "restore_close_px": 4,
+  "restore_grow_px": 2,
+  "restore_feather_px": 1.2,
+  "restore_tone": true,
+  "restore_tone_sigma": 8.0,
+  "restore_tone_span": 20.0,
+  "feature_strength": 0.0,
+  "feature_rgb": [],
+  "hold_feather_px": 3.0,
+  "tone_sigma": 0.0,
+  "tone_feature_grow_px": 2,
+  "paint_region_px": 0.0,
+  "paint_region_feather_px": 2.0
+ },
+ "clusters": {
+  "stage4_b": {
+   "registration": {
+    "name": "stage4_b",
+    "expected": [
+     400.38830750495833,
+     511.34135857265454
+    ],
+    "measured": [
+     400.3883075049585,
+     511.3032890268894
+    ],
+    "width_ratio": 0.9991211918408731,
+    "residual_tile_px": 0.014335017096914201,
+    "iou": 0.9957721339754904
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 670 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.012,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "1.2% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    },
+    "h1": {
+     "offset": [
+      1,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 525 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0657,
+       "limit": 0.03,
+       "passed": false,
+       "detail": "6.6% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": false
+    },
+    "h2": {
+     "offset": [
+      0,
+      1
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 509 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0348,
+       "limit": 0.03,
+       "passed": false,
+       "detail": "3.5% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": false
+    },
+    "h3": {
+     "offset": [
+      1,
+      1
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 678 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0241,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "2.4% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    }
+   },
+   "seams": [
+    {
+     "a": [
+      0,
+      0
+     ],
+     "b": [
+      1,
+      0
+     ],
+     "mean": 2.92,
+     "max": 16.6,
+     "px": 71,
+     "passed": true
+    },
+    {
+     "a": [
+      0,
+      0
+     ],
+     "b": [
+      0,
+      1
+     ],
+     "mean": 1.79,
+     "max": 6.4,
+     "px": 128,
+     "passed": true
+    },
+    {
+     "a": [
+      1,
+      0
+     ],
+     "b": [
+      1,
+      1
+     ],
+     "mean": 1.91,
+     "max": 7.4,
+     "px": 128,
+     "passed": true
+    },
+    {
+     "a": [
+      0,
+      1
+     ],
+     "b": [
+      1,
+      0
+     ],
+     "mean": 2.84,
+     "max": 8.2,
+     "px": 67,
+     "passed": true
+    },
+    {
+     "a": [
+      0,
+      1
+     ],
+     "b": [
+      1,
+      1
+     ],
+     "mean": 2.92,
+     "max": 26.3,
+     "px": 71,
+     "passed": true
+    }
+   ],
+   "passed": false
+  },
+  "stage3_b": {
+   "registration": {
+    "name": "stage3_b",
+    "expected": [
+     1130.2379379274093,
+     511.34135857265454
+    ],
+    "measured": [
+     1130.2379379274091,
+     511.37942811841947
+    ],
+    "width_ratio": 0.9993288633368465,
+    "residual_tile_px": 0.014335017096828584,
+    "iou": 0.9960412806213372
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 670 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0005,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "0.1% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    },
+    "h1": {
+     "offset": [
+      1,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 716 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.1094,
+       "limit": 0.03,
+       "passed": false,
+       "detail": "10.9% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 6,
+       "limit": 2,
+       "passed": false,
+       "detail": "6 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": false
+    },
+    "h2": {
+     "offset": [
+      0,
+      1
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 674 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0795,
+       "limit": 0.03,
+       "passed": false,
+       "detail": "8.0% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 4,
+       "limit": 2,
+       "passed": false,
+       "detail": "4 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": false
+    }
+   },
+   "seams": [
+    {
+     "a": [
+      0,
+      0
+     ],
+     "b": [
+      1,
+      0
+     ],
+     "mean": 3.56,
+     "max": 19.7,
+     "px": 71,
+     "passed": false
+    },
+    {
+     "a": [
+      0,
+      0
+     ],
+     "b": [
+      0,
+      1
+     ],
+     "mean": 1.27,
+     "max": 8.1,
+     "px": 128,
+     "passed": true
+    },
+    {
+     "a": [
+      0,
+      1
+     ],
+     "b": [
+      1,
+      0
+     ],
+     "mean": 2.82,
+     "max": 10.9,
+     "px": 67,
+     "passed": true
+    }
+   ],
+   "passed": false
+  }
+ }
+}

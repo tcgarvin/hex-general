@@ -77,3 +77,46 @@ art/codex/terrain/**/raw/*.png
 !art/codex/terrain/road-hills/b/raw/road-hills-b.png
 !art/codex/terrain/road-hills/c/raw/road-hills-c.png
 !art/codex/terrain/road-hills/e/raw/road-hills-e.png
+
+# Sites (art/codex/terrain/sites, ratified 2026-11-10; provenance in SITES.md):
+# commit the ratified tiles (candidates/sites-ratified), the raw sheets they were
+# cut from, the cluster bases of the ratified base stages, the oil tank-repaint
+# bases (orig/) and the reference images the prompts attach. Superseded round
+# candidates stay ignored (their picks.json are committed), as do work-dir review
+# renders, scratch pick_before/composite copies, final/*.png intermediates (rebuilt
+# by sites4_oilfac_tanks.py from orig/ + the repaint raw; the .tanks.json records
+# are kept), failed-* dirs and the cluster bases of unratified sheets.
+!art/codex/terrain/candidates/sites-ratified/**/*.png
+art/codex/terrain/sites/**/review/
+art/codex/terrain/sites/**/pick_before/
+art/codex/terrain/sites/**/composite/
+art/codex/terrain/sites/**/final/*.png
+art/codex/terrain/sites/**/failed-*/
+art/codex/terrain/sites/**/bases/**/*.png
+!art/codex/terrain/sites/base/s3-a/bases/stage3_a/*.png
+!art/codex/terrain/sites/base/s3-a/bases/stage4_a/*.png
+!art/codex/terrain/sites/base/s4-full-a/bases/stage1_b/*.png
+!art/codex/terrain/sites/base/s4-late-a/bases/stage3_g/*.png
+!art/codex/terrain/sites/base/s4-late-a/bases/stage4_g/*.png
+!art/codex/terrain/sites/base/s4-mix-s1/bases/full_h/*.png
+!art/codex/terrain/sites/base/s4-mix-s2/bases/full_g/*.png
+!art/codex/terrain/sites/base/s4-mix-s2/bases/full_h/*.png
+!art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png
+!art/codex/terrain/sites/base/s4-full-a/raw/base-s4-full-a.png
+!art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png
+!art/codex/terrain/sites/base/s4-mix-s1/raw/base-s4-mix-s1.png
+!art/codex/terrain/sites/base/s4-mix-s2/raw/base-s4-mix-s2.png
+!art/codex/terrain/sites/factory/s4-l1/raw/factory-s4-l1.png
+!art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png
+!art/codex/terrain/sites/factory/s4-l3c/raw/factory-s4-l3c.png
+!art/codex/terrain/sites/farm/s2-a/raw/farm-s2-a.png
+!art/codex/terrain/sites/farm/s2-b/raw/farm-s2-b.png
+!art/codex/terrain/sites/oil_field/s4-l1/raw/oil_field-s4-l1.png
+!art/codex/terrain/sites/oil_field/s4-l2/raw/oil_field-s4-l2.png
+!art/codex/terrain/sites/oil_field/s4-l3d/raw/oil_field-s4-l3d.png
+!art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png
+!art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png
+!art/codex/terrain/sites/oil_field/s4-tanks-l3/raw/oil_field-s4-tanks-l3.png
+!art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png
+!art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png
+!art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png

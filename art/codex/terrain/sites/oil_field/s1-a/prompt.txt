@@ -1,0 +1,35 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+
+Image 3 is a close-up of image 2's village, showing the building style and scale to match; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint an OIL FIELD, 1940s style, in the style and palette of image 2: tall thin lattice-steel oil derricks (narrow pyramids of dark timber or steel girders, seen from almost straight above, each casting a long thin dark shadow to the lower right), round squat storage tanks seen from above (flat grey-ochre circular tops with a dark rim), a few small pump houses and pipes, and dark oil-stained bare ground (dark umber-brown) around the works. Muted, dirty colours. No chimneys, no smoke, no fields.
+
+1. One derrick and one storage tank on a small patch of dark stained ground north-west of centre.
+2. One derrick and one storage tank south-east of centre.
+3. One derrick and one tank east of centre, with a small shed.
+4. Three derricks in a loose line west of centre, a pair of storage tanks and a pump house, on dark stained ground.
+5. Three derricks north of centre, a pair of tanks to their south-east and a pump house.
+6. Three derricks south-west of centre, a pair of tanks to their north-east and a pump house.
+7. A dense oil field: five or six derricks spread over the north and west, a tank farm of five round tanks in the south-east, pump houses and pipes, much dark stained ground.
+8. A dense oil field: six derricks across the south, a tank farm of four to six tanks in the north, pump houses.
+9. A dense oil field: five derricks in the east, a tank farm in the west, pipes and sheds between them.
+
+The three ROWS are three SIZES of the same kind of place, and the size difference must be obvious at a glance:
+- Top row (hexagons 1-3), SMALL: the place occupies only about a quarter to a third of the hexagon; the rest is open grass.
+- Middle row (hexagons 4-6), ESTABLISHED: clearly bigger and fuller, about half of the hexagon.
+- Bottom row (hexagons 7-9), MAJOR: nearly fills the hexagon, about two-thirds to three-quarters of it, but still stopping short of the edge.
+
+Rules for every hexagon:
+- Seen from almost straight above, with only a slight tilt from the south so south walls and tall things show a little. Light from the upper left; short soft warm-umber shadows fall to the lower right.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-twelfth of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. No road, track or rail runs out to the edge; short yard tracks or sidings fade out before the grass band.
+
+EVERY HEXAGON follows its own numbered description; the three in a row are the same size but arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

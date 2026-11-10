@@ -1,0 +1,14 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons on a flat magenta (#FF00FF) background, in 3 rows of 3. Each hexagon is a FINISHED oil-field game tile, already painted. Number the hexagons 1 to 9: left to right, top row first. North is up, east is right.
+
+Image 2 is the target game map: its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village, showing the building scale; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: change ONLY the single STORAGE TANK, in every hexagon. Keep every other pixel exactly as it is: the derrick (same position, same height, same colour, same shadow), the timber shack, the barrels and cart, the black oil-mud patches, the tracks, any wagons, the grass, the hexagon outlines and the flat magenta background.
+
+In every hexagon:
+- Repaint the tank, keeping EXACTLY ONE tank (one, not two) where it is now and about the same size, as a weathered 1940s steel oil storage tank seen from almost straight above: DULL grey-ochre and rust-stained steel tops, NOT cream, NOT white, NOT pale, no brighter than a dirt track; a darker rim; rust streaks; a small hatch or a ladder. The tank is lit on its upper-left side and shaded on its lower-right side and casts a short dark shadow to the lower right, so it reads as a solid squat cylinder, not a flat disc.
+- The tank stands on the dark mud, with one thin dark pipe wandering from it toward the derrick or the shack.
+
+Do not add anything else: no new buildings, no new derricks, no new tanks, no fences, no roads; keep the shack, barrels and cart exactly as they are. Muted colours only, no text, no labels, no outlines. The tank must NOT look like an icon or interface element (no clean pale disc). Same framing and size as image 1. NOT bright, NOT glossy, NOT airbrushed.

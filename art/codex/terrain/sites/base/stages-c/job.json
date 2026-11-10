@@ -1,0 +1,14 @@
+{
+ "name": "base-stages-c",
+ "canvas": [1536, 1024],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {"name": "stage2_a", "centre": [400, 290], "members": [[0, 0], [1, 0]], "ground_origin": [1150, 300]},
+  {"name": "stage2_b", "centre": [1130, 290], "members": [[0, 0], [1, 0]], "ground_origin": [1150, 650]},
+  {"name": "stage1_a", "centre": [400, 770], "members": [[0, 0]], "ground_origin": [1400, 300]},
+  {"name": "stage1_b", "centre": [1130, 770], "members": [[0, 0]], "ground_origin": [1400, 650]}
+ ],
+ "pin": {"restore": true},
+ "gates": {}
+}

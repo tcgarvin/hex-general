@@ -1,0 +1,31 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+
+Image 3 is a close-up of image 2's village, showing the building style and scale to match; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint an OIL FIELD, 1940s style, in the style and palette of image 2: tall thin lattice-steel oil derricks (narrow pyramids of dark timber or steel girders, seen from almost straight above, each casting a long thin dark shadow to the lower right), round squat storage tanks seen from above (flat grey-ochre circular tops with a dark rim), a few small pump houses and pipes, and dark oil-stained bare ground (dark umber-brown) around the works. Muted, dirty colours. No chimneys, no smoke, no fields.
+
+Every hexagon holds a SMALL, newly opened oil field covering about a quarter to a third of the hexagon (the rest open grass): ONE derrick, ONE round storage tank, a small pump house, a short pipe, a few stacked barrels and a small truck, all on a clearly visible patch of dark oil-stained bare ground about a quarter of the hexagon in size. Everything stays well inside the hexagon:
+1. In the north-west part.
+2. In the south-east part.
+3. In the east part.
+4. In the south-west part.
+5. In the north part.
+6. In the west part.
+7. In the north-east part.
+8. In the south part.
+9. Just west of centre, stretched north-south.
+
+Rules for every hexagon:
+- Seen from almost straight above, with only a slight tilt from the south so south walls and tall things show a little. Light from the upper left; short soft warm-umber shadows fall to the lower right.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-twelfth of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. No road, track or rail runs out to the edge; short yard tracks or sidings fade out before the grass band.
+
+EVERY HEXAGON follows its own numbered description; all nine are small oil fields of about the same size, arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

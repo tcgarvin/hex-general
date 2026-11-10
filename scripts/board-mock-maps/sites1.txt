@@ -1,0 +1,52 @@
+; Sites round 1 board (scripts/board-mock.py --sites): review1.txt plus economic sites.
+; Terrain, river, roads, town and 3-hex city as in review1.txt. Sites stand beside
+; roads or beside the city, never on a settlement, road or river (the [sites]
+; section is opt-in: without --sites the board renders exactly as review1.txt).
+;   <col>,<row> <kind> <level>   kind: farm oil_field steel_mill factory base
+;   a base takes a stage 1-4 instead of a level and covers 1-4 hexes from its
+;   anchor: anchor, +SE (1,0), +S (0,1), +SE of S (1,1) in axial offsets.
+; Pairs worth looking at: oil 1-2-3 in a row along the south side of the road;
+; farm 2|3 side by side on the north side; steel 1|2 side by side by the road;
+; factory 1|2 beside the city with factory 3 and steel 3 adjacent on its east;
+; farm 1 next to oil 1 and next to the stage-2 base (by the road, south-west);
+; stage-1 base by the road east of the river; stage-3 base top-left; stage-4
+; base beside the city's north side.
+[terrain]
+..~..www.w....
+..~..www......
+..~...w.h.~...
+..~~.....~~c..
+ww..~~.~~.cc.h
+w.....~.......
+...t..=.......
+......~~.~..w.
+...hhh..~.~~..
+............~~
+[roads]
+..............
+..............
+..............
+..............
+..........#...
+..........#..#
+...##########.
+.##...........
+.#............
+.#............
+[sites]
+2,8 farm 1
+4,5 farm 2
+5,5 farm 3
+3,7 oil_field 1
+4,7 oil_field 2
+5,7 oil_field 3
+9,5 steel_mill 1
+8,5 steel_mill 2
+12,4 steel_mill 3
+12,5 factory 1
+11,5 factory 2
+12,3 factory 3
+11,7 base 1
+2,9 base 2
+0,0 base 3
+11,0 base 4

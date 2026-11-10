@@ -1,0 +1,109 @@
+{
+ "kind": "oil_field",
+ "picks": [
+  {
+   "file": "l1_00.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s1-l1/tiles/l1_10.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-l1/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-l1/raw/oil_field-s1-l1.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.25,
+   "built": 0.195,
+   "L": 95.4,
+   "sha256": "ad1bc7f45c3eb46068c261b5fb7a0fc610c567570c49c2db6adeeab5a7774bd7"
+  },
+  {
+   "file": "l1_01.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s1-l1/tiles/l1_16.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-l1/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-l1/raw/oil_field-s1-l1.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.226,
+   "built": 0.17,
+   "L": 95.9,
+   "sha256": "d322f212687ecffb48d0d07d1cec4701e4b64071e40f9bfa28c022ea08f69b09"
+  },
+  {
+   "file": "l1_02.png",
+   "level": 1,
+   "source": "art/codex/terrain/sites/oil_field/s1-l1/tiles/l1_18.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-l1/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-l1/raw/oil_field-s1-l1.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.283,
+   "built": 0.223,
+   "L": 95.1,
+   "sha256": "ec8995ba0fa55c748987a855eb88d4d4531de4969d9fbd985c19e90ad61b361d"
+  },
+  {
+   "file": "l2_00.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s1-a/tiles/l2_00.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-a/raw/oil_field-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.405,
+   "built": 0.298,
+   "L": 94.2,
+   "sha256": "a0059eacf6071649d3bf61772046f496d3f085fa951e8f3435ad14995ab14cbc"
+  },
+  {
+   "file": "l2_01.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s1-a/tiles/l2_01.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-a/raw/oil_field-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.444,
+   "built": 0.332,
+   "L": 93.9,
+   "sha256": "24994df4f5e0521795d20344b3f613719e6ea363a477ebbe7c615cd8c1521aa0"
+  },
+  {
+   "file": "l2_02.png",
+   "level": 2,
+   "source": "art/codex/terrain/sites/oil_field/s1-a/tiles/l2_02.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-a/raw/oil_field-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.408,
+   "built": 0.31,
+   "L": 93.8,
+   "sha256": "954d041da642797c89fc7ede22cad6bfe93ecc585b0e73716bfe02d11a0d280d"
+  },
+  {
+   "file": "l3_00.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s1-a/tiles/l3_00.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-a/raw/oil_field-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.659,
+   "built": 0.541,
+   "L": 89.9,
+   "sha256": "f491d05076b49b1a78af13dd0de3af2191cdd650a4ce2957f48f60ca357818c4"
+  },
+  {
+   "file": "l3_01.png",
+   "level": 3,
+   "source": "art/codex/terrain/sites/oil_field/s1-a/tiles/l3_02.png",
+   "sheet_job": "art/codex/terrain/sites/oil_field/s1-a/job.json",
+   "raw": "art/codex/terrain/sites/oil_field/s1-a/raw/oil_field-s1-a.png",
+   "gate_passed": true,
+   "failed_checks": [],
+   "occupied": 0.676,
+   "built": 0.558,
+   "L": 90.9,
+   "sha256": "d3cb6601409bfd13ab98183ec18edc3b0734200afff7f825088a2db6e73775ae"
+  }
+ ]
+}

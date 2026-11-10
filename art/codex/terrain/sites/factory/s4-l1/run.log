@@ -1,0 +1,19 @@
+calling Codex with ['art/codex/terrain/sites/factory/s4-l1/factory-s4-l1.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png'] ...
+codex thread 01a1c530-b513-7d22-ae99-6996fff9ed65, 107 s
+FAIL l1_60
+    FAIL rim_touch: 3 salient px within 4 px of the boundary (limit 2)
+FAIL l1_61
+    FAIL rim_touch: 21 salient px within 4 px of the boundary (limit 2)
+FAIL l1_62
+    FAIL rim_touch: 4 salient px within 4 px of the boundary (limit 2)
+PASS l1_63
+FAIL l1_64
+    FAIL rim_clear: 4.3% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 43 salient px within 4 px of the boundary (limit 2)
+PASS l1_65
+FAIL l1_66
+    FAIL rim_clear: 5.4% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 45 salient px within 4 px of the boundary (limit 2)
+PASS l1_67
+PASS l1_68
+wrote art/codex/terrain/sites/factory/s4-l1/report.json, art/codex/terrain/review/sites4/sheets/factory-s4-l1.montage.png

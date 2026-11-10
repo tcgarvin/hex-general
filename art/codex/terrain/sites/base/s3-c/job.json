@@ -1,0 +1,81 @@
+{
+ "name": "base-s3-c",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "stage4_c",
+   "centre": [
+    400,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "ground_origin": [
+    560,
+    300
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 13,
+    "jitter": 0.25
+   }
+  },
+  {
+   "name": "stage3_c",
+   "centre": [
+    1130,
+    512
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ],
+   "ground_origin": [
+    560,
+    650
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 21,
+    "jitter": 0.25
+   }
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

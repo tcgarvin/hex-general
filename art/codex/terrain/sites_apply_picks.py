@@ -1,6 +1,7 @@
 """Copy picked site tiles into the candidate layout and record their provenance.
 
-usage: python3 art/codex/terrain/sites_apply_picks.py <dest_root> <kind> <work_dir>:<cell> [...]
+usage: python3 art/codex/terrain/sites_apply_picks.py <dest_root> <kind> <work_dir>:<cell>[:<tiles_subdir>] [...]
+(tiles_subdir defaults to "tiles"; graded tiles live in "tiles_graded" with a .grade.json beside each.)
 Each cell name starts with its level ("l2_01"); picks are renumbered per level in
 the order given: <dest_root>/<kind>/l<level>_00.png, l<level>_01.png, ...
 Writes picks.json beside them (source, sheet job, raw, gates, measures, sha256).
@@ -25,11 +26,11 @@ count: Counter[str] = Counter()
 measures: dict[str, dict] = {}
 record = []
 for spec in specs:
-    work, cell = spec.split(":")
+    work, cell, *sub = spec.split(":")
     level = cell.split("_")[0]
     if level not in ("l1", "l2", "l3"):
         raise SystemExit(f"cell {cell!r} does not start with a level")
-    src = Path(work) / "tiles" / f"{cell}.png"
+    src = Path(work) / (sub[0] if sub else "tiles") / f"{cell}.png"
     dst = out / f"{level}_{count[level]:02d}.png"
     count[level] += 1
     shutil.copyfile(src, dst)
@@ -49,6 +50,11 @@ for spec in specs:
             "built": m["built"],
             "L": m["L"],
             "sha256": hashlib.sha256(dst.read_bytes()).hexdigest(),
+            "grade": (
+                json.loads(Path(f"{src}.grade.json").read_text())["params"]
+                if Path(f"{src}.grade.json").exists()
+                else "none"
+            ),
         }
     )
 (out / "picks.json").write_text(json.dumps({"kind": kind, "picks": record}, indent=1) + "\n")

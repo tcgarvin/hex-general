@@ -1,0 +1,12 @@
+{
+ "tool": "art/codex/terrain/r2_grade.py",
+ "source": "art/codex/terrain/sites/oil_field/s4-l2/tiles/l2_71.png",
+ "source_sha256": "721483e90ad87c3a725232d574bb091fad2cd8e4d0a945022b98fa54be8b0049",
+ "params": {
+  "shade_mult": 0.8,
+  "shade_warm": "1.0,0.97,0.92",
+  "compress_above": 150.0,
+  "compress_k": 0.5
+ },
+ "out_sha256": "f8ffb2eb037d1f8288942830cb2218528488127701502945f3c4a47ec33f7b68"
+}

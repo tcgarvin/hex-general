@@ -61,6 +61,12 @@ the unit sprites, and `scripts/tile-foundry/selftest.py` keeps verifying it.
 variant montage; use the **`verify-board`** skill to render the local board in
 Chrome after an art/render change. See ART_PIPELINE.md + ROADMAP Phase 8.
 
+The ratified site and base tiles (farm, oil field, steel mill, factory, base stages 1-4;
+2026-11-10) live in `art/codex/terrain/candidates/sites-ratified/` (README there,
+provenance in `art/codex/terrain/SITES.md`). They are **not yet wired into the game**:
+`frontend/` must not reference them until sites move off town hexes, a site level is
+renderable and the engine has a four-hex base footprint.
+
 - **Hex art is the user's call — never auto-ratify.** Before you apply, overwrite,
   or commit *any* change to tiles under `frontend/src/board/tiles/` (new variants,
   regens, recolours, or programmatic edits like the river bank-rough pass),

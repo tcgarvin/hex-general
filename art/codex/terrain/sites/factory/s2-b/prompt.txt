@@ -1,0 +1,32 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village, showing the building scale to match; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint a FACTORY (a 1940s engineering works). Its signature: SAWTOOTH roofs (rows of parallel ridges) in soot-stained DARK SLATE GREY, walls of RED-BROWN BRICK, a cinder-grey yard of trampled earth and cinders, and a small round water tower on legs. NO pale or clean roofs, NO beige, NO white concrete. Not sooty like a steel works: no slag, no glow.
+
+Hexagons 1-3, LEVEL 2, ESTABLISHED: a brick works of three short parallel sawtooth halls, one SHORT brick chimney, a water tower, a fenced cinder yard with crates and a worn track inside. It covers LESS THAN HALF of the hexagon; the rest is open grass.
+1. Works in the west part, yard to its east.
+2. Works in the north part, yard to its south.
+3. Works in the south-east part, yard to its north-west.
+Hexagons 4-9, LEVEL 3, MAJOR: a large plant covering about two-thirds of the hexagon: a long assembly hall, several sawtooth halls, a boiler house with one SHORT brick chimney, a water tower, a paved dark-grey yard, a short rail siding with a few wagons that ends inside the plant, a thin wisp of white steam.
+4. Assembly hall across the north, sawtooth halls south of it, siding in the south-west.
+5. Sawtooth halls in the east, assembly hall and boiler house in the west, siding along the south.
+6. Halls in the south-west, yard and water tower in the north-east, siding along the north.
+7. Two blocks of sawtooth halls either side of a yard, boiler house in the north-east, siding in the west.
+8. Assembly hall diagonally across the middle, sawtooth halls north-east of it, yard and siding south-west.
+9. Halls in the north and east, yard with water tower in the south-west, siding along the south-east.
+
+Rules for every hexagon:
+- Seen from almost straight DOWN, with only a slight tilt from the south: buildings show only a thin sliver of their south wall. Tall things (derricks, chimneys, water towers, furnaces) look SHORT in the picture: painted no taller than one and a half village houses are wide, because we look down on them from above; their height is told by a long thin cast shadow falling to the lower right, not by a tall side view. Light from the upper left.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- The place sits IN the ground, not on it: a worn apron of trodden earth, cinders, mud or stubble around and between the buildings, feathering out irregularly into the grass. No building stands on clean lawn, and no yard has a straight, ruler-edged border against the grass.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-EIGHTH of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. A short service track or siding inside the place is fine, but it fades out before the grass band; no road, track or rail runs out to the edge.
+
+EVERY HEXAGON follows its own numbered description; hexagons of the same level are about the same size but arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

@@ -1,0 +1,38 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village, showing the building scale to match; the thin light lines in it are the map's grid, do not paint them.
+
+Edit image 1: in every hexagon, paint an OIL FIELD, 1940s style. Its signature: lattice derricks (narrow open-girder pyramids seen from almost straight down, each with a LONG THIN dark shadow to the lower right that does most of the work), round squat storage tanks seen from above (pale grey-ochre circular tops with a dark rim), and BLACK oily mud ground around the works. No chimneys, no smoke stacks, no furnaces, no slag heaps, no fields.
+
+Level 1, MAKESHIFT (timber, bare earth): ONE timber lattice derrick, a black mud pit around it, ONE pale round tank, a timber shed and a few barrels.
+1. In the north-west part, the derrick at the north end, the tank south of it.
+2. In the south-east part.
+3. In the east part, the tank to the north of the derrick.
+Level 2, ESTABLISHED (brick, fenced yard, worn track inside): three steel derricks spread apart, a brick pump house, two or three round tanks in a fenced yard, pipes, black ground.
+4. Derricks across the west, tanks in the east.
+5. Derricks across the north, tanks in the south.
+6. Derricks in the south-east, tanks in the north-west.
+Level 3, MAJOR (concrete, paved grey yard, rail siding): a field of five or six derricks on black ground, a tank farm of five or six round tanks on a paved grey yard, a brick pump station, a short rail siding with three dark tank wagons, a thin drift of white steam.
+7. Derricks in the north and west, tank farm in the south-east, siding in the south.
+8. Derricks across the south, tank farm in the north, siding along the north-west.
+9. Derricks in the east, tank farm in the west, siding between them.
+
+The three ROWS are three LEVELS of the same kind of place. A level is a jump in QUALITY and MATERIAL, not only in size, so each row has a clearly different overall tone and texture:
+- Top row (hexagons 1-3), LEVEL 1, MAKESHIFT: covers about a third of the hexagon.
+- Middle row (hexagons 4-6), LEVEL 2, ESTABLISHED: covers about half of the hexagon.
+- Bottom row (hexagons 7-9), LEVEL 3, MAJOR: covers about two-thirds to three-quarters of the hexagon, still stopping short of the edge.
+
+Rules for every hexagon:
+- Seen from almost straight DOWN, with only a slight tilt from the south: buildings show only a thin sliver of their south wall. Tall things (derricks, chimneys, water towers, furnaces) look SHORT in the picture, no taller than about one-tenth of the hexagon's width; their height is shown by a long thin cast shadow falling to the lower right. Light from the upper left.
+- Buildings are small, at the same scale as the village houses in image 3 (a house is about one-twelfth of the hexagon's width); do not paint big toy-like buildings.
+- The place sits IN the ground, not on it: a worn apron of trodden earth, cinders, mud or stubble around and between the buildings, feathering out irregularly into the grass. No building stands on clean lawn, and no yard has a straight, ruler-edged border against the grass.
+- Muted colours only: no bright or saturated colour, no text, no signs, no flags, no insignia, no people. At most two small neutral-coloured trucks or carts.
+- The whole place sits off-centre as described; it is not a centred badge and has no radial plan.
+- A band of plain grass about one-tenth of the hexagon's width stays untouched all around the edge: nothing touches or is cut by the hexagon's edge. A short service track or siding inside the place is fine, but it fades out before the grass band; no road, track or rail runs out to the edge.
+
+EVERY HEXAGON follows its own numbered description; the three in a row are the same level but arranged differently.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

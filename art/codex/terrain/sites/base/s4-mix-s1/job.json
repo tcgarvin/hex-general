@@ -1,0 +1,180 @@
+{
+ "name": "base-s4-mix-s1",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "full_g",
+   "centre": [
+    256,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1300,
+    560
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 85,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "full_h",
+   "centre": [
+    768,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    650,
+    830
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 86,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "full_i",
+   "centre": [
+    1280,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1000,
+    600
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 87,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "bld_g",
+   "centre": [
+    256,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    300,
+    560
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 88,
+    "jitter": 0.2,
+    "arc": 0.5,
+    "start_deg": 150,
+    "rest": "dashed",
+    "rest_rgb": [
+     200,
+     172,
+     116
+    ],
+    "rest_alpha": 0.8
+   }
+  },
+  {
+   "name": "bld_h",
+   "centre": [
+    768,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    850,
+    830
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 89,
+    "jitter": 0.2,
+    "arc": 0.5,
+    "start_deg": 160,
+    "rest": "dashed",
+    "rest_rgb": [
+     200,
+     172,
+     116
+    ],
+    "rest_alpha": 0.8
+   }
+  },
+  {
+   "name": "bld_i",
+   "centre": [
+    1280,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1200,
+    830
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 90,
+    "jitter": 0.2,
+    "arc": 0.55,
+    "start_deg": 140,
+    "rest": "dashed",
+    "rest_rgb": [
+     200,
+     172,
+     116
+    ],
+    "rest_alpha": 0.8
+   }
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

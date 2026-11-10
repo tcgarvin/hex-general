@@ -1,0 +1,6 @@
+codex thread 01a1c53b-7a85-74d3-93d4-dd1db838af6e, 78 s
+FAIL stage2_a: reg 0.06 tile px, IoU 0.997; seams [2.83] h0:rim_touch=23; h1:rim_touch=11
+FAIL stage2_b: reg 0.10 tile px, IoU 0.997; seams [2.6] h0:rim_clear=0.0411; h0:rim_touch=42; h1:rim_touch=13
+PASS stage1_a: reg 0.07 tile px, IoU 0.996; seams [] 
+FAIL stage1_b: reg 0.09 tile px, IoU 0.996; seams [] h0:rim_touch=3
+exit 1

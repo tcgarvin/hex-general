@@ -1,0 +1,123 @@
+{
+ "tool": "scripts/tile-foundry/paintin_cluster.py",
+ "version": 1,
+ "job": "art/codex/terrain/sites/base/stages-d/job.json",
+ "job_sha256": "b010f2780f5c05b18f595d64e5010fdb7f2ee950f16786fa6c3ba8cb1efa083a",
+ "name": "base-stages-d",
+ "sheet": "art/codex/terrain/sites/base/stages-d/base-stages-d.sheet.png",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "art/codex/terrain/ground/G2/source.png",
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "clusters": [
+  {
+   "name": "stage4_d",
+   "centre": [
+    400.0,
+    512.0
+   ],
+   "members": [
+    {
+     "offset": [
+      0,
+      0
+     ],
+     "cx": 272.5,
+     "cy": 291.16352203496814,
+     "base": "art/codex/terrain/sites/base/stages-d/bases/stage4_d/q0_r0.png",
+     "base_sha256": "d523d7a5684018a502236bc24e3f812436eea18fc7b71ca1cf774078a1d6e1b5",
+     "output": "stage4_d/q0_r0.png"
+    },
+    {
+     "offset": [
+      1,
+      0
+     ],
+     "cx": 527.5,
+     "cy": 438.3878406783227,
+     "base": "art/codex/terrain/sites/base/stages-d/bases/stage4_d/q1_r0.png",
+     "base_sha256": "f4c3cdd7ea5e8a26af9fda21a128b95cf2498987b54a76a85cea756d39d6f1f7",
+     "output": "stage4_d/q1_r0.png"
+    },
+    {
+     "offset": [
+      0,
+      1
+     ],
+     "cx": 272.5,
+     "cy": 585.6121593216772,
+     "base": "art/codex/terrain/sites/base/stages-d/bases/stage4_d/q0_r1.png",
+     "base_sha256": "067b03dcaa9eebf0841d921045562a786df61abc132fb52ea230306d8150b23d",
+     "output": "stage4_d/q0_r1.png"
+    },
+    {
+     "offset": [
+      1,
+      1
+     ],
+     "cx": 527.5,
+     "cy": 732.8364779650319,
+     "base": "art/codex/terrain/sites/base/stages-d/bases/stage4_d/q1_r1.png",
+     "base_sha256": "37f8b86114e1981455e2eeb33d4e7a55b149519a8eb96939d90df0f40a030193",
+     "output": "stage4_d/q1_r1.png"
+    }
+   ],
+   "ground_origin": [
+    560,
+    300
+   ]
+  },
+  {
+   "name": "stage3_d",
+   "centre": [
+    1130.0,
+    512.0
+   ],
+   "members": [
+    {
+     "offset": [
+      0,
+      0
+     ],
+     "cx": 1045.0,
+     "cy": 364.77568135664546,
+     "base": "art/codex/terrain/sites/base/stages-d/bases/stage3_d/q0_r0.png",
+     "base_sha256": "f2fa07a9741577397549c11dab144deb770e2ae36608eaf5776c73c0cbebae25",
+     "output": "stage3_d/q0_r0.png"
+    },
+    {
+     "offset": [
+      1,
+      0
+     ],
+     "cx": 1300.0,
+     "cy": 512.0,
+     "base": "art/codex/terrain/sites/base/stages-d/bases/stage3_d/q1_r0.png",
+     "base_sha256": "f8316d08c3b59ea1840688a2933148e5b932be7bf7b503ca43ee515148e6d0f4",
+     "output": "stage3_d/q1_r0.png"
+    },
+    {
+     "offset": [
+      0,
+      1
+     ],
+     "cx": 1045.0,
+     "cy": 659.2243186433545,
+     "base": "art/codex/terrain/sites/base/stages-d/bases/stage3_d/q0_r1.png",
+     "base_sha256": "c664b250107733ccad7a5a7702688e8a1bd75bd0fbead2e9cd25b865415f8b12",
+     "output": "stage3_d/q0_r1.png"
+    }
+   ],
+   "ground_origin": [
+    560,
+    650
+   ]
+  }
+ ]
+}

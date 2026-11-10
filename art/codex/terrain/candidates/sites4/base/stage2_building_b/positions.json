@@ -1,0 +1,15 @@
+{
+ "cluster": "stage2_building_b",
+ "positions": {
+  "h0": [
+   0,
+   0
+  ],
+  "h1": [
+   1,
+   0
+  ]
+ },
+ "axial": "offsets from h0, hex.ts AXIAL_DIRECTIONS convention",
+ "source": "/home/timg/code/hex-general/art/codex/terrain/sites/base/s4-mix-s2/tiles/bld_h"
+}

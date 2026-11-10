@@ -1,0 +1,115 @@
+{
+ "name": "base-s4-full-c",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "stage2_e",
+   "centre": [
+    400,
+    290
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    850,
+    150
+   ],
+   "guide": {
+    "margin": 15,
+    "shape": "blob",
+    "seed": 71,
+    "jitter": 0.25
+   }
+  },
+  {
+   "name": "stage2_f",
+   "centre": [
+    1130,
+    290
+   ],
+   "members": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "ground_origin": [
+    850,
+    480
+   ],
+   "guide": {
+    "margin": 15,
+    "shape": "blob",
+    "seed": 72,
+    "jitter": 0.25
+   }
+  },
+  {
+   "name": "stage1_e",
+   "centre": [
+    400,
+    770
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1300,
+    560
+   ],
+   "guide": {
+    "margin": 13,
+    "shape": "blob",
+    "seed": 73,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "stage1_f",
+   "centre": [
+    1130,
+    770
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    650,
+    830
+   ],
+   "guide": {
+    "margin": 13,
+    "shape": "blob",
+    "seed": 74,
+    "jitter": 0.2
+   }
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

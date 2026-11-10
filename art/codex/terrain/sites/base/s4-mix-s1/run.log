@@ -1,0 +1,8 @@
+codex thread 01a1c540-762b-7591-9f7d-59b5949c1d7e, 75 s
+PASS full_g: reg 0.07 tile px, IoU 0.993; seams [] 
+PASS full_h: reg 0.05 tile px, IoU 0.994; seams [] 
+PASS full_i: reg 0.00 tile px, IoU 0.994; seams [] 
+PASS bld_g: reg 0.01 tile px, IoU 0.994; seams [] 
+PASS bld_h: reg 0.03 tile px, IoU 0.994; seams [] 
+PASS bld_i: reg 0.07 tile px, IoU 0.994; seams [] 
+exit 0

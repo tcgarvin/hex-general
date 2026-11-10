@@ -1,0 +1,311 @@
+{
+ "kind": "base",
+ "ratified": "2026-11-10",
+ "footprint_assumed": "axial offsets from the anchor, not explicitly confirmed by the user",
+ "stages": [
+  {
+   "dir": "stage1_a",
+   "stage": 1,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage1_full_a",
+   "work_dir": "art/codex/terrain/sites/base/s4-mix-s1",
+   "work_cluster": "s4-mix-s1:full_h",
+   "raw": "art/codex/terrain/sites/base/s4-mix-s1/raw/base-s4-mix-s1.png",
+   "raw_sha256": "e11c77f6e13627e8cf49e7a774c08376c5b220c35c9dbf4990c6cb07c1676cce",
+   "registration": {
+    "width_ratio": 0.9989474158174256,
+    "residual_tile_px": 0.049748993735630034,
+    "iou": 0.9939323933189941
+   },
+   "gate_failures": [],
+   "seams_mean": [],
+   "seam_failures": [],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "58269d97ba5bb948351365d837b57b9ab839ea09956930739f83b4362ca6a791"
+   },
+   "footprint": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "dir": "stage1_b",
+   "stage": 1,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage1_full_b",
+   "work_dir": "art/codex/terrain/sites/base/s4-full-a",
+   "work_cluster": "s4-full-a:stage1_b",
+   "raw": "art/codex/terrain/sites/base/s4-full-a/raw/base-s4-full-a.png",
+   "raw_sha256": "d16eecf69ae56e357664970bc40851078dfbfe40b5c819fc586cad3bd12158f0",
+   "registration": {
+    "width_ratio": 0.9998623055882581,
+    "residual_tile_px": 0.11245258984935838,
+    "iou": 0.9941199113341032
+   },
+   "gate_failures": [],
+   "seams_mean": [],
+   "seam_failures": [],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "7a47d88c64e93d714e2f50fca32b3b89e835f04a8776f4a30bb60981c8d0eada"
+   },
+   "footprint": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "dir": "stage2_a",
+   "stage": 2,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage2_full_a",
+   "work_dir": "art/codex/terrain/sites/base/s4-mix-s2",
+   "work_cluster": "s4-mix-s2:full_g",
+   "raw": "art/codex/terrain/sites/base/s4-mix-s2/raw/base-s4-mix-s2.png",
+   "raw_sha256": "ff53dddab7670c6359dbbe5fe751c979543aa62bb2258cfb19cae851630e03a2",
+   "registration": {
+    "width_ratio": 1.0015622432734776,
+    "residual_tile_px": 0.0894254105600302,
+    "iou": 0.9966155130047754
+   },
+   "gate_failures": [],
+   "seams_mean": [
+    2.32
+   ],
+   "seam_failures": [],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "acd6e8a48dba19aa32500f004a1538bdad4980a44ec3823766f203b5cf2915b7",
+    "h1.png": "5bfd45b8e9e00f75078f01623a4718d9b209102369ad09b1aa6e3a36961adc06"
+   },
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ]
+  },
+  {
+   "dir": "stage2_b",
+   "stage": 2,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage2_full_b",
+   "work_dir": "art/codex/terrain/sites/base/s4-mix-s2",
+   "work_cluster": "s4-mix-s2:full_h",
+   "raw": "art/codex/terrain/sites/base/s4-mix-s2/raw/base-s4-mix-s2.png",
+   "raw_sha256": "ff53dddab7670c6359dbbe5fe751c979543aa62bb2258cfb19cae851630e03a2",
+   "registration": {
+    "width_ratio": 1.0029745014547615,
+    "residual_tile_px": 0.20845795432657266,
+    "iou": 0.9936613999062416
+   },
+   "gate_failures": [],
+   "seams_mean": [
+    2.24
+   ],
+   "seam_failures": [],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "526698e65c3bf9ae3f49e57c0ca27e3962c8962bcc93464553bdd6b661396b8b",
+    "h1.png": "ef1a68a54ed019fa4442a1af8b2f998b594dd43ed10e4e1e94b1580207e9a899"
+   },
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ]
+  },
+  {
+   "dir": "stage3_a",
+   "stage": 3,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage3_a",
+   "work_dir": "art/codex/terrain/sites/base/s3-a",
+   "work_cluster": "s3-a:stage3_a",
+   "raw": "art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png",
+   "raw_sha256": "b8f99be8a0fac114765947129018bc774b125d60ba96a6386cb2434b11ffbc22",
+   "registration": {
+    "width_ratio": 1.0004466680836377,
+    "residual_tile_px": 0.006628415396129251,
+    "iou": 0.9989853788214444
+   },
+   "gate_failures": [],
+   "seams_mean": [
+    2.54,
+    1.13,
+    3.08
+   ],
+   "seam_failures": [],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "1b40fb8f86038bb03b12a2c918bbf6e7b8c3d54718792bc32544c34dde568571",
+    "h1.png": "3ad8dd3d0c9d9a2898de7b9feadc859902c59989657b4b83af7745584b92da14",
+    "h2.png": "dfd6e3e6edb01fe767586468b0872194aa0bdba6041cd81dbd904b7d5b75b15a"
+   },
+   "reused_from": "art/codex/terrain/candidates/sites3/base/stage3_a",
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  {
+   "dir": "stage3_b",
+   "stage": 3,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage3_b",
+   "work_dir": "art/codex/terrain/sites/base/s4-late-a",
+   "work_cluster": "s4-late-a:stage3_g",
+   "raw": "art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png",
+   "raw_sha256": "91b32ad0e1df5b6d35be41ed7fc87dbe05372e956e27b964c4a8fec0424e29a2",
+   "registration": {
+    "width_ratio": 0.9994347263512705,
+    "residual_tile_px": 0.0073241369320706335,
+    "iou": 0.997243887224997
+   },
+   "gate_failures": [],
+   "seams_mean": [
+    2.81,
+    1.3,
+    3.13
+   ],
+   "seam_failures": [],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "a90a17063cf0c4b0f3a423a728add267d4eb5c0548f549c15a4ff4a9f316471b",
+    "h1.png": "71f72972a38a339476792581feb9601a5784044ab60047912f3e94a25e3bc847",
+    "h2.png": "42872b6fe6ba9901635f2b98b0909059baf20acab1f224bff26b4ea03a39755b"
+   },
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  {
+   "dir": "stage4_a",
+   "stage": 4,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage4_a",
+   "work_dir": "art/codex/terrain/sites/base/s3-a",
+   "work_cluster": "s3-a:stage4_a",
+   "raw": "art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png",
+   "raw_sha256": "b8f99be8a0fac114765947129018bc774b125d60ba96a6386cb2434b11ffbc22",
+   "registration": {
+    "width_ratio": 1.0003233836094803,
+    "residual_tile_px": 0.006628415395979445,
+    "iou": 0.9962974277915402
+   },
+   "gate_failures": [],
+   "seams_mean": [
+    2.63,
+    1.31,
+    1.58,
+    2.84,
+    2.79
+   ],
+   "seam_failures": [],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "e8ee5b91b81ee2bc105858b28ddc30430b5aa21ab8cf94648359b05f404ea425",
+    "h1.png": "ef87f0b82a52251449cbb15c994b97c81527e641a3f4410cf6829bda579cdd87",
+    "h2.png": "2bec37904b01416a9d45956e09afe7b1bd71fa666bbbd36e96f7d9d2ba987434",
+    "h3.png": "49e950911131d3d3b4dba4fcbcdf2c4ddc80f00947ba2c1c123f3c1e8cc6fb7e"
+   },
+   "reused_from": "art/codex/terrain/candidates/sites3/base/stage4_a",
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ]
+  },
+  {
+   "dir": "stage4_b",
+   "stage": 4,
+   "candidate": "art/codex/terrain/candidates/sites4/base/stage4_b",
+   "work_dir": "art/codex/terrain/sites/base/s4-late-a",
+   "work_cluster": "s4-late-a:stage4_g",
+   "raw": "art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png",
+   "raw_sha256": "91b32ad0e1df5b6d35be41ed7fc87dbe05372e956e27b964c4a8fec0424e29a2",
+   "registration": {
+    "width_ratio": 0.9999462992172148,
+    "residual_tile_px": 0.007324136932049252,
+    "iou": 0.9971409239260223
+   },
+   "gate_failures": [],
+   "seams_mean": [
+    3.45,
+    1.19,
+    1.75,
+    2.69,
+    4.86
+   ],
+   "seam_failures": [
+    "[0, 1]-[1, 1] mean 4.86"
+   ],
+   "guide_arc": 1.0,
+   "files": {
+    "h0.png": "e8856058780247ff310768c08f6c88d2d88f85091ae3a9a211df9c4d2e6dbb3d",
+    "h1.png": "dc21d8e0781486a9f95c81a1bdabfedbed0d5d1d8646c4c766af7cdb8e1ac93b",
+    "h2.png": "4bc168a678a8fb05cbcaf934044e810c7679ef388b42e680f80c8963e8cb2c77",
+    "h3.png": "5e927fe846141c85eff10ed532eaa62de87002cd1533ae6d8e2476c66d23d4ba"
+   },
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ]
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+{
+ "name": "oil_field-s4-tanks-l2",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "l2_130",
+   "base": "orig/l2_00.png"
+  },
+  {
+   "name": "l2_131",
+   "base": "orig/l2_01.png"
+  },
+  {
+   "name": "l2_132",
+   "base": "orig/l2_02.png"
+  },
+  {
+   "name": "l2_133",
+   "base": "orig/l2_03.png"
+  },
+  {
+   "name": "l2_134",
+   "base": "orig/l2_00.png"
+  },
+  {
+   "name": "l2_135",
+   "base": "orig/l2_01.png"
+  },
+  {
+   "name": "l2_136",
+   "base": "orig/l2_02.png"
+  },
+  {
+   "name": "l2_137",
+   "base": "orig/l2_03.png"
+  },
+  {
+   "name": "l2_138",
+   "base": "orig/l2_00.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

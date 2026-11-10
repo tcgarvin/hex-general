@@ -1,0 +1,22 @@
+{
+ "tool": "art/codex/terrain/sites4_oilfac_tanks.py",
+ "orig": "sites/oil_field/s4-tanks-l1/pick_before/l1_00.png",
+ "orig_sha256": "f8dbff36d03f2044fcd25ee029220a4afceb4d02075c64280a1bcfeb22a0e598",
+ "new": "sites/oil_field/s4-tanks-l1/tiles/l1_150.png",
+ "new_sha256": "55573222a8f53ca4238c2255937c7505690e434e42c8e6fd129513ea19d65b14",
+ "grow": 8,
+ "rim": 8.0,
+ "feather": 1.5,
+ "detect": {
+  "min_area": 30,
+  "min_ratio": 0.5,
+  "top_mean": 150.0
+ },
+ "lift": 0.12,
+ "compress_above": 145.0,
+ "compress_k": 0.5,
+ "region_px": 1184,
+ "changed_px": 787,
+ "changed_outside_region_px": 0,
+ "out_sha256": "af4e8fc13d6eff0d43fcc61d94fb03c5d65a192b76279d5197e853930d648563"
+}

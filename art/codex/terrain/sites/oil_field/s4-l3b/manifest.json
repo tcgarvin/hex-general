@@ -1,0 +1,81 @@
+{
+ "runs": [
+  {
+   "name": "oil_field-s4-l3b",
+   "when": "2026-11-10T06:26:09",
+   "job": "art/codex/terrain/sites/oil_field/s4-l3b/job.json",
+   "job_sha256": "7f7d19935c507b23921c75c7d1d99357ceedefd1e41cab04f3ef9fd4de48ed23",
+   "prompt": "art/codex/terrain/sites/oil_field/s4-l3b/prompt.txt",
+   "prompt_sha256": "aa68817dcfebafdc5f8f637c7d73b6ed0e52acd367b2bb3850c49d75ee0908bc",
+   "sheet": "art/codex/terrain/sites/oil_field/s4-l3b/oil_field-s4-l3b.sheet.png",
+   "raw": "art/codex/terrain/sites/oil_field/s4-l3b/raw/oil_field-s4-l3b.png",
+   "raw_sha256": "a94a630ccd566a2e1d81f680692c533e8f3830dac0fba9534e5e49c406c82659",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c533-d1a5-7f83-a8bc-e3fa9dc39860",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c533-d1a5-7f83-a8bc-e3fa9dc39860/exec-3e941410-e702-40d4-94aa-8627a07afad9.png",
+    "wall_seconds": 95,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/sites/oil_field/s4-l3b/oil_field-s4-l3b.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/sites/oil_field/s4-l3b/oil_field-s4-l3b.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png"
+   ],
+   "registration": {
+    "scale": 1.000179692971795,
+    "tx": 0.0792574004120293,
+    "ty": -0.4587586876234665,
+    "max_residual_tile_px": 0.06262963373313182,
+    "min_iou": 0.996047955015649
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": true,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0,
+    "feature_strength": 0.0,
+    "feature_rgb": [],
+    "hold_feather_px": 3.0,
+    "tone_sigma": 0.0,
+    "tone_feature_grow_px": 2,
+    "paint_region_px": 0.0,
+    "paint_region_feather_px": 2.0
+   },
+   "gates": {},
+   "report": "art/codex/terrain/sites/oil_field/s4-l3b/report.json",
+   "montage": "art/codex/terrain/review/sites4/sheets/oil_field-s4-l3b.montage.png",
+   "passed": [
+    "l3_91",
+    "l3_93",
+    "l3_95",
+    "l3_96",
+    "l3_97",
+    "l3_98"
+   ],
+   "failed": [
+    "l3_90",
+    "l3_92",
+    "l3_94"
+   ]
+  }
+ ]
+}

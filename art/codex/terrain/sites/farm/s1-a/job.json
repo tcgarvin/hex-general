@@ -1,0 +1,47 @@
+{
+ "name": "farm-s1-a",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "l1_00",
+   "base": "../../../r1-bases/00.png"
+  },
+  {
+   "name": "l1_01",
+   "base": "../../../r1-bases/01.png"
+  },
+  {
+   "name": "l1_02",
+   "base": "../../../r1-bases/02.png"
+  },
+  {
+   "name": "l2_00",
+   "base": "../../../r1-bases/03.png"
+  },
+  {
+   "name": "l2_01",
+   "base": "../../../r1-bases/04.png"
+  },
+  {
+   "name": "l2_02",
+   "base": "../../../r1-bases/05.png"
+  },
+  {
+   "name": "l3_00",
+   "base": "../../../r1-bases/00.png"
+  },
+  {
+   "name": "l3_01",
+   "base": "../../../r1-bases/01.png"
+  },
+  {
+   "name": "l3_02",
+   "base": "../../../r1-bases/02.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}
