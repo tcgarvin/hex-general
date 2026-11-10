@@ -4,8 +4,9 @@ A unit with a Rest order that took no damage during this turn's execution recove
 HP at one of two tiers (SPEC §7.3):
 
   * resting anywhere: +1 HP, but only up to 7 HP (no effect at or above 7);
-  * resting on a town or city: +2 HP (``GameConfig.settlement_repair``), up to the
-    10 HP maximum.
+  * resting on settlement ground (`GameState.settlement_ground`: a town or city,
+    or in a world a founded site's hex): +2 HP (``GameConfig.settlement_repair``),
+    up to the 10 HP maximum.
 
 "Up to" is a ceiling, never a reduction: a unit already above a tier's cap simply
 does not heal. A resting unit that was attacked and lost HP this turn does not
@@ -21,7 +22,6 @@ from __future__ import annotations
 
 from app.engine.events import Event, UnitRepaired
 from app.engine.models import GameState, Order, RestOrder, UnitId
-from app.engine.stats import SETTLEMENT_TERRAINS
 
 # Repair tiers (SPEC §7.3): (heal amount, HP ceiling) resting in the open. The
 # settlement tier heals `GameConfig.settlement_repair` (2 in v0.1, 3 in a world,
@@ -47,12 +47,11 @@ def resolve_repair(
         for o in orders
         if isinstance(o, RestOrder) and o.unit_id not in damaged
     }
-    hexes = new_state.map.index
 
     for unit in new_state.units:
         if unit.id not in resting:
             continue
-        in_settlement = hexes[unit.coord].terrain in SETTLEMENT_TERRAINS
+        in_settlement = new_state.settlement_ground(unit.coord)
         amount, ceiling = (
             (new_state.config.settlement_repair, _SETTLEMENT_CEILING)
             if in_settlement

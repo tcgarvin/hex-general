@@ -2,7 +2,7 @@
 
 A map-design aid, not board art: each hex is a small block of pixels in its
 flat-top odd-q position, tinted by start region, with rivers, roads, province
-borders, settlements and capitals on top. Written with the standard library
+borders, towns, cities, sites and bases on top. Written with the standard library
 (zlib + struct) so previews need no imaging dependency.
 
 Run: ``uv run python -m app.world.preview --slots 200 --seed 1 --out world.png``.
@@ -16,6 +16,7 @@ import struct
 import zlib
 from pathlib import Path
 
+from app.engine.economy_rules import SiteKind
 from app.engine.stats import Terrain
 from app.world.generate import GeneratedWorld, WorldParams, generate
 
@@ -33,6 +34,13 @@ _UNCLAIMED: _Rgb = (214, 214, 214)
 _TOWN: _Rgb = (255, 255, 255)
 _CITY: _Rgb = (235, 60, 40)
 _CAPITAL: _Rgb = (10, 10, 10)
+_PLOT: _Rgb = (120, 120, 120)  # the rest of a base's footprint
+_SITE: dict[SiteKind, _Rgb] = {
+    SiteKind.FARM: (240, 200, 40),
+    SiteKind.OIL_FIELD: (130, 40, 160),
+    SiteKind.STEEL_MILL: (40, 140, 160),
+    SiteKind.FACTORY: (200, 110, 30),
+}
 _PROVINCE_BORDER = 0.92  # brightness factor on province edges
 _TERRITORY_BORDER = 0.40  # stronger darkening where start regions meet
 
@@ -97,12 +105,17 @@ def render(world: GeneratedWorld, scale: int = 3) -> bytes:
                     canvas, _center(col, row, scale), _center(ncol, nrow, scale), _ROAD
                 )
 
-    capitals = set(world.capitals)
+    sites = world.game_map.site_index
+    plots = world.game_map.plot_hexes
     for i, hex_ in enumerate(hexes):
         col, row = i % width, i // width
-        if hex_.coord in capitals:
+        site = sites.get(hex_.coord)
+        if site is not None and site.kind is SiteKind.BASE:
             _dot(canvas, col, row, scale, _CAPITAL, 2)
-            _dot(canvas, col, row, scale, _CITY, 1)
+        elif site is not None and site.kind in _SITE:
+            _dot(canvas, col, row, scale, _SITE[site.kind], site.level - 1)
+        elif hex_.coord in plots and site is None:
+            _dot(canvas, col, row, scale, _PLOT, 0)
         elif hex_.terrain is Terrain.CITY:
             _dot(canvas, col, row, scale, _CITY, 1)
         elif hex_.terrain is Terrain.TOWN:

@@ -72,7 +72,7 @@ def plan_base(view: GameState, slot: PlayerId) -> BasePlan:
 
     income = Stocks()
     for coord in held:
-        income += economy.site_income[sites[coord].kind]
+        income += economy.income(sites[coord].kind, sites[coord].level)
     upkeep = Stocks()
     for unit in own:
         upkeep += economy.upkeep[unit.type]
@@ -172,10 +172,11 @@ def site_needs(view: GameState, slot: PlayerId) -> dict[SiteKind, float]:
         raise ValueError("site_needs needs a world economy")
     player = view.player(slot)
     sites = view.map.site_index
-    held = [sites[s.coord].kind for s in view.settlements if s.controlled_by == slot]
+    held_sites = [sites[s.coord] for s in view.settlements if s.controlled_by == slot]
+    held = [site.kind for site in held_sites]
     income = Stocks()
-    for kind in held:
-        income += economy.site_income[kind]
+    for site in held_sites:
+        income += economy.income(site.kind, site.level)
     upkeep = Stocks()
     for unit in view.units:
         if unit.owner == slot:

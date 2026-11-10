@@ -1158,17 +1158,29 @@ export interface components {
         };
         /**
          * MapSite
-         * @description A settlement's static role in a world economy, fixed at generation.
+         * @description A site's static role in a world economy, fixed at generation.
          *
+         *     A site is the ownership-bearing thing in a world (VISION §6): its `Settlement`
+         *     record in the state says who holds it. A city site stands on its city hex; a
+         *     farm, oil field, steel mill, factory or base stands on its own plains hex
+         *     beside a town or a road (towns themselves hold no ownership in a world).
          *     ``garrison`` is the tier (1–4) of the neutral garrison the site starts with,
          *     or 0 for a base, which is never garrisoned. It stays on the map after the
          *     garrison is gone so the strategic view can always show how hard a site was.
+         *     ``level`` (1–3) raises a farm's, oil field's, steel mill's or factory's
+         *     income; cities and bases are always level 1. It defaults so maps stored
+         *     before levels existed still decode.
          */
         MapSite: {
             coord: components["schemas"]["Axial"];
             /** Garrison */
             garrison: number;
             kind: components["schemas"]["SiteKind"];
+            /**
+             * Level
+             * @default 1
+             */
+            level: number;
         };
         /**
          * MarchOrder
@@ -1401,12 +1413,13 @@ export interface components {
          * Settlement
          * @description Dynamic ownership of a settlement hex (SPEC §3.2, §14).
          *
-         *     The settlement's *kind* (town vs city) is the terrain at ``coord`` —
-         *     ``Terrain.TOWN``/``Terrain.CITY`` on the map — not stored here, so there is
-         *     one source of truth. This record carries only the part that changes during
-         *     play: ``controlled_by``, where ``None`` means neutral / uncontrolled (a
-         *     single, well-defined meaning). Control changes only via the capture phase
-         *     (SPEC §14.1).
+         *     The settlement's *kind* is static map data, not stored here, so there is one
+         *     source of truth: in a v0.1 game it is the terrain at ``coord``
+         *     (``Terrain.TOWN``/``Terrain.CITY``); in a world it is the `MapSite` at
+         *     ``coord`` (every site but a vacant base slot has a settlement, and towns have
+         *     none). This record carries only the part that changes during play:
+         *     ``controlled_by``, where ``None`` means neutral / uncontrolled (a single,
+         *     well-defined meaning). Control changes only via the capture phase (SPEC §14.1).
          */
         Settlement: {
             /** Controlled By */
@@ -1415,11 +1428,16 @@ export interface components {
         };
         /**
          * SettlementCaptured
-         * @description An infantry/armor unit captured a town or city (SPEC §14.1, §11.3 Phase 3).
+         * @description An infantry/armor unit captured a settlement (SPEC §14.1, §11.3 Phase 3).
          *
          *     Emitted only when control actually changes — a unit sitting on a settlement
          *     it already controls produces no event. ``previous_owner`` is ``None`` when the
          *     settlement was neutral before capture (a single, well-defined meaning).
+         *     ``settlement`` is the terrain of the captured hex: in a v0.1 game that is what
+         *     was taken (town or city). ``site`` is the world site that was taken (farm,
+         *     base, …), whose hex is usually plains; it is ``None`` exactly when the hex is
+         *     not a world site, which is every v0.1 capture (and events stored before the
+         *     field existed).
          */
         SettlementCaptured: {
             /** Captured By */
@@ -1433,16 +1451,18 @@ export interface components {
             /** Previous Owner */
             previous_owner: string | null;
             settlement: components["schemas"]["Terrain"];
+            site?: components["schemas"]["SiteKind"] | null;
             /** Unit Id */
             unit_id: number;
         };
         /**
          * SiteKind
-         * @description What a settlement is in a world economy, fixed when the map is generated.
+         * @description What a site is in a world economy, fixed when the map is generated.
          *
-         *     The hex terrain (town or city tile) is only how the site looks on the board;
-         *     the kind decides what it produces and what may be recruited there. A `BASE` is
-         *     a player's home: not a city, and one per slot.
+         *     The kind decides what a site produces and what may be recruited there. A
+         *     `CITY` stands on its city hex; every other kind stands on its own plains hex
+         *     beside a town or a road. A `BASE` is a player's home: not a city, one per slot,
+         *     on open ground with a four-hex plot kept clear around it.
          * @enum {string}
          */
         SiteKind: "base" | "city" | "farm" | "oil_field" | "steel_mill" | "factory";
@@ -1548,6 +1568,11 @@ export interface components {
          *     ownership is tracked separately by `app.engine.models.Settlement`, but the
          *     terrain identity, defense bonus, and income all live here. Road, by
          *     contrast, is a boolean modifier layered onto terrain (`Hex.road`).
+         *
+         *     In a world game ownership lives on sites instead (`MapSite`, VISION §6): a
+         *     town there is terrain only, and a farm, oil field, steel mill, factory or base
+         *     stands on its own plains hex. Rules that ask "is this settlement ground?" go
+         *     through `GameState.settlement_ground`, which covers both.
          * @enum {string}
          */
         Terrain: "plains" | "woods" | "hills" | "river" | "bridge" | "town" | "city";
@@ -1783,8 +1808,8 @@ export interface components {
          * @description A resting, undamaged unit recovered HP (SPEC §7.3, §11.3 Phase 4).
          *
          *     Emitted only when HP actually increases. ``in_settlement`` records whether the
-         *     unit rested on a town/city (the +2-up-to-10 tier) versus anywhere else (the
-         *     +1-up-to-7 tier).
+         *     unit rested on settlement ground (a town/city, or a founded world site: the
+         *     +2-up-to-10 tier) versus anywhere else (the +1-up-to-7 tier).
          */
         UnitRepaired: {
             /** Hp After */
@@ -1885,6 +1910,8 @@ export interface components {
          * WorldEconomy
          * @description Every tunable number of the world economy (defaults: draft revision 2).
          *
+         *     A site earns ``site_income[kind]`` at level 1 and ``level_income[kind]`` more
+         *     per level above 1 (`income`); cities and bases are always level 1.
          *     ``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is
          *     the per-resource stockpile limit at depot level ``k``, so it has one more
          *     entry than the depot has levels. Artillery needs a workshop and armor a held
@@ -1895,6 +1922,10 @@ export interface components {
             /** Buildings */
             buildings?: {
                 [key: string]: components["schemas"]["BuildingLevel"][];
+            };
+            /** Level Income */
+            level_income?: {
+                [key: string]: components["schemas"]["Stocks"];
             };
             /** Recruit Cost */
             recruit_cost?: {

@@ -20,11 +20,12 @@ from app.engine.stats import UnitType
 
 
 class SiteKind(StrEnum):
-    """What a settlement is in a world economy, fixed when the map is generated.
+    """What a site is in a world economy, fixed when the map is generated.
 
-    The hex terrain (town or city tile) is only how the site looks on the board;
-    the kind decides what it produces and what may be recruited there. A `BASE` is
-    a player's home: not a city, and one per slot.
+    The kind decides what a site produces and what may be recruited there. A
+    `CITY` stands on its city hex; every other kind stands on its own plains hex
+    beside a town or a road. A `BASE` is a player's home: not a city, one per slot,
+    on open ground with a four-hex plot kept clear around it.
     """
 
     BASE = "base"
@@ -72,6 +73,14 @@ class Stocks(BaseModel):
             self.manpower >= cost.manpower
             and self.fuel >= cost.fuel
             and self.steel >= cost.steel
+        )
+
+    def scaled(self, factor: int) -> Stocks:
+        """Each resource multiplied by ``factor``."""
+        return Stocks(
+            manpower=self.manpower * factor,
+            fuel=self.fuel * factor,
+            steel=self.steel * factor,
         )
 
     def clamped(self, ceiling: int) -> Stocks:
@@ -131,6 +140,8 @@ def _levels(*levels: tuple[Stocks, int]) -> list[BuildingLevel]:
 class WorldEconomy(BaseModel):
     """Every tunable number of the world economy (defaults: draft revision 2).
 
+    A site earns ``site_income[kind]`` at level 1 and ``level_income[kind]`` more
+    per level above 1 (`income`); cities and bases are always level 1.
     ``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is
     the per-resource stockpile limit at depot level ``k``, so it has one more
     entry than the depot has levels. Artillery needs a workshop and armor a held
@@ -146,6 +157,18 @@ class WorldEconomy(BaseModel):
             SiteKind.FARM: Stocks(manpower=2),
             SiteKind.OIL_FIELD: Stocks(fuel=3),
             SiteKind.STEEL_MILL: Stocks(steel=2),
+            SiteKind.FACTORY: Stocks(steel=1),
+        }
+    )
+    # Provisional tuning (2026-11-10): +1 of what the site already produces per
+    # level, so a farm earns 2/3/4 manpower at levels 1/2/3.
+    level_income: dict[SiteKind, Stocks] = Field(
+        default_factory=lambda: {
+            SiteKind.BASE: Stocks(),
+            SiteKind.CITY: Stocks(),
+            SiteKind.FARM: Stocks(manpower=1),
+            SiteKind.OIL_FIELD: Stocks(fuel=1),
+            SiteKind.STEEL_MILL: Stocks(steel=1),
             SiteKind.FACTORY: Stocks(steel=1),
         }
     )
@@ -187,6 +210,7 @@ class WorldEconomy(BaseModel):
         """Every site, unit and building has an entry; storage matches the depot."""
         for table, keys in (
             (self.site_income, SiteKind),
+            (self.level_income, SiteKind),
             (self.recruit_cost, UnitType),
             (self.upkeep, UnitType),
             (self.buildings, Building),
@@ -201,6 +225,10 @@ class WorldEconomy(BaseModel):
                 f"{depot_levels}), got {len(self.storage)}"
             )
         return self
+
+    def income(self, kind: SiteKind, level: int) -> Stocks:
+        """What a held site of ``kind`` at ``level`` earns per turn."""
+        return self.site_income[kind] + self.level_income[kind].scaled(level - 1)
 
     def storage_limit(self, depot_level: int) -> int:
         """The per-resource stockpile limit at ``depot_level``."""

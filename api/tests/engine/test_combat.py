@@ -67,8 +67,10 @@ def test_terrain_bonus_only_protects_the_stationary_defender() -> None:
         ],
     )
     units = {u.id: u for u in state.units}
-    hexes = {h.coord: h for h in state.map.hexes}
-    outcome = resolve_contest(units[2].coord, units[2], [units[1]], set(), hexes)
+    target = units[2].coord
+    outcome = resolve_contest(
+        target, units[2], [units[1]], set(), state.terrain_defense(target)
+    )
     # Hills give +1: armor deals clamp(7 - 5 - 1) = 1 to the defender.
     assert outcome.results[2].damage_taken == 1
     assert outcome.results[2].terrain_bonus == 1

@@ -27,6 +27,8 @@ from app.engine.hex_coords import Axial, distance
 from app.engine.stats import (
     COLUMN_RULES,
     MUSTER_BANK_CAP,
+    SETTLEMENT_DEFENSE_BONUS,
+    SETTLEMENT_TERRAINS,
     TERRAIN_STATS,
     UNIT_CAP,
     Terrain,
@@ -92,12 +94,40 @@ class Hex(BaseModel):
     road: bool = False
 
 
-class MapSite(BaseModel):
-    """A settlement's static role in a world economy, fixed at generation.
+MAX_SITE_LEVEL = 3
+"""Farms, oil fields, steel mills and factories come in levels 1–3 (user, 2026-11-10)."""
 
+BASE_FOOTPRINT: tuple[Axial, ...] = (
+    Axial(q=0, r=0),
+    Axial(q=1, r=0),
+    Axial(q=0, r=1),
+    Axial(q=1, r=1),
+)
+"""Axial offsets, from a base's anchor hex, of the four hexes a base may grow over.
+
+World generation keeps all four clear for every slot (user, 2026-11-10). Every base
+is size one for now: only the anchor ``(0, 0)`` is the base. Base growth will hook
+in here, with a stage on the base that says how many of these hexes it covers."""
+
+
+def base_footprint(anchor: Axial) -> tuple[Axial, ...]:
+    """The hexes of the footprint reserved for a base anchored at ``anchor``."""
+    return tuple(Axial(q=anchor.q + d.q, r=anchor.r + d.r) for d in BASE_FOOTPRINT)
+
+
+class MapSite(BaseModel):
+    """A site's static role in a world economy, fixed at generation.
+
+    A site is the ownership-bearing thing in a world (VISION §6): its `Settlement`
+    record in the state says who holds it. A city site stands on its city hex; a
+    farm, oil field, steel mill, factory or base stands on its own plains hex
+    beside a town or a road (towns themselves hold no ownership in a world).
     ``garrison`` is the tier (1–4) of the neutral garrison the site starts with,
     or 0 for a base, which is never garrisoned. It stays on the map after the
     garrison is gone so the strategic view can always show how hard a site was.
+    ``level`` (1–3) raises a farm's, oil field's, steel mill's or factory's
+    income; cities and bases are always level 1. It defaults so maps stored
+    before levels existed still decode.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -105,6 +135,21 @@ class MapSite(BaseModel):
     coord: Axial
     kind: SiteKind
     garrison: int = Field(ge=0, le=4)
+    level: int = Field(default=1, ge=1, le=MAX_SITE_LEVEL)
+
+    @model_validator(mode="after")
+    def _levelled_kind(self) -> MapSite:
+        if self.level != 1 and self.kind in (SiteKind.BASE, SiteKind.CITY):
+            raise ValueError(f"a {self.kind} site is always level 1, got {self.level}")
+        return self
+
+    @property
+    def plot(self) -> tuple[Axial, ...]:
+        """The hexes this site keeps clear on the map: a base's whole footprint,
+        any other site's own hex."""
+        if self.kind is SiteKind.BASE:
+            return base_footprint(self.coord)
+        return (self.coord,)
 
 
 class GameMap(BaseModel):
@@ -123,11 +168,12 @@ class GameMap(BaseModel):
     width: int = Field(gt=0)
     height: int = Field(gt=0)
     hexes: list[Hex]
-    # World maps only: every settlement's site kind and garrison tier, plus the
-    # base site of every slot (WORLD_SPEC §6). Empty for v0.1 scenario maps.
+    # World maps only: every site (city, farm, oil field, steel mill, factory),
+    # plus the base site of every slot (WORLD_SPEC §6). Empty for v0.1 scenario maps.
     sites: list[MapSite] = Field(default_factory=list)
     _index: dict[Axial, Hex] | None = PrivateAttr(default=None)
     _site_index: dict[Axial, MapSite] | None = PrivateAttr(default=None)
+    _plot_hexes: frozenset[Axial] | None = PrivateAttr(default=None)
     _column_costs: dict[tuple[int, int], int] | None = PrivateAttr(default=None)
 
     @property
@@ -143,6 +189,14 @@ class GameMap(BaseModel):
         if self._site_index is None:
             self._site_index = {s.coord: s for s in self.sites}
         return self._site_index
+
+    @property
+    def plot_hexes(self) -> frozenset[Axial]:
+        """Every hex a site keeps clear (`MapSite.plot`): no starting unit or
+        garrison is placed there. Built once, then cached."""
+        if self._plot_hexes is None:
+            self._plot_hexes = frozenset(c for s in self.sites for c in s.plot)
+        return self._plot_hexes
 
     @property
     def column_costs(self) -> dict[tuple[int, int], int]:
@@ -169,12 +223,13 @@ class GameMap(BaseModel):
 class Settlement(BaseModel):
     """Dynamic ownership of a settlement hex (SPEC §3.2, §14).
 
-    The settlement's *kind* (town vs city) is the terrain at ``coord`` —
-    ``Terrain.TOWN``/``Terrain.CITY`` on the map — not stored here, so there is
-    one source of truth. This record carries only the part that changes during
-    play: ``controlled_by``, where ``None`` means neutral / uncontrolled (a
-    single, well-defined meaning). Control changes only via the capture phase
-    (SPEC §14.1).
+    The settlement's *kind* is static map data, not stored here, so there is one
+    source of truth: in a v0.1 game it is the terrain at ``coord``
+    (``Terrain.TOWN``/``Terrain.CITY``); in a world it is the `MapSite` at
+    ``coord`` (every site but a vacant base slot has a settlement, and towns have
+    none). This record carries only the part that changes during play:
+    ``controlled_by``, where ``None`` means neutral / uncontrolled (a single,
+    well-defined meaning). Control changes only via the capture phase (SPEC §14.1).
     """
 
     coord: Axial
@@ -466,6 +521,29 @@ class GameState(BaseModel):
             if settlement.coord == coord:
                 return settlement
         return None
+
+    def settlement_ground(self, coord: Axial) -> bool:
+        """Whether ``coord`` gives the settlement defence and repair bonus.
+
+        Town and city terrain always does: that is the whole v0.1 rule, and in a
+        world a town keeps its terrain bonus though it holds no ownership. A world
+        site's hex does too once its settlement exists, which is every site but a
+        vacant base slot (no settlement, nothing there yet). Every base is size
+        one today, so a base covers only its anchor hex; when bases grow over
+        `BASE_FOOTPRINT`, the other hexes a grown base covers belong here.
+        """
+        if self.map.index[coord].terrain in SETTLEMENT_TERRAINS:
+            return True
+        return coord in self.map.site_index and self.settlement_at(coord) is not None
+
+    def terrain_defense(self, coord: Axial) -> int:
+        """The terrain defence bonus a stationary defender on ``coord`` gets
+        (SPEC §4.2): its terrain's, or `SETTLEMENT_DEFENSE_BONUS` on settlement
+        ground if that is higher."""
+        bonus = TERRAIN_STATS[self.map.index[coord].terrain].defense_bonus
+        if self.settlement_ground(coord):
+            return max(bonus, SETTLEMENT_DEFENSE_BONUS)
+        return bonus
 
 
 class MoveOrder(BaseModel):

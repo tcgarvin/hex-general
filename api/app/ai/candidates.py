@@ -30,7 +30,7 @@ from app.engine.models import (
     RestOrder,
     Unit,
 )
-from app.engine.stats import TERRAIN_STATS, UNIT_STATS, UnitType
+from app.engine.stats import UNIT_STATS, UnitType
 
 _MAX_CANDIDATES = 8
 _KILL_BONUS = 5.0
@@ -123,8 +123,7 @@ def _advance_order(
 
 def _attack_score(attacker: Unit, defender: Unit, board: BoardIndex) -> float:
     """Net value of a melee attack under the enemy-Hold model (AI_SPEC §4.5)."""
-    terrain = board.hex_by_coord[defender.coord].terrain
-    mods = TERRAIN_STATS[terrain].defense_bonus + _ENEMY_HOLD_BONUS
+    mods = board.view.terrain_defense(defender.coord) + _ENEMY_HOLD_BONUS
     dealt = compute_damage(attacker.type, defender.type, mods)
     retaliation = compute_damage(defender.type, attacker.type, 0)
     lethal = dealt >= defender.hp
@@ -215,8 +214,7 @@ def _barrage_orders(board: BoardIndex, unit: Unit) -> list[tuple[float, BarrageO
     for enemy in board.enemy_units:
         if distance(unit.coord, enemy.coord) > reach:
             continue
-        terrain = board.hex_by_coord[enemy.coord].terrain
-        mods = TERRAIN_STATS[terrain].defense_bonus + _ENEMY_HOLD_BONUS
+        mods = board.view.terrain_defense(enemy.coord) + _ENEMY_HOLD_BONUS
         dealt = compute_damage(UnitType.ARTILLERY, enemy.type, mods)
         value = float(dealt) + 0.5 * UNIT_STATS[enemy.type].recruit_cost
         if dealt >= enemy.hp:

@@ -1,8 +1,9 @@
 """Seating a player in a running world (WORLD_SPEC §10.1, W5).
 
 A generated world has one start region per slot, and `GeneratedWorld.fill_order`
-spreads any prefix of slots across the map. The world stores its capitals in fill
-order (``slots``), and the slot at fill position ``k`` is player `slot_id(k)`.
+spreads any prefix of slots across the map. The world stores its capitals (each
+slot's base anchor hex, on open ground beside its seat town) in fill order
+(``slots``), and the slot at fill position ``k`` is player `slot_id(k)`.
 World creation seats the bots in the first slots with `GeneratedWorld.to_state`.
 A player joining later takes the first slot that is still open, given the same
 opening force on the same terms.
@@ -57,9 +58,10 @@ def open_slot(state: GameState, slots: list[Axial]) -> int | None:
 def seat_player(state: GameState, slots: list[Axial]) -> tuple[GameState, PlayerId]:
     """Seat a new player in the first open slot; return the new state and their id.
 
-    The player founds their base on the slot's base site and gets
-    `STARTING_UNITS` on and around it, with the economy's starting stocks, as at
-    world creation. Raises `WorldFull` if no slot is open.
+    The player founds their base on the slot's base site (its anchor hex) and
+    gets `STARTING_UNITS` on and around it, never on a site or base plot hex,
+    with the economy's starting stocks, as at world creation. Raises `WorldFull`
+    if no slot is open.
     """
     position = open_slot(state, slots)
     if position is None:
@@ -67,10 +69,9 @@ def seat_player(state: GameState, slots: list[Axial]) -> tuple[GameState, Player
     player = slot_id(position)
     capital = slots[position]
     seated = state.fork()
-    settlement_hexes = {s.coord for s in seated.settlements}
     occupied = {u.coord for u in seated.units}
     spots = [capital] + nearest_open(
-        capital, seated.map.index, settlement_hexes, occupied
+        capital, seated.map.index, seated.map.plot_hexes, occupied
     )
     next_id = max((u.id for u in seated.units), default=0) + 1
     arrivals = [

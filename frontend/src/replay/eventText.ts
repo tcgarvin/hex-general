@@ -174,7 +174,8 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       return [
         {
           indent: 0,
-          text: `${who} captured the ${event.settlement} at ${coord(event.coord)}${from}.`,
+          // A world capture names its site (farm, oil field…); its hex is plains.
+          text: `${who} captured the ${(event.site ?? event.settlement).replace("_", " ")} at ${coord(event.coord)}${from}.`,
         },
       ];
     }

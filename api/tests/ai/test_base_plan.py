@@ -12,7 +12,10 @@ from app.engine.execution import resolve_execution
 from app.engine.fog import redact_state
 from app.engine.models import EconomyOrders
 from app.games.validation import validate_submission
+from app.engine.stats import UnitType
 from app.world.generate import GeneratedWorld, WorldParams, generate
+from engine.test_world_economy import BASE, FARM, unit
+from engine.test_world_economy import world as small_world
 
 
 @pytest.fixture(scope="module")
@@ -55,6 +58,16 @@ def test_needs_favour_farms_when_manpower_is_short(world: GeneratedWorld) -> Non
     # Four units eat 4 of the base's 5 manpower; no factory held yet.
     assert needs[SiteKind.FARM] == 2.0
     assert needs[SiteKind.FACTORY] > 1.0
+
+
+def test_needs_count_a_sites_level_in_its_income() -> None:
+    infantry = [unit(k, UnitType.INFANTRY, 2 + k % 3, 2 + k // 3) for k in range(6)]
+    # Six infantry eat 6 manpower: the base's 5 plus a level-1 farm's 2 leave 1.
+    low = small_world(held=(BASE, FARM), units=infantry)
+    assert site_needs(low, "p")[SiteKind.FARM] == 2.0
+    # A level-3 farm earns 4, so manpower is no longer tight.
+    high = small_world(held=(BASE, FARM), units=infantry, levels={FARM: 3})
+    assert site_needs(high, "p")[SiteKind.FARM] == 1.0
 
 
 def test_economy_orders_helper_is_none_without_base_orders() -> None:

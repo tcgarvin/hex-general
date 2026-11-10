@@ -20,6 +20,11 @@ class Terrain(StrEnum):
     ownership is tracked separately by `app.engine.models.Settlement`, but the
     terrain identity, defense bonus, and income all live here. Road, by
     contrast, is a boolean modifier layered onto terrain (`Hex.road`).
+
+    In a world game ownership lives on sites instead (`MapSite`, VISION §6): a
+    town there is terrain only, and a farm, oil field, steel mill, factory or base
+    stands on its own plains hex. Rules that ask "is this settlement ground?" go
+    through `GameState.settlement_ground`, which covers both.
     """
 
     PLAINS = "plains"
@@ -33,6 +38,12 @@ class Terrain(StrEnum):
 
 # The terrain types that are settlements (SPEC §3.2). No villages in v0.1.
 SETTLEMENT_TERRAINS: frozenset[Terrain] = frozenset({Terrain.TOWN, Terrain.CITY})
+
+
+SETTLEMENT_DEFENSE_BONUS = 2
+"""Defence a stationary defender gets on settlement ground (SPEC §4.2): town and
+city terrain, and in a world every hex a founded site covers
+(`GameState.settlement_ground`)."""
 
 
 def is_settlement(terrain: Terrain) -> bool:
@@ -106,10 +117,14 @@ TERRAIN_STATS: dict[Terrain, TerrainStats] = {
         passable=True, defense_bonus=0, blocks_line_of_sight=False
     ),
     Terrain.TOWN: TerrainStats(
-        passable=True, defense_bonus=2, blocks_line_of_sight=False
+        passable=True,
+        defense_bonus=SETTLEMENT_DEFENSE_BONUS,
+        blocks_line_of_sight=False,
     ),
     Terrain.CITY: TerrainStats(
-        passable=True, defense_bonus=2, blocks_line_of_sight=False
+        passable=True,
+        defense_bonus=SETTLEMENT_DEFENSE_BONUS,
+        blocks_line_of_sight=False,
     ),
 }
 

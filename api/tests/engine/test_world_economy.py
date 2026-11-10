@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from app.engine.economy_rules import Building, SiteKind, Stocks, WorldEconomy
 from app.engine.events import (
+    CombatResolved,
     Event,
     ConstructionCompleted,
     ConstructionStarted,
@@ -16,10 +17,11 @@ from app.engine.events import (
     SettlementCaptured,
     StocksResolved,
     UnitDisbanded,
+    UnitRepaired,
     WorldUnitRecruited,
 )
 from app.engine.execution import resolve_execution
-from app.engine.hex_coords import Axial, offset_to_axial
+from app.engine.hex_coords import Axial, axial_to_offset, offset_to_axial
 from app.engine.models import (
     NEUTRAL,
     Construction,
@@ -32,6 +34,7 @@ from app.engine.models import (
     MoveOrder,
     Player,
     Recruitment,
+    RestOrder,
     Settlement,
     Unit,
     VictoryConfig,
@@ -48,6 +51,12 @@ MILL = offset_to_axial(1, 5)
 FACTORY = offset_to_axial(4, 5)
 CITY = offset_to_axial(6, 5)
 
+# A vacant base slot (a base site nobody has founded: no settlement) and a town
+# (terrain only: in a world a town holds no ownership).
+VACANT = offset_to_axial(6, 7)
+TOWN = offset_to_axial(1, 7)
+OPEN = offset_to_axial(3, 6)  # plain plains
+
 SITES = {
     BASE: SiteKind.BASE,
     FARM: SiteKind.FARM,
@@ -55,6 +64,7 @@ SITES = {
     MILL: SiteKind.STEEL_MILL,
     FACTORY: SiteKind.FACTORY,
     CITY: SiteKind.CITY,
+    VACANT: SiteKind.BASE,
 }
 
 
@@ -65,29 +75,35 @@ def world(
     buildings: dict[Building, int] | None = None,
     construction: Construction | None = None,
     turn: int = 1,
+    levels: dict[Axial, int] | None = None,
 ) -> GameState:
-    """An 8×8 world for player ``p`` holding ``held`` sites (the rest neutral)."""
+    """An 8×8 world for player ``p`` holding ``held`` sites (the rest neutral).
+
+    As the generator builds them, the city site is on city terrain and every
+    other site on plains; ``levels`` sets site levels (default 1).
+    """
     hexes = []
     for row in range(8):
         for col in range(8):
             coord = offset_to_axial(col, row)
-            kind = SITES.get(coord)
             terrain = (
-                Terrain.PLAINS
-                if kind is None
-                else (
-                    Terrain.CITY
-                    if kind in (SiteKind.BASE, SiteKind.CITY)
-                    else Terrain.TOWN
-                )
+                Terrain.CITY
+                if coord == CITY
+                else Terrain.TOWN if coord == TOWN else Terrain.PLAINS
             )
             hexes.append(Hex(coord=coord, terrain=terrain))
+    levels = levels or {}
     game_map = GameMap(
         width=8,
         height=8,
         hexes=hexes,
         sites=[
-            MapSite(coord=c, kind=k, garrison=0 if k is SiteKind.BASE else 2)
+            MapSite(
+                coord=c,
+                kind=k,
+                garrison=0 if k is SiteKind.BASE else 2,
+                level=levels.get(c, 1),
+            )
             for c, k in SITES.items()
         ],
     )
@@ -95,7 +111,9 @@ def world(
         turn=turn,
         map=game_map,
         settlements=[
-            Settlement(coord=c, controlled_by="p" if c in held else None) for c in SITES
+            Settlement(coord=c, controlled_by="p" if c in held else None)
+            for c in SITES
+            if c != VACANT
         ],
         units=units or [],
         players=[
@@ -137,6 +155,38 @@ def test_sites_earn_their_kind_and_units_cost_upkeep() -> None:
     assert resolved.income == Stocks(manpower=7, fuel=6, steel=3)
     assert resolved.upkeep == Stocks(manpower=2, fuel=2)
     assert after.players[0].stocks == Stocks(manpower=10, fuel=9, steel=8)
+
+
+def test_site_income_rises_by_level() -> None:
+    state = world(
+        held=(FARM, OIL, MILL, FACTORY),
+        levels={FARM: 3, OIL: 2, MILL: 3, FACTORY: 2},
+        stocks=Stocks(manpower=5),
+    )
+    _, events = resolve_execution(state, [])
+    # Farm 2+2 manpower, oil 3+1 fuel, mill 2+2 and factory 1+1 steel.
+    assert stocks_event(events).income == Stocks(manpower=4, fuel=4, steel=6)
+
+
+def test_income_by_level_is_economy_data() -> None:
+    economy = WorldEconomy()
+    assert [economy.income(SiteKind.FARM, n).manpower for n in (1, 2, 3)] == [2, 3, 4]
+    assert [economy.income(SiteKind.OIL_FIELD, n).fuel for n in (1, 2, 3)] == [3, 4, 5]
+    assert [economy.income(SiteKind.STEEL_MILL, n).steel for n in (1, 2, 3)] == [
+        2,
+        3,
+        4,
+    ]
+    assert [economy.income(SiteKind.FACTORY, n).steel for n in (1, 2, 3)] == [1, 2, 3]
+    assert economy.income(SiteKind.CITY, 1) == economy.site_income[SiteKind.CITY]
+    assert economy.income(SiteKind.BASE, 1) == economy.site_income[SiteKind.BASE]
+
+
+def test_cities_and_bases_are_always_level_one() -> None:
+    with pytest.raises(ValidationError, match="always level 1"):
+        MapSite(coord=BASE, kind=SiteKind.BASE, garrison=0, level=2)
+    with pytest.raises(ValidationError):
+        MapSite(coord=FARM, kind=SiteKind.FARM, garrison=1, level=4)
 
 
 def test_storage_limits_each_resource_and_the_depot_raises_it() -> None:
@@ -386,6 +436,59 @@ def test_clearing_a_garrison_lets_the_attacker_take_the_site() -> None:
     assert NEUTRAL not in {u.owner for u in after.units}
     farm = next(s for s in after.settlements if s.coord == FARM)
     assert farm.controlled_by == "p"
+
+
+def test_capturing_a_site_reports_its_kind() -> None:
+    guard = unit(9, INF, 4, 1, hp=1, owner=NEUTRAL)
+    state = world(units=[guard, unit(1, INF, 3, 1)], stocks=Stocks(manpower=10))
+    _, events = resolve_execution(state, [MoveOrder(unit_id=1, path=[FARM])])
+    captured = next(e for e in events if isinstance(e, SettlementCaptured))
+    assert (captured.coord, captured.site) == (FARM, SiteKind.FARM)
+    assert captured.settlement is Terrain.PLAINS
+
+
+# --- settlement ground --------------------------------------------------------
+
+
+def test_founded_sites_and_towns_are_settlement_ground_but_a_vacant_base_is_not() -> (
+    None
+):
+    state = world()
+    for coord in (BASE, FARM, CITY, TOWN):
+        assert state.settlement_ground(coord), coord
+        assert state.terrain_defense(coord) == 2, coord
+    for coord in (VACANT, OPEN):
+        assert not state.settlement_ground(coord), coord
+        assert state.terrain_defense(coord) == 0, coord
+
+
+@pytest.mark.parametrize(
+    ("where", "bonus"), [(FARM, 2), (TOWN, 2), (VACANT, 0), (OPEN, 0)]
+)
+def test_a_defender_gets_the_settlement_bonus_only_on_settlement_ground(
+    where: Axial, bonus: int
+) -> None:
+    col, row = axial_to_offset(where)
+    defender = unit(9, INF, col, row, owner=NEUTRAL)
+    attacker = unit(1, ARM, col, row - 1)
+    state = world(units=[defender, attacker], stocks=Stocks(manpower=10, fuel=10))
+    _, events = resolve_execution(state, [MoveOrder(unit_id=1, path=[where])])
+    combat = next(e for e in events if isinstance(e, CombatResolved))
+    by_id = {p.unit_id: p for p in combat.participants}
+    assert by_id[9].terrain_bonus == bonus
+    assert by_id[1].terrain_bonus == 0
+
+
+@pytest.mark.parametrize(
+    ("where", "healed"), [(FARM, 7), (BASE, 7), (TOWN, 7), (VACANT, 6), (OPEN, 6)]
+)
+def test_resting_on_settlement_ground_repairs_faster(where: Axial, healed: int) -> None:
+    col, row = axial_to_offset(where)
+    state = world(units=[unit(1, INF, col, row, hp=5)], stocks=Stocks(manpower=5))
+    after, events = resolve_execution(state, [RestOrder(unit_id=1)])
+    assert after.units[0].hp == healed
+    repaired = next(e for e in events if isinstance(e, UnitRepaired))
+    assert repaired.in_settlement is (healed == 7)
 
 
 def test_economy_orders_need_a_world() -> None:

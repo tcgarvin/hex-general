@@ -1203,7 +1203,7 @@
         "type": "object"
       },
       "MapSite": {
-        "description": "A settlement's static role in a world economy, fixed at generation.\n\n``garrison`` is the tier (1\u20134) of the neutral garrison the site starts with,\nor 0 for a base, which is never garrisoned. It stays on the map after the\ngarrison is gone so the strategic view can always show how hard a site was.",
+        "description": "A site's static role in a world economy, fixed at generation.\n\nA site is the ownership-bearing thing in a world (VISION \u00a76): its `Settlement`\nrecord in the state says who holds it. A city site stands on its city hex; a\nfarm, oil field, steel mill, factory or base stands on its own plains hex\nbeside a town or a road (towns themselves hold no ownership in a world).\n``garrison`` is the tier (1\u20134) of the neutral garrison the site starts with,\nor 0 for a base, which is never garrisoned. It stays on the map after the\ngarrison is gone so the strategic view can always show how hard a site was.\n``level`` (1\u20133) raises a farm's, oil field's, steel mill's or factory's\nincome; cities and bases are always level 1. It defaults so maps stored\nbefore levels existed still decode.",
         "properties": {
           "coord": {
             "$ref": "#/components/schemas/Axial"
@@ -1216,6 +1216,13 @@
           },
           "kind": {
             "$ref": "#/components/schemas/SiteKind"
+          },
+          "level": {
+            "default": 1,
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Level",
+            "type": "integer"
           }
         },
         "required": [
@@ -1570,7 +1577,7 @@
         "type": "object"
       },
       "Settlement": {
-        "description": "Dynamic ownership of a settlement hex (SPEC \u00a73.2, \u00a714).\n\nThe settlement's *kind* (town vs city) is the terrain at ``coord`` \u2014\n``Terrain.TOWN``/``Terrain.CITY`` on the map \u2014 not stored here, so there is\none source of truth. This record carries only the part that changes during\nplay: ``controlled_by``, where ``None`` means neutral / uncontrolled (a\nsingle, well-defined meaning). Control changes only via the capture phase\n(SPEC \u00a714.1).",
+        "description": "Dynamic ownership of a settlement hex (SPEC \u00a73.2, \u00a714).\n\nThe settlement's *kind* is static map data, not stored here, so there is one\nsource of truth: in a v0.1 game it is the terrain at ``coord``\n(``Terrain.TOWN``/``Terrain.CITY``); in a world it is the `MapSite` at\n``coord`` (every site but a vacant base slot has a settlement, and towns have\nnone). This record carries only the part that changes during play:\n``controlled_by``, where ``None`` means neutral / uncontrolled (a single,\nwell-defined meaning). Control changes only via the capture phase (SPEC \u00a714.1).",
         "properties": {
           "controlled_by": {
             "anyOf": [
@@ -1595,7 +1602,7 @@
       },
       "SettlementCaptured": {
         "additionalProperties": false,
-        "description": "An infantry/armor unit captured a town or city (SPEC \u00a714.1, \u00a711.3 Phase 3).\n\nEmitted only when control actually changes \u2014 a unit sitting on a settlement\nit already controls produces no event. ``previous_owner`` is ``None`` when the\nsettlement was neutral before capture (a single, well-defined meaning).",
+        "description": "An infantry/armor unit captured a settlement (SPEC \u00a714.1, \u00a711.3 Phase 3).\n\nEmitted only when control actually changes \u2014 a unit sitting on a settlement\nit already controls produces no event. ``previous_owner`` is ``None`` when the\nsettlement was neutral before capture (a single, well-defined meaning).\n``settlement`` is the terrain of the captured hex: in a v0.1 game that is what\nwas taken (town or city). ``site`` is the world site that was taken (farm,\nbase, \u2026), whose hex is usually plains; it is ``None`` exactly when the hex is\nnot a world site, which is every v0.1 capture (and events stored before the\nfield existed).",
         "properties": {
           "captured_by": {
             "title": "Captured By",
@@ -1624,6 +1631,16 @@
           "settlement": {
             "$ref": "#/components/schemas/Terrain"
           },
+          "site": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "unit_id": {
             "title": "Unit Id",
             "type": "integer"
@@ -1640,7 +1657,7 @@
         "type": "object"
       },
       "SiteKind": {
-        "description": "What a settlement is in a world economy, fixed when the map is generated.\n\nThe hex terrain (town or city tile) is only how the site looks on the board;\nthe kind decides what it produces and what may be recruited there. A `BASE` is\na player's home: not a city, and one per slot.",
+        "description": "What a site is in a world economy, fixed when the map is generated.\n\nThe kind decides what a site produces and what may be recruited there. A\n`CITY` stands on its city hex; every other kind stands on its own plains hex\nbeside a town or a road. A `BASE` is a player's home: not a city, one per slot,\non open ground with a four-hex plot kept clear around it.",
         "enum": [
           "base",
           "city",
@@ -1850,7 +1867,7 @@
         "type": "object"
       },
       "Terrain": {
-        "description": "Terrain of a hex (SPEC \u00a74.1).\n\nTown and City are terrain types in their own right \u2014 a settlement hex *is*\ntown/city terrain, not a marker layered on plains/woods. Their dynamic\nownership is tracked separately by `app.engine.models.Settlement`, but the\nterrain identity, defense bonus, and income all live here. Road, by\ncontrast, is a boolean modifier layered onto terrain (`Hex.road`).",
+        "description": "Terrain of a hex (SPEC \u00a74.1).\n\nTown and City are terrain types in their own right \u2014 a settlement hex *is*\ntown/city terrain, not a marker layered on plains/woods. Their dynamic\nownership is tracked separately by `app.engine.models.Settlement`, but the\nterrain identity, defense bonus, and income all live here. Road, by\ncontrast, is a boolean modifier layered onto terrain (`Hex.road`).\n\nIn a world game ownership lives on sites instead (`MapSite`, VISION \u00a76): a\ntown there is terrain only, and a farm, oil field, steel mill, factory or base\nstands on its own plains hex. Rules that ask \"is this settlement ground?\" go\nthrough `GameState.settlement_ground`, which covers both.",
         "enum": [
           "plains",
           "woods",
@@ -2354,7 +2371,7 @@
       },
       "UnitRepaired": {
         "additionalProperties": false,
-        "description": "A resting, undamaged unit recovered HP (SPEC \u00a77.3, \u00a711.3 Phase 4).\n\nEmitted only when HP actually increases. ``in_settlement`` records whether the\nunit rested on a town/city (the +2-up-to-10 tier) versus anywhere else (the\n+1-up-to-7 tier).",
+        "description": "A resting, undamaged unit recovered HP (SPEC \u00a77.3, \u00a711.3 Phase 4).\n\nEmitted only when HP actually increases. ``in_settlement`` records whether the\nunit rested on settlement ground (a town/city, or a founded world site: the\n+2-up-to-10 tier) versus anywhere else (the +1-up-to-7 tier).",
         "properties": {
           "hp_after": {
             "title": "Hp After",
@@ -2536,7 +2553,7 @@
         "type": "object"
       },
       "WorldEconomy": {
-        "description": "Every tunable number of the world economy (defaults: draft revision 2).\n\n``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is\nthe per-resource stockpile limit at depot level ``k``, so it has one more\nentry than the depot has levels. Artillery needs a workshop and armor a held\nfactory; those unlock rules are fixed in the recruitment phase.",
+        "description": "Every tunable number of the world economy (defaults: draft revision 2).\n\nA site earns ``site_income[kind]`` at level 1 and ``level_income[kind]`` more\nper level above 1 (`income`); cities and bases are always level 1.\n``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is\nthe per-resource stockpile limit at depot level ``k``, so it has one more\nentry than the depot has levels. Artillery needs a workshop and armor a held\nfactory; those unlock rules are fixed in the recruitment phase.",
         "properties": {
           "army": {
             "$ref": "#/components/schemas/ArmySize"
@@ -2552,6 +2569,16 @@
               "$ref": "#/components/schemas/Building"
             },
             "title": "Buildings",
+            "type": "object"
+          },
+          "level_income": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Stocks"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/SiteKind"
+            },
+            "title": "Level Income",
             "type": "object"
           },
           "recruit_cost": {

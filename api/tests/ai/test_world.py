@@ -14,11 +14,13 @@ from app.ai.world import (
     Stance,
     StrategistArgs,
     WorldPolicy,
+    _site_value,
     plan_world_turn,
 )
 from app.engine.fog import redact_state
-from app.engine.hex_coords import distance
-from app.engine.models import GameState, PlayerId, TravelOrder
+from app.engine.economy_rules import SiteKind
+from app.engine.hex_coords import Axial, distance
+from app.engine.models import GameState, MapSite, PlayerId, TravelOrder
 from app.engine.stats import Terrain
 from app.games.validation import validate_submission
 from app.world.generate import GeneratedWorld, WorldParams, generate
@@ -39,6 +41,31 @@ def _timeless(report: SimReport) -> dict[str, object]:
         turn.pop("resolve_ms")
         turn.pop("think_ms_max")
     return data
+
+
+def test_a_higher_level_site_is_worth_more_to_a_bot() -> None:
+    needs = {kind: 1.0 for kind in SiteKind}
+    farm = MapSite(coord=Axial(q=0, r=0), kind=SiteKind.FARM, garrison=1)
+    values = [
+        _site_value(farm.model_copy(update={"level": n}), needs) for n in (1, 2, 3)
+    ]
+    assert values[0] < values[1] < values[2]
+
+
+def test_bots_plan_over_sites_on_plains(world: GeneratedWorld) -> None:
+    # Farms, mills, oil fields and bases stand on plains: no settlement is
+    # valued by its terrain any more.
+    state = world.to_state(["b000", "b001"])
+    on_plains = [
+        s
+        for s in state.settlements
+        if state.map.index[s.coord].terrain is Terrain.PLAINS
+    ]
+    assert on_plains
+    view = redact_state(state, "b000")
+    for stance in Stance:
+        plan = plan_world_turn(view, "b000", StrategistArgs(stance=stance))
+        validate_submission(view, "b000", plan.orders, plan.recruitments)
 
 
 def test_personalities_are_seeded_and_varied() -> None:

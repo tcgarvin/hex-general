@@ -5,7 +5,7 @@
 
 import type { components } from "@/lib/api/schema";
 
-import type { SiteKind, WorldMap } from "./worldMap";
+import type { MapSite, SiteKind, WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
 type Player = components["schemas"]["Player"];
@@ -15,6 +15,8 @@ type UnitType = components["schemas"]["UnitType"];
 
 export interface Economy {
   siteIncome: Record<SiteKind, Stocks>;
+  /** Extra income per site level above 1 (cities and bases are always level 1). */
+  levelIncome: Record<SiteKind, Stocks>;
   recruitCost: Record<UnitType, Stocks>;
   upkeep: Record<UnitType, Stocks>;
   buildings: Record<Building, { cost: Stocks; turns: number }[]>;
@@ -36,6 +38,7 @@ export function economyOf(state: WorldState): Economy {
     e === undefined ||
     e === null ||
     e.site_income === undefined ||
+    e.level_income === undefined ||
     e.recruit_cost === undefined ||
     e.upkeep === undefined ||
     e.buildings === undefined ||
@@ -47,6 +50,7 @@ export function economyOf(state: WorldState): Economy {
   const army = e.army;
   return {
     siteIncome: e.site_income as Record<SiteKind, Stocks>,
+    levelIncome: e.level_income as Record<SiteKind, Stocks>,
     recruitCost: e.recruit_cost as Record<UnitType, Stocks>,
     upkeep: e.upkeep as Record<UnitType, Stocks>,
     buildings: e.buildings as Economy["buildings"],
@@ -66,6 +70,17 @@ export function add(a: Stocks, b: Stocks): Stocks {
 
 export function sub(a: Stocks, b: Stocks): Stocks {
   return { manpower: a.manpower - b.manpower, fuel: a.fuel - b.fuel, steel: a.steel - b.steel };
+}
+
+/** What a held site earns a turn at its level (mirrors `WorldEconomy.income`). */
+export function siteIncome(economy: Economy, site: MapSite): Stocks {
+  const extra = economy.levelIncome[site.kind];
+  const n = site.level - 1;
+  return add(economy.siteIncome[site.kind], {
+    manpower: extra.manpower * n,
+    fuel: extra.fuel * n,
+    steel: extra.steel * n,
+  });
 }
 
 export function covers(have: Stocks, cost: Stocks): boolean {
@@ -105,7 +120,7 @@ export function forecast(state: WorldState, map: WorldMap, slot: string): Foreca
     if (s.controlled_by !== slot) continue;
     const site = map.siteAt(s.coord.q, s.coord.r);
     if (site === undefined) throw new Error(`settlement at ${s.coord.q},${s.coord.r} has no site`);
-    income = add(income, economy.siteIncome[site.kind]);
+    income = add(income, siteIncome(economy, site));
     if (site.kind !== "base") heldSites += 1;
   }
   let upkeep = NO_STOCKS;

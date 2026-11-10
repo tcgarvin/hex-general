@@ -90,8 +90,10 @@ travel: fast, stacks, can't attack, fights badly). Study results (§12):
 - **Economy framing (decided, 2026-11-09):**
   - **Setting:** WWII-ish industrial: manpower, fuel (oil), industry (factories,
     mines), maybe food (farms).
-  - **Base:** your capital plus a few buildings (barracks, depot, workshop and the
-    like), built with resources. There is no single base level.
+  - **Base:** your home site plus a few buildings (barracks, depot, workshop and the
+    like), built with resources. There is no single base level. The base stands on
+    open ground beside a town, not on a city, with four hexes kept clear for it to
+    grow over later; for now every base is one hex (user, 2026-11-10).
   - **Neutral sites are defended:** each has a small computer-controlled garrison,
     tougher farther from the capitals and on more valuable sites. Every capture is a
     small tactical fight, and the garrisons later become the marauders (§7).
@@ -108,7 +110,12 @@ travel: fast, stacks, can't attack, fights badly). Study results (§12):
     disband; out of manpower, any unit. (Draft: one unit per short turn, with the
     weakest as the default pick.) A manpower shortage does not stop healing.
   - **Bases are not cities.** Each player has a base, its own kind of site. Empty
-    slots are vacant base sites that can't be captured. **"The Capital"** is saved for
+    slots are vacant base sites that can't be captured.
+- **Site decisions (user, 2026-11-10):** sites leave the towns. Farms, oil fields,
+  steel mills and factories each stand on their own hex beside a town or a road, at a
+  level 1–3 fixed at generation (higher levels rarer, richer). Towns stay as terrain
+  (defence, repair) but own nothing; cities stay capturable sites. Every hex a base
+  covers is fortified ground. Detail and provisional tuning: WORLD_SPEC §6–7. **"The Capital"** is saved for
     later as a season end-game objective rather than something every player has.
 - **Sites unlock unit types (decided direction).** E.g. a **tank factory** enables
   armor, and the map must supply enough that **most players who work for one can get

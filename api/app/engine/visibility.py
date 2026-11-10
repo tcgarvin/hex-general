@@ -65,7 +65,7 @@ def visible_hexes(state: GameState, player_id: PlayerId) -> set[Axial]:
     """Return the union of all hexes ``player_id``'s units and controlled settlements can see.
 
     Units contribute their full vision radius (SPEC §9). Controlled settlements
-    (towns and cities) additionally contribute a fixed radius of 1 hex, giving
+    (towns and cities in v0.1, sites in a world) additionally contribute a fixed radius of 1 hex, giving
     each player persistent local awareness around their territory even when
     no unit is present.
 

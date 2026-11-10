@@ -20,6 +20,7 @@ import {
   forecast,
   levelOf,
   RESOURCES,
+  siteIncome,
   stocksOf,
   sub,
   type Building,
@@ -724,7 +725,7 @@ function HexPanel({
       </div>
       {site !== undefined && (
         <div className="mt-1 flex flex-col gap-0.5">
-          {site.kind !== "base" && <span>Produces {stocksText(economy.siteIncome[site.kind])} a turn.</span>}
+          {site.kind !== "base" && <span>Produces {stocksText(siteIncome(economy, site))} a turn.</span>}
           {site.garrison > 0 && (
             <span>
               Garrison tier {site.garrison}: {TIER_LABEL[site.garrison]}

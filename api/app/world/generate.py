@@ -6,22 +6,28 @@
 2. **Rivers:** meandering impassable hex chains walked inland from the map edge,
    plus tributaries joining existing rivers.
 3. **Settlements:** about one per ``hexes_per_settlement`` hexes, spread by
-   best-candidate sampling; ~15% are cities.
-4. **Capitals:** one settlement per slot, spread by farthest-point sampling and
-   relaxed with Lloyd steps, then promoted to city.
+   best-candidate sampling; ~15% are cities, the rest towns.
+4. **Seats:** one settlement per slot, spread by farthest-point sampling and
+   relaxed with Lloyd steps. A seat is a town: its slot's base goes beside it.
 5. **Roads:** a spanning tree over each settlement's nearest neighbours plus ~30%
    redundant short links, each laid by least-cost search that favours reusing
    road (so roads merge into networks). A road over a river is a bridge.
 6. **Fix-ups (fairness):** each start region (*territory*, the land nearest its
-   capital) gets one connected road network, a road across every real border,
+   seat) gets one connected road network, a road across every real border,
    and at least half the median settlement count.
-7. **Provinces:** every settlement anchors the hexes nearest it by column travel
-   cost.
+7. **Base plots:** each slot's base stands on open ground near its seat, with
+   the four hexes of `BASE_FOOTPRINT` kept clear (user, 2026-11-10).
+8. **Sites** (the ownership-bearing things, VISION §6): every city is a city
+   site; every other town but a seat gets a farm, oil field, steel mill or
+   factory on its own plains hex beside the town or a road, with a level drawn
+   by `SITE_LEVEL_WEIGHTS`. Towns themselves hold no ownership.
+9. **Provinces:** every site anchors the hexes nearest it by column travel cost.
 
-Same params → same world, on any machine: the only randomness is one
-`random.Random` seeded from a string (hash-independent). The generator ports the
-sizing study's PoC (VISION §12) without numpy so it adds no runtime deps; a
-200-slot world takes tens of seconds.
+Woods or hills under a base plot or a site become plains. Same params → same
+world, on any machine: the only randomness is one `random.Random` seeded from a
+string (hash-independent). The generator ports the sizing study's PoC (VISION
+§12) without numpy so it adds no runtime deps; a 200-slot world takes tens of
+seconds.
 
 `GeneratedWorld.to_state` turns a world into a turn-0 `GameState` with some slots
 filled; the rest stay neutral land for relocation and new players (VISION §7).
@@ -39,6 +45,8 @@ from dataclasses import dataclass, field
 from app.engine.economy_rules import GARRISON_FORCES, SiteKind, WorldEconomy
 from app.engine.hex_coords import Axial, distance, within
 from app.engine.models import (
+    BASE_FOOTPRINT,
+    MAX_SITE_LEVEL,
     NEUTRAL,
     GameConfig,
     GameMap,
@@ -75,7 +83,11 @@ STARTING_UNITS: tuple[UnitType, ...] = (
 WORLD_UNIT_CAP = 15
 """Hard unit ceiling in a world; the army size rule (`WorldEconomy.army`) binds first."""
 WORLD_SETTLEMENT_REPAIR = 3
-"""HP per turn regained resting in a town or city (WORLD_SPEC §7)."""
+"""HP per turn regained resting on settlement ground (WORLD_SPEC §7)."""
+
+SITE_LEVEL_WEIGHTS: tuple[tuple[int, float], ...] = ((1, 0.6), (2, 0.3), (3, 0.1))
+"""How often a farm, oil field, steel mill or factory is generated at each level:
+higher levels are rarer (provisional tuning, 2026-11-10)."""
 
 
 # Site kinds (economy draft §03): per territory, one factory at 11–20 hexes, one
@@ -88,6 +100,10 @@ _SECOND_RESOURCE_TOWNS = 6
 # Garrison tier by distance to the nearest slot base: militia, garrison, strongpoint.
 _TIER_NEAR = 10
 _TIER_MID = 14
+# Placement radii, each widened once before the generator gives up: a site within
+# 2 (then 3) hexes of its town, a base footprint within 3 (then 5) of its seat.
+_SITE_RADII = (2, 3)
+_BASE_RADII = (3, 5)
 
 # Road laying: entering an existing road hex is cheap, so roads merge; crossing a
 # river (a bridge) is expensive, so bridges are few.
@@ -157,17 +173,21 @@ class WorldParams:
 class GeneratedWorld:
     """A generated world: the static map plus the layout facts built with it.
 
-    Per-hex lists (``territory``, ``province``) align with ``game_map.hexes``.
-    ``territory`` is the slot whose start region holds the hex, ``province`` the
-    position in ``settlements`` of the settlement anchoring it; ``-1`` marks
-    impassable or unreachable hexes. ``fill_order`` lists slots so that any prefix
-    is spread across the map: fill the first N for N players.
+    ``settlements`` are the town and city hexes (terrain; ownership lives on
+    ``game_map.sites``). Per slot, ``capitals`` is the base's anchor hex and
+    ``seats`` the town it stands beside. Per-hex lists (``territory``,
+    ``province``) align with ``game_map.hexes``. ``territory`` is the slot whose
+    start region holds the hex, ``province`` the position in ``game_map.sites`` of
+    the site anchoring it; ``-1`` marks impassable or unreachable hexes.
+    ``fill_order`` lists slots so that any prefix is spread across the map: fill
+    the first N for N players.
     """
 
     params: WorldParams
     game_map: GameMap
     settlements: list[Axial]
     capitals: list[Axial]
+    seats: list[Axial]
     fill_order: list[int]
     territory: list[int]
     province: list[int]
@@ -175,14 +195,15 @@ class GeneratedWorld:
 
     @property
     def slots(self) -> list[Axial]:
-        """Capitals in fill order: ``slots[k]`` is the capital of fill position k."""
+        """Capitals (base anchors) in fill order: ``slots[k]`` is the capital of
+        fill position k."""
         return [self.capitals[k] for k in self.fill_order]
 
     def to_state(self, players: list[PlayerId]) -> GameState:
         """A turn-0 state with ``players`` filling the first slots of ``fill_order``.
 
-        Each player holds their base and gets `STARTING_UNITS` on and around it,
-        plus the economy's starting stocks. Every other site starts neutral with
+        Each player holds their base and gets `STARTING_UNITS` on and around it
+        (never on a site or base plot hex), plus the economy's starting stocks. Every other site starts neutral with
         its tier's garrison (`GARRISON_FORCES`); the base sites of unfilled slots
         stay vacant (no settlement, nothing to capture) until someone is seated
         there. Raises `WorldGenError` if there are more players than slots or a
@@ -226,7 +247,7 @@ class GeneratedWorld:
         """Every neutral site's garrison: its tier's first unit on the site, the
         rest on the nearest free open hexes."""
         index = self.game_map.index
-        settlement_hexes = set(self.settlements)
+        reserved = self.game_map.plot_hexes
         taken = set(taken)
         units: list[Unit] = []
         for site in self.game_map.sites:
@@ -235,7 +256,7 @@ class GeneratedWorld:
             forces = GARRISON_FORCES[site.garrison]
             spots = [site.coord]
             if len(forces) > 1:
-                spots += nearest_open(site.coord, index, settlement_hexes, taken)
+                spots += nearest_open(site.coord, index, reserved, taken)
             for (unit_type, hp), coord in zip(forces, spots, strict=False):
                 taken.add(coord)
                 units.append(
@@ -253,12 +274,12 @@ class GeneratedWorld:
         """Place each player's opening force: the garrison on the capital, the
         rest on the nearest free open hexes (by distance, then axial order)."""
         index = self.game_map.index
-        settlement_hexes = set(self.settlements)
+        reserved = self.game_map.plot_hexes
         taken: set[Axial] = set()
         units: list[Unit] = []
         for k, player in enumerate(players):
             capital = self.capitals[self.fill_order[k]]
-            spots = [capital] + nearest_open(capital, index, settlement_hexes, taken)
+            spots = [capital] + nearest_open(capital, index, reserved, taken)
             for unit_type, coord in zip(STARTING_UNITS, spots, strict=False):
                 taken.add(coord)
                 units.append(
@@ -276,17 +297,22 @@ class GeneratedWorld:
 def nearest_open(
     center: Axial,
     index: dict[Axial, Hex],
-    settlement_hexes: set[Axial],
+    reserved: frozenset[Axial],
     taken: set[Axial],
 ) -> list[Axial]:
-    """Free plains/woods/hills hexes near ``center``, nearest first (up to radius 3)."""
+    """Free plains/woods/hills hexes near ``center``, nearest first (up to radius 3).
+
+    ``reserved`` hexes are never used: pass `GameMap.plot_hexes`, so no unit is
+    placed on a site or inside a base footprint. Raises `WorldGenError` if there
+    is no room for a starting force.
+    """
     open_terrain = {Terrain.PLAINS, Terrain.WOODS, Terrain.HILLS}
     spots = [
         c
         for c in within(center, 3)
         if c in index
         and index[c].terrain in open_terrain
-        and c not in settlement_hexes
+        and c not in reserved
         and c not in taken
     ]
     spots.sort(key=lambda c: (distance(center, c), c.q, c.r))
@@ -298,9 +324,24 @@ def nearest_open(
 # --- Pipeline -------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
+class _DraftSite:
+    """A site as the generator places it: hex index, kind, garrison tier, level."""
+
+    hex: int
+    kind: SiteKind
+    garrison: int
+    level: int
+
+
 @dataclass
 class _Draft:
-    """Mutable working state while a world is generated."""
+    """Mutable working state while a world is generated.
+
+    ``seats`` and ``bases`` are hex indices per slot: the seat town and the base
+    anchor beside it. ``plots`` holds every hex kept clear so far (base footprints
+    and site hexes). The counters feed `_stats`.
+    """
 
     grid: HexGrid
     rng: random.Random
@@ -309,9 +350,15 @@ class _Draft:
     road: list[bool] = field(default_factory=list)
     settlements: list[int] = field(default_factory=list)
     cities: list[bool] = field(default_factory=list)
-    capitals: list[int] = field(default_factory=list)  # hex index per slot
+    seats: list[int] = field(default_factory=list)
     territory: list[int] = field(default_factory=list)
-    sites: list[tuple[SiteKind, int]] = field(default_factory=list)  # per settlement
+    bases: list[int] = field(default_factory=list)
+    plots: set[int] = field(default_factory=set)
+    sites: list[_DraftSite] = field(default_factory=list)  # bases excluded
+    converted_footprint_hexes: int = 0
+    converted_site_hexes: int = 0
+    widened_bases: int = 0
+    widened_sites: int = 0
 
     def passable(self, i: int) -> bool:
         return not self.river[i] or self.road[i]
@@ -350,20 +397,23 @@ def generate(params: WorldParams) -> GeneratedWorld:
             draft.terrain[i] = Terrain.RIVER
     draft.road = [False] * grid.size
 
-    # One settlement per slot becomes a base, on top of the density target, so
-    # bases don't take neutral sites away (economy draft §03).
+    # One settlement per slot becomes a seat, on top of the density target, so
+    # bases don't take neutral sites away (economy draft §03). A seat is a town,
+    # so no start has a free city on its doorstep, and it gets no site of its own.
     count = grid.size // params.hexes_per_settlement + params.slots
     draft.settlements = _place_settlements(grid, rng, draft.river, count)
     draft.cities = [rng.random() < params.city_share for _ in draft.settlements]
-    capital_picks = _choose_capitals(draft, params.slots)
-    for k in capital_picks:
-        draft.cities[k] = True
-    draft.capitals = [draft.settlements[k] for k in capital_picks]
+    seat_picks = _choose_seats(draft, params.slots)
+    for k in seat_picks:
+        draft.cities[k] = False
+    draft.seats = [draft.settlements[k] for k in seat_picks]
 
     for a, b in _road_plan(draft):
         draft.lay_road(draft.settlements[a], draft.settlements[b])
     _fix_up(draft)
-    draft.sites = _assign_sites(draft)
+    # Base plots first, so the sites keep clear of them.
+    _place_bases(draft)
+    _place_sites(draft)
     return _finish(draft, params)
 
 
@@ -523,8 +573,8 @@ def _place_settlements(
     return chosen
 
 
-def _choose_capitals(draft: _Draft, slots: int) -> list[int]:
-    """Pick one settlement per slot (positions in ``draft.settlements``).
+def _choose_seats(draft: _Draft, slots: int) -> list[int]:
+    """Pick one seat settlement per slot (positions in ``draft.settlements``).
 
     Farthest-point sampling (cities slightly preferred) spreads the picks; four
     Lloyd steps then move each to the settlement nearest its region's centroid.
@@ -563,7 +613,7 @@ def _choose_capitals(draft: _Draft, slots: int) -> list[int]:
     points = [sites[k] for k in chosen]
     for _ in range(_LLOYD_STEPS):
         points = _lloyd_step(grid, points, open_hex)
-    return _snap_capitals(draft, points, open_hex)
+    return _snap_seats(draft, points, open_hex)
 
 
 def _lloyd_step(grid: HexGrid, points: list[int], open_hex: list[bool]) -> list[int]:
@@ -590,12 +640,12 @@ def _lloyd_step(grid: HexGrid, points: list[int], open_hex: list[bool]) -> list[
     return best
 
 
-def _snap_capitals(draft: _Draft, points: list[int], open_hex: list[bool]) -> list[int]:
-    """Seat each relaxed point on a nearby settlement, keeping capitals apart.
+def _snap_seats(draft: _Draft, points: list[int], open_hex: list[bool]) -> list[int]:
+    """Seat each relaxed point on a nearby settlement, keeping seats apart.
 
     Each region takes its settlement nearest the point (cities preferred) that is
-    at least 60% of the ideal lattice spacing from capitals already seated; if no
-    settlement qualifies, the nearest one anywhere still unseated.
+    at least 60% of the ideal lattice spacing from seats already taken; if no
+    settlement qualifies, the nearest one anywhere still free.
     """
     grid = draft.grid
     sites = draft.settlements
@@ -700,13 +750,13 @@ def _road_plan(draft: _Draft) -> list[tuple[int, int]]:
 def _fix_up(draft: _Draft) -> None:
     """Repeat the fairness fix-ups until none changes anything.
 
-    Territories are each capital's nearest land in steps over passable hexes, so
+    Territories are each seat's nearest land in steps over passable hexes, so
     they do not depend on roads; the fix-ups lay roads only inside territories
     and so never move a border.
     """
     for _ in range(_FIXUP_ROUNDS):
         passable = [draft.passable(i) for i in range(draft.grid.size)]
-        draft.territory, _ = multi_source_bfs(draft.grid, draft.capitals, passable)
+        draft.territory, _ = multi_source_bfs(draft.grid, draft.seats, passable)
         changed = _road_every_border(draft)
         changed = _join_territory_roads(draft) or changed
         changed = _settle_sparse_territories(draft) or changed
@@ -716,7 +766,7 @@ def _fix_up(draft: _Draft) -> None:
 
 
 def _road_every_border(draft: _Draft) -> bool:
-    """Lay a capital-to-capital road across any real border no road crosses."""
+    """Lay a seat-to-seat road across any real border no road crosses."""
     grid, territory, road = draft.grid, draft.territory, draft.road
     contacts: Counter[tuple[int, int]] = Counter()
     crossed: set[tuple[int, int]] = set()
@@ -736,8 +786,8 @@ def _road_every_border(draft: _Draft) -> bool:
             continue
         p, q = pair
         draft.lay_road(
-            draft.capitals[p],
-            draft.capitals[q],
+            draft.seats[p],
+            draft.seats[q],
             allowed=_inside(territory, p, q),
         )
         changed = True
@@ -745,16 +795,16 @@ def _road_every_border(draft: _Draft) -> bool:
 
 
 def _join_territory_roads(draft: _Draft) -> bool:
-    """Connect every road fragment in a territory to its capital's network."""
+    """Connect every road fragment in a territory to its seat's network."""
     changed = False
-    for p, capital in enumerate(draft.capitals):
+    for p, seat in enumerate(draft.seats):
         fragments = _road_fragments(draft, p)
         for fragment in fragments:
-            if capital in fragment:
+            if seat in fragment:
                 continue
             draft.lay_road(
                 min(fragment),
-                capital,
+                seat,
                 allowed=_inside(draft.territory, p),
             )
             changed = True
@@ -791,8 +841,10 @@ def _road_fragments(draft: _Draft, slot: int) -> list[set[int]]:
 def _settle_sparse_territories(draft: _Draft) -> bool:
     """Give any territory short of half the median settlement count a new town.
 
-    The town goes on the open hex farthest from every settlement, and is roaded
-    to the capital inside the territory. One town per territory per round.
+    Every settlement but a seat yields one site (`_place_sites`), so this keeps
+    the sites, the ownership-bearing things, shared fairly. The town goes on the
+    open hex farthest from every settlement, and is roaded to the seat inside the
+    territory. One town per territory per round.
     """
     grid = draft.grid
     counts = _settlements_per_territory(draft)
@@ -804,7 +856,7 @@ def _settle_sparse_territories(draft: _Draft) -> bool:
     _, spacing = multi_source_bfs(grid, draft.settlements, open_hex)
     occupied = set(draft.settlements)
     for p in lacking:
-        sites = [
+        spots = [
             i
             for i in range(grid.size)
             if draft.territory[i] == p
@@ -812,60 +864,187 @@ def _settle_sparse_territories(draft: _Draft) -> bool:
             and not grid.on_edge(i)
             and i not in occupied
         ]
-        if not sites:
+        if not spots:
             raise WorldGenError(f"territory {p} has no room for another settlement")
-        site = max(sites, key=lambda i: (spacing[i], -i))
-        draft.settlements.append(site)
+        town = max(spots, key=lambda i: (spacing[i], -i))
+        draft.settlements.append(town)
         draft.cities.append(False)
-        occupied.add(site)
+        occupied.add(town)
         draft.lay_road(
-            site,
-            draft.capitals[p],
+            town,
+            draft.seats[p],
             allowed=_inside(draft.territory, p),
         )
     return True
 
 
 def _settlements_per_territory(draft: _Draft) -> list[int]:
-    """Settlements in each territory, not counting its capital."""
-    counts = [0] * len(draft.capitals)
-    capitals = set(draft.capitals)
+    """Settlements in each territory, not counting its seat."""
+    counts = [0] * len(draft.seats)
+    seats = set(draft.seats)
     for s in draft.settlements:
         p = draft.territory[s]
-        if p >= 0 and s not in capitals:
+        if p >= 0 and s not in seats:
             counts[p] += 1
     return counts
+
+
+# --- Base plots ------------------------------------------------------------------
+
+
+def _disc(grid: HexGrid, center: int, radius: int) -> list[int]:
+    """Indices within ``radius`` hexes of ``center``, in index order."""
+    return [
+        i for i in grid.window(center, radius) if grid.distance(i, center) <= radius
+    ]
+
+
+def _footprint(grid: HexGrid, anchor: int) -> list[int] | None:
+    """The `BASE_FOOTPRINT` hexes for a base anchored at ``anchor``, or ``None`` if
+    any of them is off the map."""
+    hexes = [
+        grid.index_of(grid.q[anchor] + d.q, grid.r[anchor] + d.r)
+        for d in BASE_FOOTPRINT
+    ]
+    return None if -1 in hexes else hexes
+
+
+def _clear(draft: _Draft, i: int, settlements: set[int]) -> bool:
+    """Whether a base plot or a site may use hex ``i``: off the edge ring, not a
+    river, bridge, town or city, no road, and not already kept clear."""
+    return not (
+        draft.grid.on_edge(i)
+        or draft.river[i]
+        or draft.road[i]
+        or i in settlements
+        or i in draft.plots
+    )
+
+
+def _beside_road(draft: _Draft, i: int) -> bool:
+    return any(draft.road[n] for n in draft.grid.neighbors[i])
+
+
+def _to_plains(draft: _Draft, hexes: list[int]) -> int:
+    """Turn woods or hills among ``hexes`` into plains; return how many changed."""
+    changed = 0
+    for i in hexes:
+        if draft.terrain[i] is not Terrain.PLAINS:
+            draft.terrain[i] = Terrain.PLAINS
+            changed += 1
+    return changed
+
+
+def _place_bases(draft: _Draft) -> None:
+    """Choose each slot's base anchor near its seat and keep its footprint clear.
+
+    All four `BASE_FOOTPRINT` hexes must be clear (`_clear`), inside the slot's
+    territory and within 3 hexes of the seat (5 if nothing fits in 3), and at
+    least one must touch a road. The nearest anchor wins, then the one needing
+    the fewest woods or hills turned to plains, then a seeded coin. Raises
+    `WorldGenError` if a seat has no room for a base.
+    """
+    grid = draft.grid
+    settlements = set(draft.settlements)
+    for p, seat in enumerate(draft.seats):
+        chosen: list[int] | None = None
+        for radius in _BASE_RADII:
+            options: list[tuple[int, list[int]]] = []
+            for anchor in _disc(grid, seat, radius):
+                plot = _footprint(grid, anchor)
+                if plot is None or not all(
+                    _clear(draft, i, settlements)
+                    and draft.territory[i] == p
+                    and grid.distance(i, seat) <= radius
+                    for i in plot
+                ):
+                    continue
+                if any(_beside_road(draft, i) for i in plot):
+                    options.append((anchor, plot))
+            if options:
+                if radius != _BASE_RADII[0]:
+                    draft.widened_bases += 1
+                _, chosen = min(
+                    options,
+                    key=lambda option: (
+                        grid.distance(option[0], seat),
+                        sum(draft.terrain[i] is not Terrain.PLAINS for i in option[1]),
+                        draft.rng.random(),
+                    ),
+                )
+                break
+        if chosen is None:
+            raise WorldGenError(
+                f"slot {p} has no clear base plot within {_BASE_RADII[-1]} hexes of "
+                f"its seat at ({grid.q[seat]}, {grid.r[seat]})"
+            )
+        draft.bases.append(chosen[0])
+        draft.plots.update(chosen)
+        draft.converted_footprint_hexes += _to_plains(draft, chosen)
 
 
 # --- Sites -----------------------------------------------------------------------
 
 
-def _assign_sites(draft: _Draft) -> list[tuple[SiteKind, int]]:
-    """Each settlement's site kind and garrison tier, aligned with
-    ``draft.settlements`` (economy draft §03–04).
+def _place_sites(draft: _Draft) -> None:
+    """Every city's site on its hex, and every other town's site beside it.
 
-    Capitals are bases (tier 0). Kinds are dealt per territory by the quotas
-    above; a settlement outside every territory is a farm. Tiers rise with hex
-    distance to the nearest base and with the site's value.
+    Seats get no site (their slot's base is beside them). Kinds are dealt per
+    territory (`_deal_kinds`); each town's site then takes a hex (`_site_hex`)
+    and a level (`_draw_level`), and its garrison tier follows its distance to
+    the nearest base (`_garrison_tier`).
+    """
+    grid = draft.grid
+    seats = set(draft.seats)
+    kinds = _deal_kinds(draft)
+    taken = set(draft.bases)
+    placed: list[tuple[int, SiteKind, int]] = []
+    for s, city in zip(draft.settlements, draft.cities, strict=True):
+        if city:
+            placed.append((s, SiteKind.CITY, 1))
+            taken.add(s)
+            draft.plots.add(s)
+    for s, city in zip(draft.settlements, draft.cities, strict=True):
+        if city or s in seats:
+            continue
+        hex_ = _site_hex(draft, s, taken)
+        taken.add(hex_)
+        draft.plots.add(hex_)
+        placed.append((hex_, kinds[s], _draw_level(draft.rng)))
+    draft.sites = [
+        _DraftSite(
+            hex=h,
+            kind=kind,
+            garrison=_garrison_tier(
+                kind, min(grid.distance(h, b) for b in draft.bases), level
+            ),
+            level=level,
+        )
+        for h, kind, level in placed
+    ]
+
+
+def _deal_kinds(draft: _Draft) -> dict[int, SiteKind]:
+    """The site kind of every town but a seat (economy draft §03).
+
+    Kinds are dealt per territory by the quotas above, measured from the slot's
+    base; a town outside every territory is a farm.
     """
     grid = draft.grid
     rng = draft.rng
-    capital_slot = {c: p for p, c in enumerate(draft.capitals)}
+    seats = set(draft.seats)
     kinds: dict[int, SiteKind] = {}
     towns_by_slot: dict[int, list[int]] = {}
     for s, city in zip(draft.settlements, draft.cities, strict=True):
-        if s in capital_slot:
-            kinds[s] = SiteKind.BASE
-        elif city:
-            kinds[s] = SiteKind.CITY
-        else:
-            kinds[s] = SiteKind.FARM
-            p = draft.territory[s]
-            if p >= 0:
-                towns_by_slot.setdefault(p, []).append(s)
+        if city or s in seats:
+            continue
+        kinds[s] = SiteKind.FARM
+        p = draft.territory[s]
+        if p >= 0:
+            towns_by_slot.setdefault(p, []).append(s)
 
     for p, towns in sorted(towns_by_slot.items()):
-        home = draft.capitals[p]
+        home = draft.bases[p]
         dist = {t: grid.distance(t, home) for t in towns}
         free = sorted(towns, key=lambda t: (dist[t], t))
 
@@ -885,20 +1064,64 @@ def _assign_sites(draft: _Draft) -> list[tuple[SiteKind, int]]:
         if len(towns) >= _SECOND_RESOURCE_TOWNS:
             second = rng.choice((SiteKind.OIL_FIELD, SiteKind.STEEL_MILL))
             deal(second, lambda t: dist[t] > _NEAR_RESOURCE, rng.randint(13, 24))
-
-    return [
-        (
-            kinds[s],
-            _garrison_tier(kinds[s], min(grid.distance(s, c) for c in draft.capitals)),
-        )
-        for s in draft.settlements
-    ]
+    return kinds
 
 
-def _garrison_tier(kind: SiteKind, distance_to_base: int) -> int:
-    """Tier 1–4 for a neutral site (0 for a base): farther out and richer is harder."""
-    if kind is SiteKind.BASE:
-        return 0
+def _site_hex(draft: _Draft, town: int, sites: set[int]) -> int:
+    """The hex for ``town``'s site, which is then made plains.
+
+    It must be clear (`_clear`), in the town's territory, within 2 hexes of the
+    town (3 if nothing fits in 2), and beside the town or a road. Preferred, in
+    order: plains, beside a road, beside the town, not beside another of
+    ``sites``, nearest the town, then a seeded coin. Raises `WorldGenError` if
+    nothing fits.
+    """
+    grid = draft.grid
+    settlements = set(draft.settlements)
+    territory = draft.territory[town]
+    for radius in _SITE_RADII:
+        best: tuple[tuple[bool, bool, bool, bool, int, float], int] | None = None
+        for i in _disc(grid, town, radius):
+            if not _clear(draft, i, settlements) or draft.territory[i] != territory:
+                continue
+            by_road = _beside_road(draft, i)
+            by_town = grid.distance(i, town) == 1
+            if not (by_road or by_town):
+                continue
+            key = (
+                draft.terrain[i] is not Terrain.PLAINS,
+                not by_road,
+                not by_town,
+                any(n in sites for n in grid.neighbors[i]),
+                grid.distance(i, town),
+                draft.rng.random(),
+            )
+            if best is None or key < best[0]:
+                best = (key, i)
+        if best is not None:
+            if radius != _SITE_RADII[0]:
+                draft.widened_sites += 1
+            draft.converted_site_hexes += _to_plains(draft, [best[1]])
+            return best[1]
+    raise WorldGenError(
+        f"no clear hex for the site of the town at ({grid.q[town]}, {grid.r[town]}) "
+        f"within {_SITE_RADII[-1]} hexes"
+    )
+
+
+def _draw_level(rng: random.Random) -> int:
+    """A site level drawn by `SITE_LEVEL_WEIGHTS`."""
+    levels = [level for level, _ in SITE_LEVEL_WEIGHTS]
+    weights = [weight for _, weight in SITE_LEVEL_WEIGHTS]
+    return rng.choices(levels, weights=weights)[0]
+
+
+def _garrison_tier(kind: SiteKind, distance_to_base: int, level: int) -> int:
+    """Tier 1–4 for a neutral site: farther out, richer and higher-level is harder.
+
+    A level-3 site's tier is one above what distance and kind give (provisional
+    tuning, 2026-11-10).
+    """
     tier = (
         1
         if distance_to_base <= _TIER_NEAR
@@ -908,6 +1131,8 @@ def _garrison_tier(kind: SiteKind, distance_to_base: int) -> int:
         tier = max(tier + 1, 2)
     elif kind in (SiteKind.FACTORY, SiteKind.CITY):
         tier = max(tier, 3)
+    if level == MAX_SITE_LEVEL:
+        tier += 1
     return min(tier, 4)
 
 
@@ -915,7 +1140,10 @@ def _garrison_tier(kind: SiteKind, distance_to_base: int) -> int:
 
 
 def _finish(draft: _Draft, params: WorldParams) -> GeneratedWorld:
-    """Freeze the draft into a `GeneratedWorld` with provinces and stats."""
+    """Freeze the draft into a `GeneratedWorld` with provinces and stats.
+
+    The map lists the bases first, in slot order, then the other sites.
+    """
     grid = draft.grid
     terrain = list(draft.terrain)
     for i in range(grid.size):
@@ -924,6 +1152,18 @@ def _finish(draft: _Draft, params: WorldParams) -> GeneratedWorld:
     for s, city in zip(draft.settlements, draft.cities, strict=True):
         terrain[s] = Terrain.CITY if city else Terrain.TOWN
 
+    coords = [Axial(q=grid.q[i], r=grid.r[i]) for i in range(grid.size)]
+    sites = [
+        MapSite(coord=coords[b], kind=SiteKind.BASE, garrison=0) for b in draft.bases
+    ] + [
+        MapSite(
+            coord=coords[site.hex],
+            kind=site.kind,
+            garrison=site.garrison,
+            level=site.level,
+        )
+        for site in draft.sites
+    ]
     entry_cost = [
         (
             0
@@ -936,9 +1176,10 @@ def _finish(draft: _Draft, params: WorldParams) -> GeneratedWorld:
         )
         for i in range(grid.size)
     ]
-    province = multi_source_dijkstra(grid, draft.settlements, entry_cost)
+    province = multi_source_dijkstra(
+        grid, draft.bases + [site.hex for site in draft.sites], entry_cost
+    )
 
-    coords = [Axial(q=grid.q[i], r=grid.r[i]) for i in range(grid.size)]
     game_map = GameMap(
         width=grid.width,
         height=grid.height,
@@ -946,17 +1187,15 @@ def _finish(draft: _Draft, params: WorldParams) -> GeneratedWorld:
             Hex(coord=coords[i], terrain=terrain[i], road=draft.road[i])
             for i in range(grid.size)
         ],
-        sites=[
-            MapSite(coord=coords[s], kind=kind, garrison=tier)
-            for s, (kind, tier) in zip(draft.settlements, draft.sites, strict=True)
-        ],
+        sites=sites,
     )
     return GeneratedWorld(
         params=params,
         game_map=game_map,
         settlements=[coords[s] for s in draft.settlements],
-        capitals=[coords[c] for c in draft.capitals],
-        fill_order=_fill_order(grid, draft.capitals),
+        capitals=[coords[b] for b in draft.bases],
+        seats=[coords[s] for s in draft.seats],
+        fill_order=_fill_order(grid, draft.bases),
         territory=list(draft.territory),
         province=province,
         stats=_stats(draft, terrain),
@@ -965,7 +1204,7 @@ def _finish(draft: _Draft, params: WorldParams) -> GeneratedWorld:
 
 def _fill_order(grid: HexGrid, capitals: list[int]) -> list[int]:
     """Slots ordered so every prefix is spread out: start nearest the map centre,
-    then repeatedly take the capital farthest from those already taken."""
+    then repeatedly take the capital (base anchor) farthest from those taken."""
     cx = sum(grid.px) / grid.size
     cy = sum(grid.py) / grid.size
     first = min(
@@ -996,10 +1235,13 @@ def _stats(draft: _Draft, terrain: list[Terrain]) -> dict[str, float]:
     spacing = min(
         (
             grid.distance(a, b)
-            for k, a in enumerate(draft.capitals)
-            for b in draft.capitals[k + 1 :]
+            for k, a in enumerate(draft.bases)
+            for b in draft.bases[k + 1 :]
         ),
         default=0,
+    )
+    levels = Counter(
+        site.level for site in draft.sites if site.kind is not SiteKind.CITY
     )
     return {
         "hexes": grid.size,
@@ -1010,8 +1252,16 @@ def _stats(draft: _Draft, terrain: list[Terrain]) -> dict[str, float]:
         "share_road": round(sum(draft.road) / grid.size, 4),
         "settlements": len(draft.settlements),
         "cities": sum(draft.cities),
-        "slots": len(draft.capitals),
+        "slots": len(draft.bases),
         "min_capital_distance": spacing,
+        "sites": len(draft.sites) + len(draft.bases),
+        "sites_level_1": levels[1],
+        "sites_level_2": levels[2],
+        "sites_level_3": levels[3],
+        "site_hexes_converted": draft.converted_site_hexes,
+        "footprint_hexes_converted": draft.converted_footprint_hexes,
+        "sites_widened": draft.widened_sites,
+        "bases_widened": draft.widened_bases,
         "territory_hexes_min": min(territory_size.values()),
         "territory_hexes_max": max(territory_size.values()),
         "territory_settlements_min": min(per_territory),

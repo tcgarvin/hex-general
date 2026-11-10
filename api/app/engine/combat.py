@@ -24,8 +24,8 @@ from dataclasses import dataclass
 
 from app.engine.events import CombatRole
 from app.engine.hex_coords import Axial
-from app.engine.models import Hex, Unit, UnitId
-from app.engine.stats import COLUMN_RULES, TERRAIN_STATS, UNIT_STATS, UnitType
+from app.engine.models import Unit, UnitId
+from app.engine.stats import COLUMN_RULES, UNIT_STATS, UnitType
 
 # Lead-entrant type precedence: armor before infantry before artillery (SPEC §12.6).
 _TYPE_PRIORITY: dict[UnitType, int] = {
@@ -53,14 +53,17 @@ def compute_damage(
     return max(_MIN_DAMAGE, min(_MAX_DAMAGE, raw))
 
 
-def defender_modifiers(hex_: Hex, has_hold_order: bool, disordered: bool) -> int:
+def defender_modifiers(
+    terrain_bonus: int, has_hold_order: bool, disordered: bool
+) -> int:
     """Net defensive modifier for a stationary defender (SPEC §12.10, §13.1).
 
-    Terrain + Hold bonus, minus the disorder penalty for a unit that auto-deployed
-    on contact (WORLD_SPEC §4.5). Applied only by the contest resolver to the hex's
+    Terrain (``terrain_bonus``, from `GameState.terrain_defense`) + Hold bonus,
+    minus the disorder penalty for a unit that auto-deployed on contact
+    (WORLD_SPEC §4.5). Applied only by the contest resolver to the hex's
     stationary occupant — never to a moving attacker.
     """
-    bonus = TERRAIN_STATS[hex_.terrain].defense_bonus
+    bonus = terrain_bonus
     if has_hold_order:
         bonus += 1
     return bonus - disorder_penalty(disordered)
@@ -118,7 +121,7 @@ def resolve_contest(
     defender: Unit | None,
     attackers: list[Unit],
     hold_orders: set[UnitId],
-    hexes: dict[Axial, Hex],
+    terrain_bonus: int,
 ) -> ContestOutcome:
     """Resolve one contested hex into simultaneous damage + an occupation outcome.
 
@@ -127,13 +130,15 @@ def resolve_contest(
     must include at least one unit opposing every other side (the caller filters
     friendly-only collisions out as traffic jams, SPEC §8.2). ``hold_orders``
     holds the ids of units with a Hold order, used only for the defender's bonus.
+    ``terrain_bonus`` is the defence ``coord`` gives a stationary defender
+    (`GameState.terrain_defense`: terrain, or settlement ground).
     """
     participants: list[Unit] = ([defender] if defender is not None else []) + attackers
 
     defender_mods = 0
     if defender is not None:
         defender_mods = defender_modifiers(
-            hexes[coord], defender.id in hold_orders, defender.disordered
+            terrain_bonus, defender.id in hold_orders, defender.disordered
         )
 
     def mods_for(target: Unit) -> int:
@@ -162,9 +167,7 @@ def resolve_contest(
         is_defender = unit is defender
         results[unit.id] = UnitCombatResult(
             role=CombatRole.DEFENDER if is_defender else CombatRole.ATTACKER,
-            terrain_bonus=(
-                TERRAIN_STATS[hexes[coord].terrain].defense_bonus if is_defender else 0
-            ),
+            terrain_bonus=terrain_bonus if is_defender else 0,
             hold_bonus=(1 if is_defender and unit.id in hold_orders else 0),
             defense_penalty=(disorder_penalty(unit.disordered) if is_defender else 0),
             damage_dealt=dealt[unit.id],

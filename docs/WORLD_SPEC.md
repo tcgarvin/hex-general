@@ -201,11 +201,11 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
   single bridge decides a whole region. Each territory's roads must form one connected
   network, and roads must reach its borders. In the study, 52–60% of territories had
   split road networks, which stranded brigades under roads-only movement.
-- **Provinces:** every settlement anchors a province (about 20–40 hexes), assigned
-  by travel-cost distance. Province control is derived from its anchor settlement,
+- **Provinces:** every site anchors a province (about 20–40 hexes), assigned
+  by travel-cost distance. Province control is derived from its anchor site,
   with no extra state. Provinces exist for borders and the strategic view.
 - **Start regions:** capitals spaced by Poisson-disc sampling. Each player starts
-  with one city and 4 units (2 infantry, 1 armor, 1 artillery) [tunable].
+  with a base (not a city) and 4 units (2 infantry, 1 armor, 1 artillery) [tunable].
 - **Fairness gates** (generator tests): every settlement is road-reachable; every
   start has a similar settlement count and road access within radius R; no start
   is within X hexes of another.
@@ -219,11 +219,43 @@ takes ~18 s), `app/world/preview.py` (stdlib PNG), gates in `tests/world/`.
   hexes, so roads never move a border. Fix-ups lay roads only inside territories: one road
   network per territory, a road across every border with ≥ 4 hex contacts, and new towns
   for any territory below half the median settlement count.
-- Capitals: farthest-point sampling, 6 Lloyd steps on open hexes, then each seats on a
+- Seats: farthest-point sampling, 6 Lloyd steps on open hexes, then each seats on a
   nearby settlement (cities preferred) at least 60% of the ideal lattice spacing from
-  the others. Provinces average ~70 hexes at the default density, not 20–40.
+  the others. The seat becomes a town; territories are each seat's nearest land.
+  Provinces average ~70 hexes at the default density, not 20–40.
 - `fill_order` orders slots so any prefix is spread out; `to_state(players)` seats the
-  first N, each with a garrisoned capital and the other three units beside it.
+  first N, each with a garrisoned base and the other three units beside it.
+
+**Sites off the towns, site levels, base plots (user decisions, 2026-11-10):**
+
+1. **Sites leave the towns.** Farms, oil fields, steel mills and factories each stand
+   on their own hex beside a town or a road. Towns stay as terrain (defence and repair
+   as before) but hold no ownership: no `Settlement`, no site. Site counts and the
+   economy are unchanged (one site per former town site, dealt per territory by the
+   same quotas). City sites are unchanged: on their city hex, capturable.
+2. **Bases are not on cities.** A base (and each vacant base slot) stands on open
+   ground with a four-hex footprint kept clear: axial offsets `(0,0)`, `(1,0)`, `(0,1)`,
+   `(1,1)` from the anchor (`BASE_FOOTPRINT`). **Every base is size one for now**: only
+   the anchor is the base; growth is deferred.
+3. **Site levels.** Farms, oil fields, steel mills and factories have a level 1–3
+   (`MapSite.level`), fixed at generation, drawn at random with higher levels rarer.
+   Cities and bases are level 1.
+4. **Fortified ground.** Every hex a base covers (today just the anchor) gives the
+   settlement defence and repair bonus. Capturing a base means taking its anchor.
+
+As built (provisional tuning, all of it): site and base hexes are ordinary plains (no
+new terrain); `GameState.settlement_ground` is the one predicate for "+2 defence and
+settlement repair here": town or city terrain, or a site hex whose settlement exists
+(a vacant base slot gives nothing). Levels are drawn 60/30/10% (`SITE_LEVEL_WEIGHTS`).
+A seat is a town and gets no site; its base anchor is the nearest spot within 3 hexes
+(5 if needed) whose four footprint hexes are on the map, off the edge ring, in the
+slot's territory, not river, bridge, town, city, road or another plot, with one hex
+touching a road. A town's site goes within 2 hexes (3 if needed) on such a clear hex
+in the town's territory, beside the town or a road; preferred: plains, beside a road,
+beside the town, not beside another site, nearest. Woods or hills under a plot or site
+become plains; no fit raises `WorldGenError`. Units never start on a site or plot hex.
+Seed 1: 12 slots convert 11 site and 5 footprint hexes, none widened; 200 slots
+convert 187 and 183, one site and one base widened.
 - Known spread (seed 1, 200 slots): territory size 180–1,080 hexes (middle half
   517–681); settlements within 14 hexes of a capital 4–12 (median 8). Edge and river
   starts run small. The W4 sim will show whether it matters.
@@ -236,15 +268,21 @@ revision 2; decisions in VISION §6) replaces v0.1 muster in world games.
 - **Resources:** manpower, fuel, steel, each with a storage limit (30, then 50 and
   80 with depot levels).
 - **Sites** (`MapSite`, stored with the map): base, city, farm, oil field, steel mill,
-  factory. Per territory: one factory 11–20 hexes out, one oil field and one steel
-  mill within 12, one more of either farther out where there are 6+ towns; other
-  towns are farms. Bases are their own site kind (not cities); an unfilled slot's
-  base site is vacant (no settlement, can't be captured) until a player founds a base
-  there.
+  factory. A city site is its city hex; the others stand on their own plains hex
+  (§6, 2026-11-10). Per territory: one factory 11–20 hexes from the base, one oil
+  field and one steel mill within 12, one more of either farther out where there are
+  6+ towns; the other towns' sites are farms. Bases are their own site kind (not
+  cities); an unfilled slot's base site is vacant (no settlement, can't be captured)
+  until a player founds a base there.
+- **Site levels:** farms, oil fields, steel mills and factories are level 1–3. Each
+  level above 1 adds +1 of what the site makes (`WorldEconomy.level_income`): farm
+  manpower 2/3/4, oil fuel 3/4/5, steel mill steel 2/3/4, factory steel 1/2/3
+  [provisional tuning, 2026-11-10].
 - **Garrisons:** every neutral site starts with a neutral garrison (owner `neutral`,
   hostile to all, always holds, never captures). Tier by distance to the nearest base
   and value: T1 militia (infantry at 5 HP), T2 infantry, T3 infantry + gun, T4 two
-  infantry + gun. No respawn and no regeneration yet.
+  infantry + gun; a level-3 site is one tier tougher, up to T4 [provisional]. No
+  respawn and no regeneration yet.
 - **Buildings** at the base, one under construction at a time: barracks (5 levels),
   depot (2), workshop (1, unlocks guns). Tanks recruit only at a held factory;
   infantry and guns at the base or a held city.
@@ -253,7 +291,8 @@ revision 2; decisions in VISION §6) replaces v0.1 muster in world games.
 - **Shortages:** each turn the stock can't cover upkeep, one unit disbands per short
   resource (fuel: a tank or gun; manpower: any unit). The player's `disband` pick goes
   first, else the weakest (lowest HP, then newest).
-- **Healing:** resting in a friendly settlement restores **3 HP/turn**.
+- **Healing:** resting on settlement ground (a town, a city, or a founded site's hex)
+  restores **3 HP/turn**; the same ground gives +2 defence.
 - **Elimination:** a player with no settlements and no units is out of the world.
 - No victory condition in slice 1; the world simply runs.
 - *As built (2026-11-10):* rules data `app/engine/economy_rules.py` (`WorldEconomy`,
@@ -351,11 +390,12 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 - **`games`** gains `kind` (`match` | `world`), `clock` (`manual` | `twice_daily`) and `next_tick_at`. For a world, `games.state` and
   `turns.state_after` hold the state *without* its map. The repo rejoins the cached map
   on load, so the engine still sees one `GameState`.
-- **Slots ✅ (built 2026-11-09):** `game_maps.slots` holds the capitals in fill order,
+- **Slots ✅ (built 2026-11-09):** `game_maps.slots` holds the capitals in fill order
+  (each slot's base anchor hex, on open ground beside its seat town, since 2026-11-10),
   and fill position k is player `s<k+1>` (`s001`, `s002`, …). `GameService.create_world`
   generates the world, stores the map, seats the bots (`bot_policy = "world"`) and
   starts the game active. `join_world` seats a human in the first open slot
-  (`app.world.seating`): never held, capital still neutral, and no unit within 3 hexes
+  (`app.world.seating`): never held, base site still vacant, and no unit within 3 hexes
   of it. The `players` row is written first, so its `(game_id, slot)` uniqueness
   settles two people joining at once.
 - **Tick (service ✅ 2026-11-09, routes and scheduler to come):** `tick_world` plans

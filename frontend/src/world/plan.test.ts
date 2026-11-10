@@ -30,10 +30,10 @@ const map = decodeWorldMap({
   terrain: "cctt.",
   roads: ".....",
   sites: [
-    { coord: offsetToAxial(0, 0), kind: "base", garrison: 0 },
-    { coord: offsetToAxial(1, 0), kind: "city", garrison: 0 },
-    { coord: offsetToAxial(2, 0), kind: "factory", garrison: 0 },
-    { coord: offsetToAxial(3, 0), kind: "farm", garrison: 0 },
+    { coord: offsetToAxial(0, 0), kind: "base", garrison: 0, level: 1 },
+    { coord: offsetToAxial(1, 0), kind: "city", garrison: 0, level: 1 },
+    { coord: offsetToAxial(2, 0), kind: "factory", garrison: 0, level: 1 },
+    { coord: offsetToAxial(3, 0), kind: "farm", garrison: 0, level: 1 },
   ],
 });
 
@@ -83,6 +83,14 @@ function state({
           farm: S(2),
           oil_field: S(0, 3),
           steel_mill: S(0, 0, 2),
+          factory: S(0, 0, 1),
+        },
+        level_income: {
+          base: S(),
+          city: S(),
+          farm: S(1),
+          oil_field: S(0, 1),
+          steel_mill: S(0, 0, 1),
           factory: S(0, 0, 1),
         },
         recruit_cost: { infantry: S(3), artillery: S(2, 0, 3), armor: S(2, 0, 6) },

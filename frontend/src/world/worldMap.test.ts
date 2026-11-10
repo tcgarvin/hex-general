@@ -16,7 +16,7 @@ describe("world map", () => {
       height: 2,
       terrain: ".wht~c",
       roads: "#....#",
-      sites: [{ coord: offsetToAxial(2, 1), kind: "city", garrison: 3 }],
+      sites: [{ coord: offsetToAxial(2, 1), kind: "city", garrison: 3, level: 1 }],
     });
     expect(map.hexAt(0, 0)).toEqual({ coord: { q: 0, r: 0 }, terrain: "plains", road: true });
     const c = offsetToAxial(2, 1);

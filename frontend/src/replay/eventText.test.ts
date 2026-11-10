@@ -146,6 +146,18 @@ describe("eventLines", () => {
     ).toEqual(["Blue Armor captured the city at (2,2) from Red."]);
 
     expect(
+      linesFor({
+        kind: "settlement_captured",
+        unit_id: 1,
+        coord: { q: 2, r: 2 },
+        captured_by: "blue",
+        previous_owner: null,
+        settlement: "plains",
+        site: "oil_field",
+      }),
+    ).toEqual(["Blue Armor captured the oil field at (2,2) (was neutral)."]);
+
+    expect(
       linesFor({ kind: "unit_repaired", unit_id: 1, hp_before: 6, hp_after: 8, in_settlement: true }),
     ).toEqual(["Blue Armor repaired 6→8 HP in a settlement."]);
 

@@ -10,7 +10,16 @@ from app.engine.economy_rules import Building, Stocks
 from app.engine.models import Construction, EconomyOrders, GameState, Recruitment
 from app.engine.stats import UnitType
 from app.games.validation import OrderValidationError, validate_submission
-from engine.test_world_economy import BASE, CITY, FACTORY, FARM, unit, world
+from engine.test_world_economy import (
+    BASE,
+    CITY,
+    FACTORY,
+    FARM,
+    TOWN,
+    VACANT,
+    unit,
+    world,
+)
 
 INF, ARM, ART = UnitType.INFANTRY, UnitType.ARMOR, UnitType.ARTILLERY
 RICH = Stocks(manpower=30, fuel=30, steel=30)
@@ -82,6 +91,14 @@ def test_recruits_need_the_right_held_site() -> None:
         _validate(held, [Recruitment(owner="p", type=ART, coord=CITY)])
     with pytest.raises(OrderValidationError, match="not held"):
         _validate(world(stocks=RICH), [Recruitment(owner="p", type=INF, coord=CITY)])
+
+
+def test_towns_and_vacant_base_slots_take_no_recruits() -> None:
+    state = world(stocks=RICH)
+    with pytest.raises(OrderValidationError, match="recruits only at"):
+        _validate(state, [Recruitment(owner="p", type=INF, coord=TOWN)])
+    with pytest.raises(OrderValidationError, match="not held"):
+        _validate(state, [Recruitment(owner="p", type=INF, coord=VACANT)])
 
 
 def test_recruits_and_the_build_share_one_budget() -> None:

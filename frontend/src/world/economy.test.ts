@@ -16,9 +16,9 @@ const map = decodeWorldMap({
   terrain: "ctt.",
   roads: "....",
   sites: [
-    { coord: offsetToAxial(0, 0), kind: "base", garrison: 0 },
-    { coord: offsetToAxial(1, 0), kind: "farm", garrison: 1 },
-    { coord: offsetToAxial(2, 0), kind: "oil_field", garrison: 2 },
+    { coord: offsetToAxial(0, 0), kind: "base", garrison: 0, level: 1 },
+    { coord: offsetToAxial(1, 0), kind: "farm", garrison: 1, level: 1 },
+    { coord: offsetToAxial(2, 0), kind: "oil_field", garrison: 2, level: 1 },
   ],
 });
 
@@ -56,6 +56,14 @@ function state(held: number[], units: ("infantry" | "armor")[], stocks = S()): W
           steel_mill: S(0, 0, 2),
           factory: S(0, 0, 1),
         },
+        level_income: {
+          base: S(),
+          city: S(),
+          farm: S(1),
+          oil_field: S(0, 1),
+          steel_mill: S(0, 0, 1),
+          factory: S(0, 0, 1),
+        },
         recruit_cost: { infantry: S(3), artillery: S(2, 0, 3), armor: S(2, 0, 6) },
         upkeep: { infantry: S(1), artillery: S(1, 1), armor: S(1, 2) },
         buildings: { barracks: [], depot: [], workshop: [] },
@@ -80,6 +88,22 @@ describe("forecast", () => {
     const f = forecast(state([1], ["armor"], S(0, 1)), map, "p");
     expect(f.short).toEqual(["fuel"]);
     expect(f.next.fuel).toBe(0);
+  });
+
+  it("adds a site's level income", () => {
+    const levelled = decodeWorldMap({
+      width: 4,
+      height: 1,
+      terrain: "....",
+      roads: "....",
+      sites: [
+        { coord: offsetToAxial(0, 0), kind: "base", garrison: 0, level: 1 },
+        { coord: offsetToAxial(1, 0), kind: "farm", garrison: 1, level: 3 },
+        { coord: offsetToAxial(2, 0), kind: "oil_field", garrison: 2, level: 2 },
+      ],
+    });
+    const f = forecast(state([1, 2], [], S()), levelled, "p");
+    expect(f.income).toEqual(S(4, 4, 0));
   });
 
   it("limits next turn's stocks to storage", () => {

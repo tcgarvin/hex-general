@@ -54,13 +54,15 @@ from app.engine.models import (
 from app.engine.routing import find_route
 from app.engine.stats import UNIT_STATS, Terrain
 
+# Settlements without a world site (a v0.1 map) are valued by terrain.
 _CAPTURE_VALUE: dict[Terrain, float] = {Terrain.CITY: 6.0, Terrain.TOWN: 3.0}
 # Units assigned to one objective at most: a neutral town needs one captor, a
 # held city a proper attack.
 _NEUTRAL_CAP: dict[Terrain, int] = {Terrain.CITY: 2, Terrain.TOWN: 1}
 _HOSTILE_CAP = 4
 _DEFEND_CAP = 3
-# World sites (economy draft): what each kind is worth to a bot. Garrisoned sites
+# World sites (economy draft): what each kind is worth to a bot, and how many
+# captors a neutral one takes before its garrison is counted. Garrisoned sites
 # need an attack group one bigger than the garrison, and room for one more.
 _SITE_VALUE: dict[SiteKind, float] = {
     SiteKind.BASE: 8.0,
@@ -70,6 +72,18 @@ _SITE_VALUE: dict[SiteKind, float] = {
     SiteKind.STEEL_MILL: 4.0,
     SiteKind.FARM: 3.0,
 }
+_SITE_NEUTRAL_CAP: dict[SiteKind, int] = {
+    SiteKind.BASE: 2,
+    SiteKind.CITY: 2,
+    SiteKind.FACTORY: 1,
+    SiteKind.OIL_FIELD: 1,
+    SiteKind.STEEL_MILL: 1,
+    SiteKind.FARM: 1,
+}
+# Each site level above 1 adds this share of the kind's value (it earns more).
+_SITE_LEVEL_VALUE = 0.25
+# Sites a bot garrisons and guards first, as it does cities on a v0.1 map.
+_KEY_SITES = frozenset({SiteKind.BASE, SiteKind.CITY})
 _GARRISON_SIGHT = 3  # an own unit this close sees whether a garrison is still there
 # Beyond this many hexes an objective is reached by Travel, not by Move.
 _TRAVEL_MIN = 6
@@ -396,15 +410,14 @@ def _pick_garrisons(
 ) -> dict[int, Axial]:
     """Keep ``reserve_share`` of combat units home, nearest own cities first.
 
-    Cities are garrisoned before towns. At least one garrison is kept when the
-    stance is DEFEND or a hostile is near a held city; none while the bot has
-    fewer than two combat units.
+    Cities (and in a world the base and city sites) are garrisoned before other
+    settlements. At least one garrison is kept when the stance is DEFEND or a
+    hostile is near a held one; none while the bot has fewer than two combat units.
     """
     combat = [u for u in own if is_combat_unit(u)]
-    index = view.map.index
     homes = sorted(
         (s.coord for s in view.settlements if s.controlled_by == slot),
-        key=lambda c: (index[c].terrain is not Terrain.CITY, c.q, c.r),
+        key=lambda c: (not _is_key_settlement(view, c), c.q, c.r),
     )
     # Garrisons hold their own sites and never move, so they threaten nothing.
     hostiles = [
@@ -416,7 +429,7 @@ def _pick_garrisons(
     if args.stance is Stance.DEFEND or any(
         _nearest(c, hostiles) <= _THREAT_RADIUS
         for c in homes
-        if index[c].terrain is Terrain.CITY
+        if _is_key_settlement(view, c)
     ):
         count = max(count, 1)
     if count == 0 or len(combat) < 2:
@@ -534,12 +547,11 @@ def _targets(
             _within_horizon(o, settlement.coord) for o in origins
         ):
             continue
-        terrain = index[settlement.coord].terrain
         site = view.map.site_index.get(settlement.coord)
         base = (
-            _CAPTURE_VALUE[terrain]
+            _CAPTURE_VALUE[index[settlement.coord].terrain]
             if site is None
-            else _SITE_VALUE[site.kind] * needs[site.kind]
+            else _site_value(site, needs)
         )
         owner = settlement.controlled_by
         if owner == slot:
@@ -570,7 +582,11 @@ def _targets(
         min_group = 1
         if owner is None:
             value *= 1.4 if args.stance is Stance.EXPAND else 1.0
-            capacity = _NEUTRAL_CAP[terrain] + defenders
+            capacity = (
+                _NEUTRAL_CAP[index[settlement.coord].terrain]
+                if site is None
+                else _SITE_NEUTRAL_CAP[site.kind]
+            ) + defenders
             if site is not None and defenders:
                 min_group = defenders + 1
                 capacity = max(capacity, defenders + 2)
@@ -591,6 +607,22 @@ def _targets(
             )
         )
     return targets
+
+
+def _site_value(site: MapSite, needs: dict[SiteKind, float]) -> float:
+    """What a world site is worth to a bot: its kind, how much the bot needs that
+    kind now, and its level (a higher level earns more)."""
+    level_factor = 1.0 + _SITE_LEVEL_VALUE * (site.level - 1)
+    return _SITE_VALUE[site.kind] * needs[site.kind] * level_factor
+
+
+def _is_key_settlement(view: GameState, coord: Axial) -> bool:
+    """Whether a settlement is one a bot guards first: a city on a v0.1 map, the
+    base or a city site in a world."""
+    site = view.map.site_index.get(coord)
+    if site is None:
+        return view.map.index[coord].terrain is Terrain.CITY
+    return site.kind in _KEY_SITES
 
 
 def _expected_garrison(

@@ -5,8 +5,8 @@ same point in the turn (after capture, before recruitment). For each player, in
 roster order:
 
 1. **Construction** finishing this turn completes: the building gains its level.
-2. **Income and upkeep:** each held site earns its kind's income
-   (`WorldEconomy.site_income`); each unit costs its type's upkeep.
+2. **Income and upkeep:** each held site earns its kind's income at its level
+   (`WorldEconomy.income`); each unit costs its type's upkeep.
 3. **Shortages:** if fuel would go below zero, one fuel-burning unit disbands; if
    manpower would, one unit disbands. The player's ``disband`` pick goes first;
    otherwise the weakest qualifying unit (lowest HP, then newest). One unit per
@@ -59,8 +59,8 @@ def resolve_world_economy(
     income: dict[PlayerId, Stocks] = {p.id: Stocks() for p in new_state.players}
     for settlement in new_state.settlements:
         if settlement.controlled_by is not None:
-            kind = sites[settlement.coord].kind
-            income[settlement.controlled_by] += economy.site_income[kind]
+            site = sites[settlement.coord]
+            income[settlement.controlled_by] += economy.income(site.kind, site.level)
 
     events: list[Event] = []
     for player in new_state.players:

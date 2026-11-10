@@ -153,6 +153,8 @@ class _PulseState:
     destroyed: set[UnitId]
     events: list[Event]
     hostile: Callable[[PlayerId, PlayerId], bool]
+    # A stationary defender's terrain bonus at a hex (`GameState.terrain_defense`).
+    terrain_defense: Callable[[Axial], int]
     start_pos: dict[Axial, UnitId] = field(default_factory=dict)
 
 
@@ -208,6 +210,7 @@ def resolve_movement(
             destroyed=destroyed,
             events=events,
             hostile=state.hostile,
+            terrain_defense=state.terrain_defense,
             start_pos=dict(positions),
         )
         if pulse == 1:
@@ -505,7 +508,11 @@ def _resolve_attacks(ctx: _PulseState, attacks: dict[Axial, list[_Mover]]) -> No
         attacker_movers = attacks[target]
         attacker_units = [ctx.units[m.unit_id] for m in attacker_movers]
         outcome = resolve_contest(
-            target, ctx.units[defender_id], attacker_units, ctx.hold_ids, ctx.hexes
+            target,
+            ctx.units[defender_id],
+            attacker_units,
+            ctx.hold_ids,
+            ctx.terrain_defense(target),
         )
         _settle_contest(ctx, target, defender_id, attacker_movers, outcome)
 
@@ -549,7 +556,7 @@ def _resolve_moves(
             # Enemies racing for the same empty hex — a contest (SPEC §12.1/§12.8).
             attacker_units = [ctx.units[m.unit_id] for m in contenders]
             outcome = resolve_contest(
-                target, None, attacker_units, ctx.hold_ids, ctx.hexes
+                target, None, attacker_units, ctx.hold_ids, ctx.terrain_defense(target)
             )
             _settle_contest(ctx, target, None, contenders, outcome)
         elif len(contenders) == 1:

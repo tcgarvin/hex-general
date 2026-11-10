@@ -6,8 +6,9 @@ import pytest
 from pydantic import ValidationError
 
 from app.engine.hex_coords import Axial, axial_to_offset, offset_to_axial
+from app.engine.economy_rules import SiteKind
 from app.engine.map_codec import CompactMap, MapCodecError, decode_map, encode_map
-from app.engine.models import GameMap, Hex
+from app.engine.models import GameMap, Hex, MapSite
 from app.engine.stats import Terrain
 from app.world.generate import WorldParams, generate
 
@@ -47,7 +48,42 @@ def test_generated_world_round_trips() -> None:
     world = generate(WorldParams(slots=4, width=60, height=60, seed=3))
     decoded = decode_map(encode_map(world.game_map))
     assert decoded.hexes == world.game_map.hexes
+    assert decoded.sites == world.game_map.sites
     assert (decoded.width, decoded.height) == (60, 60)
+
+
+def test_site_levels_round_trip_through_json() -> None:
+    game_map = _offset_map(["...", "..."], ["...", "..."]).model_copy(
+        update={
+            "sites": [
+                MapSite(coord=offset_to_axial(0, 0), kind=SiteKind.BASE, garrison=0),
+                MapSite(
+                    coord=offset_to_axial(2, 1),
+                    kind=SiteKind.FARM,
+                    garrison=1,
+                    level=3,
+                ),
+            ]
+        }
+    )
+    payload = encode_map(game_map).model_dump_json()
+    decoded = decode_map(CompactMap.model_validate_json(payload))
+    assert [s.level for s in decoded.sites] == [1, 3]
+    assert decoded.sites == game_map.sites
+
+
+def test_a_stored_map_without_site_levels_decodes_at_level_one() -> None:
+    # Maps stored before levels existed: sites on town hexes, no ``level`` key.
+    payload = {
+        "width": 2,
+        "height": 1,
+        "terrain": "t.",
+        "roads": "..",
+        "sites": [{"coord": {"q": 0, "r": 0}, "kind": "farm", "garrison": 2}],
+    }
+    decoded = decode_map(CompactMap.model_validate(payload))
+    assert decoded.sites[0].level == 1
+    assert decoded.index[offset_to_axial(0, 0)].terrain is Terrain.TOWN
 
 
 def test_encode_rejects_a_map_that_is_not_a_row_major_rectangle() -> None:

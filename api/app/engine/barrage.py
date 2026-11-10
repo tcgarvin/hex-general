@@ -32,13 +32,7 @@ from app.engine.models import (
     UnitId,
 )
 from app.engine.movement import EngineError
-from app.engine.stats import (
-    COLUMN_RULES,
-    TERRAIN_STATS,
-    UNIT_STATS,
-    Terrain,
-    UnitType,
-)
+from app.engine.stats import COLUMN_RULES, UNIT_STATS, UnitType
 
 
 @dataclass(frozen=True)
@@ -81,7 +75,6 @@ def resolve_barrage(
     outside the unit's range.
     """
     units = {u.id: u.model_copy() for u in state.units}
-    hexes = state.map.index
     occupants_at: dict[Axial, list[Unit]] = defaultdict(list)
     for unit in sorted(units.values(), key=_strike_order):
         occupants_at[unit.coord].append(unit)
@@ -112,8 +105,9 @@ def resolve_barrage(
                 f"barrage target {order.target} is out of range for unit {artillery.id}"
             )
 
+        terrain_bonus = state.terrain_defense(order.target)
         strikes = tuple(
-            _strike(occupant, hexes[order.target].terrain, occupant.id in hold_ids)
+            _strike(occupant, terrain_bonus, occupant.id in hold_ids)
             for occupant in occupants_at.get(order.target, [])
         )
         for strike in strikes:
@@ -150,13 +144,13 @@ def _strike_order(unit: Unit) -> tuple[int, UnitId]:
     return (0 if unit.posture is Posture.DEPLOYED else 1, unit.id)
 
 
-def _strike(occupant: Unit, terrain: Terrain, holding: bool) -> _Strike:
-    """Damage one barrage deals to one occupant of the target hex."""
+def _strike(occupant: Unit, terrain_bonus: int, holding: bool) -> _Strike:
+    """Damage one barrage deals to one occupant of the target hex, whose terrain
+    gives a deployed occupant ``terrain_bonus`` (`GameState.terrain_defense`)."""
     if occupant.posture is Posture.COLUMN:
         penalty = COLUMN_RULES.column_defense_penalty
         damage = compute_damage(UnitType.ARTILLERY, occupant.type, -penalty)
         return _Strike(occupant.id, damage, 0, 0, penalty)
-    terrain_bonus = TERRAIN_STATS[terrain].defense_bonus
     hold_bonus = 1 if holding else 0
     penalty = disorder_penalty(occupant.disordered)
     damage = compute_damage(

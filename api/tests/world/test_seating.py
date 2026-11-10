@@ -5,8 +5,9 @@ from __future__ import annotations
 import pytest
 
 from app.engine.hex_coords import distance
-from app.engine.economy_rules import WorldEconomy
+from app.engine.economy_rules import SiteKind, WorldEconomy
 from app.engine.models import NEUTRAL, Settlement
+from app.engine.stats import Terrain
 from app.world.generate import STARTING_UNITS, GeneratedWorld, WorldParams, generate
 from app.world.seating import (
     START_CLEARANCE,
@@ -81,6 +82,19 @@ def test_a_seated_player_founds_their_base_with_starting_stocks(
     base = next(s for s in seated.settlements if s.coord == world.slots[1])
     assert base.controlled_by == player
     assert seated.player(player).stocks == WorldEconomy().starting_stocks
+
+
+def test_a_newcomer_founds_on_open_ground_and_keeps_off_plot_hexes(
+    world: GeneratedWorld,
+) -> None:
+    seated, player = seat_player(world.to_state([slot_id(0)]), world.slots)
+    capital = world.slots[1]
+    assert seated.map.index[capital].terrain is Terrain.PLAINS
+    assert seated.map.site_index[capital].kind is SiteKind.BASE
+    own = [u for u in seated.units if u.owner == player]
+    assert own[0].coord == capital
+    assert all(u.coord not in seated.map.plot_hexes for u in own[1:])
+    assert len({u.coord for u in seated.units}) == len(seated.units)
 
 
 def test_a_full_world_refuses_newcomers(world: GeneratedWorld) -> None:

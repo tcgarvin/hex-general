@@ -5,8 +5,12 @@ the same map as two character grids is ~250 KB. `CompactMap` is that grid form:
 the terrain and road layers as row-major strings over the odd-q offset rectangle,
 one character per hex, using the scenario format's alphabet (`TERRAIN_CHARS`,
 `ROAD_CHAR`/`NO_ROAD_CHAR`), plus the map's sparse list of world sites
-(`MapSite`: kind and garrison tier per settlement). It is how the `game_maps` table stores a map once per
-world, instead of in every state row, and the form the client fetches it in.
+(`MapSite`: kind, garrison tier and level per site). It is how the `game_maps`
+table stores a map once per world, instead of in every state row, and the form
+the client fetches it in. A site's hex is ordinary terrain (a city site's is city;
+the others' plains in a world generated since 2026-11-10, town in older ones); the
+codec does not check that, so maps stored before sites left the towns, or before
+levels existed (they decode at level 1), still load.
 
 `encode_map` only accepts a map that is exactly a full offset rectangle in
 row-major order, which is what scenarios (with offset layout) and the world

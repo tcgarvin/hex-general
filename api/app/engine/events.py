@@ -18,7 +18,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.engine.economy_rules import Building, Stocks
+from app.engine.economy_rules import Building, SiteKind, Stocks
 from app.engine.hex_coords import Axial
 from app.engine.models import PlayerId, UnitId
 from app.engine.stats import Terrain, UnitType
@@ -305,11 +305,16 @@ class TravelEnded(BaseModel):
 
 
 class SettlementCaptured(BaseModel):
-    """An infantry/armor unit captured a town or city (SPEC §14.1, §11.3 Phase 3).
+    """An infantry/armor unit captured a settlement (SPEC §14.1, §11.3 Phase 3).
 
     Emitted only when control actually changes — a unit sitting on a settlement
     it already controls produces no event. ``previous_owner`` is ``None`` when the
     settlement was neutral before capture (a single, well-defined meaning).
+    ``settlement`` is the terrain of the captured hex: in a v0.1 game that is what
+    was taken (town or city). ``site`` is the world site that was taken (farm,
+    base, …), whose hex is usually plains; it is ``None`` exactly when the hex is
+    not a world site, which is every v0.1 capture (and events stored before the
+    field existed).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -317,6 +322,7 @@ class SettlementCaptured(BaseModel):
     kind: Literal["settlement_captured"] = "settlement_captured"
     coord: Axial
     settlement: Terrain
+    site: SiteKind | None = None
     captured_by: PlayerId
     previous_owner: PlayerId | None
     unit_id: UnitId
@@ -326,8 +332,8 @@ class UnitRepaired(BaseModel):
     """A resting, undamaged unit recovered HP (SPEC §7.3, §11.3 Phase 4).
 
     Emitted only when HP actually increases. ``in_settlement`` records whether the
-    unit rested on a town/city (the +2-up-to-10 tier) versus anywhere else (the
-    +1-up-to-7 tier).
+    unit rested on settlement ground (a town/city, or a founded world site: the
+    +2-up-to-10 tier) versus anywhere else (the +1-up-to-7 tier).
     """
 
     model_config = ConfigDict(extra="forbid")
