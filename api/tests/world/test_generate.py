@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import math
 import statistics
-from collections import deque
-
-from collections import Counter
+from collections import Counter, deque
 
 import pytest
 
@@ -30,9 +28,15 @@ from app.world.generate import (
     _garrison_tier,
     generate,
 )
-from app.world.preview import render
+from app.world.grid import HexGrid, patches
+from app.world.land import LAKE_SIZES, SPRING_EDGE_MARGIN
+from app.world.preview import STYLES, Style, render
 
 SEEDS = (1, 2, 3)
+SWEEP_SEEDS = range(1, 21)
+RIVER_LIKE = (Terrain.RIVER, Terrain.BRIDGE)
+WATER = (Terrain.RIVER, Terrain.BRIDGE, Terrain.LAKE)
+SETTLEMENT_GROUND = (Terrain.TOWN, Terrain.CITY)
 
 
 @pytest.fixture(scope="module", params=SEEDS)
@@ -43,6 +47,36 @@ def world(request: pytest.FixtureRequest) -> GeneratedWorld:
 @pytest.fixture(scope="module")
 def big_world() -> GeneratedWorld:
     return generate(WorldParams.for_slots(24, 7))
+
+
+@pytest.fixture(scope="module")
+def sweep() -> list[GeneratedWorld]:
+    """Twenty 12-slot worlds plus one 40-slot world, for gates that must hold on
+    every seed rather than on average."""
+    worlds = [generate(WorldParams.for_slots(12, seed)) for seed in SWEEP_SEEDS]
+    return worlds + [generate(WorldParams.for_slots(40, 2))]
+
+
+def _layout(world: GeneratedWorld) -> tuple[HexGrid, list[Terrain], list[bool]]:
+    """The world's grid geometry (its hexes are in grid index order), terrain and
+    road flags per index."""
+    game_map = world.game_map
+    grid = HexGrid(game_map.width, game_map.height)
+    return grid, [h.terrain for h in game_map.hexes], [h.road for h in game_map.hexes]
+
+
+def _undrained_water(world: GeneratedWorld) -> int:
+    """Water hexes not connected through water to water on the map edge."""
+    grid, terrain, _ = _layout(world)
+    reached = [grid.on_edge(i) and terrain[i] in WATER for i in range(grid.size)]
+    stack = [i for i in range(grid.size) if reached[i]]
+    while stack:
+        u = stack.pop()
+        for v in grid.neighbors[u]:
+            if not reached[v] and terrain[v] in WATER:
+                reached[v] = True
+                stack.append(v)
+    return sum(t in WATER and not r for t, r in zip(terrain, reached))
 
 
 def _ideal_spacing(world: GeneratedWorld) -> float:
@@ -99,9 +133,121 @@ def test_map_layers_are_consistent(world: GeneratedWorld) -> None:
 
 
 def test_terrain_mix_is_near_the_requested_shares(world: GeneratedWorld) -> None:
-    assert 0.10 < world.stats["share_woods"] < 0.20
-    assert 0.06 < world.stats["share_hills"] < 0.14
-    assert 0.0 < world.stats["share_river"] < 0.06
+    params = world.params
+    assert abs(world.stats["share_woods"] - params.woods_share) < 0.02
+    assert abs(world.stats["share_hills"] - params.hills_share) < 0.015
+    assert abs(world.stats["share_river"] - params.river_share) < 0.006
+    assert world.stats["share_lake"] > 0
+    assert world.stats["lakes"] > 0 and world.stats["rivers"] > 0
+
+
+def test_stats_report_the_terrain_layout(world: GeneratedWorld) -> None:
+    grid, terrain, _ = _layout(world)
+    lakes = patches(grid, [t is Terrain.LAKE for t in terrain])
+    assert world.stats["lakes"] == len(lakes)
+    assert world.stats["share_lake"] == round(
+        sum(t is Terrain.LAKE for t in terrain) / grid.size, 4
+    )
+    assert world.stats["share_river"] == round(
+        sum(t is Terrain.RIVER for t in terrain) / grid.size, 4
+    )
+
+
+@pytest.mark.parametrize("kind", [Terrain.WOODS, Terrain.HILLS])
+def test_no_woods_or_hills_patch_is_over_thirty_hexes(
+    world: GeneratedWorld, kind: Terrain
+) -> None:
+    grid, terrain, _ = _layout(world)
+    sizes = [len(p) for p in patches(grid, [t is kind for t in terrain])]
+    assert max(sizes) <= 30
+    assert world.stats[f"{kind.value}_patch_max"] == max(sizes)
+
+
+def test_lakes_stay_small(world: GeneratedWorld) -> None:
+    # Lakes grow to at most the top `LAKE_SIZES` size; filling an enclosed hole
+    # could add a hex or two, but lakes grow compactly from their centre and the
+    # 80-seed sweep never exceeded the drawn size, so the bound is the size itself.
+    biggest = max(high for (_, high), _ in LAKE_SIZES)
+    grid, terrain, _ = _layout(world)
+    for lake in patches(grid, [t is Terrain.LAKE for t in terrain]):
+        assert 3 <= len(lake) <= biggest
+        assert all(grid.edge_distance(i) >= 3 for i in lake)
+
+
+def test_rivers_are_one_hex_chains_without_sharp_turns(world: GeneratedWorld) -> None:
+    grid, terrain, _ = _layout(world)
+    for i in range(grid.size):
+        if terrain[i] not in RIVER_LIKE:
+            continue
+        course = [n for n in grid.neighbors[i] if terrain[n] in RIVER_LIKE]
+        # Two along its own course, plus one where a tributary joins.
+        assert 1 <= len(course) <= 3, i
+        # Two river neighbours that touch would be a sharp turn here, or a
+        # triangle of mutually adjacent river hexes.
+        for k, a in enumerate(course):
+            for b in course[k + 1 :]:
+                assert b not in grid.neighbors[a], (i, a, b)
+
+
+def test_all_water_drains_off_the_map(sweep: list[GeneratedWorld]) -> None:
+    for world in sweep:
+        assert _undrained_water(world) == 0, world.params
+
+
+def test_every_lake_has_an_outflow(world: GeneratedWorld) -> None:
+    grid, terrain, _ = _layout(world)
+    for lake in patches(grid, [t is Terrain.LAKE for t in terrain]):
+        shore = {n for i in lake for n in grid.neighbors[i]}
+        assert any(terrain[n] in RIVER_LIKE for n in shore), lake
+
+
+def test_rivers_rise_at_springs_by_hills_or_run_off_the_map(
+    sweep: list[GeneratedWorld],
+) -> None:
+    for world in sweep:
+        grid, terrain, _ = _layout(world)
+        for i in range(grid.size):
+            if terrain[i] not in RIVER_LIKE:
+                continue
+            around = [terrain[n] for n in grid.neighbors[i]]
+            ends_here = sum(t in RIVER_LIKE for t in around) == 1
+            if not ends_here or Terrain.LAKE in around:
+                continue  # mid-course, or a lake outflow's source or mouth
+            if grid.on_edge(i):
+                continue  # flows off the map
+            assert Terrain.HILLS in around, (world.params, i)
+            assert grid.edge_distance(i) >= SPRING_EDGE_MARGIN, (world.params, i)
+
+
+def test_no_lake_carries_a_road_and_bridges_cross_plain_river(
+    world: GeneratedWorld,
+) -> None:
+    grid, terrain, road = _layout(world)
+    for i in range(grid.size):
+        if terrain[i] is Terrain.LAKE:
+            assert not road[i], i
+        if terrain[i] is Terrain.BRIDGE:
+            around = [terrain[n] for n in grid.neighbors[i]]
+            assert sum(t in RIVER_LIKE for t in around) == 2, i
+            assert Terrain.LAKE not in around, i
+
+
+def test_no_passable_land_is_cut_off(sweep: list[GeneratedWorld]) -> None:
+    for world in sweep:
+        assert world.stats["unclaimed_passable_hexes"] == 0, world.params
+
+
+def test_roads_turn_sharply_only_at_settlements(world: GeneratedWorld) -> None:
+    # A road hex whose only two road neighbours touch is a sharp corner. Laid
+    # roads drop those, but a road ends at a settlement, so a town beside a
+    # through-road can join it at two adjacent hexes.
+    grid, terrain, road = _layout(world)
+    for i in range(grid.size):
+        if not road[i] or terrain[i] in SETTLEMENT_GROUND:
+            continue
+        joined = [n for n in grid.neighbors[i] if road[n]]
+        if len(joined) == 2:
+            assert joined[1] not in grid.neighbors[joined[0]], i
 
 
 def test_every_settlement_is_on_one_road_network(world: GeneratedWorld) -> None:
@@ -109,8 +255,13 @@ def test_every_settlement_is_on_one_road_network(world: GeneratedWorld) -> None:
     assert set(world.settlements) <= network
 
 
-def test_each_start_region_has_one_road_network(world: GeneratedWorld) -> None:
+def test_every_settlement_reaches_its_seat_by_road_inside_its_territory(
+    world: GeneratedWorld,
+) -> None:
+    # Road fragments without a settlement (through-roads clipping a corner) may
+    # stay cut off from the seat's network inside the territory.
     hexes = world.game_map.hexes
+    position = {h.coord: i for i, h in enumerate(hexes)}
     for slot, seat in enumerate(world.seats):
         roads = {
             h.coord
@@ -125,7 +276,8 @@ def test_each_start_region_has_one_road_network(world: GeneratedWorld) -> None:
                 if n in roads and n not in seen:
                     seen.add(n)
                     queue.append(n)
-        assert seen == roads, f"slot {slot} has road fragments cut off from its seat"
+        towns = {s for s in world.settlements if world.territory[position[s]] == slot}
+        assert towns <= seen, f"slot {slot} has settlements cut off from its seat"
 
 
 def test_roads_cross_every_real_border(world: GeneratedWorld) -> None:
@@ -369,8 +521,28 @@ def test_params_reject_unusable_worlds() -> None:
         WorldParams(width=20, height=20, slots=10, seed=1)
     with pytest.raises(WorldGenError, match="at least"):
         WorldParams(width=8, height=40, slots=1, seed=1)
+    with pytest.raises(WorldGenError, match="river_share"):
+        WorldParams(width=40, height=40, slots=1, seed=1, river_share=1.5)
+    with pytest.raises(WorldGenError, match="hexes_per_lake"):
+        WorldParams(width=40, height=40, slots=1, seed=1, hexes_per_lake=0)
 
 
-def test_preview_is_a_png(world: GeneratedWorld) -> None:
-    png = render(world, scale=2)
+@pytest.mark.parametrize("style", STYLES)
+@pytest.mark.parametrize("roads", [True, False])
+def test_preview_is_a_png(world: GeneratedWorld, style: Style, roads: bool) -> None:
+    png = render(world, scale=2, style=style, roads=roads)
     assert png.startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_natural_preview_shows_terrain_not_territories(world: GeneratedWorld) -> None:
+    natural = render(world, scale=2, style="natural")
+    assert natural != render(world, scale=2, style="territory")
+    assert natural != render(world, scale=2, style="natural", roads=False)
+
+
+def test_a_town_cornered_in_its_territory_still_gets_a_site() -> None:
+    # Seed 331's town at a three-way border behind a river has no clear hex of its
+    # own territory within reach; its site stands in the neighbouring territory.
+    world = generate(WorldParams.for_slots(12, 331))
+    assert world.stats["sites_off_territory"] >= 1
+    assert world.stats["sites"] == len(world.game_map.sites)

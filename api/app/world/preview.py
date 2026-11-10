@@ -1,11 +1,15 @@
 """PNG debug render of a generated world (WORLD_SPEC §6 "Review").
 
 A map-design aid, not board art: each hex is a small block of pixels in its
-flat-top odd-q position, tinted by start region, with rivers, roads, province
-borders, towns, cities, sites and bases on top. Written with the standard library
-(zlib + struct) so previews need no imaging dependency.
+flat-top odd-q position, with roads, towns, cities, sites and bases on top. Two
+styles: ``territory`` (the default) tints each hex by start region and darkens
+province and territory borders; ``natural`` shows the land itself (plains, woods,
+hills, rivers, lakes) in natural colours. Rivers rise at springs by hills or at
+lakes and always run off the map edge. Written with the standard library (zlib +
+struct) so previews need no imaging dependency.
 
-Run: ``uv run python -m app.world.preview --slots 200 --seed 1 --out world.png``.
+Run: ``uv run python -m app.world.preview --slots 200 --seed 1 --out world.png
+[--style natural] [--no-roads]``.
 """
 
 from __future__ import annotations
@@ -14,13 +18,17 @@ import argparse
 import colorsys
 import struct
 import zlib
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from app.engine.economy_rules import SiteKind
 from app.engine.stats import Terrain
 from app.world.generate import GeneratedWorld, WorldParams, generate
 
 _Rgb = tuple[int, int, int]
+Style = Literal["territory", "natural"]
+STYLES: tuple[Style, ...] = ("territory", "natural")
 
 _TERRAIN_SHADE: dict[Terrain, tuple[float, float, float]] = {
     Terrain.PLAINS: (1.0, 1.0, 1.0),
@@ -28,6 +36,7 @@ _TERRAIN_SHADE: dict[Terrain, tuple[float, float, float]] = {
     Terrain.HILLS: (0.92, 0.80, 0.62),
 }
 _RIVER: _Rgb = (40, 95, 215)
+_LAKE: _Rgb = (30, 70, 170)
 _BRIDGE: _Rgb = (150, 115, 70)
 _ROAD: _Rgb = (55, 50, 45)
 _UNCLAIMED: _Rgb = (214, 214, 214)
@@ -44,6 +53,54 @@ _SITE: dict[SiteKind, _Rgb] = {
 _PROVINCE_BORDER = 0.92  # brightness factor on province edges
 _TERRITORY_BORDER = 0.40  # stronger darkening where start regions meet
 
+_NATURAL: dict[Terrain, _Rgb] = {
+    Terrain.PLAINS: (150, 160, 84),
+    Terrain.WOODS: (52, 92, 48),
+    Terrain.HILLS: (176, 146, 96),
+    Terrain.RIVER: (60, 110, 200),
+    Terrain.LAKE: (40, 84, 160),
+    Terrain.BRIDGE: (120, 90, 60),
+    Terrain.TOWN: (150, 160, 84),
+    Terrain.CITY: (150, 160, 84),
+}
+
+
+@dataclass(frozen=True)
+class _Markers:
+    """Colours drawn over the terrain for roads, settlements, sites and bases."""
+
+    road: _Rgb
+    town: _Rgb
+    city: _Rgb
+    capital: _Rgb
+    plot: _Rgb
+    sites: dict[SiteKind, _Rgb]
+
+
+_MARKERS: dict[Style, _Markers] = {
+    "territory": _Markers(
+        road=_ROAD,
+        town=_TOWN,
+        city=_CITY,
+        capital=_CAPITAL,
+        plot=_PLOT,
+        sites=_SITE,
+    ),
+    "natural": _Markers(
+        road=(70, 55, 40),
+        town=(215, 190, 160),
+        city=(240, 240, 240),
+        capital=(200, 30, 30),
+        plot=(110, 110, 100),
+        sites={
+            SiteKind.FARM: (240, 210, 60),
+            SiteKind.OIL_FIELD: (30, 30, 30),
+            SiteKind.STEEL_MILL: (60, 170, 190),
+            SiteKind.FACTORY: (230, 120, 30),
+        },
+    ),
+}
+
 
 def region_palette(count: int) -> list[_Rgb]:
     """Distinct pale tints per start region, skipping the blues rivers use."""
@@ -58,27 +115,47 @@ def region_palette(count: int) -> list[_Rgb]:
     return colors
 
 
-def render(world: GeneratedWorld, scale: int = 3) -> bytes:
-    """Encode the world as a PNG, ``scale`` pixels per hex."""
+def render(
+    world: GeneratedWorld,
+    scale: int = 3,
+    style: Style = "territory",
+    roads: bool = True,
+) -> bytes:
+    """Encode the world as a PNG, ``scale`` pixels per hex, in ``style``
+    (``"territory"`` or ``"natural"``); ``roads=False`` leaves roads out."""
     width = world.game_map.width
     height = world.game_map.height
-    pixel_w = width * scale
-    pixel_h = height * scale + scale // 2 + 1
-    canvas = [[(255, 255, 255)] * pixel_w for _ in range(pixel_h)]
+    canvas = [
+        [(255, 255, 255)] * (width * scale)
+        for _ in range(height * scale + scale // 2 + 1)
+    ]
+    if style == "territory":
+        _paint_territories(canvas, world, scale)
+    else:
+        for i, hex_ in enumerate(world.game_map.hexes):
+            _block(canvas, i % width, i // width, scale, _NATURAL[hex_.terrain])
+    markers = _MARKERS[style]
+    if roads:
+        _paint_roads(canvas, world, scale, markers.road)
+    _paint_places(canvas, world, scale, markers)
+    return _encode_png(canvas)
+
+
+def _paint_territories(
+    canvas: list[list[_Rgb]], world: GeneratedWorld, scale: int
+) -> None:
+    """Tint each hex by its start region, darkening province and territory edges."""
+    width = world.game_map.width
+    height = world.game_map.height
     palette = region_palette(world.params.slots)
-    hexes = world.game_map.hexes
-
-    def index(col: int, row: int) -> int:
-        return row * width + col
-
-    for i, hex_ in enumerate(hexes):
+    for i, hex_ in enumerate(world.game_map.hexes):
         col, row = i % width, i // width
         color = _hex_color(hex_.terrain, world.territory[i], palette)
         factor = 1.0
         for ncol, nrow in _offset_neighbors(col, row):
             if not (0 <= ncol < width and 0 <= nrow < height):
                 continue
-            j = index(ncol, nrow)
+            j = nrow * width + ncol
             if (
                 world.territory[j] != world.territory[i]
                 and min(world.territory[i], world.territory[j]) >= 0
@@ -86,46 +163,61 @@ def render(world: GeneratedWorld, scale: int = 3) -> bytes:
                 factor = min(factor, _TERRITORY_BORDER)
             elif world.province[j] != world.province[i]:
                 factor = min(factor, _PROVINCE_BORDER)
-        if hex_.terrain not in (Terrain.RIVER, Terrain.BRIDGE):
+        if hex_.terrain not in (Terrain.RIVER, Terrain.LAKE, Terrain.BRIDGE):
             color = _shade(color, (factor, factor, factor))
         _block(canvas, col, row, scale, color)
 
+
+def _paint_roads(
+    canvas: list[list[_Rgb]], world: GeneratedWorld, scale: int, color: _Rgb
+) -> None:
+    """A dot on every road hex and a line to each road neighbour."""
+    width = world.game_map.width
+    height = world.game_map.height
+    hexes = world.game_map.hexes
     for i, hex_ in enumerate(hexes):
         if not hex_.road:
             continue
         col, row = i % width, i // width
-        _dot(canvas, col, row, scale, _ROAD, 0)
+        _dot(canvas, col, row, scale, color, 0)
         for ncol, nrow in _offset_neighbors(col, row):
             if (
                 0 <= ncol < width
                 and 0 <= nrow < height
-                and hexes[index(ncol, nrow)].road
+                and hexes[nrow * width + ncol].road
             ):
                 _line(
-                    canvas, _center(col, row, scale), _center(ncol, nrow, scale), _ROAD
+                    canvas, _center(col, row, scale), _center(ncol, nrow, scale), color
                 )
 
+
+def _paint_places(
+    canvas: list[list[_Rgb]], world: GeneratedWorld, scale: int, markers: _Markers
+) -> None:
+    """Bases, sites (sized by level), the rest of each base plot, cities, towns."""
+    width = world.game_map.width
     sites = world.game_map.site_index
     plots = world.game_map.plot_hexes
-    for i, hex_ in enumerate(hexes):
+    for i, hex_ in enumerate(world.game_map.hexes):
         col, row = i % width, i // width
         site = sites.get(hex_.coord)
         if site is not None and site.kind is SiteKind.BASE:
-            _dot(canvas, col, row, scale, _CAPITAL, 2)
-        elif site is not None and site.kind in _SITE:
-            _dot(canvas, col, row, scale, _SITE[site.kind], site.level - 1)
+            _dot(canvas, col, row, scale, markers.capital, 2)
+        elif site is not None and site.kind in markers.sites:
+            _dot(canvas, col, row, scale, markers.sites[site.kind], site.level - 1)
         elif hex_.coord in plots and site is None:
-            _dot(canvas, col, row, scale, _PLOT, 0)
+            _dot(canvas, col, row, scale, markers.plot, 0)
         elif hex_.terrain is Terrain.CITY:
-            _dot(canvas, col, row, scale, _CITY, 1)
+            _dot(canvas, col, row, scale, markers.city, 1)
         elif hex_.terrain is Terrain.TOWN:
-            _dot(canvas, col, row, scale, _TOWN, 1)
-    return _encode_png(canvas)
+            _dot(canvas, col, row, scale, markers.town, 1)
 
 
 def _hex_color(terrain: Terrain, territory: int, palette: list[_Rgb]) -> _Rgb:
     if terrain is Terrain.RIVER:
         return _RIVER
+    if terrain is Terrain.LAKE:
+        return _LAKE
     if terrain is Terrain.BRIDGE:
         return _BRIDGE
     base = palette[territory] if territory >= 0 else _UNCLAIMED
@@ -218,9 +310,11 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--scale", type=int, default=3)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--style", choices=STYLES, default="territory")
+    parser.add_argument("--no-roads", action="store_true", help="leave roads out")
     args = parser.parse_args()
     world = generate(WorldParams.for_slots(args.slots, args.seed))
-    args.out.write_bytes(render(world, args.scale))
+    args.out.write_bytes(render(world, args.scale, args.style, not args.no_roads))
     for key, value in world.stats.items():
         print(f"{key:30s} {value}")
     print(f"wrote {args.out}")

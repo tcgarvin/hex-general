@@ -194,13 +194,18 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
 - **Unfilled slots:** their start regions are generated but left neutral; that land is
   room for relocation and new players (VISION §7).
 - **Terrain:** plains, woods, hills (as v0.1); rivers as impassable hex chains;
-  bridges where roads cross them.
+  bridges where roads cross them; lakes (impassable open water, never bridged). Every
+  river and lake drains off the map (user, 2026-11-10): rivers rise at springs by
+  hills or at lakes and always run to the map edge.
 - **Settlements:** about 1 per 70 hexes [tunable], roughly 3× v0.1's density, mostly
   towns. Cities are rarer and anchor regions.
 - **Roads:** a spanning network linking settlements plus redundant links, so no
-  single bridge decides a whole region. Each territory's roads must form one connected
-  network, and roads must reach its borders. In the study, 52–60% of territories had
-  split road networks, which stranded brigades under roads-only movement.
+  single bridge decides a whole region. Every town in a territory must reach its seat by
+  road inside the territory, and roads must reach its borders. (Until 2026-11-10 every
+  road scrap in a territory had to join the seat's network; that laid doubled roads along
+  borders, so through-roads that only clip a territory are now left alone.) In the study,
+  52–60% of territories had split road networks, which stranded brigades under roads-only
+  movement.
 - **Provinces:** every site anchors a province (about 20–40 hexes), assigned
   by travel-cost distance. Province control is derived from its anchor site,
   with no extra state. Provinces exist for borders and the strategic view.
@@ -212,13 +217,65 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
 - **Review:** the generator emits a PNG preview (terrain, roads, provinces, starts)
   for map-design review. Hex tile art is unchanged; this is a debug render, not board art.
 
-**As built (W3):** `app/world/generate.py` (pure Python, no numpy; a 200-slot 349² world
-takes ~18 s), `app/world/preview.py` (stdlib PNG), gates in `tests/world/`.
+**As built (W3):** `app/world/generate.py` with the terrain stage in `app/world/land.py`
+(pure Python, no numpy; a 200-slot 349² world takes ~10 s), `app/world/preview.py`
+(stdlib PNG, `--style territory|natural`, `--no-roads`), gates in `tests/world/`.
+
+**Terrain, rivers, settlements and roads (redesigned 2026-11-10, awaiting the user's
+review).** The old layout was thresholded noise: woods and hills in single patches of
+300–650 hexes, ~40% of land with only plains within 3 hexes, rivers that walked in from
+the edge and stopped in open fields, evenly spread towns, and parallel double roads
+from the fix-ups. Terrain is now built from sized objects, in this order:
+
+- *Highlands:* hill country is the band around the mid contour of a broad noise field,
+  so rugged ground forms belts across the map; each hex also gets the hex axis along
+  the belt.
+- *Hills* (`hills_share` 7%): ridges walked along that axis (80% of the time) with ±1
+  wobble, 1–18 hexes long, sometimes two wide, with a pass now and then. Seeds are drawn
+  in proportion to ruggedness⁴. Separate ridges never touch, so no hill patch exceeds
+  30 hexes.
+- *Lakes* (`Terrain.LAKE`, impassable, never bridged or roaded): about one per
+  `hexes_per_lake` (1,000) hexes, 3–22 hexes each, placed by best-candidate sampling
+  on low ground, grown raggedly, at least 3 hexes from the map edge and more than 5
+  from each other, never on hills, holes filled.
+- *Rivers* (`river_share` 2.4% of the map, bridges included): **every lake and river
+  drains off the map.** Rivers rise at lakes or at springs at the foot of hills and
+  always run to the map edge. Lakes are drained first, nearest to drained water first,
+  each by one outflow into the edge, a lake that already drains, or a clean Y junction
+  on a river that already drains; a lake that cannot be drained is removed (2 of 40
+  12-slot seeds lose one). Springs then add tributaries into drained water or the edge
+  until the share is met; a spring is at least 3 hexes from the edge, so a river end on
+  the edge always means it flows off the map, and the hills beside a spring are kept
+  (no town, site or base plot on them). A course is a least-cost path that turns at
+  most 60° a step, never twice the same way running, avoids hills, touches no other
+  water but where it ends, and never walls off land under 40 hexes. Rivers stay one
+  hex wide with no sharp turns and no triangle of river hexes.
+- *Woods* (`woods_share` 14.5%): copses to forests of 2–30 hexes, grown as ragged
+  blobs, seeded by a steep regional field (some country open, some close) plus bonuses
+  beside hills and along some banks; two open hexes between separate woods; hexes 3
+  deep in a forest become glades. No woods patch exceeds 30 hexes.
+- *Settlements:* best-candidate sampling weighted by appeal: plains over woods over
+  hills, a waterside bonus, fewer in rough ground and highlands. *Cities* (15%) are
+  picked by farthest-point sampling over the settlements, leaning to open and waterside
+  ground, so they are spread-out hubs (seats chosen on a city become towns).
+- *Roads:* step costs by terrain (plains 1, woods 2.2, hills 3.2, bridge 7), cheap
+  reuse of road (0.4), a smooth noise wiggle so roads are not ruler lines, a penalty
+  for running beside an existing road, never on a lake. A bridge goes only on a river
+  hex with exactly two river neighbours and no lake beside it (not at a junction, a
+  river end or a lake mouth). Sharp turns over new ground are removed from each laid
+  road; the only sharp road corners left are at towns beside a through-road.
+- Seed 1: 12 slots: woods 14.5%, hills 7.0%, river 2.3%, lake 0.7% (7 lakes, 14
+  rivers), 10 bridges, road 14.0%; largest woods patch 30, hills 19. 200 slots: woods
+  14.4%, hills 7.0%, river 2.2% plus 194 bridges, lake 0.9% (122 lakes, none dropped,
+  155 rivers), road 14.7%; largest woods and hills patches 30.
 
 - *Territories* (start regions) are each capital's nearest land in steps over passable
-  hexes, so roads never move a border. Fix-ups lay roads only inside territories: one road
-  network per territory, a road across every border with ≥ 4 hex contacts, and new towns
-  for any territory below half the median settlement count.
+  hexes, so roads never move a border. Fix-ups lay roads only inside territories: every
+  settlement reaches its seat by road inside its territory, a road crosses every border
+  with ≥ 4 hex contacts, and new towns go to any territory below half the median
+  settlement count. A road fragment with no settlement (a through-road clipping a
+  territory's corner) is left unjoined (2026-11-10): joining those laid parallel double
+  roads along borders.
 - Seats: farthest-point sampling, 6 Lloyd steps on open hexes, then each seats on a
   nearby settlement (cities preferred) at least 60% of the ideal lattice spacing from
   the others. The seat becomes a town; territories are each seat's nearest land.
@@ -249,16 +306,21 @@ settlement repair here": town or city terrain, or a site hex whose settlement ex
 (a vacant base slot gives nothing). Levels are drawn 60/30/10% (`SITE_LEVEL_WEIGHTS`).
 A seat is a town and gets no site; its base anchor is the nearest spot within 3 hexes
 (5 if needed) whose four footprint hexes are on the map, off the edge ring, in the
-slot's territory, not river, bridge, town, city, road or another plot, with one hex
+slot's territory, not river, bridge, lake, town, city, road, a spring's hills or
+another plot, with one hex
 touching a road. A town's site goes within 2 hexes (3 if needed) on such a clear hex
-in the town's territory, beside the town or a road; preferred: plains, beside a road,
+in the town's territory, beside the town or a road (a town wedged into a corner of its
+territory with no such hex may put its site in a neighbouring territory within 3 hexes,
+counted in `sites_off_territory`, 2026-11-10); preferred: plains, beside a road,
 beside the town, not beside another site, nearest. Woods or hills under a plot or site
 become plains; no fit raises `WorldGenError`. Units never start on a site or plot hex.
-Seed 1: 12 slots convert 11 site and 5 footprint hexes, none widened; 200 slots
-convert 187 and 183, one site and one base widened.
-- Known spread (seed 1, 200 slots): territory size 180–1,080 hexes (middle half
-  517–681); settlements within 14 hexes of a capital 4–12 (median 8). Edge and river
-  starts run small. The W4 sim will show whether it matters.
+Seed 1 (terrain redesign, 2026-11-10): 12 slots convert 1 site and 9 footprint hexes,
+none widened; 200 slots convert 8 and 157, none widened.
+- Known spread (seed 1, 200 slots, terrain redesign): territory size 240–878 hexes
+  (middle half 504–677); settlements other than seats within 14 hexes of a capital 3–15
+  (median 9). Over seeds 1–40 at 12 slots territories run 260–1,035 hexes with 4–21
+  settlements; seed 2 at 200 slots has one territory of 116 hexes. Edge and river starts
+  run small. The W4 sim will show whether it matters.
 
 ## 7. Economy and army size
 

@@ -13,7 +13,7 @@ import heapq
 import math
 import random
 from collections import deque
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 
 from app.engine.hex_coords import AXIAL_DIRECTIONS
 
@@ -49,7 +49,7 @@ class HexGrid:
             )
             self.neighbor_in.append(per_dir)
             self.neighbors.append(tuple(n for n in per_dir if n >= 0))
-        # Pixel offset of each direction, for steering rivers inland.
+        # Pixel offset of each direction, for lining ridges up with a contour.
         self.direction_px = [
             (1.5 * dq, SQRT3 * (dr + dq / 2.0)) for dq, dr in _DIRECTIONS
         ]
@@ -71,6 +71,17 @@ class HexGrid:
     def on_edge(self, i: int) -> bool:
         """Whether index ``i`` lies on the rectangle's border."""
         return self.col[i] in (0, self.width - 1) or self.row[i] in (0, self.height - 1)
+
+    def edge_distance(self, i: int) -> int:
+        """Rows or columns between index ``i`` and the nearest map border (0 on it)."""
+        col, row = self.col[i], self.row[i]
+        return min(col, self.width - 1 - col, row, self.height - 1 - row)
+
+    def disc(self, center: int, radius: int) -> list[int]:
+        """Indices within ``radius`` hexes of ``center``, in index order."""
+        return [
+            i for i in self.window(center, radius) if self.distance(i, center) <= radius
+        ]
 
     def window(self, center: int, radius: int) -> Iterable[int]:
         """Indices within a ``radius``-wide offset square around ``center``."""
@@ -109,6 +120,63 @@ def fbm(
         norm += amp
         amp *= 0.5
     return [t / norm for t in total]
+
+
+def rank_normalise(values: Sequence[float]) -> list[float]:
+    """Each value's rank scaled to [0, 1], ties broken by position.
+
+    Thresholds on the result are exact shares, whatever the input's distribution.
+    """
+    order = sorted(range(len(values)), key=lambda i: (values[i], i))
+    top = max(1, len(values) - 1)
+    ranks = [0.0] * len(values)
+    for rank, i in enumerate(order):
+        ranks[i] = rank / top
+    return ranks
+
+
+def patches(grid: HexGrid, mask: Sequence[bool]) -> list[list[int]]:
+    """Connected groups of ``mask`` hexes, each in discovery order, listed by
+    their lowest index."""
+    seen = [False] * grid.size
+    groups: list[list[int]] = []
+    for i in range(grid.size):
+        if not mask[i] or seen[i]:
+            continue
+        seen[i] = True
+        group = [i]
+        k = 0
+        while k < len(group):
+            for v in grid.neighbors[group[k]]:
+                if mask[v] and not seen[v]:
+                    seen[v] = True
+                    group.append(v)
+            k += 1
+        groups.append(group)
+    return groups
+
+
+def depth(grid: HexGrid, mask: Sequence[bool]) -> list[int]:
+    """Steps from each hex to the nearest hex outside ``mask`` (0 outside it).
+
+    Off the map counts as outside, so a ``mask`` hex on the border is depth 1.
+    """
+    dist = [-1] * grid.size
+    outside = [i for i in range(grid.size) if not mask[i]]
+    rim = [i for i in range(grid.size) if mask[i] and len(grid.neighbors[i]) < 6]
+    for i in outside:
+        dist[i] = 0
+    for i in rim:
+        dist[i] = 1
+    # Depth-0 sources go first so the queue stays in distance order.
+    queue: deque[int] = deque(outside + rim)
+    while queue:
+        u = queue.popleft()
+        for v in grid.neighbors[u]:
+            if dist[v] < 0:
+                dist[v] = dist[u] + 1
+                queue.append(v)
+    return dist
 
 
 def multi_source_bfs(

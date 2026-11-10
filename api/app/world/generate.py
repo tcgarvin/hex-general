@@ -2,32 +2,38 @@
 
 ``generate(params)`` builds a whole world map for ``params.slots`` start regions:
 
-1. **Terrain:** plains with fBm-noise woods (~15%) and hills (~10%).
-2. **Rivers:** meandering impassable hex chains walked inland from the map edge,
-   plus tributaries joining existing rivers.
-3. **Settlements:** about one per ``hexes_per_settlement`` hexes, spread by
-   best-candidate sampling; ~15% are cities, the rest towns.
-4. **Seats:** one settlement per slot, spread by farthest-point sampling and
+1. **Land** (`app.world.land`): hills as ridges along regional highland belts,
+   lakes of 3–22 hexes, rivers that rise at lakes or springs by hills and always
+   drain off the map edge, and woods from copses to 30-hex forests.
+2. **Settlements:** about one per ``hexes_per_settlement`` hexes, spread by
+   best-candidate sampling weighted toward good town ground (open, waterside,
+   lowland). Cities (``city_share`` of them) are picked by farthest-point
+   sampling, so they are spread-out hubs.
+3. **Seats:** one settlement per slot, spread by farthest-point sampling and
    relaxed with Lloyd steps. A seat is a town: its slot's base goes beside it.
-5. **Roads:** a spanning tree over each settlement's nearest neighbours plus ~30%
-   redundant short links, each laid by least-cost search that favours reusing
-   road (so roads merge into networks). A road over a river is a bridge.
-6. **Fix-ups (fairness):** each start region (*territory*, the land nearest its
-   seat) gets one connected road network, a road across every real border,
-   and at least half the median settlement count.
-7. **Base plots:** each slot's base stands on open ground near its seat, with
+4. **Roads:** a spanning tree over each settlement's nearest neighbours plus ~30%
+   redundant short links, each laid by least-cost search that prices terrain,
+   reuses road cheaply (so roads merge), wiggles with a noise field, shuns
+   running beside another road and never makes a sharp turn on new ground. A
+   road crosses a river only where the river runs plainly (a bridge); it never
+   touches a lake.
+5. **Fix-ups (fairness):** in each start region (*territory*, the land nearest
+   its seat) every settlement reaches the seat by road inside the territory,
+   every real border is crossed by a road, and each has at least half the median
+   settlement count.
+6. **Base plots:** each slot's base stands on open ground near its seat, with
    the four hexes of `BASE_FOOTPRINT` kept clear (user, 2026-11-10).
-8. **Sites** (the ownership-bearing things, VISION §6): every city is a city
+7. **Sites** (the ownership-bearing things, VISION §6): every city is a city
    site; every other town but a seat gets a farm, oil field, steel mill or
    factory on its own plains hex beside the town or a road, with a level drawn
    by `SITE_LEVEL_WEIGHTS`. Towns themselves hold no ownership.
-9. **Provinces:** every site anchors the hexes nearest it by column travel cost.
+8. **Provinces:** every site anchors the hexes nearest it by column travel cost.
 
 Woods or hills under a base plot or a site become plains. Same params → same
 world, on any machine: the only randomness is one `random.Random` seeded from a
-string (hash-independent). The generator ports the sizing study's PoC (VISION
-§12) without numpy so it adds no runtime deps; a 200-slot world takes tens of
-seconds.
+string (hash-independent), and no loop runs over a set or dict whose order could
+vary. Pure Python without numpy, so it adds no runtime deps; a 200-slot world
+takes some seconds.
 
 `GeneratedWorld.to_state` turns a world into a turn-0 `GameState` with some slots
 filled; the rest stay neutral land for relocation and new players (VISION §7).
@@ -67,7 +73,10 @@ from app.world.grid import (
     fbm,
     multi_source_bfs,
     multi_source_dijkstra,
+    patches,
+    rank_normalise,
 )
+from app.world.land import Land, build_land
 
 HEXES_PER_SLOT = 610
 """Map area per slot at the default sizing (VISION §1, §12: 200 slots ≈ 350²)."""
@@ -105,15 +114,20 @@ _TIER_MID = 14
 _SITE_RADII = (2, 3)
 _BASE_RADII = (3, 5)
 
-# Road laying: entering an existing road hex is cheap, so roads merge; crossing a
-# river (a bridge) is expensive, so bridges are few.
-_ROAD_REUSE_COST = 0.6
-_ROAD_TERRAIN_COST: dict[Terrain, float] = {
+ROAD_REUSE = 0.4
+"""Cost of a road step onto existing road, so roads merge into networks."""
+ROAD_COST: dict[Terrain, float] = {
     Terrain.PLAINS: 1.0,
-    Terrain.WOODS: 2.0,
-    Terrain.HILLS: 2.0,
-    Terrain.RIVER: 6.0,
+    Terrain.WOODS: 2.2,
+    Terrain.HILLS: 3.2,
+    Terrain.RIVER: 7.0,
 }
+"""Cost of a road step onto new ground by terrain; a river step is a bridge."""
+ROAD_PARALLEL = 0.8
+"""Extra cost of a new road hex beside an existing road, against double roads."""
+ROAD_WIGGLE = 0.6
+"""Spread of the noise factor on off-road step costs, so roads are not ruler lines."""
+
 _ROAD_NEIGHBORS = 6  # nearest settlements considered for the road graph
 _ROAD_EXTRA_SHARE = 0.3  # redundant links, as a share of spanning-tree links
 _BORDER_MIN_CONTACTS = 4  # territory pairs touching less than this need no road
@@ -129,7 +143,8 @@ class WorldGenError(Exception):
 class WorldParams:
     """Inputs to `generate`. ``for_slots`` sizes the map from a slot count.
 
-    Raises `WorldGenError` on construction for unusable values (this is the
+    The shares are targets for the map area under woods, hills and river courses;
+    ``hexes_per_settlement`` and ``hexes_per_lake`` set those densities. Raises `WorldGenError` on construction for unusable values (this is the
     generator's boundary: parameters come from a CLI or an admin request).
     """
 
@@ -139,9 +154,10 @@ class WorldParams:
     seed: int
     hexes_per_settlement: int = 70
     city_share: float = 0.15
-    woods_share: float = 0.15
-    hills_share: float = 0.10
-    hexes_per_river: int = 2500
+    woods_share: float = 0.145
+    hills_share: float = 0.07
+    river_share: float = 0.024
+    hexes_per_lake: int = 1000
 
     def __post_init__(self) -> None:
         if self.width < 12 or self.height < 12:
@@ -157,10 +173,14 @@ class WorldParams:
                 f"{self.hexes_per_settlement} hexes gives {settlements} settlements, "
                 f"too few for {self.slots} slots"
             )
-        for name in ("city_share", "woods_share", "hills_share"):
+        for name in ("city_share", "woods_share", "hills_share", "river_share"):
             share = getattr(self, name)
             if not 0.0 <= share < 1.0:
                 raise WorldGenError(f"{name} must be in [0, 1), got {share}")
+        if self.hexes_per_lake < 1:
+            raise WorldGenError(
+                f"hexes_per_lake must be at least 1, got {self.hexes_per_lake}"
+            )
 
     @classmethod
     def for_slots(cls, slots: int, seed: int) -> WorldParams:
@@ -338,15 +358,19 @@ class _DraftSite:
 class _Draft:
     """Mutable working state while a world is generated.
 
-    ``seats`` and ``bases`` are hex indices per slot: the seat town and the base
-    anchor beside it. ``plots`` holds every hex kept clear so far (base footprints
-    and site hexes). The counters feed `_stats`.
+    ``land`` is fixed: its ``river`` marks river course hexes, ``lake`` lake hexes
+    and ``water`` either. ``terrain`` starts as the land's and loses woods or
+    hills under plots and sites. ``road_wiggle`` (in [0, 1]) scales
+    off-road step costs. ``seats`` and ``bases`` are hex indices per slot: the
+    seat town and the base anchor beside it. ``plots`` holds every hex kept clear
+    so far (base footprints and site hexes). The counters feed `_stats`.
     """
 
     grid: HexGrid
     rng: random.Random
+    land: Land
     terrain: list[Terrain]
-    river: list[bool]
+    road_wiggle: list[float]
     road: list[bool] = field(default_factory=list)
     settlements: list[int] = field(default_factory=list)
     cities: list[bool] = field(default_factory=list)
@@ -359,27 +383,71 @@ class _Draft:
     converted_site_hexes: int = 0
     widened_bases: int = 0
     widened_sites: int = 0
+    sites_off_territory: int = 0
+
+    def water(self, i: int) -> bool:
+        """Whether hex ``i`` is river or lake."""
+        return self.land.water[i]
 
     def passable(self, i: int) -> bool:
-        return not self.river[i] or self.road[i]
+        """Whether a column may enter hex ``i``: dry land, or a bridge."""
+        return not self.water(i) or self.road[i]
+
+    def open_land(self) -> list[bool]:
+        """Per hex: not river or lake (bridges count as water here)."""
+        return [not w for w in self.land.water]
 
     def lay_road(
         self, start: int, goal: int, allowed: Callable[[int], bool] | None = None
     ) -> None:
-        """Lay a least-cost road from ``start`` to ``goal``, reusing road cheaply."""
-
-        def cost(v: int) -> float:
-            return (
-                _ROAD_REUSE_COST
-                if self.road[v]
-                else _ROAD_TERRAIN_COST[self.terrain[v]]
-            )
-
-        path = astar(self.grid, start, goal, cost, _ROAD_REUSE_COST, allowed)
+        """Lay a least-cost road from ``start`` to ``goal`` (`_road_step_cost`),
+        then drop the corner of any sharp turn it makes over new ground."""
+        path = astar(self.grid, start, goal, self._road_step_cost, ROAD_REUSE, allowed)
         if path is None:
             raise WorldGenError(f"no road possible from hex {start} to hex {goal}")
-        for i in path:
+        for i in self._without_sharp_turns(path):
             self.road[i] = True
+
+    def _road_step_cost(self, v: int) -> float:
+        """The price of a road entering hex ``v``.
+
+        Existing road is cheap. A lake is closed. A river hex may be bridged only
+        where the river runs plainly: exactly two river neighbours and no lake
+        beside it, so never at a junction, a river end or a lake mouth. Other
+        ground costs its terrain's `ROAD_COST`, scaled by the wiggle field, plus
+        `ROAD_PARALLEL` beside an existing road.
+        """
+        if self.road[v]:
+            return ROAD_REUSE
+        land = self.land
+        if land.lake[v]:
+            return math.inf
+        around = self.grid.neighbors[v]
+        if land.river[v]:
+            if any(land.lake[n] for n in around):
+                return math.inf
+            if sum(land.river[n] for n in around) != 2:
+                return math.inf
+            return ROAD_COST[Terrain.RIVER]
+        scale = 1.0 - ROAD_WIGGLE / 2 + ROAD_WIGGLE * self.road_wiggle[v]
+        cost = ROAD_COST[self.terrain[v]] * scale
+        if any(self.road[n] for n in around):
+            cost += ROAD_PARALLEL
+        return cost
+
+    def _without_sharp_turns(self, path: list[int]) -> list[int]:
+        """``path`` with each new-ground corner ``b`` of a sharp turn ``a-b-c``
+        (``a`` and ``c`` adjacent) removed; the path stays connected."""
+        neighbors = self.grid.neighbors
+        kept = list(path)
+        k = 1
+        while k < len(kept) - 1:
+            if not self.road[kept[k]] and kept[k + 1] in neighbors[kept[k - 1]]:
+                del kept[k]
+                k = max(1, k - 1)
+            else:
+                k += 1
+        return kept
 
 
 def generate(params: WorldParams) -> GeneratedWorld:
@@ -388,21 +456,29 @@ def generate(params: WorldParams) -> GeneratedWorld:
     rng = random.Random(
         f"hex-general-world:{params.seed}:{params.width}x{params.height}:{params.slots}"
     )
-    draft = _Draft(
-        grid=grid, rng=rng, terrain=_base_terrain(grid, rng, params), river=[]
+    land = build_land(
+        grid,
+        rng,
+        hills_share=params.hills_share,
+        woods_share=params.woods_share,
+        river_share=params.river_share,
+        hexes_per_lake=params.hexes_per_lake,
     )
-    draft.river = _carve_rivers(grid, rng, params)
-    for i, is_river in enumerate(draft.river):
-        if is_river:
-            draft.terrain[i] = Terrain.RIVER
-    draft.road = [False] * grid.size
+    draft = _Draft(
+        grid=grid,
+        rng=rng,
+        land=land,
+        terrain=list(land.terrain),
+        road_wiggle=rank_normalise(fbm(grid, rng, feature=10.0, octaves=2)),
+        road=[False] * grid.size,
+    )
 
     # One settlement per slot becomes a seat, on top of the density target, so
     # bases don't take neutral sites away (economy draft §03). A seat is a town,
     # so no start has a free city on its doorstep, and it gets no site of its own.
     count = grid.size // params.hexes_per_settlement + params.slots
-    draft.settlements = _place_settlements(grid, rng, draft.river, count)
-    draft.cities = [rng.random() < params.city_share for _ in draft.settlements]
+    draft.settlements = _place_settlements(grid, rng, land, count)
+    draft.cities = _pick_cities(grid, rng, land, draft.settlements, params.city_share)
     seat_picks = _choose_seats(draft, params.slots)
     for k in seat_picks:
         draft.cities[k] = False
@@ -417,160 +493,88 @@ def generate(params: WorldParams) -> GeneratedWorld:
     return _finish(draft, params)
 
 
-def _base_terrain(
-    grid: HexGrid, rng: random.Random, params: WorldParams
-) -> list[Terrain]:
-    """Plains with noise-shaped woods and hills at the requested shares."""
-    terrain = [Terrain.PLAINS] * grid.size
-    woods_noise = fbm(grid, rng, feature=16.0)
-    hills_noise = fbm(grid, rng, feature=22.0)
-    woods_cut = sorted(woods_noise)[
-        min(grid.size - 1, int((1 - params.woods_share) * grid.size))
-    ]
-    woods = [v >= woods_cut for v in woods_noise]
-    rest = sorted(
-        (i for i in range(grid.size) if not woods[i]), key=lambda i: -hills_noise[i]
-    )
-    for i in rest[: round(params.hills_share * grid.size)]:
-        terrain[i] = Terrain.HILLS
-    for i in range(grid.size):
-        if woods[i]:
-            terrain[i] = Terrain.WOODS
-    return terrain
+def _town_appeal(grid: HexGrid, land: Land, i: int) -> float:
+    """How good hex ``i`` is for a town (0 on water, the map edge and a spring's
+    hills).
 
-
-def _carve_rivers(grid: HexGrid, rng: random.Random, params: WorldParams) -> list[bool]:
-    """Walk rivers inland from the map edge, and tributaries off existing rivers."""
-    river = [False] * grid.size
-    river_hexes: list[int] = []
-    edge = [i for i in range(grid.size) if grid.on_edge(i)]
-    cx = sum(grid.px) / grid.size
-    cy = sum(grid.py) / grid.size
-    placed = 0
-    for _ in range(max(1, round(grid.size / params.hexes_per_river))):
-        best: list[int] = []
-        for _attempt in range(40):
-            length = rng.randint(30, 120)
-            tributary = placed > 0 and rng.random() < 0.35
-            if tributary:
-                mouth = rng.choice(river_hexes)
-                headings = [
-                    k
-                    for k, n in enumerate(grid.neighbor_in[mouth])
-                    if n >= 0 and not river[n]
-                ]
-                if not headings:
-                    continue
-                heading = rng.choice(headings)
-                start = grid.neighbor_in[mouth][heading]
-            else:
-                start = rng.choice(edge)
-                if river[start] or any(river[w] for w in grid.neighbors[start]):
-                    continue
-                vx, vy = cx - grid.px[start], cy - grid.py[start]
-                heading = max(
-                    range(6),
-                    key=lambda k: grid.direction_px[k][0] * vx
-                    + grid.direction_px[k][1] * vy,
-                )
-            path = _river_walk(grid, rng, river, start, heading, length, tributary)
-            if len(path) > len(best):
-                best = path
-            if len(path) >= 30:
-                break
-        if best:
-            for i in best:
-                river[i] = True
-            river_hexes.extend(best)
-            placed += 1
-    return river
-
-
-def _river_walk(
-    grid: HexGrid,
-    rng: random.Random,
-    river: list[bool],
-    start: int,
-    heading: int,
-    length: int,
-    tributary: bool,
-) -> list[int]:
-    """Meander upstream from ``start``, staying within ±1 of ``heading``.
-
-    Stops at the map edge, before touching another river or itself, or at
-    ``length`` hexes. A tributary may touch its parent river at its mouth.
+    Plains beat woods beat hills; a waterside hex gets a bonus; a hex ringed by
+    rough ground, or deep in hill country, less.
     """
-    path = [start]
-    body = {start}
-    direction = heading
-    while len(path) < length:
-        current = path[-1]
-        roll = rng.random()
-        if roll < 0.5:
-            first = direction
-        elif roll < 0.75:
-            first = (direction + 1) % 6
-        else:
-            first = (direction - 1) % 6
-        order = [first] + [
-            d
-            for d in (direction, (direction + 1) % 6, (direction - 1) % 6)
-            if d != first
-        ]
-        moved = False
-        reached_edge = False
-        for d in order:
-            if (d - heading) % 6 not in (0, 1, 5):
-                continue
-            nxt = grid.neighbor_in[current][d]
-            if nxt < 0:
-                reached_edge = True
-                break
-            if river[nxt] or nxt in body:
-                continue
-            around = grid.neighbors[nxt]
-            if any(river[w] for w in around) and not (tributary and len(path) <= 1):
-                continue
-            if any(w in body and w != current for w in around):
-                continue
-            path.append(nxt)
-            body.add(nxt)
-            direction = d
-            moved = True
-            break
-        if reached_edge or not moved:
-            break
-    return path
+    if land.water[i] or grid.on_edge(i) or land.spring_hills[i]:
+        return 0.0
+    terrain = land.terrain[i]
+    appeal = (
+        1.0 if terrain is Terrain.PLAINS else 0.6 if terrain is Terrain.WOODS else 0.4
+    )
+    around = grid.neighbors[i]
+    if any(land.water[n] for n in around):
+        appeal *= 1.3
+    if sum(land.terrain[n] in _ROUGH for n in around) >= 5:
+        appeal *= 0.6
+    return appeal * (1.12 - 0.4 * land.ruggedness[i] ** 2)
+
+
+_ROUGH = (Terrain.WOODS, Terrain.HILLS)
 
 
 def _place_settlements(
-    grid: HexGrid, rng: random.Random, river: list[bool], count: int
+    grid: HexGrid, rng: random.Random, land: Land, count: int
 ) -> list[int]:
-    """Best-candidate (Mitchell) sampling: of 12 random open hexes, take the one
-    farthest from every settlement so far. Map-edge hexes are avoided."""
+    """Best-candidate (Mitchell) sampling weighted by `_town_appeal`: of 16 random
+    hexes with some appeal, take the one with the best spacing (capped, so
+    appeal still counts in empty country) times appeal."""
     spacing = math.sqrt(grid.size / count)
     radius = int(2 * spacing) + 2
-    nearest = [math.inf] * grid.size
-    pool = [i for i in range(grid.size) if not river[i] and not grid.on_edge(i)]
+    nearest = [2.0 * spacing] * grid.size
+    appeal = [_town_appeal(grid, land, i) for i in range(grid.size)]
+    pool = [i for i in range(grid.size) if appeal[i] > 0]
     taken = [False] * grid.size
     chosen: list[int] = []
     for _ in range(count):
         candidates: list[int] = []
         while not candidates:
             candidates = [
-                c for c in (rng.choice(pool) for _ in range(12)) if not taken[c]
+                c for c in (rng.choice(pool) for _ in range(16)) if not taken[c]
             ]
-        best = max(candidates, key=lambda c: nearest[c])
+        best = max(candidates, key=lambda c: min(nearest[c], 1.6 * spacing) * appeal[c])
         chosen.append(best)
         taken[best] = True
-        bq, br = grid.q[best], grid.r[best]
         for i in grid.window(best, radius):
-            dq = grid.q[i] - bq
-            dr = grid.r[i] - br
-            d = (abs(dq) + abs(dr) + abs(dq + dr)) // 2
+            d = grid.distance(i, best)
             if d < nearest[i]:
                 nearest[i] = d
     return chosen
+
+
+def _pick_cities(
+    grid: HexGrid,
+    rng: random.Random,
+    land: Land,
+    settlements: list[int],
+    share: float,
+) -> list[bool]:
+    """Mark ``share`` of ``settlements`` as cities by farthest-point sampling, so
+    cities are spread-out hubs; open and waterside ground weighs a little more."""
+    count = len(settlements)
+    weight: list[float] = []
+    for s in settlements:
+        around = grid.neighbors[s]
+        w = 1.25 if any(land.water[n] for n in around) else 1.0
+        w *= 1.0 - 0.08 * sum(land.terrain[n] in _ROUGH for n in around)
+        weight.append(w * rng.uniform(0.8, 1.2))
+    cities = [False] * count
+    nearest = [40.0] * count
+    for _ in range(round(share * count)):
+        pick = max(
+            (k for k in range(count) if not cities[k]),
+            key=lambda k: nearest[k] * weight[k],
+        )
+        cities[pick] = True
+        for k in range(count):
+            nearest[k] = min(
+                nearest[k], grid.distance(settlements[pick], settlements[k])
+            )
+    return cities
 
 
 def _choose_seats(draft: _Draft, slots: int) -> list[int]:
@@ -609,7 +613,7 @@ def _choose_seats(draft: _Draft, slots: int) -> list[int]:
             if d < nearest[k]:
                 nearest[k] = d
 
-    open_hex = [not r for r in draft.river]
+    open_hex = draft.open_land()
     points = [sites[k] for k in chosen]
     for _ in range(_LLOYD_STEPS):
         points = _lloyd_step(grid, points, open_hex)
@@ -795,18 +799,20 @@ def _road_every_border(draft: _Draft) -> bool:
 
 
 def _join_territory_roads(draft: _Draft) -> bool:
-    """Connect every road fragment in a territory to its seat's network."""
+    """Connect every road fragment in a territory that holds a settlement to its
+    seat's network, by a road inside the territory.
+
+    A fragment without a settlement (a through-road clipping the territory) is
+    left alone: joining those laid parallel double roads along borders.
+    """
     changed = False
+    settlements = set(draft.settlements)
     for p, seat in enumerate(draft.seats):
-        fragments = _road_fragments(draft, p)
-        for fragment in fragments:
-            if seat in fragment:
+        for fragment in _road_fragments(draft, p):
+            towns = fragment & settlements
+            if seat in fragment or not towns:
                 continue
-            draft.lay_road(
-                min(fragment),
-                seat,
-                allowed=_inside(draft.territory, p),
-            )
+            draft.lay_road(min(towns), seat, allowed=_inside(draft.territory, p))
             changed = True
     return changed
 
@@ -852,15 +858,15 @@ def _settle_sparse_territories(draft: _Draft) -> bool:
     lacking = [p for p, c in enumerate(counts) if c < floor]
     if not lacking:
         return False
-    open_hex = [not r for r in draft.river]
-    _, spacing = multi_source_bfs(grid, draft.settlements, open_hex)
+    _, spacing = multi_source_bfs(grid, draft.settlements, draft.open_land())
     occupied = set(draft.settlements)
     for p in lacking:
         spots = [
             i
             for i in range(grid.size)
             if draft.territory[i] == p
-            and not draft.river[i]
+            and not draft.water(i)
+            and not draft.land.spring_hills[i]
             and not grid.on_edge(i)
             and i not in occupied
         ]
@@ -892,13 +898,6 @@ def _settlements_per_territory(draft: _Draft) -> list[int]:
 # --- Base plots ------------------------------------------------------------------
 
 
-def _disc(grid: HexGrid, center: int, radius: int) -> list[int]:
-    """Indices within ``radius`` hexes of ``center``, in index order."""
-    return [
-        i for i in grid.window(center, radius) if grid.distance(i, center) <= radius
-    ]
-
-
 def _footprint(grid: HexGrid, anchor: int) -> list[int] | None:
     """The `BASE_FOOTPRINT` hexes for a base anchored at ``anchor``, or ``None`` if
     any of them is off the map."""
@@ -911,10 +910,12 @@ def _footprint(grid: HexGrid, anchor: int) -> list[int] | None:
 
 def _clear(draft: _Draft, i: int, settlements: set[int]) -> bool:
     """Whether a base plot or a site may use hex ``i``: off the edge ring, not a
-    river, bridge, town or city, no road, and not already kept clear."""
+    river, bridge, lake, town or city, not a spring's hills, no road, and not
+    already kept clear."""
     return not (
         draft.grid.on_edge(i)
-        or draft.river[i]
+        or draft.water(i)
+        or draft.land.spring_hills[i]
         or draft.road[i]
         or i in settlements
         or i in draft.plots
@@ -950,7 +951,7 @@ def _place_bases(draft: _Draft) -> None:
         chosen: list[int] | None = None
         for radius in _BASE_RADII:
             options: list[tuple[int, list[int]]] = []
-            for anchor in _disc(grid, seat, radius):
+            for anchor in grid.disc(seat, radius):
                 plot = _footprint(grid, anchor)
                 if plot is None or not all(
                     _clear(draft, i, settlements)
@@ -1070,19 +1071,24 @@ def _deal_kinds(draft: _Draft) -> dict[int, SiteKind]:
 def _site_hex(draft: _Draft, town: int, sites: set[int]) -> int:
     """The hex for ``town``'s site, which is then made plains.
 
-    It must be clear (`_clear`), in the town's territory, within 2 hexes of the
-    town (3 if nothing fits in 2), and beside the town or a road. Preferred, in
-    order: plains, beside a road, beside the town, not beside another of
-    ``sites``, nearest the town, then a seeded coin. Raises `WorldGenError` if
-    nothing fits.
+    It must be clear (`_clear`), within 2 hexes of the town (3 if nothing fits
+    in 2), beside the town or a road, and in the town's territory. A town wedged
+    into a corner of its territory (a three-way border, often behind a river) may
+    have no such hex: only then may the site stand in a neighbouring territory
+    within 3 hexes. Preferred, in order: plains, beside a road, beside the town,
+    not beside another of ``sites``, nearest the town, then a seeded coin. Raises
+    `WorldGenError` if nothing fits.
     """
     grid = draft.grid
     settlements = set(draft.settlements)
     territory = draft.territory[town]
-    for radius in _SITE_RADII:
+    attempts = [(radius, True) for radius in _SITE_RADII] + [(_SITE_RADII[-1], False)]
+    for radius, at_home in attempts:
         best: tuple[tuple[bool, bool, bool, bool, int, float], int] | None = None
-        for i in _disc(grid, town, radius):
-            if not _clear(draft, i, settlements) or draft.territory[i] != territory:
+        for i in grid.disc(town, radius):
+            if not _clear(draft, i, settlements):
+                continue
+            if at_home and draft.territory[i] != territory:
                 continue
             by_road = _beside_road(draft, i)
             by_town = grid.distance(i, town) == 1
@@ -1101,6 +1107,8 @@ def _site_hex(draft: _Draft, town: int, sites: set[int]) -> int:
         if best is not None:
             if radius != _SITE_RADII[0]:
                 draft.widened_sites += 1
+            if not at_home:
+                draft.sites_off_territory += 1
             draft.converted_site_hexes += _to_plains(draft, [best[1]])
             return best[1]
     raise WorldGenError(
@@ -1147,7 +1155,7 @@ def _finish(draft: _Draft, params: WorldParams) -> GeneratedWorld:
     grid = draft.grid
     terrain = list(draft.terrain)
     for i in range(grid.size):
-        if draft.river[i] and draft.road[i]:
+        if draft.land.river[i] and draft.road[i]:
             terrain[i] = Terrain.BRIDGE
     for s, city in zip(draft.settlements, draft.cities, strict=True):
         terrain[s] = Terrain.CITY if city else Terrain.TOWN
@@ -1243,12 +1251,23 @@ def _stats(draft: _Draft, terrain: list[Terrain]) -> dict[str, float]:
     levels = Counter(
         site.level for site in draft.sites if site.kind is not SiteKind.CITY
     )
+
+    def largest_patch(kind: Terrain) -> int:
+        groups = patches(grid, [t is kind for t in terrain])
+        return max((len(g) for g in groups), default=0)
+
     return {
         "hexes": grid.size,
         "share_woods": round(shares[Terrain.WOODS] / grid.size, 4),
         "share_hills": round(shares[Terrain.HILLS] / grid.size, 4),
         "share_river": round(shares[Terrain.RIVER] / grid.size, 4),
+        "share_lake": round(shares[Terrain.LAKE] / grid.size, 4),
         "bridges": shares[Terrain.BRIDGE],
+        "lakes": draft.land.lakes,
+        "lakes_dropped": draft.land.lakes_dropped,
+        "rivers": draft.land.rivers,
+        "woods_patch_max": largest_patch(Terrain.WOODS),
+        "hills_patch_max": largest_patch(Terrain.HILLS),
         "share_road": round(sum(draft.road) / grid.size, 4),
         "settlements": len(draft.settlements),
         "cities": sum(draft.cities),
@@ -1261,6 +1280,7 @@ def _stats(draft: _Draft, terrain: list[Terrain]) -> dict[str, float]:
         "site_hexes_converted": draft.converted_site_hexes,
         "footprint_hexes_converted": draft.converted_footprint_hexes,
         "sites_widened": draft.widened_sites,
+        "sites_off_territory": draft.sites_off_territory,
         "bases_widened": draft.widened_bases,
         "territory_hexes_min": min(territory_size.values()),
         "territory_hexes_max": max(territory_size.values()),
