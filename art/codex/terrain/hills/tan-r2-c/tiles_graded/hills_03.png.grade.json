@@ -1,0 +1,12 @@
+{
+ "tool": "art/codex/terrain/r2_grade.py",
+ "source": "art/codex/terrain/hills/tan-r2-c/tiles/hills_03.png",
+ "source_sha256": "f9b15bd49a190952231290c535d2287aa6f71cca925fd4de7f2b671f5d858cd9",
+ "params": {
+  "shade_pct": 30.0,
+  "shade_mult": 0.78,
+  "shade_warm": "1.0,0.96,0.9",
+  "lightwarm_s": 0.4
+ },
+ "out_sha256": "49b876ebda9a32b46b1da105ca02f6ce73b27feba754ff4c1b61a190e12c4160"
+}

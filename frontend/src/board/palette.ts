@@ -1,23 +1,32 @@
-// Flat-colour palette for the Phase 8 board (Slice 1). These stand in for the
-// AI-generated sprite set that arrives in Slice 2 — terrain is a solid fill and
-// units are tinted markers. Colours are 0xRRGGBB ints (what Pixi's fill/tint
-// want), kept in one place so the sprite swap has a single source to replace.
+// Flat-colour palette for the board. Terrain fills show before the tile textures
+// load (2-player board) and are the world view's zoomed-out overview, so they
+// approximate the tile art: zooming between overview and tiles should not jump
+// palette. Colours are 0xRRGGBB ints (what Pixi's fill/tint want).
 
 import type { components } from "@/lib/api/schema";
 
 type Terrain = components["schemas"]["Terrain"];
 type UnitType = components["schemas"]["UnitType"];
 
-/** Fill colour per terrain type. */
+/**
+ * Fill colour per terrain type. Plains is the alpha-weighted mean of its Codex
+ * paint-in tiles (ratified 2026-11-09); every other terrain uses the art's
+ * feature colour (canopy, rock, roofs, brick, water, deck), not the tile mean,
+ * which is mostly grass and would make them indistinguishable from plains on
+ * the strategy overview.
+ */
 export const TERRAIN_FILL: Record<Terrain, number> = {
-  plains: 0x6b8e4e,
-  woods: 0x2f5d3a,
-  hills: 0x8a7a52,
-  river: 0x2c5a8c,
-  bridge: 0x9c7b4a,
-  town: 0xb0a48c,
-  city: 0xd8d0bc,
+  plains: 0x68692e,
+  woods: 0x3a4420,
+  hills: 0x9c8a5e,
+  river: 0x41504c,
+  bridge: 0x877353,
+  town: 0x8f7150,
+  city: 0x5a4636,
 };
+
+/** The painted roads' median colour (vector road fallback, overview road dots). */
+export const ROAD_COLOR = 0xa78e62;
 
 /** Hex outline colour (between tiles). */
 export const HEX_STROKE = 0x1b1b1f;

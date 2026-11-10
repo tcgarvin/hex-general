@@ -40,3 +40,35 @@ art/foundry/road/review/experiment/
 # U2 unit foundry: raw 2K NBP gen sheets are NOT committed (reproducibility
 # sources are the small ratified crops in art/foundry/units/gens/extracted/)
 art/foundry/units/gens/*.png
+
+# Codex terrain paint-in (art/codex/terrain): commit the replay seed, not the
+# derived files. Kept: prompts, job/refs files, manifests, picks, profiles, the
+# direction notes and refs, the paint-in bases, scripts, the shipped candidate set
+# (candidates/review1) and joins (candidates/review1-joins), and the raw Codex
+# sheets that produced shipped tiles (replay with `paintin.py run --from-raw`;
+# plains from raw/G2 via ground/G2/set.json). Ignored: review renders, generated
+# input sheets, per-sheet cut/tiles/graded intermediates, recoloured ground
+# sources and cuts, superseded candidate PNGs, and raws of unshipped sheets.
+art/codex/terrain/review/
+art/codex/terrain/**/*.sheet.png
+art/codex/terrain/**/cut/
+art/codex/terrain/**/tiles/
+art/codex/terrain/**/tiles_graded/*.png
+art/codex/terrain/ground/*/source.png
+art/codex/terrain/ground/*/plains/
+art/codex/terrain/candidates/**/*.png
+!art/codex/terrain/candidates/review1/**/*.png
+!art/codex/terrain/candidates/review1-joins/**/*.png
+art/codex/terrain/**/raw/*.png
+!art/codex/terrain/raw/G2-meadow-crop-bare.png
+!art/codex/terrain/woods/r2-d/raw/woods-r2-d.png
+!art/codex/terrain/hills/tan-r2-c/raw/hills-tan-r2-c.png
+!art/codex/terrain/town/r2-f/raw/town-r2-f.png
+!art/codex/terrain/city/r2-c/raw/city-r2-c.png
+!art/codex/terrain/river/a/raw/river-a-v2.png
+!art/codex/terrain/river/b/raw/river-b.png
+!art/codex/terrain/river/c/raw/river-c.png
+!art/codex/terrain/road/a/raw/road-a.png
+!art/codex/terrain/road/b/raw/road-b.png
+!art/codex/terrain/road/c/raw/road-c.png
+!art/codex/terrain/bridge/a/raw/bridge-a-v2.png

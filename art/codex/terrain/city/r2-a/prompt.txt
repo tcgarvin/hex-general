@@ -1,0 +1,25 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). In every description below, north is up, east is right.
+
+Image 2 is the target game map. Copy the painting style of its city (lower left of image 2: closed blocks of buildings with cream facades, terracotta and grey roofs, pale grey stone streets and small squares). Image 3 is a close-up of that city; the thin light lines in image 3 are the map's grid, do not paint them. Ignore everything else in images 2 and 3 (units, icons, interface, grid lines, the river, woods).
+
+Edit image 1: in every hexagon, paint the old core of a European town in the style of images 2 and 3.
+- A dense, dark core of closed perimeter blocks fills most of the hexagon. Pale grey stone streets and two or three small paved squares make up about a quarter of the core, in a rectilinear grid (north-south and east-west), not radial.
+- Every block shows cream or white facades on its south side; roofs are a mix of dark terracotta (about #5A3924) and grey slate; dark courtyards inside the blocks. Strong light-dark contrast between pale streets and facades and the dark roofs and courtyards. Buildings are small, each about one-fourteenth of the hexagon's width.
+- Around the core, in the outer band of the hexagon (about one-eighth of its width), the town thins out into a low-density outskirts ring: garden plots, yards, small sheds, hedges and a few trees on the grass. The dense core stops before this band; no building touches the hexagon's edge, and no street runs out to the edge.
+
+Each hexagon is a DIFFERENT town core:
+1. A wide street runs north-south slightly west of centre; a small square in the north-east; no church.
+2. A grey stone church with a square in front of it in the south-west part of the core.
+3. Two wide streets cross east of centre; small squares in the north-west and south; no church.
+4. The core is stretched west to east; a long market square along its middle; no church.
+5. A wide street runs east-west through the northern part; a small square in the south-east; no church.
+6. Blocks of mixed sizes, one large block with a big courtyard in the north; a small square in the west; no church.
+7. A grey stone town hall with a square in the north-east part of the core.
+8. Narrow irregular streets in the east, a regular grid in the west; a small square in the middle; no church.
+9. A wide street runs diagonally in steps from the north-west to the south-east; two small squares; no church.
+
+EVERY HEXAGON MUST LOOK DIFFERENT, following its own numbered description above: different shape, different position of the main mass, different outline. Do not repeat one layout across the sheet.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. Seen from almost straight above, with a very slight tilt from the south. Light from the upper left (west-north-west). Muted, hand-painted, with a fine dry-brush grain of short strokes; NOT bright, NOT glossy, NOT airbrushed.

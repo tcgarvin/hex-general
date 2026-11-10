@@ -1,0 +1,88 @@
+{
+ "runs": [
+  {
+   "name": "woods-scale-5x5",
+   "when": "2026-11-09T21:27:04",
+   "job": "art/codex/terrain/woods/scale-5x5/job.json",
+   "job_sha256": "1222f1144b953b38709d8070fdd1c05eca265184e934a4f48e1a685be18a4be2",
+   "prompt": "art/codex/terrain/woods/scale-5x5/prompt.txt",
+   "prompt_sha256": "24ade3f07057905374dde21e7e040d77a880262ca72fe7cdd1512aef1fc4980a",
+   "sheet": "art/codex/terrain/woods/scale-5x5/woods-scale-5x5.sheet.png",
+   "raw": "art/codex/terrain/woods/scale-5x5/raw/woods-scale-5x5.png",
+   "raw_sha256": "3f28af91bb43ae783e620a5f615b30812b1aaa3b7b2cb6b9f2d1a1fb547f4cce",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c346-ee4e-7fc3-8096-5a7fc3fd5156",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c346-ee4e-7fc3-8096-5a7fc3fd5156/exec-ab232888-b597-441c-b458-fcd452acf525.png",
+    "wall_seconds": 54,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/woods/scale-5x5/woods-scale-5x5.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/woods/scale-5x5/woods-scale-5x5.sheet.png",
+    "docs/concept-art/concept1.png"
+   ],
+   "registration": {
+    "scale": 1.0009046083940243,
+    "tx": -0.418013673460617,
+    "ty": -1.1907667190241202,
+    "max_residual_tile_px": 0.20957432621409497,
+    "min_iou": 0.9921547465858619
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": false,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0
+   },
+   "gates": {},
+   "report": "art/codex/terrain/woods/scale-5x5/report.json",
+   "montage": "art/codex/terrain/review/r1/sheets/woods-scale-5x5.montage.png",
+   "passed": [
+    "woods_00",
+    "woods_01",
+    "woods_02",
+    "woods_03",
+    "woods_04",
+    "woods_05",
+    "woods_06",
+    "woods_07",
+    "woods_08",
+    "woods_09",
+    "woods_10",
+    "woods_11",
+    "woods_12",
+    "woods_15",
+    "woods_16",
+    "woods_20",
+    "woods_21",
+    "woods_22",
+    "woods_24"
+   ],
+   "failed": [
+    "woods_13",
+    "woods_14",
+    "woods_17",
+    "woods_18",
+    "woods_19",
+    "woods_23"
+   ]
+  }
+ ]
+}

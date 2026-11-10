@@ -1,0 +1,20 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Two images are attached.
+
+Image 1 is a LAYOUT GUIDE for a hex wargame map, drawn in flat code colours. It is a map plan, not a style. Each hexagon's fill colour says what terrain goes in it:
+- light green = open grass
+- dark green = a forest
+- brown = rocky hills / ridges
+- orange = a small village
+- red = part of a dense city
+- the thick blue band = a narrow river (it forks into two branches in the middle)
+- the thin yellow line = a thin dirt road (where it crosses the river, put a small stone bridge)
+
+Image 2 shows the painting STYLE to use (crops from the target map).
+
+Paint exactly the map in image 1, at exactly the same size and framing, as a finished terrain map painting in the style of image 2. Every feature must stay in the same position as in the guide: each forest, hill group, village and city fills ONLY its own hexagon, as a mass shaped roughly like that hexagon with a little grass showing around it, and does not spill into neighbouring hexagons. The river follows the blue band's exact path and width, the road follows the yellow line's exact path. Everything that is light green in the guide becomes plain calm grass.
+
+Style: painterly but tight, finely detailed hand-painted strategy-game map, straight top-down view, soft shading from upper left. Palette: muted, fairly dark yellow-olive grass (around #666632), deep dark blue-green conifer canopy made of many tiny round tree crowns, tan and pale grey-brown rock with dark shaded flanks on the hills, cool grey-teal river water, dull khaki dirt road, red-brown terracotta roofs and grey lanes in the village and city. Neutral overcast daylight, muted, low contrast. NOT bright, NOT the guide's flat colours, NOT saturated, NOT sepia, NOT golden.
+
+Do NOT draw any hex grid lines or hexagon outlines in the result, do NOT keep any of the guide's flat colours, no text, no labels, no units, no icons, no border.

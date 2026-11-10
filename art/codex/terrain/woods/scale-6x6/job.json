@@ -1,0 +1,157 @@
+{
+ "name": "woods-scale-6x6",
+ "layout": "6x6",
+ "cells": [
+  {
+   "name": "woods_00",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "woods_01",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "woods_02",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "woods_03",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "woods_04",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "woods_05",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "woods_06",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "woods_07",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "woods_08",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "woods_09",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "woods_10",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "woods_11",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "woods_12",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "woods_13",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "woods_14",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "woods_15",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "woods_16",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "woods_17",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "woods_18",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "woods_19",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "woods_20",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "woods_21",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "woods_22",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "woods_23",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "woods_24",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "woods_25",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "woods_26",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "woods_27",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "woods_28",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "woods_29",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "woods_30",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "woods_31",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "woods_32",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "woods_33",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "woods_34",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "woods_35",
+   "base": "../../r1-bases/05.png"
+  }
+ ],
+ "pin": {
+  "restore": false
+ },
+ "gates": {
+  "max_residual_tile_px": 1.0
+ },
+ "anchors": {}
+}

@@ -1,0 +1,75 @@
+{
+ "name": "hills-scale-4x4",
+ "layout": "4x4",
+ "cells": [
+  {
+   "name": "hills_00",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "hills_01",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "hills_02",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "hills_03",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "hills_04",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "hills_05",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "hills_06",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "hills_07",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "hills_08",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "hills_09",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "hills_10",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "hills_11",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "hills_12",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "hills_13",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "hills_14",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "hills_15",
+   "base": "../../r1-bases/00.png"
+  }
+ ],
+ "pin": {
+  "restore": false
+ },
+ "gates": {},
+ "anchors": {}
+}

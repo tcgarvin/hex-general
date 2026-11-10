@@ -1,0 +1,47 @@
+{
+ "name": "hills-green-a",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "hills_00",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "hills_01",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "hills_02",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "hills_03",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "hills_04",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "hills_05",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "hills_06",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "hills_07",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "hills_08",
+   "base": "../../r1-bases/03.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

@@ -7,6 +7,7 @@ import { Application } from "pixi.js";
 import { useEffect, useRef, useState } from "react";
 
 import { hexKey, type Axial } from "@/board/hex";
+import { loadJoinTextures } from "@/board/joins";
 import { loadTerrainTextures } from "@/board/tiles";
 import { loadUnitTextures } from "@/board/units";
 
@@ -58,9 +59,15 @@ export function WorldBoard({
         made = new WorldRenderer(app, map, { onHexClick: (hex) => clickRef.current(hex) });
         if (focusRef.current !== null) made.centerOn(focusRef.current);
         setRenderer(made);
-        void Promise.all([loadTerrainTextures(), loadUnitTextures(), loadSiteTextures(), loadColumnTextures()])
-          .then(([tiles, units, sites, columns]) => {
-            if (!disposed) made?.setTextures(tiles, units, sites, columns);
+        void Promise.all([
+          loadTerrainTextures(),
+          loadJoinTextures(),
+          loadUnitTextures(),
+          loadSiteTextures(),
+          loadColumnTextures(),
+        ])
+          .then(([tiles, joins, units, sites, columns]) => {
+            if (!disposed) made?.setTextures(tiles, joins, units, sites, columns);
           })
           .catch((err: unknown) => console.error("world textures failed to load", err));
       });

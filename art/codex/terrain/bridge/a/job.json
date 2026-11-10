@@ -1,0 +1,373 @@
+{
+ "name": "bridge-a-v2",
+ "layout": "4x4",
+ "cells": [
+  {
+   "name": "straight_v_t0",
+   "slot": 0,
+   "base": "../bases/straight_v_01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     4
+    ],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 800,
+    "hold_edges": [
+     2,
+     5
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      62.58,
+      76.77
+     ],
+     "rotate_deg": 0.0
+    }
+   }
+  },
+  {
+   "name": "straight_v_t1",
+   "slot": 1,
+   "base": "../bases/straight_v_01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     0,
+     4
+    ],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 801,
+    "hold_edges": [
+     2,
+     5
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      62.58,
+      76.77
+     ],
+     "rotate_deg": 0.0
+    }
+   }
+  },
+  {
+   "name": "turn_se_sw_t0",
+   "slot": 2,
+   "base": "../bases/turn_se_sw_01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     2,
+     5
+    ],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 802,
+    "hold_edges": [
+     0,
+     4
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      64.0,
+      73.0
+     ],
+     "rotate_deg": 90.0
+    }
+   }
+  },
+  {
+   "name": "turn_se_sw_t1",
+   "slot": 3,
+   "base": "../bases/turn_se_sw_01.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     2,
+     5
+    ],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 803,
+    "hold_edges": [
+     0,
+     4
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      64.0,
+      73.0
+     ],
+     "rotate_deg": 90.0
+    }
+   }
+  },
+  {
+   "name": "turn_ne_nw_t0",
+   "slot": 4,
+   "base": "../bases/turn_ne_nw_00.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     2,
+     5
+    ],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 804,
+    "hold_edges": [
+     1,
+     3
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      64.0,
+      54.5
+     ],
+     "rotate_deg": 90.0
+    }
+   }
+  },
+  {
+   "name": "turn_ne_nw_t1",
+   "slot": 5,
+   "base": "../bases/turn_ne_nw_00.png",
+   "guide": {
+    "kind": "road",
+    "edges": [
+     2,
+     5
+    ],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 805,
+    "hold_edges": [
+     1,
+     3
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      64.0,
+      54.5
+     ],
+     "rotate_deg": 90.0
+    }
+   }
+  },
+  {
+   "name": "00_t0",
+   "slot": 6,
+   "base": "../bases/straight_v_00.png",
+   "guide": {
+    "kind": "road",
+    "edges": [],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 806,
+    "hold_edges": [
+     2,
+     5
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      56.5,
+      64.0
+     ],
+     "rotate_deg": 0.0
+    }
+   }
+  },
+  {
+   "name": "00_t1",
+   "slot": 7,
+   "base": "../bases/straight_v_00.png",
+   "guide": {
+    "kind": "road",
+    "edges": [],
+    "color": [
+     161,
+     140,
+     96
+    ],
+    "width": 9.5,
+    "meander": 0.0,
+    "ragged": 0.3,
+    "seed": 807,
+    "hold_edges": [
+     2,
+     5
+    ],
+    "hold_half": 17.0,
+    "marker": {
+     "kind": "bridge",
+     "axis_edges": [
+      2,
+      5
+     ],
+     "length": 52.0,
+     "width": 22.0,
+     "color": [
+      125,
+      111,
+      79
+     ],
+     "centre": [
+      56.5,
+      64.0
+     ],
+     "rotate_deg": 0.0
+    }
+   }
+  }
+ ],
+ "profile": {
+  "path": "../../road/profile.json"
+ },
+ "pin": {
+  "restore": false,
+  "tone_sigma": 6.0,
+  "paint_region_px": 5.0
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0
+ }
+}

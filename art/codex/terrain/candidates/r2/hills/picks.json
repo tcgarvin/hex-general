@@ -1,0 +1,66 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/hills/tan-r2-c/tiles_graded/hills_00.png",
+  "sheet_job": "art/codex/terrain/hills/tan-r2-c/job.json",
+  "raw": "art/codex/terrain/hills/tan-r2-c/raw/hills-tan-r2-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "5 salient px within 4 px of the boundary (limit 2)"
+  ],
+  "sha256": "dae06b1ee695e5d65ed3183002459592be64ac427974dcb3d2ccb7c9aac3bb8c",
+  "grade": {
+   "shade_pct": 30.0,
+   "shade_mult": 0.78,
+   "shade_warm": "1.0,0.96,0.9",
+   "lightwarm_s": 0.4
+  }
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/hills/tan-r2-c/tiles_graded/hills_03.png",
+  "sheet_job": "art/codex/terrain/hills/tan-r2-c/job.json",
+  "raw": "art/codex/terrain/hills/tan-r2-c/raw/hills-tan-r2-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "4.6% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "49b876ebda9a32b46b1da105ca02f6ce73b27feba754ff4c1b61a190e12c4160",
+  "grade": {
+   "shade_pct": 30.0,
+   "shade_mult": 0.78,
+   "shade_warm": "1.0,0.96,0.9",
+   "lightwarm_s": 0.4
+  }
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/hills/tan-r2-c/tiles_graded/hills_06.png",
+  "sheet_job": "art/codex/terrain/hills/tan-r2-c/job.json",
+  "raw": "art/codex/terrain/hills/tan-r2-c/raw/hills-tan-r2-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "a525e88f5467769af3e2897d09a67acbe30938fb9e6c6f78ac1646030978b03a",
+  "grade": {
+   "shade_pct": 30.0,
+   "shade_mult": 0.78,
+   "shade_warm": "1.0,0.96,0.9",
+   "lightwarm_s": 0.4
+  }
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/hills/tan-r2-c/tiles_graded/hills_07.png",
+  "sheet_job": "art/codex/terrain/hills/tan-r2-c/job.json",
+  "raw": "art/codex/terrain/hills/tan-r2-c/raw/hills-tan-r2-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "862f5e28c9a5f92fdcc49a18a1b3a81e81d577f0be0989a1107625c34bb2ee0d",
+  "grade": {
+   "shade_pct": 30.0,
+   "shade_mult": 0.78,
+   "shade_warm": "1.0,0.96,0.9",
+   "lightwarm_s": 0.4
+  }
+ }
+]

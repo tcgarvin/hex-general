@@ -1,0 +1,14 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of {count} separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in {rows} rows of {cols}. On every hexagon a flat pale tan line marks exactly where a narrow unpaved country track runs. Image 2 is the target painted wargame map: copy the painting of its dirt roads, the pale sandy tracks that wind across the grass (for example the ones in the upper left quarter of the map and around the village at the upper right). Image 3 is a close-up of one of those tracks where it forks. Ignore everything else in images 2 and 3: units, icons, panels, rivers, forests, and the thin hex grid lines.
+
+Edit image 1: in every hexagon, repaint the line as an unpaved country track painted exactly like the tracks in images 2 and 3.
+- Colour: pale sandy tan dry earth, clearly LIGHTER than the grass, muted and dusty, NOT orange, NOT dark brown, NOT grey, NOT white.
+- Two faint, slightly darker wheel ruts run along the track, with a few tiny dark pebbles scattered on it, and a faint soft shadow along its lower edge.
+- Its edges are soft and frayed, with grass creeping in from both sides; never hard, never straight-ruled, never outlined.
+- The track follows its line: same course, same curves, same width; the whole track including its frayed edges is as wide as the line. Where a line meets the hexagon outline, the track meets the outline at exactly that place and that width, running straight across it.
+- Where a second line branches off a line, the two tracks fork smoothly like the fork in image 3: no blob, no patch of bare earth, no roundabout at the junction.
+- Where a line stops inside a hexagon, the track is a dead end that fades out softly: its ruts get fainter and grass grows over it until it is gone. It keeps its width to the end and does NOT narrow to a point.
+- The grass beside the track keeps exactly the same colour and brightness as the rest of the hexagon: no darker or lighter band along the track.
+
+Keep EXACTLY as they are: the grass everywhere away from the track (same colour, same texture, same brightness), every hexagon's position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add anything else: no trees, no bushes, no rocks, no fences, no houses, no bridges, no water, no vehicles, no outlines, no borders, no grid lines, no text, nothing on the magenta. Seen from straight above. Soft daylight, muted natural colours, the same palette as image 2.

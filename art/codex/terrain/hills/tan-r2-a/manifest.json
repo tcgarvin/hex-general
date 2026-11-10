@@ -1,0 +1,79 @@
+{
+ "runs": [
+  {
+   "name": "hills-tan-r2-a",
+   "when": "2026-11-09T21:51:14",
+   "job": "art/codex/terrain/hills/tan-r2-a/job.json",
+   "job_sha256": "9c8c84b1253ee526e3c0624ef8dadb1eec5f5680a49f3d00a12558941a1d9db1",
+   "prompt": "art/codex/terrain/hills/tan-r2-a/prompt.txt",
+   "prompt_sha256": "fa19b2de77ead866c24e9dfce87c49a27efa0bc1768ca89b3edff81fa4a22c82",
+   "sheet": "art/codex/terrain/hills/tan-r2-a/hills-tan-r2-a.sheet.png",
+   "raw": "art/codex/terrain/hills/tan-r2-a/raw/hills-tan-r2-a.png",
+   "raw_sha256": "1cdeed484fd6a3190ed99a67c605837702a94db0f52b59365cea3eb65760e911",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c35c-c438-78c2-8024-090eaf93062f",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c35c-c438-78c2-8024-090eaf93062f/exec-7201e7c2-e3ba-49b3-a9ee-cbb473ee6700.png",
+    "wall_seconds": 75,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/hills/tan-r2-a/hills-tan-r2-a.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/hills_tan_ridge_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/hills/tan-r2-a/hills-tan-r2-a.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/hills_tan_ridge_2x.png"
+   ],
+   "registration": {
+    "scale": 1.000232114772581,
+    "tx": -0.09313871430879145,
+    "ty": -0.37602114736283965,
+    "max_residual_tile_px": 0.02017184527674067,
+    "min_iou": 0.996586849409671
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": true,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0,
+    "feature_strength": 0.0,
+    "feature_rgb": [],
+    "hold_feather_px": 3.0,
+    "tone_sigma": 0.0,
+    "tone_feature_grow_px": 2
+   },
+   "gates": {},
+   "report": "art/codex/terrain/hills/tan-r2-a/report.json",
+   "montage": "art/codex/terrain/review/r1/sheets/hills-tan-r2-a.montage.png",
+   "passed": [
+    "hills_01",
+    "hills_05",
+    "hills_07",
+    "hills_08"
+   ],
+   "failed": [
+    "hills_00",
+    "hills_02",
+    "hills_03",
+    "hills_04",
+    "hills_06"
+   ]
+  }
+ ]
+}

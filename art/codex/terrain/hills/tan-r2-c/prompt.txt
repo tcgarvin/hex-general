@@ -1,0 +1,27 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). In every description below, north is up, east is right.
+
+Image 2 is the target game map. Copy the painting style of its rocky ridges in the top-left corner of image 2: weathered grey-ochre rock ridges with sharp crests, pale on their west faces, in deep dark umber shadow on their east faces, set in olive grass. Image 3 is a close-up of those ridges; the thin light lines in image 3 are the map's grid, do not paint them. Ignore everything else in images 2 and 3 (units, icons, interface, grid lines, roads, rivers, woods).
+
+Edit image 1: in every hexagon, paint one connected rocky ridge in the style of images 2 and 3, drawn as shaded relief seen from above (not side-view mountains).
+- Rock is pale weathered grey-ochre like dry limestone (about #9C895D; lit west faces about #B0A080), muted and greyish: NOT orange, NOT sand, NOT yellow, NOT golden.
+- Each ridge is a BROAD, massive landform, about half the hexagon wide, with a wide sunlit west face and an equally wide dark east face: NOT a thin line of rock, NOT a narrow spine.
+- The WHOLE east- and south-east-facing slope of the ridge lies in DEEP, DARK, warm umber shadow (about #3A3220, dark brown, as dark as the woods in image 2, never green-black or blue): this dark shadow covers about a quarter of the whole hexagon and is the darkest part of the tile. Copy how dark the shadowed east faces are in image 3: nearly black-brown, with only faint detail.
+- Gullies branch irregularly down the slopes; NO parallel combed or feathery streaks.
+- The lower slopes are olive grass of the same family as the ground, so the ridge sits in the ground; the foot fades into the flat grass with no outline. A band of plain grass about one-fourteenth of the hexagon's width stays around the edge; the ridge never touches the hexagon's edge.
+
+Each hexagon holds a DIFFERENT ridge:
+1. A long, broad ridge running from the north-west corner area to the south-east.
+2. A short double crest: two peaks joined by a saddle, running west to east in the northern half of the hexagon.
+3. A hooked ridge: it runs from the west toward the centre, then bends to the south-east.
+4. A broad rocky massif in the north-east part with one spur running toward the south-west.
+5. A long, broad ridge running from the south-west to the north-east.
+6. Two short parallel spurs running north-west to south-east, joined at their north-west end.
+7. A ridge running north to south just west of the centre, with a short side spur to the east.
+8. A low broad massif in the southern half with a spur pointing north-west.
+9. A crescent ridge curving from the north around the west side to the south, open to the east.
+
+EVERY HEXAGON MUST LOOK DIFFERENT, following its own numbered description above: different shape, different position of the main mass, different outline. Do not repeat one layout across the sheet.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. Seen from almost straight above, with a very slight tilt from the south. Light from the upper left (west-north-west). Muted, hand-painted, with a fine dry-brush grain of short strokes; NOT bright, NOT glossy, NOT airbrushed.

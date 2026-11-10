@@ -12,9 +12,10 @@
 // only when one exists for its `(terrain, shape)` pair — the texture lookup key
 // is `"road/{terrain}_{shape}"` in `LoadedTiles.byOriented`, e.g.
 // `"road/plains_straight_v"` from `tiles/road/plains_straight_v_00.png`.
-// Anything unresolved (settlement hexes, fork masks, terrains without baked
-// road art yet) simply keeps the vector overlay, so partial art coverage never
-// breaks a road network's continuity.
+// Anything unresolved (settlement hexes, and every terrain but plains: the
+// 2026-11-09 Codex set bakes plains roads only, all shapes including forks)
+// simply keeps the vector overlay, so partial art coverage never breaks a road
+// network's continuity.
 //
 // Roads use the raw adjacency mask, not the river course-graph pruning: road
 // networks are authored as thin corridors, and a road hex genuinely connects to

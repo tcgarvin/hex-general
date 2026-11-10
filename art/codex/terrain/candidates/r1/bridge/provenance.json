@@ -1,0 +1,26 @@
+{
+ "00.png": {
+  "cell": "00_t0",
+  "sha256": "2f7b3f6edf2f20c9a0afe865b375813d396f3195de7f44a32749ca9f03cce1d0",
+  "sheet": "art/codex/terrain/bridge/a/bridge-a-v2.sheet.png",
+  "source": "art/codex/terrain/bridge/a/tiles/00_t0.png"
+ },
+ "straight_v_00.png": {
+  "cell": "straight_v_t0",
+  "sha256": "95aad13fda578a96e38c6c60869789f97fad624b911c6b92ac03a951d7ee0d76",
+  "sheet": "art/codex/terrain/bridge/a/bridge-a-v2.sheet.png",
+  "source": "art/codex/terrain/bridge/a/tiles/straight_v_t0.png"
+ },
+ "turn_ne_nw_00.png": {
+  "cell": "turn_ne_nw_t1",
+  "sha256": "c3752d32f26c59cdb732313e1df0d778c3ed1c9a1e9ad445baba1c4f75c7b23b",
+  "sheet": "art/codex/terrain/bridge/a/bridge-a-v2.sheet.png",
+  "source": "art/codex/terrain/bridge/a/tiles/turn_ne_nw_t1.png"
+ },
+ "turn_se_sw_00.png": {
+  "cell": "turn_se_sw_t0",
+  "sha256": "5bf6e0b5a43fdb9f08dae7052bc809c1caa047f67435e2b64bab75b925a65326",
+  "sheet": "art/codex/terrain/bridge/a/bridge-a-v2.sheet.png",
+  "source": "art/codex/terrain/bridge/a/tiles/turn_se_sw_t0.png"
+ }
+}

@@ -4,8 +4,9 @@
 // 40×40 map but not for ~122k hexes. This renderer instead:
 //
 // * **close up** (tactical zoom) keeps a pool of tile sprites and shows only the
-//   hexes on screen, re-using sprites as the camera moves, with fog over the hexes
-//   the player can't currently see;
+//   hexes on screen, re-using sprites as the camera moves, with same-terrain join
+//   sprites over the woods/city seams among them (same culling, own pool) and fog
+//   over the hexes the player can't currently see;
 // * **far out** (operational zoom) shows one prerendered overview texture of the
 //   whole map (terrain and roads, a few pixels per hex) instead of tiles;
 // * always draws site markers (owner colour) and unit tokens on top, and a minimap
@@ -18,7 +19,16 @@ import { Application, Container, Graphics, Rectangle, Sprite, Texture, type Fede
 
 import { axialToPixel, hexCornerPoints, hexKey, HEX_SIZE, pixelToAxial, type Axial } from "@/board/hex";
 import { hexTileRef } from "@/board/hexTile";
-import { TERRAIN_FILL } from "@/board/palette";
+import {
+  JOIN_TERRAINS,
+  joinDrawRank,
+  joinsOwnedBy,
+  joinSpriteScale,
+  joinVariant,
+  type JoinPlacement,
+  type LoadedJoins,
+} from "@/board/joins";
+import { ROAD_COLOR, TERRAIN_FILL } from "@/board/palette";
 import { riverCourseEdges } from "@/board/riverTiles";
 import { roadTileRefs, type RoadTileRef } from "@/board/roadTiles";
 import type { LoadedTiles } from "@/board/tiles";
@@ -28,7 +38,7 @@ import type { components } from "@/lib/api/schema";
 import { NEUTRAL_OWNER, ownerColor } from "./colors";
 import type { LoadedColumns } from "./columnArt";
 import type { LoadedSites } from "./siteArt";
-import { visibleCells, worldPixelBounds, type WorldMap } from "./worldMap";
+import { axialToOffset, visibleCells, worldPixelBounds, type CellRange, type WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
 type Unit = WorldState["units"][number];
@@ -42,6 +52,9 @@ const MAX_SCALE = 2.5;
 const OVERVIEW_HEX = 2; // overview texture: hex radius in texture pixels
 const MINIMAP_SIZE = 220;
 const MINIMAP_MARGIN = 12;
+/** Join codes per owner hex (edges 0-2, vertices 3-4); sprite key = index * 5 + code. */
+const JOIN_CODES_PER_HEX = 5;
+const NO_JOINS: readonly JoinPlacement[] = [];
 
 /**
  * Where each column of a 1–6 stack sits in its hex (in HEX_SIZE units from the
@@ -103,6 +116,8 @@ export class WorldRenderer {
   private readonly map: WorldMap;
   private readonly world = new Container();
   private readonly tileLayer = new Container();
+  /** Join sprites, kept in draw order by `zIndex` (they are added in camera order). */
+  private readonly joinLayer = new Container({ sortableChildren: true });
   private readonly fogLayer = new Container();
   private readonly overview: Sprite;
   private readonly sites = new Graphics();
@@ -120,6 +135,10 @@ export class WorldRenderer {
   private readonly minimapFrame = new Graphics();
   private readonly minimapSites = new Graphics();
   private readonly tileSprites = new Map<number, Sprite>();
+  private readonly joinSprites = new Map<number, Sprite>();
+  private readonly joinPool: Sprite[] = [];
+  /** The joins each hex owns, by hex index; the map is static, so filled lazily once. */
+  private readonly ownedJoins = new Map<number, readonly JoinPlacement[]>();
   private readonly fogSprites = new Map<number, Sprite>();
   private readonly spritePool: Sprite[] = [];
   private readonly fogPool: Sprite[] = [];
@@ -128,6 +147,7 @@ export class WorldRenderer {
   private readonly riverCourse: Map<string, number[]>;
   private readonly overviewScale: number;
   private tiles: LoadedTiles | null = null;
+  private joins: LoadedJoins | null = null;
   private units: LoadedUnits | null = null;
   private scene: WorldScene | null = null;
   private readonly options: WorldRendererOptions;
@@ -156,6 +176,7 @@ export class WorldRenderer {
     this.world.addChild(
       this.overview,
       this.tileLayer,
+      this.joinLayer,
       this.fogLayer,
       this.siteLayer,
       this.sites,
@@ -186,16 +207,20 @@ export class WorldRenderer {
 
   setTextures(
     tiles: LoadedTiles | null,
+    joins: LoadedJoins | null,
     units: LoadedUnits | null,
     sites: LoadedSites | null,
     columns: LoadedColumns,
   ): void {
     this.tiles = tiles;
+    this.joins = joins;
     this.units = units;
     this.siteArt = sites;
     this.columnArt = columns;
     for (const sprite of this.tileSprites.values()) this.releaseTile(sprite);
     this.tileSprites.clear();
+    for (const sprite of this.joinSprites.values()) this.releaseJoin(sprite);
+    this.joinSprites.clear();
     this.refresh();
   }
 
@@ -310,6 +335,7 @@ export class WorldRenderer {
 
     this.overview.visible = !tileMode;
     this.tileLayer.visible = tileMode;
+    this.joinLayer.visible = tileMode;
     this.fogLayer.visible = tileMode;
     if (tileMode) this.syncTiles(range);
     this.drawSites(range, tileMode);
@@ -318,7 +344,7 @@ export class WorldRenderer {
     this.drawMinimapFrame(x0, y0, x1, y1);
   };
 
-  private syncTiles(range: { col0: number; col1: number; row0: number; row1: number }): void {
+  private syncTiles(range: CellRange): void {
     const want = new Set<number>();
     const { width } = this.map;
     const visible = this.scene?.visible;
@@ -352,6 +378,69 @@ export class WorldRenderer {
         this.fogSprites.delete(index);
       }
     }
+    if (this.joins !== null) this.syncJoins(range, this.joins);
+  }
+
+  /**
+   * Join sprites for the same cells as the tiles: each join is owned by one hex
+   * (`joins.ts`) and drawn only while every hex it spans is in the range, i.e.
+   * has its tile sprite, so a join never hangs over a hex whose tile is culled.
+   */
+  private syncJoins(range: CellRange, joins: LoadedJoins): void {
+    const want = new Set<number>();
+    const { width } = this.map;
+    const inRange = (a: Axial): boolean => {
+      const { col, row } = axialToOffset(a);
+      return col >= range.col0 && col <= range.col1 && row >= range.row0 && row <= range.row1;
+    };
+    for (let row = range.row0; row <= range.row1; row++) {
+      for (let col = range.col0; col <= range.col1; col++) {
+        const index = row * width + col;
+        for (const join of this.joinsOwnedAt(index)) {
+          if (!join.members.every(inRange)) continue;
+          const key = index * JOIN_CODES_PER_HEX + join.code;
+          want.add(key);
+          if (!this.joinSprites.has(key)) this.joinSprites.set(key, this.placeJoin(join, joins));
+        }
+      }
+    }
+    for (const [key, sprite] of this.joinSprites) {
+      if (!want.has(key)) {
+        this.releaseJoin(sprite);
+        this.joinSprites.delete(key);
+      }
+    }
+  }
+
+  private joinsOwnedAt(index: number): readonly JoinPlacement[] {
+    let owned = this.ownedJoins.get(index);
+    if (owned === undefined) {
+      const found = joinsOwnedBy(
+        this.map.hexes[index].coord,
+        (q, r) => this.map.hexAt(q, r)?.terrain,
+        JOIN_TERRAINS,
+        HEX_SIZE,
+      );
+      owned = found.length === 0 ? NO_JOINS : found;
+      this.ownedJoins.set(index, owned);
+    }
+    return owned;
+  }
+
+  private placeJoin(join: JoinPlacement, joins: LoadedJoins): Sprite {
+    const sprite = this.joinPool.pop() ?? new Sprite();
+    sprite.texture = joinVariant(joins, join);
+    sprite.anchor.set(0.5);
+    sprite.scale.set(joinSpriteScale(HEX_SIZE));
+    sprite.position.set(join.x, join.y);
+    sprite.zIndex = joinDrawRank(join);
+    this.joinLayer.addChild(sprite);
+    return sprite;
+  }
+
+  private releaseJoin(sprite: Sprite): void {
+    sprite.removeFromParent();
+    this.joinPool.push(sprite);
   }
 
   private placeTile(hex: WorldMap["hexes"][number]): Sprite {
@@ -754,7 +843,6 @@ export function drawOverview(map: WorldMap): HTMLCanvasElement {
   if (ctx === null) throw new Error("no 2D canvas context for the world overview");
   const image = ctx.createImageData(canvas.width, canvas.height);
   const px = image.data;
-  const ROAD = 0x5c4028;
   for (let y = 0; y < canvas.height; y++) {
     for (let x = 0; x < canvas.width; x++) {
       const wx = x + b.minX;
@@ -765,7 +853,7 @@ export function drawOverview(map: WorldMap): HTMLCanvasElement {
       let color = TERRAIN_FILL[cell.terrain];
       if (cell.road && cell.terrain !== "river") {
         const c = axialToPixel(hex.q, hex.r, OVERVIEW_HEX);
-        if (Math.abs(c.x - wx) < 0.9 && Math.abs(c.y - wy) < 0.9) color = ROAD;
+        if (Math.abs(c.x - wx) < 0.9 && Math.abs(c.y - wy) < 0.9) color = ROAD_COLOR;
       }
       const i = (y * canvas.width + x) * 4;
       px[i] = (color >> 16) & 0xff;

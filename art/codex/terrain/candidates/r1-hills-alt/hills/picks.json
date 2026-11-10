@@ -1,0 +1,38 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/hills/green-a/tiles/hills_00.png",
+  "sheet_job": "art/codex/terrain/hills/green-a/job.json",
+  "raw": "art/codex/terrain/hills/green-a/raw/hills-green-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "e26fb5a2f0ab7e6b60b2314a4ea83a1599d6af8fe6a49318682c299f5d5f0cad"
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/hills/green-a/tiles/hills_02.png",
+  "sheet_job": "art/codex/terrain/hills/green-a/job.json",
+  "raw": "art/codex/terrain/hills/green-a/raw/hills-green-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "b627a6160acfc685c6d6d028b8f12fd1b979e7d5051c6ca00b8eafc368c8c6e0"
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/hills/green-a/tiles/hills_05.png",
+  "sheet_job": "art/codex/terrain/hills/green-a/job.json",
+  "raw": "art/codex/terrain/hills/green-a/raw/hills-green-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "52d0b53469b280493c4f9d26951061f8453f0554ec210b1915d0f340f165595e"
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/hills/green-a/tiles/hills_07.png",
+  "sheet_job": "art/codex/terrain/hills/green-a/job.json",
+  "raw": "art/codex/terrain/hills/green-a/raw/hills-green-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "a7e1942bb364881ac7a451a1fe48275a4218610728f68b3ae5a1f05bbb610fa2"
+ }
+]

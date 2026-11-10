@@ -1,0 +1,312 @@
+{
+ "hex_width": 128,
+ "canvas": 64,
+ "anchor": "canvas centre = shared edge midpoint (edge_*) or vertex (vert_*)",
+ "edge_kinds": {
+  "edge_se": 0,
+  "edge_ne": 1,
+  "edge_n": 2
+ },
+ "vertex_kinds": {
+  "vert_e": 0,
+  "vert_ne": 1
+ },
+ "draw_order": "after base tiles: edges by (r, q, dir), then vertices by (r, q, i); before grid and overlays",
+ "tiles": "art/codex/terrain/candidates/r1",
+ "params": {
+  "city": {
+   "edge": {
+    "half_width": 17.0,
+    "half_length": 26.0,
+    "feather": 5.0
+   },
+   "vertex": {
+    "radius": 22.0,
+    "feather": 6.0
+   }
+  },
+  "woods": {
+   "edge": {
+    "half_width": 19.0,
+    "half_length": 27.0,
+    "feather": 7.0
+   },
+   "vertex": {
+    "radius": 24.0,
+    "feather": 9.0
+   }
+  }
+ },
+ "sprites": [
+  {
+   "file": "woods/edge_se_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/00.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "woods/edge_se_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/01.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "woods/edge_se_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/02.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "woods/edge_ne_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/01.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  },
+  {
+   "file": "woods/edge_ne_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/02.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  },
+  {
+   "file": "woods/edge_ne_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/03.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  },
+  {
+   "file": "woods/edge_n_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/02.png",
+   "offset": [
+    -6,
+    6
+   ]
+  },
+  {
+   "file": "woods/edge_n_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/03.png",
+   "offset": [
+    -6,
+    6
+   ]
+  },
+  {
+   "file": "woods/edge_n_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/04.png",
+   "offset": [
+    -6,
+    6
+   ]
+  },
+  {
+   "file": "woods/vert_e_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/03.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "woods/vert_e_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/04.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "woods/vert_e_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/05.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "woods/vert_ne_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/04.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  },
+  {
+   "file": "woods/vert_ne_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/05.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  },
+  {
+   "file": "woods/vert_ne_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/woods/00.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  },
+  {
+   "file": "city/edge_se_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/00.png",
+   "offset": [
+    0,
+    0
+   ]
+  },
+  {
+   "file": "city/edge_se_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/01.png",
+   "offset": [
+    0,
+    3
+   ]
+  },
+  {
+   "file": "city/edge_se_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/02.png",
+   "offset": [
+    -9,
+    6
+   ]
+  },
+  {
+   "file": "city/edge_ne_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/01.png",
+   "offset": [
+    -6,
+    6
+   ]
+  },
+  {
+   "file": "city/edge_ne_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/02.png",
+   "offset": [
+    0,
+    9
+   ]
+  },
+  {
+   "file": "city/edge_ne_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/03.png",
+   "offset": [
+    -6,
+    -6
+   ]
+  },
+  {
+   "file": "city/edge_n_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/02.png",
+   "offset": [
+    9,
+    9
+   ]
+  },
+  {
+   "file": "city/edge_n_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/03.png",
+   "offset": [
+    0,
+    -15
+   ]
+  },
+  {
+   "file": "city/edge_n_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/00.png",
+   "offset": [
+    6,
+    -6
+   ]
+  },
+  {
+   "file": "city/vert_e_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/03.png",
+   "offset": [
+    -6,
+    -3
+   ]
+  },
+  {
+   "file": "city/vert_e_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/00.png",
+   "offset": [
+    0,
+    -3
+   ]
+  },
+  {
+   "file": "city/vert_e_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/01.png",
+   "offset": [
+    0,
+    3
+   ]
+  },
+  {
+   "file": "city/vert_ne_00.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/00.png",
+   "offset": [
+    3,
+    6
+   ]
+  },
+  {
+   "file": "city/vert_ne_01.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/01.png",
+   "offset": [
+    -9,
+    0
+   ]
+  },
+  {
+   "file": "city/vert_ne_02.png",
+   "route": "patch",
+   "source": "art/codex/terrain/candidates/r1/city/02.png",
+   "offset": [
+    0,
+    12
+   ]
+  }
+ ]
+}

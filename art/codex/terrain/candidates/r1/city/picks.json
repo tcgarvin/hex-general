@@ -1,0 +1,46 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/city/r1-d/tiles/city_07.png",
+  "sheet_job": "art/codex/terrain/city/r1-d/job.json",
+  "raw": "art/codex/terrain/city/r1-d/raw/city-r1-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "7.4% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "f8c85254571df57fa666a406fb711eaa5ac7de8c0cb1c158904a811202442b78"
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/city/r1-d/tiles/city_08.png",
+  "sheet_job": "art/codex/terrain/city/r1-d/job.json",
+  "raw": "art/codex/terrain/city/r1-d/raw/city-r1-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "8.0% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "fd44033449e7ae46ab2c93dd837481d67be976cf9bd092ed1d7f6b8e77498b4c"
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/city/r1-d/tiles/city_06.png",
+  "sheet_job": "art/codex/terrain/city/r1-d/job.json",
+  "raw": "art/codex/terrain/city/r1-d/raw/city-r1-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "8.4% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "86650e5c7078b44852c2e7edc99f9df69db43cfeefd91004bde9376df48ee767"
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/city/r1-d/tiles/city_03.png",
+  "sheet_job": "art/codex/terrain/city/r1-d/job.json",
+  "raw": "art/codex/terrain/city/r1-d/raw/city-r1-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "11.3% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "c4adbf130d8a0fc48ba7f920616695ee798f4c2fdc219e69a60ff8e17fd00c68"
+ }
+]

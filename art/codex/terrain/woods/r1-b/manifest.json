@@ -1,0 +1,73 @@
+{
+ "runs": [
+  {
+   "name": "woods-r1-b",
+   "when": "2026-11-09T21:32:12",
+   "job": "art/codex/terrain/woods/r1-b/job.json",
+   "job_sha256": "6205dbc970cd7b29d2a78679f8140a28b8bc6d07eda0f60a190ec319f4a57ce1",
+   "prompt": "art/codex/terrain/woods/r1-b/prompt.txt",
+   "prompt_sha256": "8b0b9406b72495a0c4e8176cfec6b5b6dd7ff4a81bd68ed77d96a1570d723d9e",
+   "sheet": "art/codex/terrain/woods/r1-b/woods-r1-b.sheet.png",
+   "raw": "art/codex/terrain/woods/r1-b/raw/woods-r1-b.png",
+   "raw_sha256": "99c46e0692a163c524f769b29dfb01876ef65ff88b031b48f6ef70da60ea60c7",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c34b-ae9d-7a42-8807-68aa2d855fed",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c34b-ae9d-7a42-8807-68aa2d855fed/exec-40a2281a-3b2c-4940-a7d3-fa2a87c357c6.png",
+    "wall_seconds": 52,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/woods/r1-b/woods-r1-b.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/forest_cluster_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/woods/r1-b/woods-r1-b.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/forest_cluster_2x.png"
+   ],
+   "registration": {
+    "scale": 1.0004204427837646,
+    "tx": -0.6585550528433843,
+    "ty": -1.4105839738008261,
+    "max_residual_tile_px": 0.09039050500643915,
+    "min_iou": 0.98774370309584
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": false,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0
+   },
+   "gates": {},
+   "report": "art/codex/terrain/woods/r1-b/report.json",
+   "montage": "art/codex/terrain/review/r1/sheets/woods-r1-b.montage.png",
+   "passed": [],
+   "failed": [
+    "woods_00",
+    "woods_01",
+    "woods_02",
+    "woods_03",
+    "woods_04",
+    "woods_05",
+    "woods_06",
+    "woods_07",
+    "woods_08"
+   ]
+  }
+ ]
+}

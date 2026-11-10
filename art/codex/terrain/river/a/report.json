@@ -1,0 +1,2160 @@
+{
+ "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+ "registration": {
+  "scale": 1.0003693521327883,
+  "tx": -0.3838437065439041,
+  "ty": -0.7914973567983801,
+  "max_residual_tile_px": 0.19316759934125627,
+  "min_iou": 0.9930685212845407
+ },
+ "pin": {
+  "rim_exact_px": 1.5,
+  "rim_ramp_px": 6.0,
+  "cross_exact_px": 3.0,
+  "cross_ramp_px": 12.0,
+  "restore": false,
+  "restore_sigma": 0.75,
+  "restore_lo": 14.0,
+  "restore_hi": 26.0,
+  "restore_close_px": 4,
+  "restore_grow_px": 2,
+  "restore_feather_px": 1.2,
+  "restore_tone": true,
+  "restore_tone_sigma": 8.0,
+  "restore_tone_span": 20.0,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   67.0,
+   81.0,
+   77.0
+  ],
+  "hold_feather_px": 3.0,
+  "tone_sigma": 6.0,
+  "tone_feature_grow_px": 2
+ },
+ "tiles": {
+  "straight_v_00": {
+   "passed": true,
+   "colour": {
+    "lum": 92.74,
+    "hue": 61.09,
+    "sat": 0.551
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0854,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.09 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9953,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.995 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e2",
+     "value": 0.375,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.38 (limit 3.0), width 17.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e2",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e5",
+     "value": -0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.12 (limit 3.0), width 19.0 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e5",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.5,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.5 vs anchor 76.0 (-1.50, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.006,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.176 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.96,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 92.7 vs anchor 96.7 (-4.0, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.91,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "straight_v_01": {
+   "passed": true,
+   "colour": {
+    "lum": 92.57,
+    "hue": 61.11,
+    "sat": 0.551
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.067,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.07 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.994,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.994 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e2",
+     "value": 1.0,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +1.00 (limit 3.0), width 17.8 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e2",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e5",
+     "value": -0.5,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.50 (limit 3.0), width 20.0 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e5",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -0.9,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 75.1 vs anchor 76.0 (-0.90, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.009,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.179 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -4.13,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 92.6 vs anchor 96.7 (-4.1, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.89,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "straight_v_02": {
+   "passed": true,
+   "colour": {
+    "lum": 92.87,
+    "hue": 61.13,
+    "sat": 0.55
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1249,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.12 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.994,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.994 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e2",
+     "value": 0.5,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.50 (limit 3.0), width 17.0 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e2",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e5",
+     "value": -0.625,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.62 (limit 3.0), width 20.2 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e5",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.2,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.8 vs anchor 76.0 (-1.20, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.009,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.179 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.83,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 92.9 vs anchor 96.7 (-3.8, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.87,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "straight_d_00": {
+   "passed": true,
+   "colour": {
+    "lum": 93.39,
+    "hue": 61.07,
+    "sat": 0.553
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.106,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.11 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9955,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.995 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": 0.5,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.50 (limit 3.0), width 18.8 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": 0.25,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.25 (limit 3.0), width 18.2 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.1,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.9 vs anchor 76.0 (-1.10, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.012,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.182 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.31,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 93.4 vs anchor 96.7 (-3.3, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.93,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "straight_d_01": {
+   "passed": true,
+   "colour": {
+    "lum": 92.65,
+    "hue": 61.07,
+    "sat": 0.549
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0598,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.06 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9971,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.997 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": 0.25,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.25 (limit 3.0), width 18.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": 0.25,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.25 (limit 3.0), width 18.2 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.6,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.4 vs anchor 76.0 (-1.60, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.015,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.185 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -4.05,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 92.7 vs anchor 96.7 (-4.0, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.93,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "straight_d_02": {
+   "passed": true,
+   "colour": {
+    "lum": 92.83,
+    "hue": 61.11,
+    "sat": 0.55
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0243,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.02 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9955,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.996 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": -1.0,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -1.00 (limit 3.0), width 20.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": -0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.12 (limit 3.0), width 17.8 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.8,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.2 vs anchor 76.0 (-1.80, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.005,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.175 vs anchor 0.17 (+0.00, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.87,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 92.8 vs anchor 96.7 (-3.9, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.89,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "turn_n_se_00": {
+   "passed": true,
+   "colour": {
+    "lum": 93.07,
+    "hue": 61.09,
+    "sat": 0.553
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1466,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.15 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9954,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.995 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": -1.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -1.12 (limit 3.0), width 20.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e2",
+     "value": 0.75,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.75 (limit 3.0), width 19.0 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e2",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.9,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.1 vs anchor 76.0 (-1.90, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.013,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.183 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.63,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 93.1 vs anchor 96.7 (-3.6, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.91,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "turn_s_nw_00": {
+   "passed": true,
+   "colour": {
+    "lum": 93.78,
+    "hue": 61.09,
+    "sat": 0.551
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0716,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.07 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9948,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.995 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": -0.375,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.38 (limit 3.0), width 22.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e5",
+     "value": -0.875,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.88 (limit 3.0), width 19.8 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e5",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.6,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.4 vs anchor 76.0 (-1.60, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.012,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.182 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -2.92,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 93.8 vs anchor 96.7 (-2.9, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.91,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "turn_s_nw_01": {
+   "passed": true,
+   "colour": {
+    "lum": 93.7,
+    "hue": 61.11,
+    "sat": 0.55
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.178,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.18 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9947,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.995 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": -0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.12 (limit 3.0), width 18.2 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e5",
+     "value": 0.0,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 3.0), width 18.0 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e5",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.2,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.8 vs anchor 76.0 (-1.20, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.006,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.176 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.0,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 93.7 vs anchor 96.7 (-3.0, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.89,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "turn_se_sw_00": {
+   "passed": true,
+   "colour": {
+    "lum": 93.31,
+    "hue": 61.05,
+    "sat": 0.554
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1753,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.18 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9931,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.993 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": 0.5,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.50 (limit 3.0), width 19.8 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e4",
+     "value": -0.25,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 3.0), width 20.8 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e4",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -2.1,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 73.9 vs anchor 76.0 (-2.10, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.003,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.173 vs anchor 0.17 (+0.00, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.39,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 93.3 vs anchor 96.7 (-3.4, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.95,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.0 vs anchor 62.0 (-1.0, tol 6.0)"
+    }
+   ]
+  },
+  "turn_se_sw_01": {
+   "passed": true,
+   "colour": {
+    "lum": 93.22,
+    "hue": 61.07,
+    "sat": 0.549
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1932,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.19 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9933,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.993 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": -0.25,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 3.0), width 17.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e4",
+     "value": -0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.12 (limit 3.0), width 21.2 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e4",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -2.2,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 73.8 vs anchor 76.0 (-2.20, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.009,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.179 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.48,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 93.2 vs anchor 96.7 (-3.5, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.93,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "turn_ne_nw_00": {
+   "passed": true,
+   "colour": {
+    "lum": 93.37,
+    "hue": 61.09,
+    "sat": 0.551
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1804,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.18 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9935,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.994 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e1",
+     "value": -0.875,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.88 (limit 3.0), width 20.2 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e1",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "cross_cut_e3",
+     "value": 0.125,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.12 (limit 3.0), width 17.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e3",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.8,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.2 vs anchor 76.0 (-1.80, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.014,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.184 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -3.33,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 93.4 vs anchor 96.7 (-3.3, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.91,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.1 vs anchor 62.0 (-0.9, tol 6.0)"
+    }
+   ]
+  },
+  "end_n_00": {
+   "passed": true,
+   "colour": {
+    "lum": 95.81,
+    "hue": 61.03,
+    "sat": 0.557
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1524,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.15 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9939,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.994 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e2",
+     "value": 0.5,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.50 (limit 3.0), width 19.0 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e2",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.4,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.6 vs anchor 76.0 (-1.40, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.013,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.183 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -0.89,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 95.8 vs anchor 96.7 (-0.9, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.97,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.0 vs anchor 62.0 (-1.0, tol 6.0)"
+    }
+   ]
+  },
+  "end_s_00": {
+   "passed": true,
+   "colour": {
+    "lum": 95.56,
+    "hue": 61.03,
+    "sat": 0.557
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1279,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.13 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9933,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.993 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e5",
+     "value": 0.375,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.38 (limit 3.0), width 19.8 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e5",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.2 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.4,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.6 vs anchor 76.0 (-1.40, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.022,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.192 vs anchor 0.17 (+0.02, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -1.14,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 95.6 vs anchor 96.7 (-1.1, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.97,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.0 vs anchor 62.0 (-1.0, tol 6.0)"
+    }
+   ]
+  },
+  "end_se_00": {
+   "passed": true,
+   "colour": {
+    "lum": 96.03,
+    "hue": 61.05,
+    "sat": 0.556
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1709,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.17 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9935,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.994 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e0",
+     "value": -0.25,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre -0.25 (limit 3.0), width 18.5 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e0",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.9,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.1 vs anchor 76.0 (-1.90, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.011,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.181 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -0.67,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 96.0 vs anchor 96.7 (-0.7, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.95,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.0 vs anchor 62.0 (-1.0, tol 6.0)"
+    }
+   ]
+  },
+  "end_ne_00": {
+   "passed": true,
+   "colour": {
+    "lum": 95.96,
+    "hue": 61.03,
+    "sat": 0.558
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.1365,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.14 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9932,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.993 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "cross_cut_e1",
+     "value": 0.75,
+     "limit": 3.0,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.75 (limit 3.0), width 19.0 vs 20.4 (tol 7.2) at depth 10-16"
+    },
+    {
+     "name": "cross_final_e1",
+     "value": 0.0,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre +0.00 (limit 0.75), width 20.8 vs 20.4 (tol 2.0) at depth 0.5-2.5"
+    },
+    {
+     "name": "leak_cut",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "leak_final",
+     "value": 0.0,
+     "limit": 4.0,
+     "passed": true,
+     "hard": true,
+     "detail": "0 feature px within 8 px of a non-connected rim (limit 4)"
+    },
+    {
+     "name": "feature_lum",
+     "value": -1.9,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "river lum 74.1 vs anchor 76.0 (-1.90, tol 6.0)"
+    },
+    {
+     "name": "feature_sat",
+     "value": 0.014,
+     "limit": 0.05,
+     "passed": true,
+     "hard": false,
+     "detail": "river sat 0.184 vs anchor 0.17 (+0.01, tol 0.05)"
+    },
+    {
+     "name": "lum",
+     "value": -0.74,
+     "limit": 8.0,
+     "passed": true,
+     "hard": false,
+     "detail": "lum 96.0 vs anchor 96.7 (-0.7, tol 8.0)"
+    },
+    {
+     "name": "hue",
+     "value": -0.97,
+     "limit": 6.0,
+     "passed": true,
+     "hard": false,
+     "detail": "hue 61.0 vs anchor 62.0 (-1.0, tol 6.0)"
+    }
+   ]
+  }
+ },
+ "passed": true,
+ "codex_follow": {
+  "straight_v_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "2": {
+     "edge": {
+      "centre": 0.62,
+      "width": 22.0
+     },
+     "handover": {
+      "centre": 0.38,
+      "width": 17.25
+     }
+    },
+    "5": {
+     "edge": {
+      "centre": 0.75,
+      "width": 20.25
+     },
+     "handover": {
+      "centre": -0.12,
+      "width": 19.0
+     }
+    }
+   }
+  },
+  "straight_v_01": {
+   "guide_width": 23.0,
+   "edges": {
+    "2": {
+     "edge": {
+      "centre": 1.0,
+      "width": 19.75
+     },
+     "handover": {
+      "centre": 1.0,
+      "width": 17.75
+     }
+    },
+    "5": {
+     "edge": {
+      "centre": 1.0,
+      "width": 20.0
+     },
+     "handover": {
+      "centre": -0.5,
+      "width": 20.0
+     }
+    }
+   }
+  },
+  "straight_v_02": {
+   "guide_width": 23.0,
+   "edges": {
+    "2": {
+     "edge": {
+      "centre": 0.0,
+      "width": 18.25
+     },
+     "handover": {
+      "centre": 0.5,
+      "width": 17.0
+     }
+    },
+    "5": {
+     "edge": {
+      "centre": 0.25,
+      "width": 17.5
+     },
+     "handover": {
+      "centre": -0.62,
+      "width": 20.25
+     }
+    }
+   }
+  },
+  "straight_d_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": -0.5,
+      "width": 18.75
+     },
+     "handover": {
+      "centre": 0.5,
+      "width": 18.5
+     }
+    },
+    "3": {
+     "edge": {
+      "centre": -1.38,
+      "width": 16.25
+     },
+     "handover": {
+      "centre": 0.25,
+      "width": 18.0
+     }
+    }
+   }
+  },
+  "straight_d_01": {
+   "guide_width": 23.0,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.38,
+      "width": 19.75
+     },
+     "handover": {
+      "centre": 0.38,
+      "width": 18.5
+     }
+    },
+    "3": {
+     "edge": {
+      "centre": -0.25,
+      "width": 18.25
+     },
+     "handover": {
+      "centre": 0.25,
+      "width": 18.25
+     }
+    }
+   }
+  },
+  "straight_d_02": {
+   "guide_width": 23.0,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.62,
+      "width": 19.0
+     },
+     "handover": {
+      "centre": -1.0,
+      "width": 20.25
+     }
+    },
+    "3": {
+     "edge": {
+      "centre": 0.0,
+      "width": 17.75
+     },
+     "handover": {
+      "centre": -0.12,
+      "width": 17.75
+     }
+    }
+   }
+  },
+  "turn_n_se_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.12,
+      "width": 20.0
+     },
+     "handover": {
+      "centre": -1.12,
+      "width": 20.5
+     }
+    },
+    "2": {
+     "edge": {
+      "centre": 0.38,
+      "width": 19.75
+     },
+     "handover": {
+      "centre": 0.88,
+      "width": 19.0
+     }
+    }
+   }
+  },
+  "turn_s_nw_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "3": {
+     "edge": {
+      "centre": -0.25,
+      "width": 21.75
+     },
+     "handover": {
+      "centre": -0.38,
+      "width": 22.5
+     }
+    },
+    "5": {
+     "edge": {
+      "centre": -0.25,
+      "width": 21.25
+     },
+     "handover": {
+      "centre": -0.88,
+      "width": 19.5
+     }
+    }
+   }
+  },
+  "turn_s_nw_01": {
+   "guide_width": 23.0,
+   "edges": {
+    "3": {
+     "edge": {
+      "centre": 0.25,
+      "width": 17.5
+     },
+     "handover": {
+      "centre": 0.0,
+      "width": 18.25
+     }
+    },
+    "5": {
+     "edge": {
+      "centre": 0.0,
+      "width": 19.75
+     },
+     "handover": {
+      "centre": 0.12,
+      "width": 18.0
+     }
+    }
+   }
+  },
+  "turn_se_sw_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": -0.5,
+      "width": 19.25
+     },
+     "handover": {
+      "centre": 0.62,
+      "width": 19.75
+     }
+    },
+    "4": {
+     "edge": {
+      "centre": -1.25,
+      "width": 17.0
+     },
+     "handover": {
+      "centre": -0.25,
+      "width": 20.75
+     }
+    }
+   }
+  },
+  "turn_se_sw_01": {
+   "guide_width": 23.0,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": -1.12,
+      "width": 19.0
+     },
+     "handover": {
+      "centre": -0.25,
+      "width": 17.5
+     }
+    },
+    "4": {
+     "edge": {
+      "centre": -0.12,
+      "width": 18.75
+     },
+     "handover": {
+      "centre": -0.12,
+      "width": 21.25
+     }
+    }
+   }
+  },
+  "turn_ne_nw_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "1": {
+     "edge": {
+      "centre": -0.38,
+      "width": 18.75
+     },
+     "handover": {
+      "centre": -0.88,
+      "width": 20.25
+     }
+    },
+    "3": {
+     "edge": {
+      "centre": -2.12,
+      "width": 14.0
+     },
+     "handover": {
+      "centre": 0.12,
+      "width": 17.25
+     }
+    }
+   }
+  },
+  "end_n_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "2": {
+     "edge": {
+      "centre": 0.38,
+      "width": 22.5
+     },
+     "handover": {
+      "centre": 0.5,
+      "width": 19.0
+     }
+    }
+   }
+  },
+  "end_s_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "5": {
+     "edge": {
+      "centre": 0.5,
+      "width": 20.0
+     },
+     "handover": {
+      "centre": 0.38,
+      "width": 19.75
+     }
+    }
+   }
+  },
+  "end_se_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "0": {
+     "edge": {
+      "centre": 0.0,
+      "width": 18.25
+     },
+     "handover": {
+      "centre": -0.25,
+      "width": 18.5
+     }
+    }
+   }
+  },
+  "end_ne_00": {
+   "guide_width": 23.0,
+   "edges": {
+    "1": {
+     "edge": {
+      "centre": -0.25,
+      "width": 17.25
+     },
+     "handover": {
+      "centre": 0.88,
+      "width": 18.75
+     }
+    }
+   }
+  }
+ }
+}

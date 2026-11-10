@@ -1,0 +1,9 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image: a square, full-frame texture of grass ground for a top-down WWII-era strategy wargame map, seen straight from above (orthographic, no perspective, no horizon, no sky). The grass fills the WHOLE square edge to edge with even, flat, uniform lighting and no vignette, no darker corners, no light spot. It is ONLY ground: no trees, no bushes, no rocks, no paths, no tracks, no roads, no water, no buildings, no flowers, no objects of any kind, no grid lines, no text. It will be cut into hexagon tiles anywhere, so nothing may stand out from the field.
+
+Palette and register: match the grass of the attached reference crops. Muted, fairly dark yellow-olive green (average colour around #666632, like dry moss under an overcast sky), painterly hand-painted strategy-game map style. Neutral overcast daylight. NOT bright, NOT lime, NOT emerald, NOT blue-green, NOT golden-hour, NOT sepia, NOT orange. Low contrast.
+
+Texture: the visible painterly mottling of the reference grass. Soft irregular patches of slightly lighter yellow-olive and slightly darker olive, each patch roughly 2 to 6 percent of the image width, blended together with small dabbed brush strokes and tiny flecks of darker green, evenly distributed over the whole square so no area stands out. Same overall brightness everywhere.
+
+The attached image is a board of crops from the target map. Copy only the grass between the features. Ignore the trees, hills, buildings, roads, the thin pale hex grid lines, and the dark gaps between crops.

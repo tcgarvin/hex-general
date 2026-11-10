@@ -1,0 +1,26 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). In every description below, north is up, east is right.
+
+Image 2 is the target game map. Copy the painting style of its dense woods: dark, closed forest masses made of many small round tree crowns. Image 3 is a close-up of two of those woods; the thin light lines in image 3 are the map's grid, do not paint them. Ignore everything else in images 2 and 3 (units, icons, interface, grid lines, roads, rivers).
+
+Edit image 1: in every hexagon, paint one dense deciduous wood in the style of images 2 and 3.
+- A closed canopy of very many SMALL, round, overlapping crowns, each only about one-fourteenth of the hexagon's width. No ground between the crowns, no clearings.
+- Canopy colour: muted, cool, dark moss-olive (about #343D1D), less yellow than you would usually paint it: NO yellow or golden highlights. Each crown is lit on its upper left with a slightly lighter greyish moss-olive and darker on its lower right; even the lit tops stay much darker than the grass. A few darker pointed conifer crowns (at most one in seven).
+- The wood fills most of the hexagon, but its outline is IRREGULAR: SHALLOW bays (not deep) and gentle bulges and bulges, never a clean hexagon and never a circle. The grass band between the wood and the hexagon's edge is at its narrowest about one-tenth of the hexagon's width (even where the wood bulges), and wider in the bays; no crown comes closer to the edge than that. Two or three single outlying trees stand on their own in the grass between the wood and the edge, complete and well away from the edge.
+- Along the wood's southern edge only two or three thin dark trunks show, with a short soft warm-brown shadow to the lower right. No dark ring around the wood.
+
+Each hexagon is the same kind of wood but with its own outline:
+1. The densest, largest part of the wood is toward the north-west; a shallow bay of grass cuts into its south-east side; two single trees stand in the grass to the east.
+2. The densest part is toward the south; a wide shallow bay cuts into its north side; single trees stand to the north-west and north-east.
+3. The densest part is toward the east; a bay cuts into its west side; two single trees stand to the west and south-west.
+4. The densest part is toward the north-east; a bay cuts into its south-west side; single trees stand to the south and to the west.
+5. The wood is wider than tall, stretched west to east, with bays on both its north and south sides; single trees stand to the north and to the south.
+6. The densest part is toward the south-west, bulging toward the south-west corner; a bay cuts into its north-east side; two single trees stand to the north-east.
+7. The densest part is toward the north; a narrow tongue of grass reaches into the wood from the south; three single trees stand along the south.
+8. The wood is taller than wide, stretched north to south, with bays on its east and west sides; single trees stand to the east and to the west.
+9. The densest part is toward the south-east; a bay cuts into its north-west side; two single trees stand to the north-west.
+
+EVERY HEXAGON MUST LOOK DIFFERENT, following its own numbered description above: different shape, different position of the main mass, different outline. Do not repeat one layout across the sheet.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. Seen from almost straight above, with a very slight tilt from the south. Light from the upper left (west-north-west). Muted, hand-painted, with a fine dry-brush grain of short strokes; NOT bright, NOT glossy, NOT airbrushed.

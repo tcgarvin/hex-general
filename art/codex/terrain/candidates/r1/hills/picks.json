@@ -1,0 +1,38 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/hills/tan-a/tiles/hills_00.png",
+  "sheet_job": "art/codex/terrain/hills/tan-a/job.json",
+  "raw": "art/codex/terrain/hills/tan-a/raw/hills-tan-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "de8052238788ebddc24792293f8fcf7a042213c7b7cb10a2b0549753396c12ae"
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/hills/tan-a/tiles/hills_01.png",
+  "sheet_job": "art/codex/terrain/hills/tan-a/job.json",
+  "raw": "art/codex/terrain/hills/tan-a/raw/hills-tan-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "edf9697efdecd67b116c139724dc13094a248af19853b3a8b750c1b695992ab4"
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/hills/tan-a/tiles/hills_04.png",
+  "sheet_job": "art/codex/terrain/hills/tan-a/job.json",
+  "raw": "art/codex/terrain/hills/tan-a/raw/hills-tan-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "c0c6a6bae5e9b8a7e690099d686494676a0dca2c3a55999b7b4d19af85230bb5"
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/hills/tan-a/tiles/hills_05.png",
+  "sheet_job": "art/codex/terrain/hills/tan-a/job.json",
+  "raw": "art/codex/terrain/hills/tan-a/raw/hills-tan-a.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "5851cbde40ee752c80ffa5d3cd6b3c3b7dc29b2f85e28b23f172784fad74dfaf"
+ }
+]

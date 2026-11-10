@@ -1,0 +1,79 @@
+{
+ "runs": [
+  {
+   "name": "town-r2-b",
+   "when": "2026-11-09T21:54:13",
+   "job": "art/codex/terrain/town/r2-b/job.json",
+   "job_sha256": "6cdae501de07cab87943512edfb92a6082b383278e8401495c376ecf8417d460",
+   "prompt": "art/codex/terrain/town/r2-b/prompt.txt",
+   "prompt_sha256": "2e3a10322f7aed66227482238be2044bd08ad735b883a490f33ca306d8c3c40d",
+   "sheet": "art/codex/terrain/town/r2-b/town-r2-b.sheet.png",
+   "raw": "art/codex/terrain/town/r2-b/raw/town-r2-b.png",
+   "raw_sha256": "d441f141d5bb947ecc3ca875d8afac71d08600b1380bde1b0c37983efd0cc18c",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c35f-59e1-72e3-bb3f-fec5b4bdc1ba",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c35f-59e1-72e3-bb3f-fec5b4bdc1ba/exec-516d92ef-7bb0-44df-b6c1-cd20fe94d7ab.png",
+    "wall_seconds": 84,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/town/r2-b/town-r2-b.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/town/r2-b/town-r2-b.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png"
+   ],
+   "registration": {
+    "scale": 1.0001555490002052,
+    "tx": 0.017062676781160385,
+    "ty": -0.3753201227096153,
+    "max_residual_tile_px": 0.018659472331191716,
+    "min_iou": 0.9972507039260479
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": true,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0,
+    "feature_strength": 0.0,
+    "feature_rgb": [],
+    "hold_feather_px": 3.0,
+    "tone_sigma": 0.0,
+    "tone_feature_grow_px": 2
+   },
+   "gates": {},
+   "report": "art/codex/terrain/town/r2-b/report.json",
+   "montage": "art/codex/terrain/review/r2/sheets/town-r2-b.montage.png",
+   "passed": [
+    "town_00",
+    "town_06",
+    "town_08"
+   ],
+   "failed": [
+    "town_01",
+    "town_02",
+    "town_03",
+    "town_04",
+    "town_05",
+    "town_07"
+   ]
+  }
+ ]
+}

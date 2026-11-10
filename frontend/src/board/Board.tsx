@@ -50,6 +50,7 @@ import {
   HEX_STROKE,
   NEUTRAL_COLOR,
   playerColor,
+  ROAD_COLOR,
   TERRAIN_FILL,
 } from "./palette";
 import { loadChromeTextures, type LoadedChrome } from "./panels/chrome";
@@ -78,6 +79,14 @@ import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
 import { roadTileRefs } from "./roadTiles";
 import { hexTileRef } from "./hexTile";
+import {
+  JOIN_TERRAINS,
+  joinPlacements,
+  joinSpriteScale,
+  joinVariant,
+  loadJoinTextures,
+  type LoadedJoins,
+} from "./joins";
 import { loadTerrainTextures, type LoadedTiles } from "./tiles";
 import {
   drawPipBar,
@@ -208,6 +217,11 @@ const PULSE_BADGE_FILL = 0x14141a;
 // translucent dark wash so lit hexes read at full brightness against them.
 const FOG_COLOR = 0x05060a;
 const FOG_ALPHA = 0.55;
+// Vector road drawn where no baked road tile exists (hills and settlement road
+// hexes, half-stubs toward baked neighbours). Matches the painted roads: their
+// median colour (`ROAD_COLOR`) and crossing width (~9.5 px on a 128 px tile =
+// 4.75 world px).
+const VECTOR_ROAD_WIDTH = 4.75;
 
 // Stable empty path so unkeyed lookups don't churn memo identities.
 const EMPTY_PATH: readonly Axial[] = [];
@@ -505,6 +519,19 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [hexes, terrainAt],
   );
 
+  // Same-terrain join sprites over every woods/city seam (see `joins.ts`), in
+  // draw order. The map is static, so this is computed once per map.
+  const joins = useMemo(
+    () =>
+      joinPlacements(
+        hexes.map((h) => h.coord),
+        terrainAt,
+        JOIN_TERRAINS,
+        HEX_SIZE,
+      ),
+    [hexes, terrainAt],
+  );
+
   // Baked road tile references for road-flagged hexes (T5). Whether the
   // referenced texture exists decides baked-vs-vector per hex at render time.
   const roadTiles = useMemo(
@@ -527,6 +554,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
   // AI-generated terrain tile textures; null until loaded (flat colours until then).
   // Each terrain holds one or more interchangeable variants (see `tiles.ts`).
   const [terrainTex, setTerrainTex] = useState<LoadedTiles | null>(null);
+  // Same-terrain join sprites; null until loaded (drawn only once the tiles are too).
+  const [joinTex, setJoinTex] = useState<LoadedJoins | null>(null);
   // Two-layer unit sprites; null until loaded (vector markers until then).
   const [unitTex, setUnitTex] = useState<LoadedUnits | null>(null);
   const [chromeTex, setChromeTex] = useState<LoadedChrome | null>(null);
@@ -609,6 +638,14 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
       },
       (err) => {
         console.error("Failed to load terrain tile textures", err);
+      },
+    );
+    loadJoinTextures().then(
+      (tex) => {
+        if (active) setJoinTex(tex);
+      },
+      (err) => {
+        console.error("Failed to load terrain join textures", err);
       },
     );
     loadUnitTextures().then(
@@ -1227,7 +1264,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
           g.lineTo((c.x + nc.x) / 2, (c.y + nc.y) / 2);
         }
       }
-      g.stroke({ width: 6, color: 0x6b4f2a });
+      g.stroke({ width: VECTOR_ROAD_WIDTH, color: ROAD_COLOR });
 
       // settlement ownership rings
       for (const [key, owner] of settlementOwner) {
@@ -1570,6 +1607,20 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                   />
                 );
               })}
+            {/* Joins sit on the tiles they bridge, so they need both loaded;
+                every hex draws its tile, so every member of a join is shown. */}
+            {terrainTex !== null &&
+              joinTex !== null &&
+              joins.map((p) => (
+                <pixiSprite
+                  key={`join:${p.owner.q},${p.owner.r},${p.code}`}
+                  texture={joinVariant(joinTex, p)}
+                  x={p.x}
+                  y={p.y}
+                  anchor={0.5}
+                  scale={joinSpriteScale(HEX_SIZE)}
+                />
+              ))}
             <pixiGraphics draw={drawTerrainOverlay} />
             <pixiGraphics draw={drawSelection} />
             <pixiGraphics draw={drawTraffic} />

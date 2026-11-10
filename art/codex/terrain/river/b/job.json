@@ -1,0 +1,410 @@
+{
+ "name": "river-b",
+ "layout": "4x4",
+ "cells": [
+  {
+   "name": "fork_ne_n_s_00",
+   "slot": 0,
+   "base": "../../bases/g2/00.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     1,
+     2,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 200
+   }
+  },
+  {
+   "name": "fork_ne_n_s_01",
+   "slot": 1,
+   "base": "../../bases/g2/01.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     1,
+     2,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 201
+   }
+  },
+  {
+   "name": "fork_ne_nw_s_00",
+   "slot": 2,
+   "base": "../../bases/g2/02.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     1,
+     3,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 202
+   }
+  },
+  {
+   "name": "fork_se_ne_nw_00",
+   "slot": 3,
+   "base": "../../bases/g2/03.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     1,
+     3
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 203
+   }
+  },
+  {
+   "name": "fork_se_ne_s_00",
+   "slot": 4,
+   "base": "../../bases/g2/04.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     1,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 204
+   }
+  },
+  {
+   "name": "fork_se_n_nw_00",
+   "slot": 5,
+   "base": "../../bases/g2/05.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     2,
+     3
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 205
+   }
+  },
+  {
+   "name": "fork_se_n_s_00",
+   "slot": 6,
+   "base": "../../bases/g2/00.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     2,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 206
+   }
+  },
+  {
+   "name": "fork_se_n_s_01",
+   "slot": 7,
+   "base": "../../bases/g2/01.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     2,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 207
+   }
+  },
+  {
+   "name": "fork_se_n_sw_00",
+   "slot": 8,
+   "base": "../../bases/g2/02.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     2,
+     4
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 208
+   }
+  },
+  {
+   "name": "fork_se_nw_s_00",
+   "slot": 9,
+   "base": "../../bases/g2/03.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     3,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 209
+   }
+  },
+  {
+   "name": "fork_se_nw_sw_00",
+   "slot": 10,
+   "base": "../../bases/g2/04.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 210
+   }
+  },
+  {
+   "name": "fork_se_nw_sw_01",
+   "slot": 11,
+   "base": "../../bases/g2/05.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     3,
+     4
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 211
+   }
+  },
+  {
+   "name": "fork_se_sw_s_00",
+   "slot": 12,
+   "base": "../../bases/g2/00.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     4,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 212
+   }
+  },
+  {
+   "name": "fork_se_sw_s_01",
+   "slot": 13,
+   "base": "../../bases/g2/01.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     4,
+     5
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 213
+   }
+  },
+  {
+   "name": "fork_ne_n_nw_00",
+   "slot": 14,
+   "base": "../../bases/g2/02.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     1,
+     2,
+     3
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 214
+   }
+  },
+  {
+   "name": "fork_se_ne_n_00",
+   "slot": 15,
+   "base": "../../bases/g2/03.png",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     1,
+     2
+    ],
+    "color": [
+     67,
+     81,
+     77
+    ],
+    "width": 23,
+    "meander": 9,
+    "breathe": 0.12,
+    "ragged": 0.9,
+    "round_px": 7,
+    "seed": 215
+   }
+  }
+ ],
+ "profile": {
+  "path": "../profile.json"
+ },
+ "pin": {
+  "restore": false,
+  "feature_strength": 0.8,
+  "feature_rgb": [
+   67,
+   81,
+   77
+  ],
+  "tone_sigma": 6.0
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0,
+  "feature_lum": 76.0,
+  "feature_sat": 0.17
+ }
+}

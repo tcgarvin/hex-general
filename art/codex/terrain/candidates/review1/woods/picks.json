@@ -1,0 +1,72 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/woods/r2-d/tiles/woods_07.png",
+  "sheet_job": "art/codex/terrain/woods/r2-d/job.json",
+  "raw": "art/codex/terrain/woods/r2-d/raw/woods-r2-d.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "110169eb2d3f4ef02c6d237a3030f988c75a38b2e9c229ad78eaecf6af674ce4",
+  "grade": null
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/woods/r2-d/tiles/woods_00.png",
+  "sheet_job": "art/codex/terrain/woods/r2-d/job.json",
+  "raw": "art/codex/terrain/woods/r2-d/raw/woods-r2-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "4.5% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "2f71ec37da2c6923cccabdc3856ae1b279dc041e2d03a57b1ee1aacb4215bd67",
+  "grade": null
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/woods/r2-d/tiles/woods_03.png",
+  "sheet_job": "art/codex/terrain/woods/r2-d/job.json",
+  "raw": "art/codex/terrain/woods/r2-d/raw/woods-r2-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "4.6% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "b952c3078d5624a1c81c2c67c96aafbea4e2bb0658f54cb9d2654bbee8cd0bde",
+  "grade": null
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/woods/r2-d/tiles/woods_06.png",
+  "sheet_job": "art/codex/terrain/woods/r2-d/job.json",
+  "raw": "art/codex/terrain/woods/r2-d/raw/woods-r2-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "4.6% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "2f1306a3d934c83dbe7bc852e87d5a6c6db4681a340d8931ed2d1f7775d7477c",
+  "grade": null
+ },
+ {
+  "file": "04.png",
+  "source": "art/codex/terrain/woods/r2-d/tiles/woods_05.png",
+  "sheet_job": "art/codex/terrain/woods/r2-d/job.json",
+  "raw": "art/codex/terrain/woods/r2-d/raw/woods-r2-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "4.8% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "62aaa8ea0cdb97e8ce1e08ea2ffc446f5445cadb7b75bfe07dfc3596699eb1ac",
+  "grade": null
+ },
+ {
+  "file": "05.png",
+  "source": "art/codex/terrain/woods/r2-d/tiles/woods_08.png",
+  "sheet_job": "art/codex/terrain/woods/r2-d/job.json",
+  "raw": "art/codex/terrain/woods/r2-d/raw/woods-r2-d.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "5.8% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "233030572cd3785cedb33a29bbb6b92be8361f8b664ef565f94db2730e812d91",
+  "grade": null
+ }
+]

@@ -1,0 +1,460 @@
+{
+ "tool": "scripts/tile-foundry/paintin.py",
+ "version": 1,
+ "job": "art/codex/terrain/toolproof/river/job.json",
+ "job_sha256": "e552e88ba1c13f65470229343fc9dd20cefb76242c2ef1d572eeef7025007b7b",
+ "name": "river-proof",
+ "sheet": "art/codex/terrain/toolproof/river/river-proof.sheet.png",
+ "sheet_sha256": "09ef9daeab49d140e297b641c37ade8e00e09f5f233aa13d6091165970157912",
+ "canvas": [
+  1254,
+  1254
+ ],
+ "layout": {
+  "canvas": 1254,
+  "cols": 4,
+  "rows": 4,
+  "hex_width": 256
+ },
+ "background": [
+  255,
+  0,
+  255
+ ],
+ "tile_px": 128,
+ "profile": {
+  "extract": {
+   "cell": "straight_v_a",
+   "edges": [
+    2,
+    5
+   ]
+  },
+  "bank_px": 3.0,
+  "feather_px": 4.0
+ },
+ "pin": {
+  "restore": false
+ },
+ "gates": {},
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0
+ },
+ "cells": [
+  {
+   "name": "straight_v_a",
+   "slot": 0,
+   "cx": 157.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g00.png",
+   "base_sha256": "21bc3d8d04e122c9753d106fcfa18626b31a1c862b52772ea3910d573290ad5f",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     2,
+     5
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "straight_v_a.png"
+  },
+  {
+   "name": "straight_v_b",
+   "slot": 1,
+   "cx": 470.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g01.png",
+   "base_sha256": "a107981d114f01a3af9c1f8c2ba94c6cc6d68c6c3a715e4e071c514e7893af3e",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     2,
+     5
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "straight_v_b.png"
+  },
+  {
+   "name": "straight_d_a",
+   "slot": 2,
+   "cx": 784.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g02.png",
+   "base_sha256": "31297fb7e0d6915e6097e407349ca1231ae844e6835dee3bc6e45626cb0cb913",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     3
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "straight_d_a.png"
+  },
+  {
+   "name": "straight_d_b",
+   "slot": 3,
+   "cx": 1097.0,
+   "cy": 157.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g03.png",
+   "base_sha256": "bc993019e90fafc9092d1dc96a0d8eb013370c59480c5dd96114a41b67908296",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     3
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "straight_d_b.png"
+  },
+  {
+   "name": "turn_n_se_a",
+   "slot": 4,
+   "cx": 157.0,
+   "cy": 470.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g04.png",
+   "base_sha256": "421a8dfdc0d3fc123d2f37d2916007af83c0000c81cb362fecb5bc207f3c3f82",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     2
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "turn_n_se_a.png"
+  },
+  {
+   "name": "turn_n_se_b",
+   "slot": 5,
+   "cx": 470.0,
+   "cy": 470.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g05.png",
+   "base_sha256": "283f738400e462f132b0c55565b485f72fe980daf5f02ccbd8020b4bd6e9212e",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     2
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "turn_n_se_b.png"
+  },
+  {
+   "name": "turn_s_nw_a",
+   "slot": 6,
+   "cx": 784.0,
+   "cy": 470.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g06.png",
+   "base_sha256": "fda1ebb44be35416bf57a5feb9caa7630760b5ee9a9f9ab4514edd534c1fafbe",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     3,
+     5
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "turn_s_nw_a.png"
+  },
+  {
+   "name": "turn_s_nw_b",
+   "slot": 7,
+   "cx": 1097.0,
+   "cy": 470.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g07.png",
+   "base_sha256": "d045e4f609251309cde0d2ff50d4e73772ede1b5a47d2df93f3408c8495e11d2",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     3,
+     5
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "turn_s_nw_b.png"
+  },
+  {
+   "name": "turn_se_sw_a",
+   "slot": 8,
+   "cx": 157.0,
+   "cy": 784.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g08.png",
+   "base_sha256": "7bfa0b349ead475316f5cbdd92ad3588b57fe48b982828212afc93a38da9a66c",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     4
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "turn_se_sw_a.png"
+  },
+  {
+   "name": "turn_ne_nw_a",
+   "slot": 9,
+   "cx": 470.0,
+   "cy": 784.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g09.png",
+   "base_sha256": "1695a6d8d8c3701d555608ebfc3c6204a059c0169de5e4c1366c17ef122309b4",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     1,
+     3
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "turn_ne_nw_a.png"
+  },
+  {
+   "name": "fork_se_sw_s_a",
+   "slot": 10,
+   "cx": 784.0,
+   "cy": 784.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g10.png",
+   "base_sha256": "026cad9dad85950d7db21e44246062c1b377b7de97831fbe348a1af70eca04ac",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     4,
+     5
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "fork_se_sw_s_a.png"
+  },
+  {
+   "name": "fork_se_n_s_a",
+   "slot": 11,
+   "cx": 1097.0,
+   "cy": 784.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g11.png",
+   "base_sha256": "70fc308a311edce73e8c38636ec5a181b6e35779ae697b36c000f6c2e031d831",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0,
+     2,
+     5
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "fork_se_n_s_a.png"
+  },
+  {
+   "name": "end_n_a",
+   "slot": 12,
+   "cx": 157.0,
+   "cy": 1097.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g12.png",
+   "base_sha256": "7665336e76c4bec5929db6f6cf7aee3795880666f8223d7a30f40270564f914e",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     2
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "end_n_a.png"
+  },
+  {
+   "name": "end_s_a",
+   "slot": 13,
+   "cx": 470.0,
+   "cy": 1097.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g13.png",
+   "base_sha256": "5df4765aad8496d061e3c50316a9ce720a1b846f375a722ce96eb1521f235c51",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     5
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "end_s_a.png"
+  },
+  {
+   "name": "end_se_a",
+   "slot": 14,
+   "cx": 784.0,
+   "cy": 1097.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g14.png",
+   "base_sha256": "feecde6d8ee0afa5f227f0c4d5f9b5dad7a264cfe117302ea46ba6748ccaed13",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     0
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "end_se_a.png"
+  },
+  {
+   "name": "end_ne_a",
+   "slot": 15,
+   "cx": 1097.0,
+   "cy": 1097.0,
+   "hex_width": 256,
+   "scale": 2.0,
+   "base": "art/codex/terrain/toolproof/river/bases/g15.png",
+   "base_sha256": "a40cd7546a978d391d8d6fe6ae40ead08e1cf7ecd5e44d156d9911de4bd8b76d",
+   "guide": {
+    "kind": "river",
+    "edges": [
+     1
+    ],
+    "width": 22.0,
+    "color": [
+     88,
+     104,
+     108
+    ],
+    "marker": null
+   },
+   "anchors": {},
+   "output": "end_ne_a.png"
+  }
+ ]
+}

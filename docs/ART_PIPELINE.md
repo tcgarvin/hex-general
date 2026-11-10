@@ -1,9 +1,12 @@
 # Terrain art pipeline — inputs & outputs
 
-> **Status (2026-11-08):** new art generation moves to **Codex** (the `codex` CLI's
-> built-in image generation; see `docs/VISION.md` §11). This document remains the
-> contract for the NBP foundry that produced the shipped tiles, and for reproducing
-> them. The asset spec and the user-ratification gate still apply to Codex-made art.
+> **Status (2026-11-09):** new art generation moves to **Codex** (the `codex` CLI's
+> built-in image generation; see `docs/VISION.md` §11). The shipped terrain tiles
+> now come from the Codex paint-in toolchain (see "Paint-in recipe" below; ratified
+> 2026-11-09). The NBP sections further down remain the contract for the unit
+> sprites and the record of the superseded NBP terrain tiles (kept, and still
+> byte-reproduced by `selftest.py`, under `art/foundry/applied-tiles/`). The asset
+> spec and the user-ratification gate apply to Codex-made art unchanged.
 
 ## Codex recipe (2026-11-10)
 
@@ -71,6 +74,64 @@ background, then despilled. White keying: alpha = `1 - min(rgb)/255`, unmixed
 from white. Clean edges, no visible fringe. Rendering the review images:
 `art/codex/sites/review_renders.py`, then `scripts/review-page.py`.
 
+## Paint-in recipe (terrain tiles, ratified 2026-11-09)
+
+How the shipped terrain set was made. Tools: `scripts/tile-foundry/paintin.py`
+(+ `paintin_sheet.py`, `paintin_geom.py`, `paintin_pin.py`, `paintin_gate.py`),
+`scripts/tile-foundry/joins.py`, `scripts/board-mock.py`. Work dirs, prompts, raws,
+picks and measurements are in `art/codex/terrain/` (its `README.md` has the round
+by round findings; `APPLIED.md` maps every shipped tile to its sheet and cell).
+
+1. **Sheet.** `job.json` lays out separated flat-top hexagons on flat `#FF00FF`,
+   each one of our own opaque ground tiles (crops of the ratified G2 meadow), plus
+   for oriented tiles a deterministic guide (river band or road ribbon through the
+   named edge midpoints, bridge-deck marker).
+2. **Codex.** One call per sheet (Codex recipe above), with concept close-up refs.
+   Codex keeps the magenta and the hexagon silhouettes to about a pixel and paints
+   the feature in register, but re-renders the ground it was given.
+3. **Cut.** Fit scale and translation from the silhouettes (fails loudly on a missing
+   cell or a residual, width or IoU over its limit) and resample each cell to 128 px.
+4. **Pin.** Pin the rim back to the base ground exactly, so any tile abuts any other;
+   optionally restore the interior ground with a difference matte (on for every
+   class: Codex's repainted grass otherwise leaves a light hex outline). Oriented
+   tiles pin each edge crossing to one shared edge profile (`river/profile.json`,
+   20 px water; `road/profile.json`, 9.25 px road), so crossings line up across
+   every shape and variant.
+5. **Gates.** Per-tile checks with measured values in `report.json`: registration,
+   rim painted over (`rim_clear`), features touching the rim, salient pixels near
+   the boundary, water or road leaking outside its band, crossing width and centre,
+   advisory feature L and S against concept anchors. The montage and board preview
+   decide; a marginal gate failure can still be picked, and the pick records it.
+
+**Scale.** Codex paints elements at a roughly constant size in output pixels
+whatever the hexagon size, so the sheet density sets the feature scale. Woods,
+hills, town and city use 3x3 sheets (340 px hexagons, 2.66:1), which gives the
+concept's crown and house scale and the best registration; denser sheets (6x6,
+1:1) make features cartoonishly large. Rivers, roads and bridges use 4x4 sheets
+(256 px, 2:1); 6x6 came back softer.
+
+**Per-hexagon prompts.** Codex reuses one layout across a sheet unless told not to.
+Numbering the nine hexagons and describing each one's layout ("densest mass toward
+the north-west, a bay on its south-east side"), then saying every hexagon must look
+different, gives nine distinct variants from one call.
+
+**Joins.** Every tile keeps a plain-ground rim, so same-terrain neighbours show a
+grass moat. `joins.py` cuts lens sprites (shared edge) and disc sprites (corner of
+three) from the terrain's own tiles; the renderers draw them after the base tiles
+and before the grid and overlays (`frontend/src/board/joins.ts`). Woods and city
+have joins.
+
+**Offline preview.** `scripts/board-mock.py` renders any map with the frontend's
+exact tile, join and road selection (`--tiles`, `--joins`, `--no-vector-roads`)
+and reports any hex that falls back to a generic tile. Use it to judge candidates
+at board scale before anything is applied; the user still ratifies.
+
+**Replay.** `paintin.py run --from-raw <work>/raw/<name>.png` (with the job, prompt
+and `refs.txt` refs) rebuilds a sheet's tiles without a Codex call; the raws of the
+sheets behind shipped tiles are committed, derived files are not.
+
+## NBP foundry (superseded for terrain; unit sprites)
+
 The review artifact for how terrain hex art gets made, now that the loop is
 proven on plains, woods, hills, and city. It defines the **contract**: what
 art direction goes in, what assets come out, and where human judgment sits.
@@ -119,6 +180,10 @@ without a pick); the applied tiles are verified on the live board and made
   `vignette.py` (hills, city); `scripts/tile-foundry/selftest.py` checks this.
 
 ## Terrain classes (which recipe a terrain gets)
+
+> Superseded for terrain by the paint-in recipe above (2026-11-09): every terrain is
+> now painted in context on the shared ground. Kept as the record of the NBP tiles
+> and of why each class existed.
 
 1. **Texture** (plains): swatch-cut. Requires genuinely uniform art — cuts
    must be safe anywhere. Variants = seam-compatible cut offsets

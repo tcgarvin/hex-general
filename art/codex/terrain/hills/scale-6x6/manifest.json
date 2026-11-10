@@ -1,0 +1,100 @@
+{
+ "runs": [
+  {
+   "name": "hills-scale-6x6",
+   "when": "2026-11-09T21:28:00",
+   "job": "art/codex/terrain/hills/scale-6x6/job.json",
+   "job_sha256": "d365f1eec8280f659876c0a0ae2b49ac282e2b742410576186c3ac44d362fea8",
+   "prompt": "art/codex/terrain/hills/scale-6x6/prompt.txt",
+   "prompt_sha256": "5d1f895b19a7d0467f1651070b0b7d5a61706a57cafa1e104f78e8b99bc46f1e",
+   "sheet": "art/codex/terrain/hills/scale-6x6/hills-scale-6x6.sheet.png",
+   "raw": "art/codex/terrain/hills/scale-6x6/raw/hills-scale-6x6.png",
+   "raw_sha256": "025d8e82b09e4708d44c4c16d41e1bca12cbec7eb175bb2d3a57213b5aacc9b2",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": true,
+   "codex": {
+    "codex_thread": "01a1c347-1520-7df1-b8b1-6aafd1325c45",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c347-1520-7df1-b8b1-6aafd1325c45/exec-b452bd81-43d3-4718-8ea2-9a5166d41e3a.png",
+    "wall_seconds": 51,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/hills/scale-6x6/hills-scale-6x6.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/hills/scale-6x6/hills-scale-6x6.sheet.png",
+    "docs/concept-art/concept1.png"
+   ],
+   "registration": {
+    "scale": 1.0000423575576716,
+    "tx": -0.2649611724224509,
+    "ty": -0.5317587124024591,
+    "max_residual_tile_px": 0.8437221171980385,
+    "min_iou": 0.9816275401317621
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": false,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0
+   },
+   "gates": {
+    "max_residual_tile_px": 1.0
+   },
+   "report": "art/codex/terrain/hills/scale-6x6/report.json",
+   "montage": "art/codex/terrain/review/r1/sheets/hills-scale-6x6.montage.png",
+   "passed": [],
+   "failed": [
+    "hills_00",
+    "hills_01",
+    "hills_02",
+    "hills_03",
+    "hills_04",
+    "hills_05",
+    "hills_06",
+    "hills_07",
+    "hills_08",
+    "hills_09",
+    "hills_10",
+    "hills_11",
+    "hills_12",
+    "hills_13",
+    "hills_14",
+    "hills_15",
+    "hills_16",
+    "hills_17",
+    "hills_18",
+    "hills_19",
+    "hills_20",
+    "hills_21",
+    "hills_22",
+    "hills_23",
+    "hills_24",
+    "hills_25",
+    "hills_26",
+    "hills_27",
+    "hills_28",
+    "hills_29",
+    "hills_30",
+    "hills_31",
+    "hills_32",
+    "hills_33",
+    "hills_34",
+    "hills_35"
+   ]
+  }
+ ]
+}

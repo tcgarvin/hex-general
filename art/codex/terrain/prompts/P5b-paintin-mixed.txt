@@ -1,0 +1,11 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Image 2 shows the painting style (crops from the target map).
+
+Edit image 1: paint one feature inside each hexagon, and change nothing else.
+- Top row (3 hexagons): a group of two or three rocky ridges and peaks seen from straight above, like the hills in image 2: sharp pale tan and grey-brown rock crests, faceted dark shaded flanks, a little olive scrub on the lower slopes. Vary the arrangement.
+- Middle row (3 hexagons): a small village of about twelve to eighteen tiny houses with red-brown terracotta roofs and a few grey roofs, small gardens, around one or two short khaki dirt lanes, like the village in image 2.
+- Bottom row (3 hexagons): a dense block of a city, tightly packed tiny red-brown and grey roofed townhouses divided by narrow grey streets, like the city in image 2.
+Each feature is centred in its hexagon, covers roughly the inner three quarters of it with an irregular natural outline, and leaves a band of the existing grass visible all around it between the feature and the hexagon edge. Seen from straight above (top-down), small scale, as in image 2.
+
+Keep EXACTLY as they are: the grass outside the features (same colour, same texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, shadows on the magenta, grid lines, text or any other objects. Neutral overcast daylight, muted, NOT bright, NOT sepia, NOT golden.

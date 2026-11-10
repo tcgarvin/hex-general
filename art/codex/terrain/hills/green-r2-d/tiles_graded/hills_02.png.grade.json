@@ -1,0 +1,11 @@
+{
+ "tool": "art/codex/terrain/r2_grade.py",
+ "source": "art/codex/terrain/hills/green-r2-d/tiles/hills_02.png",
+ "source_sha256": "994348bb61fa0015f6b198136966164e2041f46240c72f0e4191eeea81886c69",
+ "params": {
+  "shade_mult": 0.8,
+  "shade_warm": "1.0,0.97,0.92",
+  "lightwarm_s": 0.42
+ },
+ "out_sha256": "52682c6b0a996040e27b77f36f9eac115f0abe50d55e05db64c1a5d97ac96f39"
+}

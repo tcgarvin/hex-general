@@ -1,0 +1,62 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/city/r2-c/tiles_graded/city_02.png",
+  "sheet_job": "art/codex/terrain/city/r2-c/job.json",
+  "raw": "art/codex/terrain/city/r2-c/raw/city-r2-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "fdf95985e9f8247fb29feb21258712691b8e085e5163725b4f09a611b530436e",
+  "grade": {
+   "value_scale": 0.9,
+   "shade_mult": 0.8,
+   "shade_warm": "1.0,0.97,0.92"
+  }
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/city/r2-c/tiles_graded/city_01.png",
+  "sheet_job": "art/codex/terrain/city/r2-c/job.json",
+  "raw": "art/codex/terrain/city/r2-c/raw/city-r2-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "94ac38099fcc2fe5ef6cd3f1ce1440ba49b6e7e653e5c96507faefa57495562a",
+  "grade": {
+   "value_scale": 0.9,
+   "shade_mult": 0.8,
+   "shade_warm": "1.0,0.97,0.92"
+  }
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/city/r2-c/tiles_graded/city_04.png",
+  "sheet_job": "art/codex/terrain/city/r2-c/job.json",
+  "raw": "art/codex/terrain/city/r2-c/raw/city-r2-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "3.2% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "69324408bc3bcb7b94b13840d85a17bd720893d7465761c715c49f593001c90d",
+  "grade": {
+   "value_scale": 0.9,
+   "shade_mult": 0.8,
+   "shade_warm": "1.0,0.97,0.92"
+  }
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/city/r2-c/tiles_graded/city_07.png",
+  "sheet_job": "art/codex/terrain/city/r2-c/job.json",
+  "raw": "art/codex/terrain/city/r2-c/raw/city-r2-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "3.0% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "e5de7825b5f8bef50262cc28cb7b88206aaf4a452a7b8e196abe2b30ec80ecbd",
+  "grade": {
+   "value_scale": 0.9,
+   "shade_mult": 0.8,
+   "shade_warm": "1.0,0.97,0.92"
+  }
+ }
+]

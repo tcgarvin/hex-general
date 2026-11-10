@@ -1,0 +1,11 @@
+{
+ "tool": "art/codex/terrain/r2_grade.py",
+ "source": "art/codex/terrain/city/r2-c/tiles/city_02.png",
+ "source_sha256": "c0c628a50a6bbc278f2e91b708e5e6f5991f6583ab7e9d6835a9252cba21c076",
+ "params": {
+  "value_scale": 0.9,
+  "shade_mult": 0.8,
+  "shade_warm": "1.0,0.97,0.92"
+ },
+ "out_sha256": "fdf95985e9f8247fb29feb21258712691b8e085e5163725b4f09a611b530436e"
+}

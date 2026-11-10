@@ -1,0 +1,200 @@
+{
+ "00.png": {
+  "cell": "pond_00",
+  "sha256": "48563d5a1360b8b88cfb40c834ac4f9eda1741d6c027045bc27c25fd72bc1426",
+  "sheet": "art/codex/terrain/river/c/river-c.sheet.png",
+  "source": "art/codex/terrain/river/c/tiles/pond_00.png"
+ },
+ "end_n_00.png": {
+  "cell": "end_n_00",
+  "sha256": "8fbb80dcfcd5cebe10f6a7f47f6fa193c72cd504570bf800200426b8e59f0695",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/end_n_00.png"
+ },
+ "end_ne_00.png": {
+  "cell": "end_ne_00",
+  "sha256": "2e8b2546bb3884949fe8bb69ff795c355c0530da9ca9971d5d0f323eda87345f",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/end_ne_00.png"
+ },
+ "end_s_00.png": {
+  "cell": "end_s_00",
+  "sha256": "61b8e89a3813d6c51f58d4cb811d4651ce2ae9f51bc184a3d89539d0fb06282b",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/end_s_00.png"
+ },
+ "end_se_00.png": {
+  "cell": "end_se_00",
+  "sha256": "c672723f9fd148f2ca3e87dac662eec85cc253ffb391277d7da0f79c9851b60c",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/end_se_00.png"
+ },
+ "fork_ne_n_nw_00.png": {
+  "cell": "fork_ne_n_nw_00",
+  "sha256": "02d496d35a8771323e698e82a2eb8269a3bca42349d5fe291b82d33c6fd66469",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_ne_n_nw_00.png"
+ },
+ "fork_ne_n_s_00.png": {
+  "cell": "fork_ne_n_s_00",
+  "sha256": "9697037042c8a7b784619d494c9aa078f8ef7140d8e3ce5bdf56a9c6817fb93c",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_ne_n_s_00.png"
+ },
+ "fork_ne_n_s_01.png": {
+  "cell": "fork_ne_n_s_01",
+  "sha256": "4b71c6cf58d69b640ea9d0c31e44cb48dad1b50ae5d5cca6eb1b3bd6c95ae8aa",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_ne_n_s_01.png"
+ },
+ "fork_ne_nw_s_00.png": {
+  "cell": "fork_ne_nw_s_00",
+  "sha256": "92f18ff00d792b73586fdff6c28ee5d35c3219234f5d2ff810adeeed640cdf27",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_ne_nw_s_00.png"
+ },
+ "fork_se_n_nw_00.png": {
+  "cell": "fork_se_n_nw_00",
+  "sha256": "4bd9afec0a4d442781fdde8d67c145f9de95428d1c9b84417769dabea28f3931",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_n_nw_00.png"
+ },
+ "fork_se_n_s_00.png": {
+  "cell": "fork_se_n_s_00",
+  "sha256": "a7bde6b22acb40f155174348275cb4864f1308250b15c60cba6b2291839941fd",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_n_s_00.png"
+ },
+ "fork_se_n_s_01.png": {
+  "cell": "fork_se_n_s_01",
+  "sha256": "4219b232b21fd119d16bcdb96eef86b8346bbfa44d35311586ae5ceb9e313305",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_n_s_01.png"
+ },
+ "fork_se_n_sw_00.png": {
+  "cell": "fork_se_n_sw_00",
+  "sha256": "114ba0b49667586b5418ecc1f1ba6ebd94b69c87b1ed010ae55517537aa2538c",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_n_sw_00.png"
+ },
+ "fork_se_ne_n_00.png": {
+  "cell": "fork_se_ne_n_00",
+  "sha256": "fe8cc8176255bad3e73d89aa6d677c17f1fb33af5d545b9b06ccd3b17f0aa672",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_ne_n_00.png"
+ },
+ "fork_se_ne_nw_00.png": {
+  "cell": "fork_se_ne_nw_00",
+  "sha256": "51da5bd2bb121e6f9e125cc1eca6393006484886e841a8a209d262803850959b",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_ne_nw_00.png"
+ },
+ "fork_se_ne_s_00.png": {
+  "cell": "fork_se_ne_s_00",
+  "sha256": "541ec0454d1d737e1f9ed9741eb1a3a779161a3ed2bec20fb82d5ad9d1b84890",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_ne_s_00.png"
+ },
+ "fork_se_nw_s_00.png": {
+  "cell": "fork_se_nw_s_00",
+  "sha256": "dea3e0337e48df3369d6de9c6a407ec7c389a2604adb40e5642bdf16f82e7866",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_nw_s_00.png"
+ },
+ "fork_se_nw_sw_00.png": {
+  "cell": "fork_se_nw_sw_00a",
+  "sha256": "0f08b15bf26bb00320ae8a2c1fc619187b9f030d74ffa25688a361328541c4c2",
+  "sheet": "art/codex/terrain/river/c/river-c.sheet.png",
+  "source": "art/codex/terrain/river/c/tiles/fork_se_nw_sw_00a.png"
+ },
+ "fork_se_nw_sw_01.png": {
+  "cell": "fork_se_nw_sw_01",
+  "sha256": "c1b1e2ddfbaa8785fa872d7ad6dc964e7f0b698b6047ced9a03cacdef259d86d",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_nw_sw_01.png"
+ },
+ "fork_se_sw_s_00.png": {
+  "cell": "fork_se_sw_s_00",
+  "sha256": "884bf44d8f4a67d1e5d1ba477520ad1a85616dc1cefc279acff7c4f605a31846",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_sw_s_00.png"
+ },
+ "fork_se_sw_s_01.png": {
+  "cell": "fork_se_sw_s_01",
+  "sha256": "8275761161a62ec2f18fc4f018cec6fb274ab13e8a202957eaf6c86fb62fd5aa",
+  "sheet": "art/codex/terrain/river/b/river-b.sheet.png",
+  "source": "art/codex/terrain/river/b/tiles/fork_se_sw_s_01.png"
+ },
+ "straight_d_00.png": {
+  "cell": "straight_d_00",
+  "sha256": "47632cd45c6c95af3c7342523a91cb68cb26ca7a8053dcabdd9a62821d7b7b82",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/straight_d_00.png"
+ },
+ "straight_d_01.png": {
+  "cell": "straight_d_01",
+  "sha256": "b0f8f6652407d1fc0febc88790c32f80cfbe22ff35019a1541940433759b1f97",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/straight_d_01.png"
+ },
+ "straight_d_02.png": {
+  "cell": "straight_d_02",
+  "sha256": "fb97e374db8a969a993da2ee533adafaa0d39e6276e0c71a623424301f2ec1f0",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/straight_d_02.png"
+ },
+ "straight_v_00.png": {
+  "cell": "straight_v_00",
+  "sha256": "65ac740073688f8626ac932a3f360240c58a4ee491e9df1496e5cd914473cdf7",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/straight_v_00.png"
+ },
+ "straight_v_01.png": {
+  "cell": "straight_v_01",
+  "sha256": "ad6569fe55d09fa0ab9627e4ff8c080d049ba2efefdedafcf40e258d6598fac1",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/straight_v_01.png"
+ },
+ "straight_v_02.png": {
+  "cell": "straight_v_02",
+  "sha256": "5c8ab57a6890da9bcd96c2ef9b57ca0e1e9d1df0993bf781825713c3fbf2b31d",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/straight_v_02.png"
+ },
+ "turn_n_se_00.png": {
+  "cell": "turn_n_se_00",
+  "sha256": "c32d06e33f07117e504f7e763d86bfcfeed67d4c12f39808ef2abef37c3825a6",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/turn_n_se_00.png"
+ },
+ "turn_ne_nw_00.png": {
+  "cell": "turn_ne_nw_00",
+  "sha256": "e6cf5b861af2e3bdff83e3dc0d120af5cdc92b25ca2e7d56807d660a4a7bcb39",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/turn_ne_nw_00.png"
+ },
+ "turn_s_nw_00.png": {
+  "cell": "turn_s_nw_00",
+  "sha256": "b292fa8c5db655bbdf1e32df50a3436be6e614a406562b9d8cfb02992e70f133",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/turn_s_nw_00.png"
+ },
+ "turn_s_nw_01.png": {
+  "cell": "turn_s_nw_01",
+  "sha256": "d07f4ecadd083bc445ea437e0b3c6ed9789d746c7e6996d8c63ca825ebf7dd4e",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/turn_s_nw_01.png"
+ },
+ "turn_se_sw_00.png": {
+  "cell": "turn_se_sw_00",
+  "sha256": "c0339714ac5b71b612341790d17a1166db0eebdd1d30a510b02a28d1df3c96de",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/turn_se_sw_00.png"
+ },
+ "turn_se_sw_01.png": {
+  "cell": "turn_se_sw_01",
+  "sha256": "a033df78c0cd31a991cdf16722212b74f6f11858ad40d5d74e2682f9937587b4",
+  "sheet": "art/codex/terrain/river/a/river-a-v2.sheet.png",
+  "source": "art/codex/terrain/river/a/tiles/turn_se_sw_01.png"
+ }
+}

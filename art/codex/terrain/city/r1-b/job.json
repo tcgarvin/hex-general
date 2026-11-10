@@ -1,0 +1,47 @@
+{
+ "name": "city-r1-b",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "city_00",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "city_01",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "city_02",
+   "base": "../../r1-bases/04.png"
+  },
+  {
+   "name": "city_03",
+   "base": "../../r1-bases/05.png"
+  },
+  {
+   "name": "city_04",
+   "base": "../../r1-bases/00.png"
+  },
+  {
+   "name": "city_05",
+   "base": "../../r1-bases/01.png"
+  },
+  {
+   "name": "city_06",
+   "base": "../../r1-bases/02.png"
+  },
+  {
+   "name": "city_07",
+   "base": "../../r1-bases/03.png"
+  },
+  {
+   "name": "city_08",
+   "base": "../../r1-bases/04.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

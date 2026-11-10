@@ -1,0 +1,42 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/town/r2-f/tiles/town_00.png",
+  "sheet_job": "art/codex/terrain/town/r2-f/job.json",
+  "raw": "art/codex/terrain/town/r2-f/raw/town-r2-f.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "7b7f161a2447d72d1ee7b6f3a5833874b50066d9baec20808c6fdee15c635c27",
+  "grade": null
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/town/r2-f/tiles/town_04.png",
+  "sheet_job": "art/codex/terrain/town/r2-f/job.json",
+  "raw": "art/codex/terrain/town/r2-f/raw/town-r2-f.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "e5ee2256711e5564a703a47693e0d722ecc7b65919bec3ee91d76726935eb425",
+  "grade": null
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/town/r2-f/tiles/town_06.png",
+  "sheet_job": "art/codex/terrain/town/r2-f/job.json",
+  "raw": "art/codex/terrain/town/r2-f/raw/town-r2-f.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "bd6a903f328c99e4eee843fd6fb2b043bb3d088933a4e61c42d45d5aab12da43",
+  "grade": null
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/town/r2-f/tiles/town_08.png",
+  "sheet_job": "art/codex/terrain/town/r2-f/job.json",
+  "raw": "art/codex/terrain/town/r2-f/raw/town-r2-f.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "d0ac1d52812b97aa3b4268f80cd330a02c3249c715202129687db135a80c8d4a",
+  "grade": null
+ }
+]

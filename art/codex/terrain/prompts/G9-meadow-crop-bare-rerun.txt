@@ -1,0 +1,11 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image: a landscape-format (wide) top-down terrain map painting for a WWII-era hex wargame board, seen straight from above (orthographic, no perspective, no horizon, no sky). This particular stretch of the map is one wide open meadow: the whole map, edge to edge, is open grassland and nothing else. It is ONLY terrain: no units, no vehicles, no markers, no UI, no text, no labels, no frame or border, and NO hex grid lines or any other grid.
+
+The meadow is completely bare short grass.
+
+Grass rendering, the important part: paint the grass exactly the way the open grass between the features is painted in the reference map: muted, fairly dark yellow-olive (average about #666632, like dry moss under an overcast sky), with a fine, streaky, pixel-level grain of thousands of tiny short strokes, each only one to three pixels wide, in slightly lighter yellow-olive and slightly darker olive, spread evenly everywhere. Neutral overcast daylight, low contrast. NOT bright, NOT lime, NOT emerald, NOT blue-green, NOT golden-hour, NOT sepia, NOT orange. NOT smooth, NOT soft blobs or dabs, NOT airbrushed.
+
+Nothing else on the map: no trees, no bushes, no shrubs, no hedges, no rocks, no stones, no flowers, no paths, no tracks, no roads, no water, no puddles, no buildings, no fences, no field boundaries, no shadows of clouds. No vignette, no darker corners or edges, no light spot, and no large lighter or darker patches or zones anywhere: the overall tone is the same in every part of the map, so any small piece cut from anywhere looks like any other piece. Nothing stands out.
+
+The attached image is a small crop, at actual pixel size, of open grass from a map painted in this style. Paint more of exactly this ground, at exactly this scale: the grass strokes in your image must be just as small as in the crop (do not enlarge or zoom in on the texture).

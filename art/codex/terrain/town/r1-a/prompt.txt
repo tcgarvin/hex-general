@@ -1,0 +1,13 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of 9 separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Image 2 is the target game map. Copy the painting style of its small village (upper right of centre in image 2, east of the river: loose houses with brown roofs along crossing dirt tracks). Image 3 is a close-up of that village; the thin light lines in image 3 are the map's grid, do not paint them. Ignore everything else in images 2 and 3 (units, icons, interface, grid lines, the river, woods).
+
+Edit image 1: in every hexagon, paint one loose country village in the style of images 2 and 3.
+- 10 to 16 small detached houses and one church with a small tower, strung loosely along two pale dirt tracks that cross near the middle of the hexagon. The houses are tiny: each house is only about one-fourteenth of the hexagon's width, smaller than you would usually paint a house.
+- Walls are cream or whitewash with dark window dots; roofs are muted terracotta-brown (about #644029), not orange and not pink. South walls show in a slight oblique view, and short soft shadows fall to the lower right.
+- Between the houses are gardens, hedges, small green plots and a few single trees. The village is open and irregular, NOT a compact disc and NOT a ring; it thins out and dissolves into the grass at its edges.
+- The pale sandy tracks (about #A18C60) run out toward the hexagon's edges but fade into the grass before they reach the edge. No radial spokes, no star plan, no central square.
+- A band of plain grass, about one-twelfth of the hexagon's width, stays untouched all around the edge: no house, garden or tree touches the hexagon's edge.
+- Every hexagon holds the same kind of village, only slightly different in layout.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add anything else: no rivers, no woods, no fields, no walls around the village, no borders, no outlines, no grid lines, no text. Seen from almost straight above, with a very slight tilt from the south. Light from the upper left. Muted, hand-painted, with a fine dry-brush grain; NOT bright, NOT glossy.

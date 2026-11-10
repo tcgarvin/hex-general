@@ -21,13 +21,12 @@
 // defensive (a bug in map authoring, not a missing-art gap). Masks of four or
 // more connected edges are likewise not modelled and fall back to `00`.
 //
-// Art for 11 of the 20 fork names (everything but the shipped `fork_se_sw_s`)
-// lands separately (ROADMAP Phase 8, T3b-rest) — until then `orientedRiverTile`
-// still returns those names, but no PNG exists for them. The fallback to the
-// generic `00` tile for a missing texture is *not* here: it's the render-site
-// lookup in `Board.tsx` (`terrainTex.byOriented[name] ?? terrainTex.byOriented[
-// \`${terrain}/00\`]`), which falls through to the "00" group whenever the
-// named oriented group has no loaded variants.
+// The river set ships art for every name `orientedRiverTile` returns (all twelve
+// fork tiles since the 2026-11-09 Codex set); bridges ship the vertical straight and two
+// turns. The fallback to the generic `00` tile for a missing texture is *not*
+// here: it's the render-site lookup in `hexTile.ts` (`terrainTex.byOriented[name]
+// ?? terrainTex.byOriented[\`${terrain}/00\`]`), which falls through to the "00"
+// group whenever the named oriented group has no loaded variants.
 
 import type { components } from "@/lib/api/schema";
 

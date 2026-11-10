@@ -1,0 +1,7 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background. Image 2 shows the painting style (crops from the target map).
+
+Edit image 1: paint ONE dense forest mass inside each of the nine hexagons, and change nothing else. Each forest is a dense clump of many hundreds of small dark conifer and broadleaf tree crowns (each crown tiny, a few pixels across, like the forests in image 2), packed tightly with no clearings and no paths, with an irregular, natural edge made of individual crowns. Each forest is centred in its hexagon and covers roughly the inner three quarters of it, leaving a band of the existing grass visible all around it between the trees and the hexagon edge. Vary the nine clumps mildly.
+
+Keep EXACTLY as they are: the grass outside the forests (same colour, same texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, shadows on the magenta, grid lines, text or any other objects. Palette for the trees: deep dark blue-green and olive canopy with darker gaps, neutral overcast daylight, muted, NOT bright, NOT sepia, NOT golden.

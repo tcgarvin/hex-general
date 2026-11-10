@@ -1,0 +1,184 @@
+{
+ "raw": "raw/G7-meadow-both-bare.png",
+ "scale": "1:1",
+ "recolour": {
+  "tool": "recolour.py --auto --strength 1.0",
+  "hue_shift_deg": 1.1,
+  "sat_scale": 0.891,
+  "val_scale": 1.0301
+ },
+ "candidates": {
+  "cut": "cut.py --stride 128 --bleed 1",
+  "n": 96,
+  "spot_limit": 12.78,
+  "dropped_salient": [
+   "cand_x0000_y0512.png",
+   "cand_x0768_y0128.png"
+  ],
+  "pool": "20 nearest mean luminance 97.6"
+ },
+ "clique": {
+  "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+  "largest_compatible": "largest mutually-compatible subset: 15/20 tiles",
+  "worst_pairwise_badness_texture": 0.684
+ },
+ "tiles": [
+  {
+   "file": "plains/00.png",
+   "cut": "cand_x1024_y0256.png",
+   "source_offset_px": [
+    1024,
+    256
+   ],
+   "raw_window_ltrb": [
+    1024,
+    256,
+    1152,
+    384
+   ],
+   "spot": 8.52,
+   "lum_mean": 97.5,
+   "lum_std": 7.9,
+   "H": 61.0,
+   "S": 0.556,
+   "V": 0.408,
+   "hp1": 4.99,
+   "bp2": 3.05,
+   "lf8": 1.41,
+   "coh": 0.257
+  },
+  {
+   "file": "plains/01.png",
+   "cut": "cand_x0896_y0000.png",
+   "source_offset_px": [
+    896,
+    0
+   ],
+   "raw_window_ltrb": [
+    896,
+    0,
+    1024,
+    128
+   ],
+   "spot": 11.45,
+   "lum_mean": 97.6,
+   "lum_std": 8.4,
+   "H": 61.0,
+   "S": 0.559,
+   "V": 0.408,
+   "hp1": 5.38,
+   "bp2": 3.11,
+   "lf8": 1.97,
+   "coh": 0.269
+  },
+  {
+   "file": "plains/02.png",
+   "cut": "cand_x0128_y0896.png",
+   "source_offset_px": [
+    128,
+    896
+   ],
+   "raw_window_ltrb": [
+    128,
+    896,
+    256,
+    1024
+   ],
+   "spot": 8.62,
+   "lum_mean": 97.6,
+   "lum_std": 8.0,
+   "H": 60.0,
+   "S": 0.56,
+   "V": 0.408,
+   "hp1": 5.15,
+   "bp2": 2.96,
+   "lf8": 1.61,
+   "coh": 0.257
+  },
+  {
+   "file": "plains/03.png",
+   "cut": "cand_x0640_y0384.png",
+   "source_offset_px": [
+    640,
+    384
+   ],
+   "raw_window_ltrb": [
+    640,
+    384,
+    768,
+    512
+   ],
+   "spot": 9.07,
+   "lum_mean": 97.4,
+   "lum_std": 8.1,
+   "H": 61.0,
+   "S": 0.559,
+   "V": 0.408,
+   "hp1": 5.24,
+   "bp2": 3.14,
+   "lf8": 1.04,
+   "coh": 0.266
+  },
+  {
+   "file": "plains/04.png",
+   "cut": "cand_x0128_y0256.png",
+   "source_offset_px": [
+    128,
+    256
+   ],
+   "raw_window_ltrb": [
+    128,
+    256,
+    256,
+    384
+   ],
+   "spot": 9.68,
+   "lum_mean": 97.8,
+   "lum_std": 8.3,
+   "H": 61.0,
+   "S": 0.562,
+   "V": 0.412,
+   "hp1": 5.09,
+   "bp2": 3.15,
+   "lf8": 1.89,
+   "coh": 0.258
+  },
+  {
+   "file": "plains/05.png",
+   "cut": "cand_x0384_y0256.png",
+   "source_offset_px": [
+    384,
+    256
+   ],
+   "raw_window_ltrb": [
+    384,
+    256,
+    512,
+    384
+   ],
+   "spot": 7.94,
+   "lum_mean": 97.8,
+   "lum_std": 7.9,
+   "H": 61.0,
+   "S": 0.559,
+   "V": 0.408,
+   "hp1": 4.93,
+   "bp2": 3.04,
+   "lf8": 1.45,
+   "coh": 0.261
+  }
+ ],
+ "gate": {
+  "smooth": {
+   "pass": true,
+   "worst_seam_ratio": 1.535,
+   "worst_trunc": 1.02
+  },
+  "texture": {
+   "pass": true,
+   "worst_seam_ratio": 1.296,
+   "worst_trunc": 1.02,
+   "worst_dc_over_sigma": 0.513
+  }
+ }
+}

@@ -1,0 +1,485 @@
+{
+ "sheet": "art/codex/terrain/town/r2-a/town-r2-a.sheet.png",
+ "registration": {
+  "scale": 0.9999863966493141,
+  "tx": 0.09819492017100931,
+  "ty": -0.32774418300391356,
+  "max_residual_tile_px": 0.04009549054141389,
+  "min_iou": 0.9988048919755136
+ },
+ "pin": {
+  "rim_exact_px": 1.5,
+  "rim_ramp_px": 6.0,
+  "cross_exact_px": 3.0,
+  "cross_ramp_px": 12.0,
+  "restore": true,
+  "restore_sigma": 0.75,
+  "restore_lo": 14.0,
+  "restore_hi": 26.0,
+  "restore_close_px": 4,
+  "restore_grow_px": 2,
+  "restore_feather_px": 1.2,
+  "restore_tone": true,
+  "restore_tone_sigma": 8.0,
+  "restore_tone_span": 20.0,
+  "feature_strength": 0.0,
+  "feature_rgb": [],
+  "hold_feather_px": 3.0,
+  "tone_sigma": 0.0,
+  "tone_feature_grow_px": 2
+ },
+ "tiles": {
+  "town_00": {
+   "passed": false,
+   "colour": {
+    "lum": 91.82,
+    "hue": 60.0,
+    "sat": 0.546
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0208,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.02 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9988,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.0472,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "4.7% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 13.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "13 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_01": {
+   "passed": false,
+   "colour": {
+    "lum": 93.47,
+    "hue": 60.98,
+    "sat": 0.55
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0161,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.02 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9989,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.1355,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "13.5% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 166.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "166 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_02": {
+   "passed": false,
+   "colour": {
+    "lum": 92.01,
+    "hue": 60.0,
+    "sat": 0.551
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0205,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.02 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9989,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.1081,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "10.8% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 105.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "105 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_03": {
+   "passed": false,
+   "colour": {
+    "lum": 94.07,
+    "hue": 60.0,
+    "sat": 0.547
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0392,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.04 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9991,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.089,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "8.9% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 77.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "77 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_04": {
+   "passed": false,
+   "colour": {
+    "lum": 93.43,
+    "hue": 60.0,
+    "sat": 0.552
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0401,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.04 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.999,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.0997,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "10.0% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 83.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "83 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_05": {
+   "passed": false,
+   "colour": {
+    "lum": 93.48,
+    "hue": 60.0,
+    "sat": 0.552
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0339,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.03 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9992,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.0434,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "4.3% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 23.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "23 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_06": {
+   "passed": false,
+   "colour": {
+    "lum": 93.81,
+    "hue": 60.0,
+    "sat": 0.548
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0112,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.01 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.999,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.0518,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "5.2% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 18.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "18 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_07": {
+   "passed": false,
+   "colour": {
+    "lum": 93.5,
+    "hue": 60.0,
+    "sat": 0.548
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0184,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.02 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9989,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.0928,
+     "limit": 0.03,
+     "passed": false,
+     "hard": true,
+     "detail": "9.3% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 76.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "76 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  },
+  "town_08": {
+   "passed": false,
+   "colour": {
+    "lum": 94.36,
+    "hue": 60.92,
+    "sat": 0.555
+   },
+   "checks": [
+    {
+     "name": "registration_residual",
+     "value": 0.0251,
+     "limit": 0.75,
+     "passed": true,
+     "hard": true,
+     "detail": "centre residual 0.03 tile px (limit 0.75)"
+    },
+    {
+     "name": "registration_iou",
+     "value": 0.9989,
+     "limit": 0.97,
+     "passed": true,
+     "hard": true,
+     "detail": "silhouette IoU 0.999 (min 0.97)"
+    },
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 0.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - target| 0 over 1024 rim px (d < 1.5)"
+    },
+    {
+     "name": "rim_clear",
+     "value": 0.0282,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "2.8% of the rim band painted over (limit 3%)"
+    },
+    {
+     "name": "rim_touch",
+     "value": 9.0,
+     "limit": 2.0,
+     "passed": false,
+     "hard": true,
+     "detail": "9 salient px within 4 px of the boundary (limit 2)"
+    }
+   ]
+  }
+ },
+ "passed": false,
+ "codex_follow": {}
+}

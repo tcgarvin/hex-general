@@ -1,0 +1,12 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of 36 separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 6 rows of 6. Image 2 is the target game map. Copy the painting style of its dense woods: the dark, closed forest masses made of many small round tree crowns (for example the wood just right of the river near the top centre of image 2, and the woods in its lower right). Ignore everything else in image 2 (units, icons, interface, grid lines, roads, rivers).
+
+Edit image 1: in every hexagon, paint one dense deciduous wood in the style of image 2, at the same scale as image 2's woods relative to their hexagons.
+- The wood is a closed canopy of many small, round, overlapping tree crowns; each crown is only about one-twelfth of the hexagon's width. No ground is visible between the crowns, and there are no clearings.
+- The canopy is dark olive green (about #343D1D), much darker than the grass. Each crown is lit on its upper-left with a slightly lighter moss-olive and is darker on its lower-right; even the lit tops stay clearly darker than the grass. A few darker, pointed conifer crowns are mixed in (at most one in seven).
+- The wood's outline is a lumpy, irregular line of round crowns that loosely fills the hexagon: NOT a straight-edged hexagon and NOT a circle. A band of the existing grass, about one-fourteenth of the hexagon's width, shows all around the wood; no crown touches or crosses the hexagon's edge.
+- Along the wood's southern edge a few tree trunks show, and a short, soft, warm brown shadow falls on the grass to the lower right. There is no dark ring or shadow band around the rest of the wood.
+- Every hexagon holds the same kind of wood, only slightly different in outline and crown arrangement.
+
+Keep EXACTLY as they are: the grass outside the wood (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add anything else: no roads, no rivers, no houses, no rocks, no single trees on the open grass, no borders, no outlines, no grid lines, no text. Seen from almost straight above, with a very slight tilt from the south. Light from the upper left. Muted, hand-painted, with a fine dry-brush grain; NOT bright, NOT lime, NOT blue-green, NOT glossy.

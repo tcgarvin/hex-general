@@ -1,0 +1,181 @@
+{
+ "raw": "raw/G1-meadow-concept-bare.png",
+ "scale": "1:1",
+ "recolour": {
+  "tool": "recolour.py --auto --strength 1.0",
+  "hue_shift_deg": 0.13,
+  "sat_scale": 0.8572,
+  "val_scale": 1.0301
+ },
+ "candidates": {
+  "cut": "cut.py --stride 128 --bleed 1",
+  "n": 96,
+  "spot_limit": 9.03,
+  "dropped_salient": [],
+  "pool": "20 nearest mean luminance 97.5"
+ },
+ "clique": {
+  "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+  "largest_compatible": "largest mutually-compatible subset: 20/20 tiles",
+  "worst_pairwise_badness_texture": 0.639
+ },
+ "tiles": [
+  {
+   "file": "plains/00.png",
+   "cut": "cand_x0768_y0896.png",
+   "source_offset_px": [
+    768,
+    896
+   ],
+   "raw_window_ltrb": [
+    768,
+    896,
+    896,
+    1024
+   ],
+   "spot": 6.61,
+   "lum_mean": 97.5,
+   "lum_std": 5.6,
+   "H": 61.1,
+   "S": 0.559,
+   "V": 0.408,
+   "hp1": 3.07,
+   "bp2": 2.35,
+   "lf8": 0.99,
+   "coh": 0.202
+  },
+  {
+   "file": "plains/01.png",
+   "cut": "cand_x0640_y0512.png",
+   "source_offset_px": [
+    640,
+    512
+   ],
+   "raw_window_ltrb": [
+    640,
+    512,
+    768,
+    640
+   ],
+   "spot": 6.93,
+   "lum_mean": 97.5,
+   "lum_std": 5.7,
+   "H": 61.1,
+   "S": 0.559,
+   "V": 0.408,
+   "hp1": 3.09,
+   "bp2": 2.54,
+   "lf8": 0.95,
+   "coh": 0.213
+  },
+  {
+   "file": "plains/02.png",
+   "cut": "cand_x0384_y0128.png",
+   "source_offset_px": [
+    384,
+    128
+   ],
+   "raw_window_ltrb": [
+    384,
+    128,
+    512,
+    256
+   ],
+   "spot": 5.92,
+   "lum_mean": 97.5,
+   "lum_std": 5.6,
+   "H": 61.1,
+   "S": 0.557,
+   "V": 0.408,
+   "hp1": 3.03,
+   "bp2": 2.47,
+   "lf8": 0.96,
+   "coh": 0.223
+  },
+  {
+   "file": "plains/03.png",
+   "cut": "cand_x1024_y0256.png",
+   "source_offset_px": [
+    1024,
+    256
+   ],
+   "raw_window_ltrb": [
+    1024,
+    256,
+    1152,
+    384
+   ],
+   "spot": 5.77,
+   "lum_mean": 97.6,
+   "lum_std": 5.3,
+   "H": 61.1,
+   "S": 0.559,
+   "V": 0.408,
+   "hp1": 2.91,
+   "bp2": 2.37,
+   "lf8": 0.81,
+   "coh": 0.229
+  },
+  {
+   "file": "plains/04.png",
+   "cut": "cand_x0768_y0128.png",
+   "source_offset_px": [
+    768,
+    128
+   ],
+   "raw_window_ltrb": [
+    768,
+    128,
+    896,
+    256
+   ],
+   "spot": 6.29,
+   "lum_mean": 97.7,
+   "lum_std": 5.8,
+   "H": 61.1,
+   "S": 0.56,
+   "V": 0.408,
+   "hp1": 3.15,
+   "bp2": 2.56,
+   "lf8": 1.09,
+   "coh": 0.233
+  },
+  {
+   "file": "plains/05.png",
+   "cut": "cand_x0896_y0768.png",
+   "source_offset_px": [
+    896,
+    768
+   ],
+   "raw_window_ltrb": [
+    896,
+    768,
+    1024,
+    896
+   ],
+   "spot": 4.84,
+   "lum_mean": 97.4,
+   "lum_std": 5.5,
+   "H": 61.1,
+   "S": 0.559,
+   "V": 0.408,
+   "hp1": 3.03,
+   "bp2": 2.49,
+   "lf8": 0.88,
+   "coh": 0.214
+  }
+ ],
+ "gate": {
+  "smooth": {
+   "pass": true,
+   "worst_seam_ratio": 1.5,
+   "worst_trunc": 1.099
+  },
+  "texture": {
+   "pass": true,
+   "worst_seam_ratio": 1.278,
+   "worst_trunc": 1.099,
+   "worst_dc_over_sigma": 0.464
+  }
+ }
+}

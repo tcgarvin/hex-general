@@ -1,0 +1,26 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). In every description below, north is up, east is right.
+
+Image 2 is the target game map. Copy the painting style of its village (upper right of centre in image 2, east of the river). Image 3 is a close-up of that village; the thin light lines in image 3 are the map's grid, do not paint them. Ignore everything else in images 2 and 3 (units, icons, interface, grid lines, the river, woods).
+
+Edit image 1: in every hexagon, paint one country village in the style of images 2 and 3.
+- The village is LARGE and DENSE but ASYMMETRIC: it spans most of the hexagon (about two-thirds of its area, reaching across the centre), with its densest heart off-centre toward the side named below; only the opposite side shows a crescent of open grass. Houses stand close together in clusters and short rows; gardens, orchards and plots fill every gap, so little open lawn is left inside the village.
+- 28 to 36 small houses and barns, packed close together so their roofs nearly touch along the lanes, of VARIED sizes and orientations, each roughly one-twelfth of the hexagon's width; cream or whitewashed walls with dark window dots, DARK, muted terracotta-brown roofs (about #5C3F28, darker and browner than you would usually paint them). South walls show in a slight oblique view; short soft shadows fall to the lower right.
+- Orchards, vegetable plots, fenced gardens and dark hedges fill the gaps between houses. On the village's side, its outer gardens and hedges may reach close to the hexagon's edge, but every HOUSE stands well inside the hexagon: no house closer to the edge than one-twelfth of the hexagon's width.
+- Only short, faint, muted earth lanes between the houses. NO pale track or road leading out toward the hexagon's edge.
+
+Each hexagon is a DIFFERENT village:
+1. Village in the north-west half, gardens reaching toward the north-west edge; a small church with a tower on its east side.
+2. Village in the southern half, stretched west to east, orchards toward the south edge; no church.
+3. Village in the eastern half, gardens reaching toward the east edge; a small church in its north.
+4. Village in the north-east half, a farm courtyard in the middle; no church.
+5. Village in the south-west half, orchards reaching toward the south-west edge; a small church near its middle.
+6. Village in the northern half, a row of houses along a short lane, vegetable plots to the north; no church.
+7. Village in the western half, a large barn and farmyard on its south side; no church.
+8. Village in the south-east half, gardens toward the south-east edge; a small church on its west side.
+9. Village spread from the north-west to the centre as a loose L shape; no church.
+
+EVERY HEXAGON MUST LOOK DIFFERENT, following its own numbered description above: different shape, different position of the main mass, different outline. Do not repeat one layout across the sheet.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. Seen from almost straight above, with a very slight tilt from the south. Light from the upper left (west-north-west). Muted, hand-painted, with a fine dry-brush grain of short strokes; NOT bright, NOT glossy, NOT airbrushed.

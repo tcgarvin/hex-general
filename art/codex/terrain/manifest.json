@@ -1,0 +1,2066 @@
+{
+ "generated": "2026-11-09",
+ "generator": "codex-cli, codex exec, built-in image_generation tool (ChatGPT login); run_codex.sh",
+ "status": "capability probe only; nothing here is a candidate for frontend/ yet",
+ "refs": {
+  "refs/styleboard.png": {
+   "built_by": "make_refs.py",
+   "from": "docs/concept-art/concept1.png",
+   "scale": 1.5,
+   "layout_rows": [
+    [
+     "hills",
+     "east_forest",
+     "center_forest"
+    ],
+    [
+     "city",
+     "town"
+    ],
+    [
+     "river_bridge",
+     "farmland",
+     "ne_hills_forest"
+    ]
+   ],
+   "crops_ltrb": {
+    "refs/crop_hills.png": [
+     8,
+     168,
+     300,
+     345
+    ],
+    "refs/crop_east_forest.png": [
+     1264,
+     300,
+     1448,
+     540
+    ],
+    "refs/crop_river_bridge.png": [
+     680,
+     690,
+     935,
+     815
+    ],
+    "refs/crop_farmland.png": [
+     935,
+     700,
+     1250,
+     815
+    ],
+    "refs/crop_town.png": [
+     940,
+     232,
+     1115,
+     370
+    ],
+    "refs/crop_city.png": [
+     20,
+     585,
+     470,
+     800
+    ],
+    "refs/crop_ne_hills_forest.png": [
+     1052,
+     62,
+     1235,
+     168
+    ],
+    "refs/crop_center_forest.png": [
+     600,
+     62,
+     800,
+     160
+    ]
+   },
+   "note": "unit/UI/ZOC-free crops; the concept hex grid lines are still visible in every crop"
+  },
+  "refs/hex_guide.png": {
+   "built_by": "hex_guide.py",
+   "layout": "refs/hex_guide.json"
+  },
+  "refs/paintin_sheet.png": {
+   "built_by": "make_paintin_sheet.py raw/P3b-ground-mottled.png",
+   "layout": "refs/paintin_sheet.json"
+  },
+  "refs/G-p1a-grass-crop.png": {
+   "from": "raw/P1a-keyart-fullconcept.png",
+   "crop_ltrb": [
+    696,
+    672,
+    856,
+    832
+   ],
+   "note": "clean open grass from the P1a key art (no tree, rock or road), native pixels; attached to G2/G4/G6/G7/G8/G9"
+  }
+ },
+ "concept_grass_boxes_ltrb": [
+  [
+   240,
+   410,
+   300,
+   450
+  ],
+  [
+   1140,
+   520,
+   1200,
+   560
+  ],
+  [
+   1340,
+   320,
+   1400,
+   360
+  ],
+  [
+   860,
+   250,
+   920,
+   290
+  ],
+  [
+   200,
+   735,
+   260,
+   775
+  ],
+  [
+   380,
+   740,
+   440,
+   780
+  ]
+ ],
+ "concept_forest_boxes_ltrb": [
+  [
+   430,
+   320,
+   490,
+   370
+  ],
+  [
+   745,
+   260,
+   800,
+   300
+  ],
+  [
+   1300,
+   430,
+   1350,
+   470
+  ],
+  [
+   640,
+   100,
+   690,
+   140
+  ]
+ ],
+ "measure": {
+  "colour": "python3 measure.py <png> [--box l,t,r,b ...]",
+  "registration": "uv run --no-project --with scipy --with pillow --with numpy python register.py raw/P2?-*.png -> review/<name>.{overlay,classes}.png + .registration.json",
+  "paintin": "python3 measure_paintin.py raw/P5?-*.png -> review/<name>.rimdiff.png + .paintin.json"
+ },
+ "runs": [
+  {
+   "name": "P1a-keyart-fullconcept",
+   "experiment": "P1 free key art, full concept1.png attached",
+   "prompt": "prompts/P1a-keyart-fullconcept.txt",
+   "raw": "raw/P1a-keyart-fullconcept.png",
+   "raw_size": [
+    1672,
+    941
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c31e-64a6-7bc3-9b9a-07436f01e60f",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c31e-64a6-7bc3-9b9a-07436f01e60f/exec-cd251be1-ed25-42d3-aafe-f8242f9c6e09.png",
+   "wall_seconds": 63,
+   "refs": [
+    "../../../docs/concept-art/concept1.png"
+   ]
+  },
+  {
+   "name": "P1b-keyart-crops",
+   "experiment": "P1 free key art, unit-free style board attached",
+   "prompt": "prompts/P1b-keyart-crops.txt",
+   "raw": "raw/P1b-keyart-crops.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c31e-64a8-7ad3-8ffa-732756ff655a",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c31e-64a8-7ad3-8ffa-732756ff655a/exec-4e9ed3f4-0c9d-4444-94bf-ec1babaffb0f.png",
+   "wall_seconds": 72,
+   "refs": [
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P2a-guided-keyart",
+   "experiment": "P2 guided key art: hex layout guide + style board",
+   "prompt": "prompts/P2a-guided-keyart.txt",
+   "raw": "raw/P2a-guided-keyart.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c320-0104-7532-95dc-3bdf608710ff",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c320-0104-7532-95dc-3bdf608710ff/exec-c28b1f37-261e-4287-8687-059026517db0.png",
+   "wall_seconds": 80,
+   "refs": [
+    "refs/hex_guide.png",
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P2b-guided-keyart-organic",
+   "experiment": "P2 guided key art, same guide, organic (non-hexagonal) feature outlines asked for",
+   "prompt": "prompts/P2b-guided-keyart-organic.txt",
+   "raw": "raw/P2b-guided-keyart-organic.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c323-6bf7-7051-b7df-c191e5c0b4bf",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c323-6bf7-7051-b7df-c191e5c0b4bf/exec-980767ff-1487-4040-9f50-541951ab1c4a.png",
+   "wall_seconds": 86,
+   "refs": [
+    "refs/hex_guide.png",
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P3a-ground-calm",
+   "experiment": "P3 grass ground swatch, calm fine grain",
+   "prompt": "prompts/P3a-ground-calm.txt",
+   "raw": "raw/P3a-ground-calm.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c31e-64ae-7112-8619-079a0c50fad3",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c31e-64ae-7112-8619-079a0c50fad3/exec-5c4c6906-680e-41a9-89f3-5801d510c073.png",
+   "wall_seconds": 34,
+   "refs": [
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P3b-ground-mottled",
+   "experiment": "P3 grass ground swatch, concept-style mottling",
+   "prompt": "prompts/P3b-ground-mottled.txt",
+   "raw": "raw/P3b-ground-mottled.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c320-0106-7563-bbb7-ccee508c56ce",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c320-0106-7563-bbb7-ccee508c56ce/exec-09e189a4-68c9-4c83-b208-1b33d7442d4e.png",
+   "wall_seconds": 37,
+   "refs": [
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P4a-sheet-forest",
+   "experiment": "P4 3x3 forest masses on magenta",
+   "prompt": "prompts/P4a-sheet-forest.txt",
+   "raw": "raw/P4a-sheet-forest.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c320-c8a8-7d82-bc05-1eb7501daa1d",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c320-c8a8-7d82-bc05-1eb7501daa1d/exec-d9e90e70-aa31-4761-87d4-32d3af219684.png",
+   "wall_seconds": 32,
+   "refs": [
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P4b-sheet-hills",
+   "experiment": "P4 3x3 hill/ridge groups on magenta",
+   "prompt": "prompts/P4b-sheet-hills.txt",
+   "raw": "raw/P4b-sheet-hills.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c321-674b-79a2-be1f-9adf276a9087",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c321-674b-79a2-be1f-9adf276a9087/exec-b3389ecb-d4e9-4494-8bcc-75d00ef55b98.png",
+   "wall_seconds": 41,
+   "refs": [
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P4c-sheet-settlements",
+   "experiment": "P4 3x3 settlements (5 towns, 4 cities) on magenta",
+   "prompt": "prompts/P4c-sheet-settlements.txt",
+   "raw": "raw/P4c-sheet-settlements.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c321-74bf-7c10-8b7c-63c440ca9477",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c321-74bf-7c10-8b7c-63c440ca9477/exec-74f84b81-106c-4d4b-8710-282385cb7ece.png",
+   "wall_seconds": 65,
+   "refs": [
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P5a-paintin-forest",
+   "experiment": "P5 paint-in: forest into 3x3 P3b-ground hexagons",
+   "prompt": "prompts/P5a-paintin-forest.txt",
+   "raw": "raw/P5a-paintin-forest.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c323-2a01-7632-a1db-25b46bd3e321",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c323-2a01-7632-a1db-25b46bd3e321/exec-8868d8be-fde6-41da-9614-ecbe88010686.png",
+   "wall_seconds": 43,
+   "refs": [
+    "refs/paintin_sheet.png",
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "P5b-paintin-mixed",
+   "experiment": "P5 paint-in: hills / village / city rows into 3x3 P3b-ground hexagons",
+   "prompt": "prompts/P5b-paintin-mixed.txt",
+   "raw": "raw/P5b-paintin-mixed.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c325-60fb-73d3-99c8-2336913789ec",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c325-60fb-73d3-99c8-2336913789ec/exec-917bd167-f7ec-4a5f-8c19-9ba1309ca225.png",
+   "wall_seconds": 64,
+   "refs": [
+    "refs/paintin_sheet.png",
+    "refs/styleboard.png"
+   ]
+  },
+  {
+   "name": "G1-meadow-concept-bare",
+   "experiment": "G ground: meadow-map framing, full concept1.png attached, strictly bare",
+   "prompt": "prompts/G1-meadow-concept-bare.txt",
+   "raw": "raw/G1-meadow-concept-bare.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c32d-e87e-7fc3-b08d-cefc75f0fcef",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c32d-e87e-7fc3-b08d-cefc75f0fcef/exec-e50ca088-2c05-4711-8fbf-cc788fbb87ee.png",
+   "wall_seconds": 31,
+   "refs": [
+    "../../../docs/concept-art/concept1.png"
+   ]
+  },
+  {
+   "name": "G2-meadow-crop-bare",
+   "experiment": "G ground: meadow-map framing, P1a open-grass crop attached ('more of exactly this ground'), strictly bare",
+   "prompt": "prompts/G2-meadow-crop-bare.txt",
+   "raw": "raw/G2-meadow-crop-bare.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c32d-e87d-7382-b113-c2a645966c20",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c32d-e87d-7382-b113-c2a645966c20/exec-e0c9f5d8-9d76-495e-9e47-f4256ee30920.png",
+   "wall_seconds": 28,
+   "refs": [
+    "refs/G-p1a-grass-crop.png"
+   ]
+  },
+  {
+   "name": "G3-meadow-concept-tufts",
+   "experiment": "G ground: meadow-map framing, full concept attached, 'very occasional tiny tuft of taller grass'",
+   "prompt": "prompts/G3-meadow-concept-tufts.txt",
+   "raw": "raw/G3-meadow-concept-tufts.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c32d-e87f-7b21-b995-ae6c6e41170a",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c32d-e87f-7b21-b995-ae6c6e41170a/exec-d7c5981c-b279-445d-84e0-829a1c94ad4f.png",
+   "wall_seconds": 33,
+   "refs": [
+    "../../../docs/concept-art/concept1.png"
+   ]
+  },
+  {
+   "name": "G4-meadow-crop-tufts",
+   "experiment": "G ground: meadow-map framing, P1a grass crop attached, occasional tiny tufts",
+   "prompt": "prompts/G4-meadow-crop-tufts.txt",
+   "raw": "raw/G4-meadow-crop-tufts.png",
+   "raw_size": [
+    1672,
+    941
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c32e-7ec2-7cc0-a26e-039525c7e056",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c32e-7ec2-7cc0-a26e-039525c7e056/exec-ad04b3b1-3833-4c7c-b8e6-16c060c99b63.png",
+   "wall_seconds": 29,
+   "refs": [
+    "refs/G-p1a-grass-crop.png"
+   ]
+  },
+  {
+   "name": "G5-meadow-concept-streaky",
+   "experiment": "G ground: meadow-map framing, full concept attached, bare, 'more visible painterly streaking'",
+   "prompt": "prompts/G5-meadow-concept-streaky.txt",
+   "raw": "raw/G5-meadow-concept-streaky.png",
+   "raw_size": [
+    1672,
+    941
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c32e-7ebe-7f22-919b-dec330ca023d",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c32e-7ebe-7f22-919b-dec330ca023d/exec-5817c24b-a62b-4427-a095-946c018a128b.png",
+   "wall_seconds": 37,
+   "refs": [
+    "../../../docs/concept-art/concept1.png"
+   ]
+  },
+  {
+   "name": "G6-meadow-crop-streaky",
+   "experiment": "G ground: meadow-map framing, P1a grass crop attached, bare, 'more visible painterly streaking'",
+   "prompt": "prompts/G6-meadow-crop-streaky.txt",
+   "raw": "raw/G6-meadow-crop-streaky.png",
+   "raw_size": [
+    1672,
+    941
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c32e-7ec1-73b2-bc01-aa4804726ef6",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c32e-7ec1-73b2-bc01-aa4804726ef6/exec-98e3ef07-669d-476d-983f-afcfa7f847e1.png",
+   "wall_seconds": 27,
+   "refs": [
+    "refs/G-p1a-grass-crop.png"
+   ]
+  },
+  {
+   "name": "G7-meadow-both-bare",
+   "experiment": "G ground: meadow-map framing, full concept AND P1a grass crop attached, strictly bare",
+   "prompt": "prompts/G7-meadow-both-bare.txt",
+   "raw": "raw/G7-meadow-both-bare.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c330-2aad-7622-9f25-2415fd839955",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c330-2aad-7622-9f25-2415fd839955/exec-5bd84171-936e-4215-a635-ea647b26a061.png",
+   "wall_seconds": 32,
+   "refs": [
+    "../../../docs/concept-art/concept1.png",
+    "refs/G-p1a-grass-crop.png"
+   ]
+  },
+  {
+   "name": "G8-meadow-crop-tufts-rerun",
+   "experiment": "G ground: G4 prompt re-run unchanged (reproducibility check)",
+   "prompt": "prompts/G8-meadow-crop-tufts-rerun.txt",
+   "raw": "raw/G8-meadow-crop-tufts-rerun.png",
+   "raw_size": [
+    1672,
+    941
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c330-2aa7-7c00-8894-df6b2ba55d5c",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c330-2aa7-7c00-8894-df6b2ba55d5c/exec-e02434a5-8e47-4b8a-a1a8-331088669623.png",
+   "wall_seconds": 31,
+   "refs": [
+    "refs/G-p1a-grass-crop.png"
+   ]
+  },
+  {
+   "name": "G9-meadow-crop-bare-rerun",
+   "experiment": "G ground: G2 prompt re-run unchanged (reproducibility check)",
+   "prompt": "prompts/G9-meadow-crop-bare-rerun.txt",
+   "raw": "raw/G9-meadow-crop-bare-rerun.png",
+   "raw_size": [
+    1672,
+    941
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c339-6bec-71f0-bcd2-773b8a598cd7",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c339-6bec-71f0-bcd2-773b8a598cd7/exec-5ac1a982-6618-4f46-9833-298452aae689.png",
+   "wall_seconds": 30,
+   "refs": [
+    "refs/G-p1a-grass-crop.png"
+   ]
+  }
+ ],
+ "ground": {
+  "date": "2026-11-09",
+  "status": "candidates for user review; nothing applied to frontend/",
+  "tools": {
+   "build": "ground/build_set.py <raw> --set <name> [--flatten-sigma 24]  (flatten -> recolour -> cut.py --stride 128 --bleed 1 -> salience drop -> gate.py clique --seam-mode texture --pick 6 --pool-size 20 -> gate.py smooth+texture)",
+   "grain": "ground/grain.py (lum_std, hp1 = std(lum - G1), bp2 = std(G1 - G3), lf8 = std(G8), median HSV)",
+   "scale_study": "ground/scale_study.py <raw...>  (1:1 vs 2:1 cuts against 7 clean concept grass boxes, centre 64x64 of each window)",
+   "recolour": "ground/recolour.py (global HSV: H += shift, S *= k, V *= k; --auto lands on concept medians)",
+   "fields": "scripts/board-mock.py --tiles ground/<set> --map <12x8 all-plains ASCII> --hex-px 128|64 --grid|--no-grid -> review/ground-fields/",
+   "field_metrics": "ground/field_metrics.py <grid.png> <no-grid.png> <hex_px>",
+   "review": "ground/compare.py <sets...> -> review/ground-compare.png, review/ground-scale.png"
+  },
+  "concept_grass_anchor": {
+   "boxes_ltrb": [
+    [
+     848,
+     456,
+     912,
+     520
+    ],
+    [
+     312,
+     168,
+     376,
+     232
+    ],
+    [
+     1368,
+     512,
+     1432,
+     576
+    ],
+    [
+     16,
+     448,
+     80,
+     512
+    ],
+    [
+     1368,
+     248,
+     1432,
+     312
+    ],
+    [
+     440,
+     440,
+     504,
+     504
+    ],
+    [
+     1368,
+     712,
+     1432,
+     776
+    ]
+   ],
+   "median": {
+    "lum_mean": 96.3,
+    "lum_std": 7.5,
+    "H": 61.1,
+    "S": 0.558,
+    "V": 0.408,
+    "hp1": 3.68,
+    "bp2": 2.94,
+    "lf8": 2.74
+   },
+   "hex_ref": {
+    "centre": [
+     347,
+     185
+    ],
+    "lum_mean": 106.2,
+    "lum_std": 7.1,
+    "H": 60.0,
+    "S": 0.555,
+    "V": 0.447,
+    "hp1": 3.85,
+    "bp2": 2.9
+   },
+   "note": "the probe's six grass boxes include grid lines, road edges and features (that is where its lum std 9-24 came from); clean open grass is lum std ~7-8"
+  },
+  "cut_scale": {
+   "winner": "1:1",
+   "evidence": "2:1 cuts lose stroke-scale (bp2) and low-frequency (lf8) energy relative to concept and push the hp1/bp2 ratio from ~1.2-1.5 to ~1.8-2.0 (concept 1.25); see scale_study output in set notes and review/ground-scale.png",
+   "numbers": "ground/scale_study.json"
+  },
+  "sets": {
+   "G1": {
+    "raw": "raw/G1-meadow-concept-bare.png",
+    "scale": "1:1",
+    "recolour": {
+     "tool": "recolour.py --auto --strength 1.0",
+     "hue_shift_deg": 0.13,
+     "sat_scale": 0.8572,
+     "val_scale": 1.0301
+    },
+    "candidates": {
+     "cut": "cut.py --stride 128 --bleed 1",
+     "n": 96,
+     "spot_limit": 9.03,
+     "dropped_salient": [],
+     "pool": "20 nearest mean luminance 97.5"
+    },
+    "clique": {
+     "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+     "largest_compatible": "largest mutually-compatible subset: 20/20 tiles",
+     "worst_pairwise_badness_texture": 0.639
+    },
+    "tiles": [
+     {
+      "file": "plains/00.png",
+      "cut": "cand_x0768_y0896.png",
+      "source_offset_px": [
+       768,
+       896
+      ],
+      "raw_window_ltrb": [
+       768,
+       896,
+       896,
+       1024
+      ],
+      "spot": 6.61,
+      "lum_mean": 97.5,
+      "lum_std": 5.6,
+      "H": 61.1,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 3.07,
+      "bp2": 2.35,
+      "lf8": 0.99,
+      "coh": 0.202
+     },
+     {
+      "file": "plains/01.png",
+      "cut": "cand_x0640_y0512.png",
+      "source_offset_px": [
+       640,
+       512
+      ],
+      "raw_window_ltrb": [
+       640,
+       512,
+       768,
+       640
+      ],
+      "spot": 6.93,
+      "lum_mean": 97.5,
+      "lum_std": 5.7,
+      "H": 61.1,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 3.09,
+      "bp2": 2.54,
+      "lf8": 0.95,
+      "coh": 0.213
+     },
+     {
+      "file": "plains/02.png",
+      "cut": "cand_x0384_y0128.png",
+      "source_offset_px": [
+       384,
+       128
+      ],
+      "raw_window_ltrb": [
+       384,
+       128,
+       512,
+       256
+      ],
+      "spot": 5.92,
+      "lum_mean": 97.5,
+      "lum_std": 5.6,
+      "H": 61.1,
+      "S": 0.557,
+      "V": 0.408,
+      "hp1": 3.03,
+      "bp2": 2.47,
+      "lf8": 0.96,
+      "coh": 0.223
+     },
+     {
+      "file": "plains/03.png",
+      "cut": "cand_x1024_y0256.png",
+      "source_offset_px": [
+       1024,
+       256
+      ],
+      "raw_window_ltrb": [
+       1024,
+       256,
+       1152,
+       384
+      ],
+      "spot": 5.77,
+      "lum_mean": 97.6,
+      "lum_std": 5.3,
+      "H": 61.1,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 2.91,
+      "bp2": 2.37,
+      "lf8": 0.81,
+      "coh": 0.229
+     },
+     {
+      "file": "plains/04.png",
+      "cut": "cand_x0768_y0128.png",
+      "source_offset_px": [
+       768,
+       128
+      ],
+      "raw_window_ltrb": [
+       768,
+       128,
+       896,
+       256
+      ],
+      "spot": 6.29,
+      "lum_mean": 97.7,
+      "lum_std": 5.8,
+      "H": 61.1,
+      "S": 0.56,
+      "V": 0.408,
+      "hp1": 3.15,
+      "bp2": 2.56,
+      "lf8": 1.09,
+      "coh": 0.233
+     },
+     {
+      "file": "plains/05.png",
+      "cut": "cand_x0896_y0768.png",
+      "source_offset_px": [
+       896,
+       768
+      ],
+      "raw_window_ltrb": [
+       896,
+       768,
+       1024,
+       896
+      ],
+      "spot": 4.84,
+      "lum_mean": 97.4,
+      "lum_std": 5.5,
+      "H": 61.1,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 3.03,
+      "bp2": 2.49,
+      "lf8": 0.88,
+      "coh": 0.214
+     }
+    ],
+    "gate": {
+     "smooth": {
+      "pass": true,
+      "worst_seam_ratio": 1.5,
+      "worst_trunc": 1.099
+     },
+     "texture": {
+      "pass": true,
+      "worst_seam_ratio": 1.278,
+      "worst_trunc": 1.099,
+      "worst_dc_over_sigma": 0.464
+     }
+    },
+    "source": "ground/G1/source.png",
+    "mean_tile_metrics": {
+     "lum_mean": 97.533,
+     "H": 61.1,
+     "S": 0.559,
+     "V": 0.408,
+     "lum_std": 5.583,
+     "hp1": 3.047,
+     "bp2": 2.463,
+     "lf8": 0.947
+    },
+    "field": {
+     "128px": {
+      "seam_index": 1.007,
+      "blotch_4": 1.51,
+      "blotch_8": 0.89,
+      "blotch_16": 0.46
+     },
+     "64px": {
+      "seam_index": 1.173,
+      "blotch_4": 1.57,
+      "blotch_8": 0.94,
+      "blotch_16": 0.47
+     }
+    },
+    "field_renders": "review/ground-fields/G1-field-{128,64}px-{grid,no-grid}.png"
+   },
+   "G2": {
+    "raw": "raw/G2-meadow-crop-bare.png",
+    "scale": "1:1",
+    "recolour": {
+     "tool": "recolour.py --auto --strength 1.0",
+     "hue_shift_deg": 2.04,
+     "sat_scale": 0.8495,
+     "val_scale": 1.0404
+    },
+    "candidates": {
+     "cut": "cut.py --stride 128 --bleed 1",
+     "n": 96,
+     "spot_limit": 13.83,
+     "dropped_salient": [],
+     "pool": "20 nearest mean luminance 97.6"
+    },
+    "clique": {
+     "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+     "largest_compatible": "largest mutually-compatible subset: 14/20 tiles",
+     "worst_pairwise_badness_texture": 0.701
+    },
+    "tiles": [
+     {
+      "file": "plains/00.png",
+      "cut": "cand_x0384_y0896.png",
+      "source_offset_px": [
+       384,
+       896
+      ],
+      "raw_window_ltrb": [
+       384,
+       896,
+       512,
+       1024
+      ],
+      "spot": 9.52,
+      "lum_mean": 97.5,
+      "lum_std": 7.3,
+      "H": 61.0,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 4.31,
+      "bp2": 2.92,
+      "lf8": 1.49,
+      "coh": 0.262
+     },
+     {
+      "file": "plains/01.png",
+      "cut": "cand_x0896_y0896.png",
+      "source_offset_px": [
+       896,
+       896
+      ],
+      "raw_window_ltrb": [
+       896,
+       896,
+       1024,
+       1024
+      ],
+      "spot": 7.86,
+      "lum_mean": 97.7,
+      "lum_std": 7.5,
+      "H": 61.0,
+      "S": 0.557,
+      "V": 0.408,
+      "hp1": 4.31,
+      "bp2": 2.96,
+      "lf8": 1.59,
+      "coh": 0.28
+     },
+     {
+      "file": "plains/02.png",
+      "cut": "cand_x1024_y0256.png",
+      "source_offset_px": [
+       1024,
+       256
+      ],
+      "raw_window_ltrb": [
+       1024,
+       256,
+       1152,
+       384
+      ],
+      "spot": 8.12,
+      "lum_mean": 97.8,
+      "lum_std": 7.2,
+      "H": 61.1,
+      "S": 0.557,
+      "V": 0.408,
+      "hp1": 4.1,
+      "bp2": 2.95,
+      "lf8": 1.24,
+      "coh": 0.275
+     },
+     {
+      "file": "plains/03.png",
+      "cut": "cand_x0768_y0128.png",
+      "source_offset_px": [
+       768,
+       128
+      ],
+      "raw_window_ltrb": [
+       768,
+       128,
+       896,
+       256
+      ],
+      "spot": 9.21,
+      "lum_mean": 97.8,
+      "lum_std": 7.5,
+      "H": 61.0,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 4.2,
+      "bp2": 3.16,
+      "lf8": 1.14,
+      "coh": 0.259
+     },
+     {
+      "file": "plains/04.png",
+      "cut": "cand_x1024_y0640.png",
+      "source_offset_px": [
+       1024,
+       640
+      ],
+      "raw_window_ltrb": [
+       1024,
+       640,
+       1152,
+       768
+      ],
+      "spot": 8.7,
+      "lum_mean": 97.7,
+      "lum_std": 7.4,
+      "H": 61.0,
+      "S": 0.554,
+      "V": 0.408,
+      "hp1": 4.25,
+      "bp2": 3.1,
+      "lf8": 1.16,
+      "coh": 0.255
+     },
+     {
+      "file": "plains/05.png",
+      "cut": "cand_x0896_y0512.png",
+      "source_offset_px": [
+       896,
+       512
+      ],
+      "raw_window_ltrb": [
+       896,
+       512,
+       1024,
+       640
+      ],
+      "spot": 8.16,
+      "lum_mean": 97.5,
+      "lum_std": 7.4,
+      "H": 61.0,
+      "S": 0.558,
+      "V": 0.408,
+      "hp1": 4.24,
+      "bp2": 2.95,
+      "lf8": 1.24,
+      "coh": 0.265
+     }
+    ],
+    "gate": {
+     "smooth": {
+      "pass": true,
+      "worst_seam_ratio": 1.897,
+      "worst_trunc": 1.043
+     },
+     "texture": {
+      "pass": true,
+      "worst_seam_ratio": 1.402,
+      "worst_trunc": 1.043,
+      "worst_dc_over_sigma": 0.5
+     }
+    },
+    "source": "ground/G2/source.png",
+    "mean_tile_metrics": {
+     "lum_mean": 97.667,
+     "H": 61.017,
+     "S": 0.557,
+     "V": 0.408,
+     "lum_std": 7.383,
+     "hp1": 4.235,
+     "bp2": 3.007,
+     "lf8": 1.31
+    },
+    "field": {
+     "128px": {
+      "seam_index": 1.01,
+      "blotch_4": 2.15,
+      "blotch_8": 1.24,
+      "blotch_16": 0.6
+     },
+     "64px": {
+      "seam_index": 1.104,
+      "blotch_4": 2.16,
+      "blotch_8": 1.23,
+      "blotch_16": 0.58
+     }
+    },
+    "field_renders": "review/ground-fields/G2-field-{128,64}px-{grid,no-grid}.png"
+   },
+   "G4": {
+    "raw": "raw/G4-meadow-crop-tufts.png",
+    "scale": "1:1",
+    "recolour": {
+     "tool": "recolour.py --auto --strength 1.0",
+     "hue_shift_deg": 3.04,
+     "sat_scale": 0.8585,
+     "val_scale": 1.0616
+    },
+    "candidates": {
+     "cut": "cut.py --stride 128 --bleed 1",
+     "n": 91,
+     "spot_limit": 16.16,
+     "dropped_salient": [],
+     "pool": "20 nearest mean luminance 97.7"
+    },
+    "clique": {
+     "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+     "largest_compatible": "largest mutually-compatible subset: 14/20 tiles",
+     "worst_pairwise_badness_texture": 0.695
+    },
+    "tiles": [
+     {
+      "file": "plains/00.png",
+      "cut": "cand_x1536_y0640.png",
+      "source_offset_px": [
+       1536,
+       640
+      ],
+      "raw_window_ltrb": [
+       1536,
+       640,
+       1664,
+       768
+      ],
+      "spot": 11.68,
+      "lum_mean": 97.7,
+      "lum_std": 9.4,
+      "H": 61.0,
+      "S": 0.557,
+      "V": 0.408,
+      "hp1": 5.43,
+      "bp2": 3.9,
+      "lf8": 1.67,
+      "coh": 0.345
+     },
+     {
+      "file": "plains/01.png",
+      "cut": "cand_x0512_y0768.png",
+      "source_offset_px": [
+       512,
+       768
+      ],
+      "raw_window_ltrb": [
+       512,
+       768,
+       640,
+       896
+      ],
+      "spot": 9.57,
+      "lum_mean": 97.7,
+      "lum_std": 9.4,
+      "H": 61.0,
+      "S": 0.558,
+      "V": 0.408,
+      "hp1": 5.42,
+      "bp2": 3.88,
+      "lf8": 1.47,
+      "coh": 0.3
+     },
+     {
+      "file": "plains/02.png",
+      "cut": "cand_x0384_y0000.png",
+      "source_offset_px": [
+       384,
+       0
+      ],
+      "raw_window_ltrb": [
+       384,
+       0,
+       512,
+       128
+      ],
+      "spot": 12.34,
+      "lum_mean": 97.8,
+      "lum_std": 9.6,
+      "H": 61.0,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 5.57,
+      "bp2": 3.92,
+      "lf8": 1.88,
+      "coh": 0.325
+     },
+     {
+      "file": "plains/03.png",
+      "cut": "cand_x0256_y0512.png",
+      "source_offset_px": [
+       256,
+       512
+      ],
+      "raw_window_ltrb": [
+       256,
+       512,
+       384,
+       640
+      ],
+      "spot": 13.05,
+      "lum_mean": 97.5,
+      "lum_std": 9.5,
+      "H": 61.1,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 5.33,
+      "bp2": 3.86,
+      "lf8": 2.14,
+      "coh": 0.356
+     },
+     {
+      "file": "plains/04.png",
+      "cut": "cand_x1408_y0512.png",
+      "source_offset_px": [
+       1408,
+       512
+      ],
+      "raw_window_ltrb": [
+       1408,
+       512,
+       1536,
+       640
+      ],
+      "spot": 9.9,
+      "lum_mean": 97.8,
+      "lum_std": 9.5,
+      "H": 61.0,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 5.48,
+      "bp2": 4.01,
+      "lf8": 1.46,
+      "coh": 0.327
+     },
+     {
+      "file": "plains/05.png",
+      "cut": "cand_x0640_y0768.png",
+      "source_offset_px": [
+       640,
+       768
+      ],
+      "raw_window_ltrb": [
+       640,
+       768,
+       768,
+       896
+      ],
+      "spot": 12.95,
+      "lum_mean": 98.0,
+      "lum_std": 10.1,
+      "H": 61.0,
+      "S": 0.556,
+      "V": 0.412,
+      "hp1": 5.65,
+      "bp2": 4.17,
+      "lf8": 2.15,
+      "coh": 0.35
+     }
+    ],
+    "gate": {
+     "smooth": {
+      "pass": true,
+      "worst_seam_ratio": 1.926,
+      "worst_trunc": 1.038
+     },
+     "texture": {
+      "pass": true,
+      "worst_seam_ratio": 1.39,
+      "worst_trunc": 1.038,
+      "worst_dc_over_sigma": 0.487
+     }
+    },
+    "source": "ground/G4/source.png",
+    "mean_tile_metrics": {
+     "lum_mean": 97.75,
+     "H": 61.017,
+     "S": 0.558,
+     "V": 0.409,
+     "lum_std": 9.583,
+     "hp1": 5.48,
+     "bp2": 3.957,
+     "lf8": 1.795
+    },
+    "field": {
+     "128px": {
+      "seam_index": 0.958,
+      "blotch_4": 2.71,
+      "blotch_8": 1.69,
+      "blotch_16": 0.84
+     },
+     "64px": {
+      "seam_index": 0.98,
+      "blotch_4": 2.74,
+      "blotch_8": 1.73,
+      "blotch_16": 0.87
+     }
+    },
+    "field_renders": "review/ground-fields/G4-field-{128,64}px-{grid,no-grid}.png"
+   },
+   "G6": {
+    "raw": "raw/G6-meadow-crop-streaky.png",
+    "scale": "1:1",
+    "flatten": {
+     "tool": "scripts/tile-foundry/flatten.py",
+     "sigma": 24.0,
+     "clip": [
+      0.6,
+      1.8
+     ]
+    },
+    "recolour": {
+     "tool": "recolour.py --auto --strength 1.0",
+     "hue_shift_deg": 3.1,
+     "sat_scale": 0.8577,
+     "val_scale": 1.0837
+    },
+    "candidates": {
+     "cut": "cut.py --stride 128 --bleed 1",
+     "n": 91,
+     "spot_limit": 18.65,
+     "dropped_salient": [],
+     "pool": "20 nearest mean luminance 98.1"
+    },
+    "clique": {
+     "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+     "largest_compatible": "largest mutually-compatible subset: 14/20 tiles",
+     "worst_pairwise_badness_texture": 0.74
+    },
+    "tiles": [
+     {
+      "file": "plains/00.png",
+      "cut": "cand_x0512_y0384.png",
+      "source_offset_px": [
+       512,
+       384
+      ],
+      "raw_window_ltrb": [
+       512,
+       384,
+       640,
+       512
+      ],
+      "spot": 14.57,
+      "lum_mean": 98.1,
+      "lum_std": 10.5,
+      "H": 61.0,
+      "S": 0.558,
+      "V": 0.408,
+      "hp1": 4.91,
+      "bp2": 4.61,
+      "lf8": 3.0,
+      "coh": 0.317
+     },
+     {
+      "file": "plains/01.png",
+      "cut": "cand_x0640_y0384.png",
+      "source_offset_px": [
+       640,
+       384
+      ],
+      "raw_window_ltrb": [
+       640,
+       384,
+       768,
+       512
+      ],
+      "spot": 14.59,
+      "lum_mean": 98.0,
+      "lum_std": 10.0,
+      "H": 61.0,
+      "S": 0.561,
+      "V": 0.408,
+      "hp1": 4.94,
+      "bp2": 4.35,
+      "lf8": 2.31,
+      "coh": 0.316
+     },
+     {
+      "file": "plains/02.png",
+      "cut": "cand_x0000_y0512.png",
+      "source_offset_px": [
+       0,
+       512
+      ],
+      "raw_window_ltrb": [
+       0,
+       512,
+       128,
+       640
+      ],
+      "spot": 17.91,
+      "lum_mean": 97.9,
+      "lum_std": 10.6,
+      "H": 61.1,
+      "S": 0.557,
+      "V": 0.408,
+      "hp1": 4.76,
+      "bp2": 4.75,
+      "lf8": 3.46,
+      "coh": 0.346
+     },
+     {
+      "file": "plains/03.png",
+      "cut": "cand_x0512_y0256.png",
+      "source_offset_px": [
+       512,
+       256
+      ],
+      "raw_window_ltrb": [
+       512,
+       256,
+       640,
+       384
+      ],
+      "spot": 14.82,
+      "lum_mean": 98.0,
+      "lum_std": 10.8,
+      "H": 61.0,
+      "S": 0.561,
+      "V": 0.408,
+      "hp1": 5.13,
+      "bp2": 4.75,
+      "lf8": 3.05,
+      "coh": 0.306
+     },
+     {
+      "file": "plains/04.png",
+      "cut": "cand_x1408_y0128.png",
+      "source_offset_px": [
+       1408,
+       128
+      ],
+      "raw_window_ltrb": [
+       1408,
+       128,
+       1536,
+       256
+      ],
+      "spot": 14.38,
+      "lum_mean": 97.7,
+      "lum_std": 10.2,
+      "H": 61.1,
+      "S": 0.562,
+      "V": 0.408,
+      "hp1": 4.93,
+      "bp2": 4.47,
+      "lf8": 2.89,
+      "coh": 0.315
+     },
+     {
+      "file": "plains/05.png",
+      "cut": "cand_x0768_y0768.png",
+      "source_offset_px": [
+       768,
+       768
+      ],
+      "raw_window_ltrb": [
+       768,
+       768,
+       896,
+       896
+      ],
+      "spot": 10.87,
+      "lum_mean": 98.0,
+      "lum_std": 10.2,
+      "H": 61.1,
+      "S": 0.558,
+      "V": 0.408,
+      "hp1": 5.2,
+      "bp2": 4.5,
+      "lf8": 2.47,
+      "coh": 0.304
+     }
+    ],
+    "gate": {
+     "smooth": {
+      "pass": false,
+      "worst_seam_ratio": 2.041,
+      "worst_trunc": 1.062
+     },
+     "texture": {
+      "pass": true,
+      "worst_seam_ratio": 1.475,
+      "worst_trunc": 1.062,
+      "worst_dc_over_sigma": 0.555
+     }
+    },
+    "source": "ground/G6/source.png",
+    "mean_tile_metrics": {
+     "lum_mean": 97.95,
+     "H": 61.05,
+     "S": 0.559,
+     "V": 0.408,
+     "lum_std": 10.383,
+     "hp1": 4.978,
+     "bp2": 4.572,
+     "lf8": 2.863
+    },
+    "field": {
+     "128px": {
+      "seam_index": 0.993,
+      "blotch_4": 3.82,
+      "blotch_8": 2.65,
+      "blotch_16": 1.49
+     },
+     "64px": {
+      "seam_index": 1.054,
+      "blotch_4": 3.8,
+      "blotch_8": 2.62,
+      "blotch_16": 1.47
+     }
+    },
+    "field_renders": "review/ground-fields/G6-field-{128,64}px-{grid,no-grid}.png"
+   },
+   "G7": {
+    "raw": "raw/G7-meadow-both-bare.png",
+    "scale": "1:1",
+    "recolour": {
+     "tool": "recolour.py --auto --strength 1.0",
+     "hue_shift_deg": 1.1,
+     "sat_scale": 0.891,
+     "val_scale": 1.0301
+    },
+    "candidates": {
+     "cut": "cut.py --stride 128 --bleed 1",
+     "n": 96,
+     "spot_limit": 12.78,
+     "dropped_salient": [
+      "cand_x0000_y0512.png",
+      "cand_x0768_y0128.png"
+     ],
+     "pool": "20 nearest mean luminance 97.6"
+    },
+    "clique": {
+     "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+     "largest_compatible": "largest mutually-compatible subset: 15/20 tiles",
+     "worst_pairwise_badness_texture": 0.684
+    },
+    "tiles": [
+     {
+      "file": "plains/00.png",
+      "cut": "cand_x1024_y0256.png",
+      "source_offset_px": [
+       1024,
+       256
+      ],
+      "raw_window_ltrb": [
+       1024,
+       256,
+       1152,
+       384
+      ],
+      "spot": 8.52,
+      "lum_mean": 97.5,
+      "lum_std": 7.9,
+      "H": 61.0,
+      "S": 0.556,
+      "V": 0.408,
+      "hp1": 4.99,
+      "bp2": 3.05,
+      "lf8": 1.41,
+      "coh": 0.257
+     },
+     {
+      "file": "plains/01.png",
+      "cut": "cand_x0896_y0000.png",
+      "source_offset_px": [
+       896,
+       0
+      ],
+      "raw_window_ltrb": [
+       896,
+       0,
+       1024,
+       128
+      ],
+      "spot": 11.45,
+      "lum_mean": 97.6,
+      "lum_std": 8.4,
+      "H": 61.0,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 5.38,
+      "bp2": 3.11,
+      "lf8": 1.97,
+      "coh": 0.269
+     },
+     {
+      "file": "plains/02.png",
+      "cut": "cand_x0128_y0896.png",
+      "source_offset_px": [
+       128,
+       896
+      ],
+      "raw_window_ltrb": [
+       128,
+       896,
+       256,
+       1024
+      ],
+      "spot": 8.62,
+      "lum_mean": 97.6,
+      "lum_std": 8.0,
+      "H": 60.0,
+      "S": 0.56,
+      "V": 0.408,
+      "hp1": 5.15,
+      "bp2": 2.96,
+      "lf8": 1.61,
+      "coh": 0.257
+     },
+     {
+      "file": "plains/03.png",
+      "cut": "cand_x0640_y0384.png",
+      "source_offset_px": [
+       640,
+       384
+      ],
+      "raw_window_ltrb": [
+       640,
+       384,
+       768,
+       512
+      ],
+      "spot": 9.07,
+      "lum_mean": 97.4,
+      "lum_std": 8.1,
+      "H": 61.0,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 5.24,
+      "bp2": 3.14,
+      "lf8": 1.04,
+      "coh": 0.266
+     },
+     {
+      "file": "plains/04.png",
+      "cut": "cand_x0128_y0256.png",
+      "source_offset_px": [
+       128,
+       256
+      ],
+      "raw_window_ltrb": [
+       128,
+       256,
+       256,
+       384
+      ],
+      "spot": 9.68,
+      "lum_mean": 97.8,
+      "lum_std": 8.3,
+      "H": 61.0,
+      "S": 0.562,
+      "V": 0.412,
+      "hp1": 5.09,
+      "bp2": 3.15,
+      "lf8": 1.89,
+      "coh": 0.258
+     },
+     {
+      "file": "plains/05.png",
+      "cut": "cand_x0384_y0256.png",
+      "source_offset_px": [
+       384,
+       256
+      ],
+      "raw_window_ltrb": [
+       384,
+       256,
+       512,
+       384
+      ],
+      "spot": 7.94,
+      "lum_mean": 97.8,
+      "lum_std": 7.9,
+      "H": 61.0,
+      "S": 0.559,
+      "V": 0.408,
+      "hp1": 4.93,
+      "bp2": 3.04,
+      "lf8": 1.45,
+      "coh": 0.261
+     }
+    ],
+    "gate": {
+     "smooth": {
+      "pass": true,
+      "worst_seam_ratio": 1.535,
+      "worst_trunc": 1.02
+     },
+     "texture": {
+      "pass": true,
+      "worst_seam_ratio": 1.296,
+      "worst_trunc": 1.02,
+      "worst_dc_over_sigma": 0.513
+     }
+    },
+    "source": "ground/G7/source.png",
+    "mean_tile_metrics": {
+     "lum_mean": 97.617,
+     "H": 60.833,
+     "S": 0.559,
+     "V": 0.409,
+     "lum_std": 8.1,
+     "hp1": 5.13,
+     "bp2": 3.075,
+     "lf8": 1.562
+    },
+    "field": {
+     "128px": {
+      "seam_index": 0.983,
+      "blotch_4": 2.34,
+      "blotch_8": 1.52,
+      "blotch_16": 0.84
+     },
+     "64px": {
+      "seam_index": 1.044,
+      "blotch_4": 2.35,
+      "blotch_8": 1.51,
+      "blotch_16": 0.82
+     }
+    },
+    "field_renders": "review/ground-fields/G7-field-{128,64}px-{grid,no-grid}.png"
+   },
+   "G8": {
+    "raw": "raw/G8-meadow-crop-tufts-rerun.png",
+    "scale": "1:1",
+    "recolour": {
+     "tool": "recolour.py --auto --strength 1.0",
+     "hue_shift_deg": 2.07,
+     "sat_scale": 0.8877,
+     "val_scale": 1.0509
+    },
+    "candidates": {
+     "cut": "cut.py --stride 128 --bleed 1",
+     "n": 91,
+     "spot_limit": 16.49,
+     "dropped_salient": [
+      "cand_x1280_y0128.png",
+      "cand_x1280_y0384.png"
+     ],
+     "pool": "20 nearest mean luminance 97.6"
+    },
+    "clique": {
+     "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+     "largest_compatible": "largest mutually-compatible subset: 11/20 tiles",
+     "worst_pairwise_badness_texture": 0.744
+    },
+    "tiles": [
+     {
+      "file": "plains/00.png",
+      "cut": "cand_x0512_y0384.png",
+      "source_offset_px": [
+       512,
+       384
+      ],
+      "raw_window_ltrb": [
+       512,
+       384,
+       640,
+       512
+      ],
+      "spot": 8.88,
+      "lum_mean": 97.4,
+      "lum_std": 9.3,
+      "H": 61.1,
+      "S": 0.557,
+      "V": 0.408,
+      "hp1": 4.67,
+      "bp2": 4.26,
+      "lf8": 1.54,
+      "coh": 0.317
+     },
+     {
+      "file": "plains/01.png",
+      "cut": "cand_x1024_y0640.png",
+      "source_offset_px": [
+       1024,
+       640
+      ],
+      "raw_window_ltrb": [
+       1024,
+       640,
+       1152,
+       768
+      ],
+      "spot": 11.08,
+      "lum_mean": 97.2,
+      "lum_std": 9.2,
+      "H": 61.0,
+      "S": 0.557,
+      "V": 0.408,
+      "hp1": 4.61,
+      "bp2": 4.0,
+      "lf8": 2.17,
+      "coh": 0.298
+     },
+     {
+      "file": "plains/02.png",
+      "cut": "cand_x0384_y0256.png",
+      "source_offset_px": [
+       384,
+       256
+      ],
+      "raw_window_ltrb": [
+       384,
+       256,
+       512,
+       384
+      ],
+      "spot": 12.19,
+      "lum_mean": 97.7,
+      "lum_std": 9.8,
+      "H": 61.0,
+      "S": 0.558,
+      "V": 0.408,
+      "hp1": 4.59,
+      "bp2": 4.38,
+      "lf8": 2.27,
+      "coh": 0.312
+     },
+     {
+      "file": "plains/03.png",
+      "cut": "cand_x0640_y0000.png",
+      "source_offset_px": [
+       640,
+       0
+      ],
+      "raw_window_ltrb": [
+       640,
+       0,
+       768,
+       128
+      ],
+      "spot": 13.35,
+      "lum_mean": 97.4,
+      "lum_std": 9.4,
+      "H": 61.0,
+      "S": 0.56,
+      "V": 0.408,
+      "hp1": 4.66,
+      "bp2": 4.2,
+      "lf8": 2.0,
+      "coh": 0.313
+     },
+     {
+      "file": "plains/04.png",
+      "cut": "cand_x0768_y0384.png",
+      "source_offset_px": [
+       768,
+       384
+      ],
+      "raw_window_ltrb": [
+       768,
+       384,
+       896,
+       512
+      ],
+      "spot": 11.08,
+      "lum_mean": 97.4,
+      "lum_std": 9.6,
+      "H": 61.0,
+      "S": 0.556,
+      "V": 0.408,
+      "hp1": 4.75,
+      "bp2": 4.3,
+      "lf8": 1.77,
+      "coh": 0.303
+     },
+     {
+      "file": "plains/05.png",
+      "cut": "cand_x0128_y0256.png",
+      "source_offset_px": [
+       128,
+       256
+      ],
+      "raw_window_ltrb": [
+       128,
+       256,
+       256,
+       384
+      ],
+      "spot": 12.73,
+      "lum_mean": 98.0,
+      "lum_std": 9.2,
+      "H": 61.0,
+      "S": 0.561,
+      "V": 0.412,
+      "hp1": 4.51,
+      "bp2": 4.05,
+      "lf8": 2.46,
+      "coh": 0.305
+     }
+    ],
+    "gate": {
+     "smooth": {
+      "pass": false,
+      "worst_seam_ratio": 2.047,
+      "worst_trunc": 1.118
+     },
+     "texture": {
+      "pass": true,
+      "worst_seam_ratio": 1.488,
+      "worst_trunc": 1.118,
+      "worst_dc_over_sigma": 0.494
+     }
+    },
+    "source": "ground/G8/source.png",
+    "mean_tile_metrics": {
+     "lum_mean": 97.517,
+     "H": 61.017,
+     "S": 0.558,
+     "V": 0.409,
+     "lum_std": 9.417,
+     "hp1": 4.632,
+     "bp2": 4.198,
+     "lf8": 2.035
+    },
+    "field": {
+     "128px": {
+      "seam_index": 0.998,
+      "blotch_4": 3.04,
+      "blotch_8": 1.92,
+      "blotch_16": 1.02
+     },
+     "64px": {
+      "seam_index": 1.045,
+      "blotch_4": 3.08,
+      "blotch_8": 1.97,
+      "blotch_16": 1.05
+     }
+    },
+    "field_renders": "review/ground-fields/G8-field-{128,64}px-{grid,no-grid}.png"
+   },
+   "G9": {
+    "raw": "raw/G9-meadow-crop-bare-rerun.png",
+    "scale": "1:1",
+    "recolour": {
+     "tool": "recolour.py --auto --strength 1.0",
+     "hue_shift_deg": 3.07,
+     "sat_scale": 0.8701,
+     "val_scale": 1.0726
+    },
+    "candidates": {
+     "cut": "cut.py --stride 128 --bleed 1",
+     "n": 91,
+     "spot_limit": 13.13,
+     "dropped_salient": [],
+     "pool": "20 nearest mean luminance 97.6"
+    },
+    "clique": {
+     "cmd": "gate.py clique --seam-mode texture --pick 6 --pool-size 20",
+     "largest_compatible": "largest mutually-compatible subset: 15/20 tiles",
+     "worst_pairwise_badness_texture": 0.67
+    },
+    "tiles": [
+     {
+      "file": "plains/00.png",
+      "cut": "cand_x1024_y0640.png",
+      "source_offset_px": [
+       1024,
+       640
+      ],
+      "raw_window_ltrb": [
+       1024,
+       640,
+       1152,
+       768
+      ],
+      "spot": 9.55,
+      "lum_mean": 97.6,
+      "lum_std": 8.2,
+      "H": 61.1,
+      "S": 0.558,
+      "V": 0.408,
+      "hp1": 5.01,
+      "bp2": 3.23,
+      "lf8": 1.5,
+      "coh": 0.32
+     },
+     {
+      "file": "plains/01.png",
+      "cut": "cand_x0256_y0000.png",
+      "source_offset_px": [
+       256,
+       0
+      ],
+      "raw_window_ltrb": [
+       256,
+       0,
+       384,
+       128
+      ],
+      "spot": 9.14,
+      "lum_mean": 97.6,
+      "lum_std": 8.7,
+      "H": 61.0,
+      "S": 0.556,
+      "V": 0.408,
+      "hp1": 4.95,
+      "bp2": 3.41,
+      "lf8": 2.21,
+      "coh": 0.303
+     },
+     {
+      "file": "plains/02.png",
+      "cut": "cand_x1408_y0640.png",
+      "source_offset_px": [
+       1408,
+       640
+      ],
+      "raw_window_ltrb": [
+       1408,
+       640,
+       1536,
+       768
+      ],
+      "spot": 11.16,
+      "lum_mean": 97.6,
+      "lum_std": 8.9,
+      "H": 61.0,
+      "S": 0.56,
+      "V": 0.408,
+      "hp1": 5.14,
+      "bp2": 3.59,
+      "lf8": 1.87,
+      "coh": 0.299
+     },
+     {
+      "file": "plains/03.png",
+      "cut": "cand_x1152_y0256.png",
+      "source_offset_px": [
+       1152,
+       256
+      ],
+      "raw_window_ltrb": [
+       1152,
+       256,
+       1280,
+       384
+      ],
+      "spot": 8.12,
+      "lum_mean": 97.7,
+      "lum_std": 8.8,
+      "H": 61.0,
+      "S": 0.558,
+      "V": 0.408,
+      "hp1": 5.23,
+      "bp2": 3.58,
+      "lf8": 1.34,
+      "coh": 0.292
+     },
+     {
+      "file": "plains/04.png",
+      "cut": "cand_x0128_y0640.png",
+      "source_offset_px": [
+       128,
+       640
+      ],
+      "raw_window_ltrb": [
+       128,
+       640,
+       256,
+       768
+      ],
+      "spot": 9.16,
+      "lum_mean": 97.4,
+      "lum_std": 8.4,
+      "H": 61.0,
+      "S": 0.56,
+      "V": 0.408,
+      "hp1": 4.94,
+      "bp2": 3.34,
+      "lf8": 1.59,
+      "coh": 0.307
+     },
+     {
+      "file": "plains/05.png",
+      "cut": "cand_x0768_y0128.png",
+      "source_offset_px": [
+       768,
+       128
+      ],
+      "raw_window_ltrb": [
+       768,
+       128,
+       896,
+       256
+      ],
+      "spot": 9.63,
+      "lum_mean": 97.7,
+      "lum_std": 8.3,
+      "H": 61.0,
+      "S": 0.558,
+      "V": 0.412,
+      "hp1": 4.92,
+      "bp2": 3.42,
+      "lf8": 1.36,
+      "coh": 0.302
+     }
+    ],
+    "gate": {
+     "smooth": {
+      "pass": true,
+      "worst_seam_ratio": 1.614,
+      "worst_trunc": 1.077
+     },
+     "texture": {
+      "pass": true,
+      "worst_seam_ratio": 1.294,
+      "worst_trunc": 1.077,
+      "worst_dc_over_sigma": 0.503
+     }
+    },
+    "source": "ground/G9/source.png",
+    "mean_tile_metrics": {
+     "lum_mean": 97.6,
+     "H": 61.017,
+     "S": 0.558,
+     "V": 0.409,
+     "lum_std": 8.55,
+     "hp1": 5.032,
+     "bp2": 3.428,
+     "lf8": 1.645
+    },
+    "field": {
+     "128px": {
+      "seam_index": 0.984,
+      "blotch_4": 2.49,
+      "blotch_8": 1.55,
+      "blotch_16": 0.74
+     },
+     "64px": {
+      "seam_index": 1.013,
+      "blotch_4": 2.53,
+      "blotch_8": 1.6,
+      "blotch_16": 0.77
+     }
+    },
+    "field_renders": "review/ground-fields/G9-field-{128,64}px-{grid,no-grid}.png"
+   }
+  }
+ }
+}

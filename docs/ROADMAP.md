@@ -324,6 +324,14 @@ the pipeline contract and terrain classes are documented in
 still describe the remaining oriented work (rivers/bridges/roads), which will
 follow the same pipeline.
 
+**2026-11-09 update:** every terrain tile (plains, woods, hills, town, city, all
+river and bridge shapes, plains roads including all twelve forks) has been
+replaced by the Codex paint-in set (`art/codex/terrain/`, "Paint-in recipe" in
+`docs/ART_PIPELINE.md`), and woods/city seams get join sprites in both renderers.
+Roads on hills and on settlements have no baked art yet; the 2-player board draws
+the vector road there (the world view draws the base tile). The NBP tiles
+described below are superseded; their provenance stays in `art/foundry/`.
+
 **Orientation decision (applies to rivers/bridges/road-tiles):** no 60° rotation
 — rotating 64px pixel art by 60° resamples and looks mushy. Generate the distinct
 oriented tiles instead, but use a cheap **horizontal (left↔right) mirror** at

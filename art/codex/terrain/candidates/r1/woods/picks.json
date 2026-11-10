@@ -1,0 +1,60 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/woods/r1-c/tiles/woods_00.png",
+  "sheet_job": "art/codex/terrain/woods/r1-c/job.json",
+  "raw": "art/codex/terrain/woods/r1-c/raw/woods-r1-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "7e188c670341d7e943563883da07f544af01305792d14e1551233e27c4495f8f"
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/woods/r1-c/tiles/woods_03.png",
+  "sheet_job": "art/codex/terrain/woods/r1-c/job.json",
+  "raw": "art/codex/terrain/woods/r1-c/raw/woods-r1-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "15ca76cf7f7ffcca50a41c0822b05d96dd805e548ac420efcdc8a4d9bfd4433f"
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/woods/r1-c/tiles/woods_04.png",
+  "sheet_job": "art/codex/terrain/woods/r1-c/job.json",
+  "raw": "art/codex/terrain/woods/r1-c/raw/woods-r1-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "cb389a5c4ee5359a9ace5169d2efdaf62ebda8b6fb4b1b71372586dda65ce34b"
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/woods/r1-c/tiles/woods_05.png",
+  "sheet_job": "art/codex/terrain/woods/r1-c/job.json",
+  "raw": "art/codex/terrain/woods/r1-c/raw/woods-r1-c.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "a7e6c5a80e70c5a68dec080dd5bf16758e4805d9880744a7cc7106fc28d5553e"
+ },
+ {
+  "file": "04.png",
+  "source": "art/codex/terrain/woods/r1-c/tiles/woods_07.png",
+  "sheet_job": "art/codex/terrain/woods/r1-c/job.json",
+  "raw": "art/codex/terrain/woods/r1-c/raw/woods-r1-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "3.0% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "98187253d482593b8c6f6fc5c72c08490bf7ea54f2e2aeb7b64a94f6edc125c7"
+ },
+ {
+  "file": "05.png",
+  "source": "art/codex/terrain/woods/r1-c/tiles/woods_08.png",
+  "sheet_job": "art/codex/terrain/woods/r1-c/job.json",
+  "raw": "art/codex/terrain/woods/r1-c/raw/woods-r1-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "3.1% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "d13eb44f5996adc1992cba2a6d83110cc57e183207ec2aed7eaa0e1e39e5bfc8"
+ }
+]

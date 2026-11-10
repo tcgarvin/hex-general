@@ -1,0 +1,48 @@
+[
+ {
+  "file": "00.png",
+  "source": "art/codex/terrain/town/r2-c/tiles/town_00.png",
+  "sheet_job": "art/codex/terrain/town/r2-c/job.json",
+  "raw": "art/codex/terrain/town/r2-c/raw/town-r2-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "3.2% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "9a4eab19166b1b1cddaefdd53ac52814310572f56532b025baf5542e7def9627",
+  "grade": null
+ },
+ {
+  "file": "01.png",
+  "source": "art/codex/terrain/town/r2-c/tiles/town_08.png",
+  "sheet_job": "art/codex/terrain/town/r2-c/job.json",
+  "raw": "art/codex/terrain/town/r2-c/raw/town-r2-c.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "3.4% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "ba36523a4195a00b72fb2aa37b01cf33d3ae4be6dcd713e4a334744fb07be89f",
+  "grade": null
+ },
+ {
+  "file": "02.png",
+  "source": "art/codex/terrain/town/r2-b/tiles/town_06.png",
+  "sheet_job": "art/codex/terrain/town/r2-b/job.json",
+  "raw": "art/codex/terrain/town/r2-b/raw/town-r2-b.png",
+  "gate_passed": true,
+  "failed_checks": [],
+  "sha256": "fbfa5bb35ec3c8e62ea66663f154ed314e9ceb43b8357ec18e0e477c3cbeb1ae",
+  "grade": null
+ },
+ {
+  "file": "03.png",
+  "source": "art/codex/terrain/town/r2-b/tiles/town_04.png",
+  "sheet_job": "art/codex/terrain/town/r2-b/job.json",
+  "raw": "art/codex/terrain/town/r2-b/raw/town-r2-b.png",
+  "gate_passed": false,
+  "failed_checks": [
+   "3.3% of the rim band painted over (limit 3%)"
+  ],
+  "sha256": "f98ee3e4770bc7c123c9aee4548db089f0ee855b0214f7db612671d7507b959a",
+  "grade": null
+ }
+]

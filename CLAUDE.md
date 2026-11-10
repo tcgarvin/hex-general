@@ -46,16 +46,20 @@ as the record and reproducer for tiles already shipped. The ratification rule be
 unchanged. See `docs/VISION.md` §11.
 
 Board tileset work (painterly hex tiles in `frontend/src/board/tiles/`, 128px
-flat-top RGBA): the existing tiles were made by the NBP (Nano Banana Pro / Vertex, keyless)
-tile-foundry — **`docs/ART_PIPELINE.md` is the canonical contract** (inputs, asset
-spec, terrain classes, command quick-ref); tooling lives in `scripts/tile-foundry/`
-and provenance in `art/foundry/`. `python3 scripts/tile-montage.py <dir|globs>
---out <path>` renders a labelled variant montage. Spawn the **`tile-smith`
-subagent** to run a generate→cut/composite→gate→montage loop off the main thread
-(it returns candidates + review images; the user ratifies, the main agent applies),
-and use the **`verify-board`** skill to render the local board in Chrome after an
-art/render change. See ART_PIPELINE.md + ROADMAP Phase 8. (The old PixelLab
-per-hex `create_tiles_pro` path is retired — see the art-pipeline-pivot memory.)
+flat-top RGBA, plus same-terrain join sprites in `frontend/src/board/joins/`): the
+shipped terrain tiles come from the Codex paint-in toolchain,
+`scripts/tile-foundry/paintin.py` (sheet, Codex, cut, rim pin, gates) and
+`scripts/tile-foundry/joins.py`, ratified 2026-11-09; work dirs, raws and
+provenance are in `art/codex/terrain/` (`APPLIED.md` traces each shipped tile).
+Preview candidates at board scale offline with `python3 scripts/board-mock.py`
+(`--tiles`, `--joins`, `--map scripts/board-mock-maps/...`), which uses the
+frontend's exact selection rules. **`docs/ART_PIPELINE.md` is the canonical
+contract** ("Paint-in recipe", asset spec, command quick-ref). The NBP foundry
+(`art/foundry/`, `tile-smith` subagent) is superseded for terrain but still builds
+the unit sprites, and `scripts/tile-foundry/selftest.py` keeps verifying it.
+`python3 scripts/tile-montage.py <dir|globs> --out <path>` renders a labelled
+variant montage; use the **`verify-board`** skill to render the local board in
+Chrome after an art/render change. See ART_PIPELINE.md + ROADMAP Phase 8.
 
 - **Hex art is the user's call — never auto-ratify.** Before you apply, overwrite,
   or commit *any* change to tiles under `frontend/src/board/tiles/` (new variants,

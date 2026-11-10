@@ -1,0 +1,182 @@
+{
+ "plains_end_n_00.png": {
+  "cell": "plains_end_n_c0",
+  "sha256": "16a0973a08f29162281545a1a48200c2ba261c1285c426a2a1049b54b6fc847d",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_end_n_c0.png"
+ },
+ "plains_end_ne_00.png": {
+  "cell": "plains_end_ne_c0",
+  "sha256": "fdc7effa6ff9e07c6da28b2f7544a9f638a44142c07b5493f8295aac94aa49e1",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_end_ne_c0.png"
+ },
+ "plains_end_s_00.png": {
+  "cell": "plains_end_s_c1",
+  "sha256": "d0200cc8f8897ef1dc717bf9ea028d2eb32d195b922002e8ab37a2d95f8f4d5e",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_end_s_c1.png"
+ },
+ "plains_end_se_00.png": {
+  "cell": "plains_end_se_c0",
+  "sha256": "ef1d68db1c533ed2f9dbd1b3b05e1d84e1215ff0d70884d91d628a8b5a0f5640",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_end_se_c0.png"
+ },
+ "plains_fork_ne_n_nw_00.png": {
+  "cell": "plains_fork_ne_n_nw_00",
+  "sha256": "728c88f0251929655534532f6023f16c047c5b36657aea07059892ad5dd4fb6d",
+  "sheet": "art/codex/terrain/road/b/road-b.sheet.png",
+  "source": "art/codex/terrain/road/b/tiles/plains_fork_ne_n_nw_00.png"
+ },
+ "plains_fork_ne_n_s_00.png": {
+  "cell": "plains_fork_ne_n_s_c0",
+  "sha256": "33604e376aa2efb26f8ec32f1b19dccb4f3a4db01cd06403478f7a81f4455064",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_ne_n_s_c0.png"
+ },
+ "plains_fork_ne_nw_s_00.png": {
+  "cell": "plains_fork_ne_nw_s_c0",
+  "sha256": "abe739b122e08f6e4292fe70f7d420a829ae26208ef354bb892ff64e14444866",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_ne_nw_s_c0.png"
+ },
+ "plains_fork_se_n_nw_00.png": {
+  "cell": "plains_fork_se_n_nw_c0",
+  "sha256": "ef01569eeb257fbae2a3271b6b9a98952c098c45b649d9ea064fa922896dca8f",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_se_n_nw_c0.png"
+ },
+ "plains_fork_se_n_s_00.png": {
+  "cell": "plains_fork_se_n_s_c1",
+  "sha256": "25b92e9311392443e28cbcaa07e8a0d40a11d8382823e6732b2a7178a413fde3",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_se_n_s_c1.png"
+ },
+ "plains_fork_se_n_sw_00.png": {
+  "cell": "plains_fork_se_n_sw_c0",
+  "sha256": "fba60966609c6e123b249965dc7a04fbf45909f408125548b6cf105b27110bd3",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_se_n_sw_c0.png"
+ },
+ "plains_fork_se_ne_n_00.png": {
+  "cell": "plains_fork_se_ne_n_c1",
+  "sha256": "39be0fe6031cb3437f0cc5a3d20d023451eac3fab439ee59ee31d89827d22797",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_se_ne_n_c1.png"
+ },
+ "plains_fork_se_ne_nw_00.png": {
+  "cell": "plains_fork_se_ne_nw_c0",
+  "sha256": "34cbedeee5ba40c2ec39e7bbab6b245e5efa232aee63cf178a0e63094dee2e73",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_se_ne_nw_c0.png"
+ },
+ "plains_fork_se_ne_s_00.png": {
+  "cell": "plains_fork_se_ne_s_c0",
+  "sha256": "5010f794fa84714fda349af3afcd1ad9e2838b00feaf2d51c642d5c2ad012e24",
+  "sheet": "art/codex/terrain/road/c/road-c.sheet.png",
+  "source": "art/codex/terrain/road/c/tiles/plains_fork_se_ne_s_c0.png"
+ },
+ "plains_fork_se_nw_s_00.png": {
+  "cell": "plains_fork_se_nw_s_00",
+  "sha256": "8fd439d3acca2dedc416f3cc33e400c3f07494d845da1e31d8c93a74f9bf6140",
+  "sheet": "art/codex/terrain/road/b/road-b.sheet.png",
+  "source": "art/codex/terrain/road/b/tiles/plains_fork_se_nw_s_00.png"
+ },
+ "plains_fork_se_nw_sw_00.png": {
+  "cell": "plains_fork_se_nw_sw_00",
+  "sha256": "fbc11bd7380f2569df7375253def85f3bf37cdfb55f46f25b6b1d783927afc3b",
+  "sheet": "art/codex/terrain/road/b/road-b.sheet.png",
+  "source": "art/codex/terrain/road/b/tiles/plains_fork_se_nw_sw_00.png"
+ },
+ "plains_fork_se_sw_s_00.png": {
+  "cell": "plains_fork_se_sw_s_00",
+  "sha256": "8be18a4b39dab2d2f432828fb2f8b58aa31148db3fb53ba2ba9f08b1588594a7",
+  "sheet": "art/codex/terrain/road/b/road-b.sheet.png",
+  "source": "art/codex/terrain/road/b/tiles/plains_fork_se_sw_s_00.png"
+ },
+ "plains_straight_d_00.png": {
+  "cell": "plains_straight_d_00",
+  "sha256": "cc743221261152809a1a268813b67b409428b369247964eecdc6dc731d72dd42",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_straight_d_00.png"
+ },
+ "plains_straight_d_01.png": {
+  "cell": "plains_straight_d_01",
+  "sha256": "d6b9e59187702bd3707325496f97723a3bc840176c99cee4ee07a479f709a6b1",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_straight_d_01.png"
+ },
+ "plains_straight_d_02.png": {
+  "cell": "plains_straight_d_02",
+  "sha256": "4fed1f26e11e5a942f2c792f94943baa26e939452996563715d298e8dcbab423",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_straight_d_02.png"
+ },
+ "plains_straight_v_00.png": {
+  "cell": "plains_straight_v_00",
+  "sha256": "32fc70b26183d40ec3026204d81fe31fdf24fc6ab4289776c490e71ed3b9aeef",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_straight_v_00.png"
+ },
+ "plains_straight_v_01.png": {
+  "cell": "plains_straight_v_01",
+  "sha256": "d97aa59aa5fc63cb901b765967c6af655442872be70bc4d7743d2d22f4e2d7b5",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_straight_v_01.png"
+ },
+ "plains_straight_v_02.png": {
+  "cell": "plains_straight_v_02",
+  "sha256": "ac33f93f882a60c7d9f1a431c947a858f658d70f64b4e0ff19ae545004c2ae49",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_straight_v_02.png"
+ },
+ "plains_turn_n_se_00.png": {
+  "cell": "plains_turn_n_se_00",
+  "sha256": "07bbe6fcd25eafa22fc74ff7fde99c0aa76e61e0615c4d09b9ad1e885b619c3e",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_n_se_00.png"
+ },
+ "plains_turn_n_se_01.png": {
+  "cell": "plains_turn_n_se_01",
+  "sha256": "58fe388fa4d7ec18bf1a7764c7d00dac86f74c14a83cc320dc22490af08bcb72",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_n_se_01.png"
+ },
+ "plains_turn_ne_nw_00.png": {
+  "cell": "plains_turn_ne_nw_00",
+  "sha256": "adb796abdde34a42d944c860918a4694f8df18ac0371a2e229ce7b0e220073b8",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_ne_nw_00.png"
+ },
+ "plains_turn_ne_nw_01.png": {
+  "cell": "plains_turn_ne_nw_01",
+  "sha256": "39d1c94c94e1d1bfcfaff9d526b03880c7e0156d10233236026074f3ac587f25",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_ne_nw_01.png"
+ },
+ "plains_turn_s_nw_00.png": {
+  "cell": "plains_turn_s_nw_00",
+  "sha256": "3eba8a8701267669d9d8a6adc19382a61a6be32aad1127713ae4b09fcfe6ab17",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_s_nw_00.png"
+ },
+ "plains_turn_s_nw_01.png": {
+  "cell": "plains_turn_s_nw_01",
+  "sha256": "651c19840c05b60961f035b72cabd635cf2f5b67aaa45d302da3981579f014ac",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_s_nw_01.png"
+ },
+ "plains_turn_se_sw_00.png": {
+  "cell": "plains_turn_se_sw_00",
+  "sha256": "33f0a53a7a9045727f083a710e52237527e40e15f73de20889590f1b7383bb6e",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_se_sw_00.png"
+ },
+ "plains_turn_se_sw_01.png": {
+  "cell": "plains_turn_se_sw_01",
+  "sha256": "390052388f25ec88b7b037d56c73a7d7837d5666c6cc29a9ac64f861db4d8579",
+  "sheet": "art/codex/terrain/road/a/road-a.sheet.png",
+  "source": "art/codex/terrain/road/a/tiles/plains_turn_se_sw_01.png"
+ }
+}

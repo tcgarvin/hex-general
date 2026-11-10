@@ -1,0 +1,1 @@
+--ref art/codex/terrain/refs/r1/hills_tan_ridge_2x.png

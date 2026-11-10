@@ -22,6 +22,11 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+# The NBP foundry's applied outputs as they shipped up to commit 30a0d4c. The
+# frontend terrain tiles are now the Codex paint-in set (art/codex/terrain), so
+# the byte-reproduction checks below compare against this committed copy and
+# keep proving the old foundry replays its own recorded outputs.
+APPLIED_TILES = SCRIPT_DIR.parent.parent / "art" / "foundry" / "applied-tiles"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import bridge  # noqa: E402,F401  (kept for parity / future in-process checks)
@@ -522,13 +527,13 @@ def test_compose_matches_ratified_woods_tiles(tmp_dir: Path) -> None:
 
     This is the compositor's acceptance test: it depends on the real (large,
     generated) sprite sheet and ratified plains base under `art/foundry/`, and
-    on the applied output under `frontend/src/board/tiles/woods/` — both
+    on the applied output under `art/foundry/applied-tiles/woods/` — both
     absent in some environments (e.g. a shallow checkout), so this skips
     gracefully rather than failing when they're missing.
     """
     repo_root = SCRIPT_DIR.parent.parent
     manifest_path = repo_root / "art" / "foundry" / "manifest.json"
-    ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / "woods"
+    ref_dir = APPLIED_TILES / "woods"
     if not manifest_path.is_file() or not ref_dir.is_dir():
         print(f"[SKIP] compose.py: ratified-tile check (missing {manifest_path} or {ref_dir})")
         return
@@ -546,7 +551,7 @@ def test_compose_matches_ratified_woods_tiles(tmp_dir: Path) -> None:
         str(ref_dir),
     )
     check(
-        "compose.py: reproduces frontend/src/board/tiles/woods/*.png byte-for-byte (--verify)",
+        "compose.py: reproduces art/foundry/applied-tiles/woods/*.png byte-for-byte (--verify)",
         result.returncode == 0,
         result.stdout + result.stderr,
     )
@@ -558,13 +563,13 @@ def test_vignette_matches_ratified_tiles(tmp_dir: Path) -> None:
 
     Same acceptance-test shape as the woods check above: depends on the real
     sprite sheets and ratified plains bases under `art/foundry/` and the
-    applied output under `frontend/src/board/tiles/`, so it skips gracefully
+    applied output under `art/foundry/applied-tiles/`, so it skips gracefully
     when those are absent.
     """
     repo_root = SCRIPT_DIR.parent.parent
     manifest_path = repo_root / "art" / "foundry" / "manifest.json"
     for section in ["hills", "city", "town"]:
-        ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / section
+        ref_dir = APPLIED_TILES / section
         if not manifest_path.is_file() or not ref_dir.is_dir():
             print(f"[SKIP] vignette.py: ratified-tile check for {section} (missing inputs)")
             continue
@@ -581,7 +586,7 @@ def test_vignette_matches_ratified_tiles(tmp_dir: Path) -> None:
             str(ref_dir),
         )
         check(
-            f"vignette.py: reproduces frontend/src/board/tiles/{section}/*.png byte-for-byte (--verify)",
+            f"vignette.py: reproduces art/foundry/applied-tiles/{section}/*.png byte-for-byte (--verify)",
             result.returncode == 0,
             result.stdout + result.stderr,
         )
@@ -593,13 +598,13 @@ def test_river_matches_ratified_tiles(tmp_dir: Path) -> None:
 
     Same acceptance-test shape as the woods/hills checks above: depends on the
     committed swatch + guide under `art/foundry/river/` and the applied tiles
-    under `frontend/src/board/tiles/river/`, so it skips gracefully when those
+    under `art/foundry/applied-tiles/river/`, so it skips gracefully when those
     are absent. `build` also re-derives the layout guide from its recorded
     parameters and fails if the committed guide drifted.
     """
     repo_root = SCRIPT_DIR.parent.parent
     manifest_path = repo_root / "art" / "foundry" / "manifest.json"
-    ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / "river"
+    ref_dir = APPLIED_TILES / "river"
     if not manifest_path.is_file() or not ref_dir.is_dir():
         print(f"[SKIP] river.py: ratified-tile check (missing {manifest_path} or {ref_dir})")
         return
@@ -618,7 +623,7 @@ def test_river_matches_ratified_tiles(tmp_dir: Path) -> None:
         str(ref_dir),
     )
     check(
-        "river.py: reproduces frontend/src/board/tiles/river/straight_v_*.png byte-for-byte (--verify)",
+        "river.py: reproduces art/foundry/applied-tiles/river/straight_v_*.png byte-for-byte (--verify)",
         result.returncode == 0,
         result.stdout + result.stderr,
     )
@@ -630,14 +635,14 @@ def test_bridge_matches_ratified_tiles(tmp_dir: Path) -> None:
 
     Same acceptance-test shape as the woods/hills/river checks: depends on the
     committed v2 deck sheet and ratified river bases under `art/foundry/` and the
-    applied output under `frontend/src/board/tiles/bridge/`, so it skips
+    applied output under `art/foundry/applied-tiles/bridge/`, so it skips
     gracefully when those are absent. The build segments the combined deck sheet,
     composites the recorded deck sprite over each river base, and re-runs the
     placement gate before the byte-compare.
     """
     repo_root = SCRIPT_DIR.parent.parent
     manifest_path = repo_root / "art" / "foundry" / "manifest.json"
-    ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / "bridge"
+    ref_dir = APPLIED_TILES / "bridge"
     if not manifest_path.is_file() or not ref_dir.is_dir():
         print(f"[SKIP] bridge.py: ratified-tile check (missing {manifest_path} or {ref_dir})")
         return
@@ -656,7 +661,7 @@ def test_bridge_matches_ratified_tiles(tmp_dir: Path) -> None:
         str(ref_dir),
     )
     check(
-        "bridge.py: reproduces frontend/src/board/tiles/bridge/turn_*_00.png byte-for-byte (--verify)",
+        "bridge.py: reproduces art/foundry/applied-tiles/bridge/turn_*_00.png byte-for-byte (--verify)",
         result.returncode == 0,
         result.stdout + result.stderr,
     )
@@ -668,13 +673,13 @@ def test_roadfinish_matches_ratified_tiles(tmp_dir: Path) -> None:
 
     Same acceptance-test shape as the woods/river/bridge checks: depends on the
     committed 128px sources under ``art/foundry/road/gens128/`` and the applied
-    output under ``frontend/src/board/tiles/road/``, so it skips gracefully when
+    output under ``art/foundry/applied-tiles/road/``, so it skips gracefully when
     those are absent. ``build`` re-derives each deterministic input composite and
     replays the recolour + rim-blend post-chain from the committed source.
     """
     repo_root = SCRIPT_DIR.parent.parent
     manifest_path = repo_root / "art" / "foundry" / "manifest.json"
-    ref_dir = repo_root / "frontend" / "src" / "board" / "tiles" / "road"
+    ref_dir = APPLIED_TILES / "road"
     if not manifest_path.is_file() or not ref_dir.is_dir():
         print(f"[SKIP] roadfinish.py: ratified-tile check (missing {manifest_path} or {ref_dir})")
         return
@@ -693,7 +698,7 @@ def test_roadfinish_matches_ratified_tiles(tmp_dir: Path) -> None:
         str(ref_dir),
     )
     check(
-        "roadfinish.py: reproduces frontend/src/board/tiles/road/*.png byte-for-byte (--verify)",
+        "roadfinish.py: reproduces art/foundry/applied-tiles/road/*.png byte-for-byte (--verify)",
         result.returncode == 0,
         result.stdout + result.stderr,
     )

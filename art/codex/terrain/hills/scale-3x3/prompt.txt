@@ -1,0 +1,12 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of 9 separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Image 2 is the target game map. Copy the painting style of its grassy ridges in the top-right corner of image 2: long, low, olive-green ridges drawn as shaded relief, with fine dark gully creases and small ochre rock outcrops on their crests. Ignore everything else in image 2 (units, icons, interface, grid lines, roads, rivers, woods).
+
+Edit image 1: in every hexagon, paint one low grassy ridge in the style of image 2's top-right ridges, at the same scale as in image 2.
+- One ridge (or two spurs joined into one mass) runs diagonally across the hexagon, from upper left toward lower right, and covers about two-thirds of the hexagon. It is one connected landform: NOT several separate bumps, NOT cones, NOT pyramids.
+- Its slopes are olive grass of the same family as the ground. Faces turned to the upper left are lit a warm olive-ochre; faces turned to the lower right fall into warm dark umber-brown shadow (about #37321C), never green-black or blue-grey.
+- Fine dark creases run down the slopes as erosion gullies. Small patches of pale ochre-tan rock (about #A28D64) sit only along the crest and cover at most a tenth of the hexagon.
+- The foot of the slopes fades gradually into the flat grass with no outline or contour line. A band of plain flat grass, about one-twelfth of the hexagon's width, stays untouched all around the edge; the ridge never touches the hexagon's edge.
+- Every hexagon holds the same kind of ridge, only slightly different in shape.
+
+Keep EXACTLY as they are: the grass outside the ridge (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add anything else: no trees, no bushes, no roads, no rivers, no houses, no borders, no outlines, no grid lines, no text. Seen from almost straight above, with a very slight tilt from the south. Light from the upper left. Muted, hand-painted, with a fine dry-brush grain; NOT bright, NOT lime, NOT snowy, NOT glossy.

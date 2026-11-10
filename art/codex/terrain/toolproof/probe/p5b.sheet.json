@@ -1,0 +1,139 @@
+{
+ "tool": "scripts/tile-foundry/paintin.py (adopt)",
+ "version": 1,
+ "job": "adopted from art/codex/terrain/refs/paintin_sheet.json",
+ "job_sha256": "0c0a63b0866abafdad59654dd95994dd66f983999a1f7a7016c9747794ca8e67",
+ "name": "p5b",
+ "sheet": "art/codex/terrain/refs/paintin_sheet.png",
+ "sheet_sha256": "fc38bad3280e827bac51db32667865c5c95f1f6fa72ed0b3d4a8c29a13c48458",
+ "canvas": [
+  1254,
+  1254
+ ],
+ "layout": {
+  "canvas": 1254,
+  "cols": 3,
+  "rows": 3,
+  "hex_width": 340
+ },
+ "background": [
+  255,
+  0,
+  255
+ ],
+ "tile_px": 128,
+ "profile": {},
+ "pin": {},
+ "gates": {},
+ "anchors": {},
+ "cells": [
+  {
+   "name": "hills_0",
+   "slot": 0,
+   "cx": 209.0,
+   "cy": 209.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_0.png",
+   "base_sha256": "ba83c32c9a67ef51eaa26b80fb432210340d6a30e6188c2c704c0ce0b47b651d",
+   "guide": null,
+   "output": "hills_0.png"
+  },
+  {
+   "name": "hills_1",
+   "slot": 1,
+   "cx": 627.0,
+   "cy": 209.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_1.png",
+   "base_sha256": "a4a3c68d13b51ef7ec20f846f9eb7ea706b6ee1f741e72c5ef56184b3755286c",
+   "guide": null,
+   "output": "hills_1.png"
+  },
+  {
+   "name": "hills_2",
+   "slot": 2,
+   "cx": 1045.0,
+   "cy": 209.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_2.png",
+   "base_sha256": "0f762f148d1fd48b4bc7757fbaf86b74ba9d61b6f4e160e4515122046f4a3e4a",
+   "guide": null,
+   "output": "hills_2.png"
+  },
+  {
+   "name": "village_0",
+   "slot": 3,
+   "cx": 209.0,
+   "cy": 627.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_3.png",
+   "base_sha256": "0a592106f2b000a33ad4f798330791275c118b6a032bc94e2715051ebb8b4ed7",
+   "guide": null,
+   "output": "village_0.png"
+  },
+  {
+   "name": "village_1",
+   "slot": 4,
+   "cx": 627.0,
+   "cy": 627.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_4.png",
+   "base_sha256": "1ac021e4b59111c038fc30bd843fa98e5bbd5c06b362331e338a221c1912070b",
+   "guide": null,
+   "output": "village_1.png"
+  },
+  {
+   "name": "village_2",
+   "slot": 5,
+   "cx": 1045.0,
+   "cy": 627.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_5.png",
+   "base_sha256": "0e404895d6e8797a212486ecbbb3a8d8efe146771fb0a99aa585baa8cbdc5177",
+   "guide": null,
+   "output": "village_2.png"
+  },
+  {
+   "name": "city_0",
+   "slot": 6,
+   "cx": 209.0,
+   "cy": 1045.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_6.png",
+   "base_sha256": "0ecf934f45b83c8ddff633cb45348568adaa2375c3c5b9f10eca7aec289e3241",
+   "guide": null,
+   "output": "city_0.png"
+  },
+  {
+   "name": "city_1",
+   "slot": 7,
+   "cx": 627.0,
+   "cy": 1045.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_7.png",
+   "base_sha256": "f1268f384364a45e4311dc9daea0c5c00f0adbcae00dc179b9e6201d37a949b6",
+   "guide": null,
+   "output": "city_1.png"
+  },
+  {
+   "name": "city_2",
+   "slot": 8,
+   "cx": 1045.0,
+   "cy": 1045.0,
+   "hex_width": 340,
+   "scale": 2.65625,
+   "base": "art/codex/terrain/toolproof/probe/bases/p5b_8.png",
+   "base_sha256": "61e83c3f9ad90ac52bd41cefafe00b2c26428b3c9f81406ee755a6fe9cd335fa",
+   "guide": null,
+   "output": "city_2.png"
+  }
+ ]
+}

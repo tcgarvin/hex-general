@@ -1,0 +1,270 @@
+{
+ "river/straight_v_00.png": {
+  "work": "river/a",
+  "cell": "straight_v_00"
+ },
+ "river/straight_v_01.png": {
+  "work": "river/a",
+  "cell": "straight_v_01"
+ },
+ "river/straight_v_02.png": {
+  "work": "river/a",
+  "cell": "straight_v_02"
+ },
+ "river/straight_d_00.png": {
+  "work": "river/a",
+  "cell": "straight_d_00"
+ },
+ "river/straight_d_01.png": {
+  "work": "river/a",
+  "cell": "straight_d_01"
+ },
+ "river/straight_d_02.png": {
+  "work": "river/a",
+  "cell": "straight_d_02"
+ },
+ "river/turn_n_se_00.png": {
+  "work": "river/a",
+  "cell": "turn_n_se_00"
+ },
+ "river/turn_s_nw_00.png": {
+  "work": "river/a",
+  "cell": "turn_s_nw_00"
+ },
+ "river/turn_s_nw_01.png": {
+  "work": "river/a",
+  "cell": "turn_s_nw_01"
+ },
+ "river/turn_se_sw_00.png": {
+  "work": "river/a",
+  "cell": "turn_se_sw_00"
+ },
+ "river/turn_se_sw_01.png": {
+  "work": "river/a",
+  "cell": "turn_se_sw_01"
+ },
+ "river/turn_ne_nw_00.png": {
+  "work": "river/a",
+  "cell": "turn_ne_nw_00"
+ },
+ "river/end_n_00.png": {
+  "work": "river/a",
+  "cell": "end_n_00"
+ },
+ "river/end_s_00.png": {
+  "work": "river/a",
+  "cell": "end_s_00"
+ },
+ "river/end_se_00.png": {
+  "work": "river/a",
+  "cell": "end_se_00"
+ },
+ "river/end_ne_00.png": {
+  "work": "river/a",
+  "cell": "end_ne_00"
+ },
+ "river/fork_ne_n_s_00.png": {
+  "work": "river/b",
+  "cell": "fork_ne_n_s_00"
+ },
+ "river/fork_ne_n_s_01.png": {
+  "work": "river/b",
+  "cell": "fork_ne_n_s_01"
+ },
+ "river/fork_ne_nw_s_00.png": {
+  "work": "river/b",
+  "cell": "fork_ne_nw_s_00"
+ },
+ "river/fork_se_ne_nw_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_ne_nw_00"
+ },
+ "river/fork_se_ne_s_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_ne_s_00"
+ },
+ "river/fork_se_n_nw_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_n_nw_00"
+ },
+ "river/fork_se_n_s_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_n_s_00"
+ },
+ "river/fork_se_n_s_01.png": {
+  "work": "river/b",
+  "cell": "fork_se_n_s_01"
+ },
+ "river/fork_se_n_sw_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_n_sw_00"
+ },
+ "river/fork_se_nw_s_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_nw_s_00"
+ },
+ "river/fork_se_nw_sw_01.png": {
+  "work": "river/b",
+  "cell": "fork_se_nw_sw_01"
+ },
+ "river/fork_se_sw_s_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_sw_s_00"
+ },
+ "river/fork_se_sw_s_01.png": {
+  "work": "river/b",
+  "cell": "fork_se_sw_s_01"
+ },
+ "river/fork_ne_n_nw_00.png": {
+  "work": "river/b",
+  "cell": "fork_ne_n_nw_00"
+ },
+ "river/fork_se_ne_n_00.png": {
+  "work": "river/b",
+  "cell": "fork_se_ne_n_00"
+ },
+ "river/fork_se_nw_sw_00.png": {
+  "work": "river/c",
+  "cell": "fork_se_nw_sw_00a"
+ },
+ "river/00.png": {
+  "work": "river/c",
+  "cell": "pond_00"
+ },
+ "road/plains_straight_v_00.png": {
+  "work": "road/a",
+  "cell": "plains_straight_v_00"
+ },
+ "road/plains_straight_v_01.png": {
+  "work": "road/a",
+  "cell": "plains_straight_v_01"
+ },
+ "road/plains_straight_v_02.png": {
+  "work": "road/a",
+  "cell": "plains_straight_v_02"
+ },
+ "road/plains_straight_d_00.png": {
+  "work": "road/a",
+  "cell": "plains_straight_d_00"
+ },
+ "road/plains_straight_d_01.png": {
+  "work": "road/a",
+  "cell": "plains_straight_d_01"
+ },
+ "road/plains_straight_d_02.png": {
+  "work": "road/a",
+  "cell": "plains_straight_d_02"
+ },
+ "road/plains_turn_n_se_00.png": {
+  "work": "road/a",
+  "cell": "plains_turn_n_se_00"
+ },
+ "road/plains_turn_n_se_01.png": {
+  "work": "road/a",
+  "cell": "plains_turn_n_se_01"
+ },
+ "road/plains_turn_s_nw_00.png": {
+  "work": "road/a",
+  "cell": "plains_turn_s_nw_00"
+ },
+ "road/plains_turn_s_nw_01.png": {
+  "work": "road/a",
+  "cell": "plains_turn_s_nw_01"
+ },
+ "road/plains_turn_se_sw_00.png": {
+  "work": "road/a",
+  "cell": "plains_turn_se_sw_00"
+ },
+ "road/plains_turn_se_sw_01.png": {
+  "work": "road/a",
+  "cell": "plains_turn_se_sw_01"
+ },
+ "road/plains_turn_ne_nw_00.png": {
+  "work": "road/a",
+  "cell": "plains_turn_ne_nw_00"
+ },
+ "road/plains_turn_ne_nw_01.png": {
+  "work": "road/a",
+  "cell": "plains_turn_ne_nw_01"
+ },
+ "road/plains_end_n_00.png": {
+  "work": "road/c",
+  "cell": "plains_end_n_c0"
+ },
+ "road/plains_end_s_00.png": {
+  "work": "road/c",
+  "cell": "plains_end_s_c1"
+ },
+ "road/plains_end_se_00.png": {
+  "work": "road/c",
+  "cell": "plains_end_se_c0"
+ },
+ "road/plains_end_ne_00.png": {
+  "work": "road/c",
+  "cell": "plains_end_ne_c0"
+ },
+ "road/plains_fork_se_n_s_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_se_n_s_c1"
+ },
+ "road/plains_fork_ne_n_s_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_ne_n_s_c0"
+ },
+ "road/plains_fork_se_ne_nw_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_se_ne_nw_c0"
+ },
+ "road/plains_fork_se_n_nw_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_se_n_nw_c0"
+ },
+ "road/plains_fork_se_nw_sw_00.png": {
+  "work": "road/b",
+  "cell": "plains_fork_se_nw_sw_00"
+ },
+ "road/plains_fork_se_nw_s_00.png": {
+  "work": "road/b",
+  "cell": "plains_fork_se_nw_s_00"
+ },
+ "road/plains_fork_se_n_sw_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_se_n_sw_c0"
+ },
+ "road/plains_fork_ne_nw_s_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_ne_nw_s_c0"
+ },
+ "road/plains_fork_ne_n_nw_00.png": {
+  "work": "road/b",
+  "cell": "plains_fork_ne_n_nw_00"
+ },
+ "road/plains_fork_se_ne_n_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_se_ne_n_c1"
+ },
+ "road/plains_fork_se_ne_s_00.png": {
+  "work": "road/c",
+  "cell": "plains_fork_se_ne_s_c0"
+ },
+ "road/plains_fork_se_sw_s_00.png": {
+  "work": "road/b",
+  "cell": "plains_fork_se_sw_s_00"
+ },
+ "bridge/straight_v_00.png": {
+  "work": "bridge/a",
+  "cell": "straight_v_t0"
+ },
+ "bridge/turn_se_sw_00.png": {
+  "work": "bridge/a",
+  "cell": "turn_se_sw_t0"
+ },
+ "bridge/turn_ne_nw_00.png": {
+  "work": "bridge/a",
+  "cell": "turn_ne_nw_t1"
+ },
+ "bridge/00.png": {
+  "work": "bridge/a",
+  "cell": "00_t0"
+ }
+}
