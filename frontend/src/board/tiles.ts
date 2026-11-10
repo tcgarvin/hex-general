@@ -52,8 +52,10 @@ export interface LoadedTiles {
    * `terrain → [texture, …]` sorted by filename, indexed by `variantIndex`. Used
    * by the cosmetic-variant terrains (plains/woods/hills/town/city). River/bridge
    * tiles also appear here but are selected by name instead (see {@link byOriented}).
+   * A terrain with no tile files has no entry (its hexes draw as flat fill; see
+   * `hexTileRef`); a group, once present, is never empty.
    */
-  readonly byTerrain: Record<Terrain, Texture[]>;
+  readonly byTerrain: Partial<Record<Terrain, Texture[]>>;
   /**
    * `"<terrain>/<oriented-name>" → [texture, …]` (e.g. `"river/straight_v"`),
    * variants sorted by filename and indexed by `variantIndex` like the cosmetic
@@ -86,15 +88,15 @@ export async function loadTerrainTextures(): Promise<LoadedTiles> {
       byName[`${terrain}/${basename(variant)}`] = texture;
     }),
   );
-  const byTerrain: Record<string, Texture[]> = {};
+  const byTerrain: Partial<Record<Terrain, Texture[]>> = {};
   const byOriented: Record<string, Texture[]> = {};
   for (const [key] of entries) {
     const { terrain, variant } = parseTileKey(key);
     const texture = byName[`${terrain}/${basename(variant)}`];
-    (byTerrain[terrain] ??= []).push(texture);
+    (byTerrain[terrain as Terrain] ??= []).push(texture);
     (byOriented[`${terrain}/${orientedKey(basename(variant))}`] ??= []).push(texture);
   }
-  return { byTerrain: byTerrain as Record<Terrain, Texture[]>, byOriented };
+  return { byTerrain, byOriented };
 }
 
 /**

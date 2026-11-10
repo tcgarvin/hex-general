@@ -17,15 +17,18 @@
 // simply keeps the vector overlay, so partial art coverage never breaks a road
 // network's continuity.
 //
-// Roads use the raw adjacency mask, not the river course-graph pruning: road
-// networks are authored as thin corridors, and a road hex genuinely connects to
-// every adjacent road hex (there is no "water flows one way" reading to
-// preserve). If a future map authors a road blob whose junction triangles
-// over-connect, generalise `riverCourseEdges` rather than special-casing here.
+// Roads use the same course-graph pruning as rivers (`courseGraphEdges`, see
+// `courseGraph.ts`) over the road-carrying hexes: where a road joins another
+// mid-run, the hexes around the join are mutually adjacent, and the raw masks
+// would draw a small triangle loop; the course graph keeps one fork. Every
+// consumer of a road hex's connections (baked tile choice here, the 2-player
+// vector stubs in `Board.tsx`) reads the same `roadCourseEdges` map, so baked
+// art and vector stubs agree. Drawing only: engine movement goes by hex flag.
 
 import type { components } from "@/lib/api/schema";
 
 import { AXIAL_DIRECTIONS, hexKey, type Axial } from "./hex";
+import { courseGraphEdges } from "./courseGraph";
 import { orientedRiverTile } from "./riverTiles";
 
 type Hex = components["schemas"]["Hex"];
@@ -56,6 +59,23 @@ export function roadConnectedEdges(
   return edges;
 }
 
+/**
+ * The per-hex connected-edge sets of the road course graph: road adjacency
+ * ({@link roadConnectedEdges}) with junction-triangle chords pruned. Keyed by
+ * {@link hexKey}, ascending direction indices; every road-carrying hex among
+ * `hexes` (road-flagged or bridge) appears. `hexes` must hold every
+ * road-carrying hex next to one in it (pass the whole map). Build once per map.
+ */
+export function roadCourseEdges(
+  hexes: readonly Hex[],
+  hexAt: (q: number, r: number) => Hex | undefined,
+): Map<string, number[]> {
+  return courseGraphEdges(
+    hexes.map((h) => h.coord),
+    (q, r) => isRoadLike(hexAt(q, r)),
+  );
+}
+
 /** A resolved baked-road-tile reference for one hex. */
 export interface RoadTileRef {
   /** `byOriented` lookup key, e.g. `"road/plains_turn_n_se"`. */
@@ -65,24 +85,26 @@ export interface RoadTileRef {
 }
 
 /**
- * The baked-road-tile reference for every road-flagged hex whose edge mask maps
- * to a handled oriented shape, keyed by {@link hexKey}. River and bridge hexes
- * are excluded (their own oriented art carries the water/deck/ramps); hexes
- * whose mask is unhandled (forks without art rulings, defensive cases) are
- * simply absent. Whether the referenced texture actually exists is the render
- * site's decision — a missing `byOriented` group falls back to the vector road
- * overlay, so this map stays a pure geometry computation.
+ * The baked-road-tile reference for every road-flagged hex whose course-graph
+ * mask (`roadCourse`, from {@link roadCourseEdges} over the same map) maps to a
+ * handled oriented shape, keyed by {@link hexKey}. River and bridge hexes are
+ * excluded (their own oriented art carries the water/deck/ramps); hexes whose
+ * mask is unhandled (4+-way blobs, defensive cases) are simply absent. Whether
+ * the referenced texture actually exists is the render site's decision — a
+ * missing `byOriented` group falls back to the vector road overlay, so this map
+ * stays a pure geometry computation.
  */
 export function roadTileRefs(
   hexes: readonly Hex[],
-  hexAt: (q: number, r: number) => Hex | undefined,
+  roadCourse: ReadonlyMap<string, readonly number[]>,
 ): Map<string, RoadTileRef> {
   const refs = new Map<string, RoadTileRef>();
   for (const h of hexes) {
     if (!h.road || h.terrain === "river" || h.terrain === "bridge") continue;
-    const oriented = orientedRiverTile(roadConnectedEdges(h.coord, hexAt));
+    const key = hexKey(h.coord.q, h.coord.r);
+    const oriented = orientedRiverTile(roadCourse.get(key)!);
     if (oriented === null) continue;
-    refs.set(hexKey(h.coord.q, h.coord.r), {
+    refs.set(key, {
       lookup: `road/${h.terrain}_${oriented.name}`,
       mirror: oriented.mirror,
     });

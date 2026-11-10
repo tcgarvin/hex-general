@@ -18,7 +18,7 @@ import {
 
 type Terrain = components["schemas"]["Terrain"];
 
-const CHARS: Record<string, Terrain> = { ".": "plains", w: "woods", c: "city", h: "hills" };
+const CHARS: Record<string, Terrain> = { ".": "plains", w: "woods", c: "city", h: "hills", o: "lake" };
 
 /** An ASCII map in odd-q offset rows (like scripts/board-mock-maps) → axial terrain probe. */
 function asciiMap(text: string): {
@@ -80,6 +80,13 @@ describe("groupJoinFiles", () => {
     expect(groups.get("woods")).toEqual(kinds.map((k) => [`${k}_00`, `${k}_01`]));
   });
 
+  it("groups any terrain's join files the same way (lake joins need no code change)", () => {
+    const entries = ["woods", "lake"].flatMap((t) => kinds.map((k) => [`./joins/${t}/${k}_00.png`, `${t}/${k}`] as const));
+    const groups = groupJoinFiles(entries);
+    expect([...groups.keys()].sort()).toEqual(["lake", "woods"]);
+    expect(groups.get("lake")).toEqual(kinds.map((k) => [`lake/${k}`]));
+  });
+
   it("rejects an unknown kind", () => {
     expect(() => groupJoinFiles([["./joins/woods/edge_sw_00.png", 1]])).toThrow(/kind must be/);
   });
@@ -133,6 +140,15 @@ describe("joinsOwnedBy / joinPlacements", () => {
     expect(joinPlacements(...args("hh\nhh"))).toEqual([]);
     expect(joinPlacements(...args("..\n.."))).toEqual([]);
     expect(joinPlacements(...args("cc\ncc")).every((p) => p.terrain === "city")).toBe(true);
+  });
+
+  it("joins lake hexes exactly like woods once lake is joinable (art present)", () => {
+    const woods = joinPlacements(...args("ww..\nw...\n....\n...w"));
+    const lakeArgs = asciiMap("oo..\no...\n....\n...o");
+    const lake = joinPlacements(lakeArgs.hexes, lakeArgs.terrainAt, new Set<Terrain>(["lake"]), HEX_SIZE);
+    expect(lake).toEqual(woods.map((p) => ({ ...p, terrain: "lake" })));
+    // Without lake join art, lake hexes get no joins.
+    expect(joinPlacements(lakeArgs.hexes, lakeArgs.terrainAt, JOINABLE, HEX_SIZE)).toEqual([]);
   });
 
   it("names every edge and corner of a solid block exactly once", () => {

@@ -68,6 +68,12 @@ describe("inspectorContent", () => {
     );
   });
 
+  it("names a lake and marks it impassable", () => {
+    const c = inspectorContent(hex("lake"), null, null);
+    expect(c.title).toBe("LAKE");
+    expect(c.lines).toEqual(["Defense +0", "Impassable", "Road: no"]);
+  });
+
   it("notes the road layer, including on settlements that have one", () => {
     expect(inspectorContent(hex("plains", true), null, null).lines).toContain(
       "Road: yes",

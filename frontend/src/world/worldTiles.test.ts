@@ -95,4 +95,10 @@ describe("overview fill", () => {
     expect(overviewHexFill(map, VACANT.q, VACANT.r)).toBe(TERRAIN_FILL.plains);
     expect(overviewHexFill(map, PLAIN.q, PLAIN.r)).toBe(TERRAIN_FILL.plains);
   });
+
+  it("gives a lake hex the water fill", () => {
+    const lakeMap = decodeWorldMap({ width: 2, height: 1, terrain: "o~", roads: "..", sites: [] });
+    expect(overviewHexFill(lakeMap, 0, 0)).toBe(TERRAIN_FILL.lake);
+    expect(TERRAIN_FILL.lake).toBe(TERRAIN_FILL.river);
+  });
 });

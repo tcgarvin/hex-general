@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import type { components } from "@/lib/api/schema";
 
 import { AXIAL_DIRECTIONS, hexKey, type Axial } from "./hex";
-import { connectedEdges, orientedRiverTile, riverCourseEdges } from "./riverTiles";
+import {
+  connectedEdges,
+  orientedRiverTile,
+  riverCourseEdges,
+  riverMouths,
+  riverOutletDirection,
+  riverOutlets,
+} from "./riverTiles";
 
 type Terrain = components["schemas"]["Terrain"];
 
@@ -174,15 +181,56 @@ describe("orientedRiverTile", () => {
   });
 });
 
-describe("riverCourseEdges", () => {
-  /** Probe + coord list over an explicit "q,r" → terrain map. */
-  function world(cells: Record<string, Terrain>) {
-    const coords = Object.keys(cells).map((k) => {
-      const [q, r] = k.split(",").map(Number);
-      return { q, r };
-    });
-    return { coords, probe: terrainProbe(cells) };
+/** Probe + coord list over an explicit "q,r" → terrain map (anything else is off the map). */
+function edgeWorld(cells: Record<string, Terrain>) {
+  const coords = Object.keys(cells).map((k) => {
+    const [q, r] = k.split(",").map(Number);
+    return { q, r };
+  });
+  return { coords, probe: terrainProbe(cells) };
+}
+
+/**
+ * Like {@link edgeWorld}, but every unlisted neighbour of a listed cell is
+ * plains, so no listed river hex touches the map edge (the edge rule stays out
+ * of tests about something else). `offMap` then removes the given neighbours of
+ * the given hexes, putting those hexes on the edge.
+ */
+function world(cells: Record<string, Terrain>, offMap: readonly [Axial, number][] = []) {
+  const padded: Record<string, Terrain> = { ...cells };
+  for (const k of Object.keys(cells)) {
+    const [q, r] = k.split(",").map(Number);
+    for (const d of AXIAL_DIRECTIONS) padded[`${q + d.q},${r + d.r}`] ??= "plains";
   }
+  for (const [at, dir] of offMap) {
+    delete padded[`${at.q + AXIAL_DIRECTIONS[dir].q},${at.r + AXIAL_DIRECTIONS[dir].r}`];
+  }
+  return edgeWorld(padded);
+}
+
+/** "q,r" of `at`'s neighbour in direction `dir`. */
+function towards(at: Axial, dir: number): string {
+  return `${at.q + AXIAL_DIRECTIONS[dir].q},${at.r + AXIAL_DIRECTIONS[dir].r}`;
+}
+
+/** The twin_rivers tributary junction (see the test below), shifted by `dq` columns. */
+function junctionCells(dq: number): Record<string, Terrain> {
+  const cells: Record<string, Terrain> = {};
+  for (const [q, r] of [
+    [0, 0],
+    [1, 0],
+    [-1, 1],
+    [0, 1],
+    [2, -1],
+    [-2, 1],
+    [0, 2],
+  ]) {
+    cells[`${q + dq},${r}`] = "river";
+  }
+  return cells;
+}
+
+describe("riverCourseEdges", () => {
 
   it("leaves a triangle-free course untouched (matches raw connectedEdges)", () => {
     // A vertical three-hex run: end / straight_v / end.
@@ -252,5 +300,169 @@ describe("riverCourseEdges", () => {
     for (const edges of course.values()) {
       expect(edges.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("riverCourseEdges at world scale (local junction pruning)", () => {
+  it("prunes far-apart junctions independently (more chords map-wide than one search allows)", () => {
+    // Four junctions of five chords each: 20 chords map-wide, over the old
+    // whole-map cap of 16, but each cluster is small.
+    const cells = Object.assign({}, ...[0, 20, 40, 60].map(junctionCells));
+    const { coords, probe } = world(cells);
+    const course = riverCourseEdges(coords, probe);
+    for (const dq of [0, 20, 40, 60]) {
+      expect(course.get(hexKey(dq, 0))).toEqual([0, 4, 5]);
+      expect(course.get(hexKey(dq + 1, 0))).toEqual([1, 3]);
+      expect(course.get(hexKey(dq - 1, 1))).toEqual([1, 3]);
+      expect(course.get(hexKey(dq, 1))).toEqual([2, 5]);
+    }
+  });
+
+  it("prunes 300 separated junctions quickly", () => {
+    const dqs = Array.from({ length: 300 }, (_, i) => i * 10);
+    const { coords, probe } = world(Object.assign({}, ...dqs.map(junctionCells)));
+    const start = performance.now();
+    const course = riverCourseEdges(coords, probe);
+    const elapsed = performance.now() - start;
+    for (const dq of dqs) {
+      expect(course.get(hexKey(dq, 0))).toEqual([0, 4, 5]);
+      expect(course.get(hexKey(dq, 1))).toEqual([2, 5]);
+    }
+    expect(elapsed).toBeLessThan(1000);
+  });
+});
+
+describe("riverOutletDirection (mouth and edge rules)", () => {
+  it("prefers a straight run over a gentle turn", () => {
+    // River connection due S (5): N (2) is straight, NE (1) a gentle turn.
+    expect(riverOutletDirection([5], [1, 2])).toBe(2);
+  });
+
+  it("takes a gentle turn when there is no straight option", () => {
+    // SE (0) is next to S: sharp, never taken; NE (1) is two steps away.
+    expect(riverOutletDirection([5], [0, 1])).toBe(1);
+  });
+
+  it("gives no outlet when only sharp turns are possible", () => {
+    expect(riverOutletDirection([5], [0, 4])).toBeNull();
+  });
+
+  it("breaks a tie by the lowest direction index", () => {
+    expect(riverOutletDirection([5], [3, 1])).toBe(1);
+  });
+
+  it("takes the lowest candidate index when the hex has no river neighbour", () => {
+    expect(riverOutletDirection([], [4, 2, 3])).toBe(2);
+  });
+
+  it("gives a mid-course hex (two river neighbours) no outlet", () => {
+    expect(riverOutletDirection([2, 5], [0])).toBeNull();
+  });
+
+  it("gives no outlet without candidates", () => {
+    expect(riverOutletDirection([5], [])).toBeNull();
+  });
+});
+
+describe("riverCourseEdges: mouth rule (rivers ending at a lake)", () => {
+  const R: Axial = { q: 0, r: 0 };
+
+  it("runs a river's last hex straight into the lake when it can", () => {
+    // R's river comes from the S; lakes N (straight) and NE (gentle).
+    const { coords, probe } = world({
+      "0,0": "river",
+      "0,1": "river",
+      "0,2": "river",
+      [towards(R, 2)]: "lake",
+      [towards(R, 1)]: "lake",
+    });
+    const course = riverCourseEdges(coords, probe);
+    expect(course.get(hexKey(0, 0))).toEqual([2, 5]);
+    expect(orientedRiverTile(course.get(hexKey(0, 0))!)).toEqual({ name: "straight_v", mirror: false });
+    // The lake hexes are not part of the river course; their tiles never change.
+    expect(course.has(towards(R, 2))).toBe(false);
+    expect(riverMouths(coords, probe)).toEqual([{ coord: R, direction: 2, kind: "lake" }]);
+  });
+
+  it("turns gently into the lake when there is no straight option", () => {
+    const { coords, probe } = world({
+      "0,0": "river",
+      "0,1": "river",
+      "0,2": "river",
+      [towards(R, 0)]: "lake", // sharp from S
+      [towards(R, 1)]: "lake", // gentle from S
+    });
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([1, 5]);
+  });
+
+  it("keeps the end cap when the lake is only reachable by a sharp turn", () => {
+    const { coords, probe } = world({
+      "0,0": "river",
+      "0,1": "river",
+      "0,2": "river",
+      [towards(R, 4)]: "lake",
+    });
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([5]);
+    expect(riverMouths(coords, probe)).toEqual([]);
+  });
+
+  it("leaves a mid-course river hex beside a lake alone", () => {
+    const { coords, probe } = world({
+      "0,-1": "river",
+      "0,0": "river",
+      "0,1": "river",
+      [towards(R, 0)]: "lake",
+    });
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([2, 5]);
+    expect(riverMouths(coords, probe)).toEqual([]);
+  });
+});
+
+describe("riverCourseEdges: edge rule (rivers flowing off the map)", () => {
+  const R: Axial = { q: 0, r: 0 };
+  // R's river comes from the S and continues inland.
+  const run: Record<string, Terrain> = { "0,0": "river", "0,1": "river", "0,2": "river" };
+
+  it("runs straight off the map when it can", () => {
+    const { coords, probe } = world(run, [
+      [R, 1],
+      [R, 2],
+    ]);
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([2, 5]);
+    expect(riverOutlets(coords, probe)).toEqual([{ coord: R, direction: 2, kind: "edge" }]);
+  });
+
+  it("turns gently off the map when there is no straight option", () => {
+    const { coords, probe } = world(run, [
+      [R, 0],
+      [R, 1],
+    ]);
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([1, 5]);
+  });
+
+  it("keeps the end cap when only a sharp turn leads off the map", () => {
+    const { coords, probe } = world(run, [
+      [R, 0],
+      [R, 4],
+    ]);
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([5]);
+  });
+
+  it("leaves a mid-course edge hex alone", () => {
+    const { coords, probe } = world({ "0,-1": "river", "0,0": "river", "0,1": "river" }, [[R, 1]]);
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([2, 5]);
+  });
+
+  it("leaves an inland end cap alone", () => {
+    const { coords, probe } = world(run);
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([5]);
+    expect(riverOutlets(coords, probe)).toEqual([]);
+  });
+
+  it("lets the mouth rule win over the edge rule", () => {
+    // Off the map due N (straight), a lake to the NE (gentle): the lake wins.
+    const { coords, probe } = world({ ...run, [towards(R, 1)]: "lake" }, [[R, 2]]);
+    expect(riverCourseEdges(coords, probe).get(hexKey(0, 0))).toEqual([1, 5]);
+    expect(riverOutlets(coords, probe)).toEqual([{ coord: R, direction: 1, kind: "lake" }]);
   });
 });

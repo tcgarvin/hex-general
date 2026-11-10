@@ -29,9 +29,9 @@ import {
   type JoinPlacement,
   type LoadedJoins,
 } from "@/board/joins";
-import { ROAD_COLOR } from "@/board/palette";
+import { ROAD_COLOR, TERRAIN_FILL } from "@/board/palette";
 import { riverCourseEdges } from "@/board/riverTiles";
-import { roadTileRefs, type RoadTileRef } from "@/board/roadTiles";
+import { roadCourseEdges, roadTileRefs, type RoadTileRef } from "@/board/roadTiles";
 import type { LoadedTiles } from "@/board/tiles";
 import type { LoadedUnits, UnitSpritePair } from "@/board/units";
 import type { components } from "@/lib/api/schema";
@@ -152,7 +152,8 @@ export class WorldRenderer {
   private readonly fogSprites = new Map<number, Sprite>();
   private readonly spritePool: Sprite[] = [];
   private readonly fogPool: Sprite[] = [];
-  private readonly fogTexture: Texture;
+  /** A white board-size hex: tinted for fog, and for hexes whose terrain has no tile art. */
+  private readonly plainHexTexture: Texture;
   private readonly roadTiles: Map<string, RoadTileRef>;
   private readonly riverCourse: Map<string, number[]>;
   /** Painted tiles of the map's leveled sites (static). */
@@ -173,7 +174,8 @@ export class WorldRenderer {
     this.app = app;
     this.map = map;
     this.options = options;
-    this.roadTiles = roadTileRefs(map.hexes, (q, r) => map.hexAt(q, r));
+    // Road and river course graphs (junction chords pruned), built once per map.
+    this.roadTiles = roadTileRefs(map.hexes, roadCourseEdges(map.hexes, (q, r) => map.hexAt(q, r)));
     this.riverCourse = riverCourseEdges(
       map.hexes.filter((h) => h.terrain === "river" || h.terrain === "bridge").map((h) => h.coord),
       (q, r) => map.hexAt(q, r)?.terrain,
@@ -186,7 +188,7 @@ export class WorldRenderer {
     this.overviewScale = HEX_SIZE / OVERVIEW_HEX;
     this.overview.scale.set(this.overviewScale);
     this.overview.position.set(-HEX_SIZE, -HEX_SIZE);
-    this.fogTexture = hexTexture(app);
+    this.plainHexTexture = hexTexture(app);
 
     this.world.addChild(
       this.overview,
@@ -476,7 +478,11 @@ export class WorldRenderer {
     return sprite;
   }
 
-  /** Give a tile sprite its hex's texture: a painted site/base tile, else its terrain. */
+  /**
+   * Give a tile sprite its hex's texture: a painted site/base tile, else its
+   * terrain tile, else (a terrain with no tile art yet, e.g. lake) a plain hex
+   * tinted with the terrain's flat fill.
+   */
   private textureTile(sprite: Sprite, hex: WorldMap["hexes"][number]): void {
     const tiles = this.tiles;
     if (tiles === null) throw new Error("tile texture asked for before textures loaded");
@@ -486,6 +492,14 @@ export class WorldRenderer {
       choice.kind === "site"
         ? { tex: siteTileTexture(choice.key), mirror: false }
         : hexTileRef(hex, tiles, this.riverCourse, this.roadTiles);
+    // Pooled sprites are reused across hexes, so the tint is always set.
+    if (ref === null) {
+      sprite.texture = this.plainHexTexture;
+      sprite.tint = TERRAIN_FILL[hex.terrain];
+      sprite.scale.set(1);
+      return;
+    }
+    sprite.tint = 0xffffff;
     sprite.texture = ref.tex;
     const scale = (2 * HEX_SIZE) / ref.tex.width;
     sprite.scale.set(ref.mirror ? -scale : scale, scale);
@@ -510,7 +524,7 @@ export class WorldRenderer {
   }
 
   private placeFog(hex: WorldMap["hexes"][number]): Sprite {
-    const sprite = this.fogPool.pop() ?? new Sprite(this.fogTexture);
+    const sprite = this.fogPool.pop() ?? new Sprite(this.plainHexTexture);
     sprite.anchor.set(0.5);
     sprite.tint = 0x0b0d12;
     sprite.alpha = 0.38;

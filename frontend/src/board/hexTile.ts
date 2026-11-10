@@ -19,13 +19,19 @@ type Hex = components["schemas"]["Hex"];
  * falls through to the base tile + vector road overlay), then the coord-hashed
  * cosmetic variant of the base terrain. Shared by the map render loop and the
  * dock portrait so the portrait backdrop always matches the board.
+ *
+ * `null` when the hex's terrain has no tile art loaded (no `tiles/<terrain>/`
+ * files, e.g. lake before its art is ratified): the caller draws the hex as its
+ * flat `TERRAIN_FILL` colour with no sprite. Once `tiles/<terrain>/NN.png` files
+ * exist, the glob in `tiles.ts` picks them up and the hex takes a coord-hashed
+ * cosmetic variant like woods, with no code change.
  */
 export function hexTileRef(
   h: Hex,
   terrainTex: LoadedTiles,
   riverCourse: Map<string, number[]>,
   roadTiles: Map<string, RoadTileRef>,
-): PortraitTile {
+): PortraitTile | null {
   if (h.terrain === "river" || h.terrain === "bridge") {
     const oriented = orientedRiverTile(
       riverCourse.get(hexKey(h.coord.q, h.coord.r)) ?? [],
@@ -44,6 +50,7 @@ export function hexTileRef(
     return { tex, mirror: roadRef.mirror };
   }
   const variants = terrainTex.byTerrain[h.terrain];
+  if (variants === undefined) return null;
   return {
     tex: variants[variantIndex(h.coord.q, h.coord.r, variants.length)],
     mirror: false,

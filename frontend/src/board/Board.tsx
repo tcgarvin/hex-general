@@ -77,7 +77,7 @@ import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panel
 import { SelectedUnitPanel, type PortraitTile } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
 import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
-import { roadTileRefs } from "./roadTiles";
+import { roadCourseEdges, roadTileRefs } from "./roadTiles";
 import { hexTileRef } from "./hexTile";
 import {
   JOIN_TERRAINS,
@@ -532,12 +532,16 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [hexes, terrainAt],
   );
 
-  // Baked road tile references for road-flagged hexes (T5). Whether the
-  // referenced texture exists decides baked-vs-vector per hex at render time.
-  const roadTiles = useMemo(
-    () => roadTileRefs(hexes, (q, r) => hexByKey.get(hexKey(q, r))),
+  // Course-pruned road edge masks (junction triangle chords dropped), shared by
+  // the baked road tiles and the vector road stubs so the two always agree.
+  const roadCourse = useMemo(
+    () => roadCourseEdges(hexes, (q, r) => hexByKey.get(hexKey(q, r))),
     [hexes, hexByKey],
   );
+
+  // Baked road tile references for road-flagged hexes (T5). Whether the
+  // referenced texture exists decides baked-vs-vector per hex at render time.
+  const roadTiles = useMemo(() => roadTileRefs(hexes, roadCourse), [hexes, roadCourse]);
 
   const settlementOwner = useMemo(() => {
     const m = new Map<string, string | null>();
@@ -1254,12 +1258,12 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
             continue;
           }
         }
+        // Stubs follow the road course graph (pruned like the baked tiles), so a
+        // road joining another mid-run draws one fork, not a triangle loop.
         const c = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
-        for (const d of AXIAL_DIRECTIONS) {
-          const n = hexByKey.get(hexKey(h.coord.q + d.q, h.coord.r + d.r));
-          if (n === undefined) continue;
-          if (!n.road && n.terrain !== "bridge") continue;
-          const nc = axialToPixel(n.coord.q, n.coord.r, HEX_SIZE);
+        for (const dir of roadCourse.get(hexKey(h.coord.q, h.coord.r))!) {
+          const d = AXIAL_DIRECTIONS[dir];
+          const nc = axialToPixel(h.coord.q + d.q, h.coord.r + d.r, HEX_SIZE);
           g.moveTo(c.x, c.y);
           g.lineTo((c.x + nc.x) / 2, (c.y + nc.y) / 2);
         }
@@ -1290,7 +1294,7 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
         }
       }
     },
-    [hexes, hexByKey, settlementOwner, visibleKeys, riverCourse, roadTiles, terrainTex],
+    [hexes, hexByKey, settlementOwner, visibleKeys, riverCourse, roadCourse, roadTiles, terrainTex],
   );
 
   const drawSelection = useCallback(
@@ -1594,7 +1598,10 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
                 // Tiles span two generations (64px legacy, 128px painterly), so
                 // scale by the texture's own size to land at HEX_SIZE*2 world px.
-                const { tex, mirror } = hexTileRef(h, terrainTex, riverCourse, roadTiles);
+                const ref = hexTileRef(h, terrainTex, riverCourse, roadTiles);
+                // No art for this terrain yet: the flat base fill shows through.
+                if (ref === null) return null;
+                const { tex, mirror } = ref;
                 const s = (HEX_SIZE * 2) / tex.width;
                 return (
                   <pixiSprite

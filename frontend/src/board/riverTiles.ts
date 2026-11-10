@@ -15,7 +15,7 @@
 // apart), and all 20 three-edge junction forks (C(6,3) — every three-edge mask).
 // Sharp turns (two adjacent connected edges) are disallowed by design ruling
 // (user, 2026-07-03): a river course must never be authored to produce one, and
-// `shapePenalty` already steers the course-graph pruner away from choosing one
+// `shapePenalty` (`courseGraph.ts`) already steers the course-graph pruner away from choosing one
 // over a calmer routing. They are not "art pending" — no tile will ever be
 // generated for them, and the generic `00` fallback that catches them is purely
 // defensive (a bug in map authoring, not a missing-art gap). Masks of four or
@@ -30,6 +30,7 @@
 
 import type { components } from "@/lib/api/schema";
 
+import { courseGraphEdges } from "./courseGraph";
 import { AXIAL_DIRECTIONS, hexKey, type Axial } from "./hex";
 
 type Terrain = components["schemas"]["Terrain"];
@@ -55,162 +56,139 @@ export function connectedEdges(
   return edges;
 }
 
-// --- Course-graph pruning ---------------------------------------------------
+// --- Course graph -----------------------------------------------------------
 //
-// Raw adjacency over-connects river junctions: where a tributary meets a main
-// course, the hexes *around* the junction are also mutually adjacent, so each
-// picks up edges to river hexes its water never actually flows toward (in graph
-// terms: hex-grid triangles whose chords are not part of any course). Classifying
-// on the raw mask would render a braided multi-channel blob at every junction.
-// `riverCourseEdges` derives the course graph instead: among the edges that lie
-// on a triangle of mutually-adjacent river hexes, it drops the subset that
-// minimises the summed "shape awkwardness" of the affected hexes, subject to
-// never disconnecting a river. On twin_rivers this resolves the tributary
-// junction into one true fork + a straight + two gentle turns.
+// A river hex's connected edges come from the *course graph*, not raw
+// adjacency: junction-triangle chords are pruned (`courseGraphEdges`, shared
+// with roads, see `courseGraph.ts`) so a tributary junction draws as one fork
+// instead of a braided blob, and a river's open end gets one outlet edge where
+// the water visibly leaves the hex:
+//
+// * **Mouth rule.** Lake hexes are not river-like, but a river/bridge hex with at
+//   most one river-like neighbour and at least one lake neighbour connects to
+//   exactly one lake neighbour (`riverOutletDirection` picks it), so the river
+//   runs its water to the lake shore instead of ending in a cap. The lake hex's
+//   own tile never changes.
+// * **Edge rule** (lower priority: only when the mouth rule gave nothing). Such a
+//   hex on the map edge (a neighbour direction off the map, `terrainAt` ⇒
+//   `undefined`) connects to exactly one off-map direction, chosen the same way,
+//   so a river flows off the map instead of ending in a cap on the border.
+//
+// A hex with at most one river-like neighbour is on no triangle (a triangle
+// needs two), so pruning never touches it and the outlet edge can be added
+// after pruning without changing the pruning.
 
-// Awkwardness of a hex's connected-edge set. Calm course shapes (straights,
-// gentle turns) are cheap; a fork is expensive but sometimes the only honest
-// answer; fake termini and sharp turns are worse than any gentle routing.
-function shapePenalty(edges: number[]): number {
-  const n = edges.length;
-  if (n === 0) return 0;
-  if (n === 1) return 3; // end
-  if (n === 2) {
-    const raw = edges[1] - edges[0];
-    const gap = Math.min(raw, 6 - raw); // circular distance between the edges
-    if (gap === 3) return 0; // straight
-    if (gap === 2) return 1; // gentle turn
-    return 4; // sharp turn
-  }
-  return [5, 9, 14, 20][n - 3]; // 3..6-way forks
-}
-
-// Beyond this many triangle-chord candidates the exhaustive subset search is no
-// longer cheap (2^k); such a map is a river *blob*, not courses with junctions,
-// and pruning would be guesswork anyway — render the raw masks.
-const MAX_CHORD_CANDIDATES = 16;
-
-interface RiverNode {
-  readonly key: string;
-  readonly coord: Axial;
-  /** Ascending direction indices of raw river-like adjacency. */
-  edges: number[];
+/** Circular distance between two direction indices (0..3). */
+function directionGap(a: number, b: number): number {
+  const raw = Math.abs(a - b);
+  return Math.min(raw, 6 - raw);
 }
 
 /**
- * The per-hex connected-edge sets of the *course graph*: raw river/bridge
- * adjacency with junction-triangle chords pruned (see module note above).
- * Returns a map from {@link hexKey} to ascending direction indices; only
- * river-like hexes among `coords` appear. Feed the result to
- * {@link orientedRiverTile} instead of a raw {@link connectedEdges} mask.
+ * The one outlet direction for a river/bridge hex R, from R's river-like
+ * neighbour directions `riverDirs` and its candidate outlet directions
+ * `candidateDirs` (lake neighbours for the mouth rule, off-map directions for
+ * the edge rule; never one of `riverDirs`), or `null` for no outlet.
+ *
+ * R gets no outlet with two or more river-like neighbours (a mid-course hex) or
+ * no candidates. With no river-like neighbour it takes the lowest candidate
+ * index. Otherwise, with `p` its one river connection, the calmest shape wins:
+ * straight (`d` opposite `p`), then a gentle turn (`d` two steps from `p`);
+ * never a sharp turn (`d` next to `p`), so sharp-only candidates give `null`.
+ * Ties go to the lowest direction index.
+ */
+export function riverOutletDirection(
+  riverDirs: readonly number[],
+  candidateDirs: readonly number[],
+): number | null {
+  if (riverDirs.length > 1 || candidateDirs.length === 0) return null;
+  if (riverDirs.length === 0) return Math.min(...candidateDirs);
+  const p = riverDirs[0];
+  let best: number | null = null;
+  let bestGap = 0;
+  for (const d of candidateDirs) {
+    const gap = directionGap(d, p);
+    if (gap < 2) continue; // sharp (or p itself)
+    if (best === null || gap > bestGap || (gap === bestGap && d < best)) {
+      best = d;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
+/** Where a river leaves through a hex edge: into a lake, or off the map. */
+export interface RiverOutlet {
+  /** The river/bridge hex R. */
+  readonly coord: Axial;
+  /** Direction index (into {@link AXIAL_DIRECTIONS}) of the outlet edge. */
+  readonly direction: number;
+  /** `"lake"`: a mouth onto the lake hex there; `"edge"`: off the map. */
+  readonly kind: "lake" | "edge";
+}
+
+/**
+ * Every river outlet among `coords` (distinct coords; non-river hexes are
+ * skipped): the mouth rule first, the edge rule for hexes it gave nothing.
+ * At most one outlet per hex, in `coords` order.
+ */
+export function riverOutlets(
+  coords: readonly Axial[],
+  terrainAt: (q: number, r: number) => Terrain | undefined,
+): RiverOutlet[] {
+  const out: RiverOutlet[] = [];
+  for (const c of coords) {
+    if (!isRiverLike(terrainAt(c.q, c.r))) continue;
+    const riverDirs: number[] = [];
+    const lakeDirs: number[] = [];
+    const offMapDirs: number[] = [];
+    AXIAL_DIRECTIONS.forEach((d, i) => {
+      const t = terrainAt(c.q + d.q, c.r + d.r);
+      if (isRiverLike(t)) riverDirs.push(i);
+      else if (t === "lake") lakeDirs.push(i);
+      else if (t === undefined) offMapDirs.push(i);
+    });
+    const mouth = riverOutletDirection(riverDirs, lakeDirs);
+    if (mouth !== null) {
+      out.push({ coord: c, direction: mouth, kind: "lake" });
+      continue;
+    }
+    const edge = riverOutletDirection(riverDirs, offMapDirs);
+    if (edge !== null) out.push({ coord: c, direction: edge, kind: "edge" });
+  }
+  return out;
+}
+
+/**
+ * The river mouths among `coords` (river hex + the direction of the lake hex it
+ * runs into), for drawing mouth join art. Nothing draws them yet.
+ */
+export function riverMouths(
+  coords: readonly Axial[],
+  terrainAt: (q: number, r: number) => Terrain | undefined,
+): RiverOutlet[] {
+  return riverOutlets(coords, terrainAt).filter((o) => o.kind === "lake");
+}
+
+/**
+ * The per-hex connected-edge sets of the river *course graph*: river/bridge
+ * adjacency with junction-triangle chords pruned, plus each hex's outlet edge
+ * (lake mouth or map edge; see the note above). Returns a map from
+ * {@link hexKey} to ascending direction indices; only river-like hexes among
+ * `coords` appear, and `coords` must hold every river-like hex next to one in
+ * it. Feed the result to {@link orientedRiverTile} instead of a raw
+ * {@link connectedEdges} mask.
  */
 export function riverCourseEdges(
   coords: readonly Axial[],
   terrainAt: (q: number, r: number) => Terrain | undefined,
 ): Map<string, number[]> {
-  const nodes = new Map<string, RiverNode>();
-  for (const c of coords) {
-    if (!isRiverLike(terrainAt(c.q, c.r))) continue;
-    const key = hexKey(c.q, c.r);
-    nodes.set(key, { key, coord: c, edges: connectedEdges(c, terrainAt) });
+  const course = courseGraphEdges(coords, (q, r) => isRiverLike(terrainAt(q, r)));
+  for (const outlet of riverOutlets(coords, terrainAt)) {
+    const key = hexKey(outlet.coord.q, outlet.coord.r);
+    course.set(key, [...course.get(key)!, outlet.direction].sort((a, b) => a - b));
   }
-
-  // Undirected edges, each once, id = "keyA|keyB" with keyA < keyB.
-  const edgeId = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
-  const neighborKey = (n: RiverNode, dir: number): string =>
-    hexKey(n.coord.q + AXIAL_DIRECTIONS[dir].q, n.coord.r + AXIAL_DIRECTIONS[dir].r);
-
-  // Triangles of mutually-adjacent river hexes are exactly {A, A+d_i, A+d_(i+1)}
-  // (two consecutive directions); collect every edge that lies on one.
-  const chordIds = new Set<string>();
-  for (const n of nodes.values()) {
-    for (let i = 0; i < 6; i++) {
-      const b = neighborKey(n, i);
-      const c = neighborKey(n, (i + 1) % 6);
-      if (nodes.has(b) && nodes.has(c)) {
-        chordIds.add(edgeId(n.key, b));
-        chordIds.add(edgeId(n.key, c));
-        chordIds.add(edgeId(b, c));
-      }
-    }
-  }
-
-  const result = (dropped: Set<string>): Map<string, number[]> => {
-    const out = new Map<string, number[]>();
-    for (const n of nodes.values()) {
-      out.set(
-        n.key,
-        n.edges.filter((dir) => !dropped.has(edgeId(n.key, neighborKey(n, dir)))),
-      );
-    }
-    return out;
-  };
-
-  if (chordIds.size === 0 || chordIds.size > MAX_CHORD_CANDIDATES) {
-    return result(new Set());
-  }
-
-  // Connected components of the course graph under a given dropped-edge set;
-  // pruning must never split a river, so components must match the raw graph's.
-  const componentSignature = (dropped: Set<string>): string => {
-    const seen = new Set<string>();
-    const labels: string[] = [];
-    for (const start of nodes.keys()) {
-      if (seen.has(start)) continue;
-      const member: string[] = [];
-      const stack = [start];
-      seen.add(start);
-      while (stack.length > 0) {
-        const k = stack.pop()!;
-        member.push(k);
-        const n = nodes.get(k)!;
-        for (const dir of n.edges) {
-          const nb = neighborKey(n, dir);
-          if (!seen.has(nb) && !dropped.has(edgeId(k, nb))) {
-            seen.add(nb);
-            stack.push(nb);
-          }
-        }
-      }
-      labels.push(member.sort().join(","));
-    }
-    return labels.sort().join(";");
-  };
-
-  const chords = [...chordIds].sort();
-  const affected = new Set<string>();
-  for (const id of chords) {
-    const [a, b] = id.split("|");
-    affected.add(a);
-    affected.add(b);
-  }
-  const rawSignature = componentSignature(new Set());
-
-  let best: Set<string> = new Set();
-  let bestScore = Infinity;
-  let bestSize = Infinity;
-  for (let mask = 0; mask < 1 << chords.length; mask++) {
-    const dropped = new Set<string>();
-    for (let i = 0; i < chords.length; i++) {
-      if (mask & (1 << i)) dropped.add(chords[i]);
-    }
-    if (componentSignature(dropped) !== rawSignature) continue;
-    let score = 0;
-    for (const key of affected) {
-      const n = nodes.get(key)!;
-      score += shapePenalty(
-        n.edges.filter((dir) => !dropped.has(edgeId(key, neighborKey(n, dir)))),
-      );
-    }
-    // Deterministic: lower score, then fewer drops, then lower bitmask (chords
-    // are lexicographically sorted, so the whole ordering is stable).
-    if (score < bestScore || (score === bestScore && dropped.size < bestSize)) {
-      best = dropped;
-      bestScore = score;
-      bestSize = dropped.size;
-    }
-  }
-  return result(best);
+  return course;
 }
 
 export interface OrientedTile {
@@ -307,7 +285,7 @@ const ORIENTED_TRIPLES: Readonly<Record<string, OrientedTile>> = {
  * more edges are likewise unmodelled. Both fall back to the generic `00` tile
  * as a defensive render, not an expected map state.
  */
-export function orientedRiverTile(edges: number[]): OrientedTile | null {
+export function orientedRiverTile(edges: readonly number[]): OrientedTile | null {
   if (edges.length === 1) {
     return ORIENTED_SINGLES[`${edges[0]}`] ?? null;
   }
