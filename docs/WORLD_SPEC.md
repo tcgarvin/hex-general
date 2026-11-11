@@ -560,6 +560,22 @@ units block unless they are leaving this turn, a hostile hex can end a move (an 
 but not be passed, and an engaged unit can't step from one hostile-adjacent hex to
 another.
 
+**As built (2026-11-11): relief swaps and the turn report.** A relief in place or
+friendly swap (§4.7) is ordered from the board with Shift+click on a neighbouring unit
+of yours while one of your deployed units is selected, or with the "Swap with" buttons
+the unit panel shows when a deployed friend stands next door. It stages two one-hex
+Move orders, each unit into the other's hex, so both step on pulse 1, where the engine
+resolves the pair as a swap (`_friendly_cycles` in `movement.py`). The swap is refused
+when both hexes touch a visible hostile deployed unit, because ZOC would block both
+steps. The Army list reads "relieve (q,r)" for the unit stepping up into a hex next to
+the enemy, "relieved by ..." for the one falling back, and "swap with ..." otherwise.
+Clearing either order clears both. The turn report lists income and upkeep, then the
+build and recruits paid after them, and ends on the stocks the header shows. A column
+that halted on contact gets one line, and when no other player's unit is in sight near
+it, the line names the garrisoned site it most likely met, from the static map. Each
+fight is one line with both sides' losses and the HP left. Each report line keeps the
+index of the replay event it came from (`eventIndex`), for playback to highlight it.
+
 ## 12. Implementation phases
 
 | Phase | Delivers | Gate |
