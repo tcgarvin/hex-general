@@ -53,4 +53,19 @@ describe("contactSources", () => {
     const keys = contactSources(state, map, "me").map((a) => hexKey(a.q, a.r));
     expect(keys.sort()).toEqual([hexKey(0, 0), hexKey(3, offsetToAxial(3, 0).r)].sort());
   });
+
+  it("counts the hexes beside a site whose garrison has several units", () => {
+    const wide = decodeWorldMap({
+      width: 9,
+      height: 9,
+      terrain: ".".repeat(81),
+      roads: ".".repeat(81),
+      sites: [{ coord: { q: 4, r: 2 }, kind: "steel_mill", garrison: 3, level: 1 }],
+    });
+    const state = { units: [], settlements: [{ coord: { q: 4, r: 2 }, controlled_by: null }] } as unknown as WorldState;
+    const zone = contactZone(contactSources(state, wide, "me"));
+    // Four from the site, three from the gun that may stand beside it.
+    expect(zone.has(hexKey(4, 6))).toBe(true);
+    expect(zone.has(hexKey(4, 7))).toBe(false);
+  });
 });

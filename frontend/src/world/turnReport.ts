@@ -17,7 +17,7 @@ import type { ReplayEvent } from "@/lib/api/types";
 import { eventLines, type NameOf, type Naming } from "@/replay/eventText";
 
 import { NEUTRAL_OWNER } from "./colors";
-import { DEPLOY_DISTANCE } from "./contact";
+import { DEPLOY_DISTANCE, SPREAD_GARRISON_TIER } from "./contact";
 import type { MapSite } from "./worldMap";
 
 type UnitType = components["schemas"]["UnitType"];
@@ -421,7 +421,8 @@ export function contactCause(at: Axial, viewer: string, context: ReportContext |
   let best: { site: MapSite; d: number } | null = null;
   for (const site of context.sites) {
     if (site.garrison <= 0 || !neutral.has(coordText(site.coord))) continue;
-    const d = axialDistance(site.coord, at);
+    // A garrison of several units stands on the site and beside it.
+    const d = axialDistance(site.coord, at) - (site.garrison >= SPREAD_GARRISON_TIER ? 1 : 0);
     if (d <= reach && (best === null || d < best.d)) best = { site, d };
   }
   if (best === null) return "the enemy";

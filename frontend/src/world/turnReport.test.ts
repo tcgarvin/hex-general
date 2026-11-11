@@ -214,6 +214,16 @@ describe("turnReport: spending and contact", () => {
     );
   });
 
+  it("names a several-unit garrison met one hex further out, by the unit beside its site", () => {
+    const spread: ReportContext = {
+      sites: [{ coord: coord(10, 0), kind: "steel_mill", garrison: 3, level: 2 }],
+      settlements: [{ coord: coord(10, 0), controlled_by: null }],
+      units: [],
+    };
+    expect(contactCause(coord(5, 0), ME, spread)).toBe("the garrison at the steel mill (10,0)");
+    expect(contactCause(coord(4, 0), ME, spread)).toBe("the enemy");
+  });
+
   it("says the enemy when a player's unit is in sight, or nothing on the map explains it", () => {
     expect(contactCause(coord(6, 0), ME, { ...context, units: [unit(9, "s2", coord(8, 0))] })).toBe("the enemy");
     expect(contactCause(coord(0, 0), ME, context)).toBe("the enemy"); // the mill is out of reach
