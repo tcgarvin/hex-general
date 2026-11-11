@@ -23,7 +23,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from app.engine.economy_rules import Building, SiteKind, Stocks, WorldEconomy
-from app.engine.hex_coords import Axial, distance
+from app.engine.hex_coords import Axial
 from app.engine.stats import (
     COLUMN_RULES,
     MUSTER_BANK_CAP,
@@ -287,10 +287,21 @@ def default_facing(coord: Axial, owner: PlayerId, units: Iterable[Unit]) -> Faci
     With no enemies on the board, or an enemy in the same column, use
     `DEFAULT_FACING`.
     """
-    enemies = [u for u in units if u.owner != owner]
-    if not enemies:
+    # One pass with the distance inlined: recruitment asks this per recruit over
+    # every unit on a world board. Same pick as `min` over (distance, id).
+    q, r = coord.q, coord.r
+    nearest: Unit | None = None
+    best = (0, 0)
+    for unit in units:
+        if unit.owner == owner:
+            continue
+        dq = unit.coord.q - q
+        dr = unit.coord.r - r
+        key = ((abs(dq) + abs(dq + dr) + abs(dr)) // 2, unit.id)
+        if nearest is None or key < best:
+            nearest, best = unit, key
+    if nearest is None:
         return DEFAULT_FACING
-    nearest = min(enemies, key=lambda u: (distance(coord, u.coord), u.id))
     if nearest.coord.q > coord.q:
         return Facing.RIGHT
     if nearest.coord.q < coord.q:
