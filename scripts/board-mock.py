@@ -61,6 +61,11 @@ sprite on that edge (plus lake-lake ``edge_*``/``vert_*`` joins like woods).
 The **edge rule** (``edge_direction``, below the mouth rule) does the same for a
 river or bridge hex on the map border: its course runs off the map instead of
 ending in a cap.
+
+``--variety DIR --variety-density low|medium|high`` (opt-in, candidates only, not
+in the frontend): decorates open country with plains feature, homestead and
+roadside variants by a deterministic per-hex rule (``variety_picks``, written to
+port to ``hexTile.ts``); off by default, so other renders are unchanged.
 """
 
 from __future__ import annotations
@@ -1184,6 +1189,268 @@ class SiteSet:
         return files[variant_index(h.q, h.r, len(files))]
 
 
+# ==============================================================================
+# Variety (opt-in, candidates only; not in the frontend yet)
+# ==============================================================================
+#
+# Purely visual decoration of open country, chosen per hex from static map data
+# only (terrain, roads, sites): never units or ownership, and nothing the engine
+# sees. Written to port line for line to frontend/src/board/hexTile.ts:
+#
+#   1. Excluded hexes: any hex covered by a site (``SiteSet`` footprints, bases
+#      included) is never decorated.
+#   2. Homestead candidates: undecorated plains hexes (no road, no site) next to
+#      a road-carrying hex or a town/city hex, not next to a base hex, with
+#      ``roll(HOME) < home_town`` (next to a town/city) or ``< home_road``.
+#   3. Nature candidates: the other plains hexes (no road, no site) with
+#      ``roll(NATURE) < nature``.
+#   4. Roadside candidates: plains road hexes whose baked road shape has
+#      roadside variants, with ``roll(ROAD) < road_town`` (a town/city within
+#      2 hexes) or ``< road_open``.
+#   5. No clusters: a homestead candidate is kept only if it outranks every
+#      adjacent homestead candidate (``rank``: ``roll(RANK)``, ties by q then
+#      r). Nature and roadside candidates rank as one pool the same way, and are
+#      also dropped next to a kept homestead. So no two decorated hexes touch.
+#   6. Variant: ``salted_index(q, r, PICK, count)`` over the kind's files (a
+#      roadside pick keeps the road hex's mirror flag).
+#
+# Probabilities are per mille (``roll`` is ``salted_index(q, r, salt, 1000)``).
+
+VARIETY_SALT_NATURE = 11
+VARIETY_SALT_HOME = 12
+VARIETY_SALT_ROAD = 13
+VARIETY_SALT_RANK = 14
+VARIETY_SALT_PICK = 15
+VARIETY_KINDS = ("nature", "home", "road")
+SETTLEMENTS = ("town", "city")
+
+
+@dataclass(frozen=True)
+class VarietyDensity:
+    """Per-mille candidate probabilities (before the no-cluster rule)."""
+
+    nature: int
+    home_road: int
+    home_town: int
+    road_open: int
+    road_town: int
+
+
+VARIETY_DENSITIES: dict[str, VarietyDensity] = {
+    "low": VarietyDensity(
+        nature=70, home_road=90, home_town=200, road_open=60, road_town=160
+    ),
+    "medium": VarietyDensity(
+        nature=140, home_road=160, home_town=350, road_open=120, road_town=300
+    ),
+    "high": VarietyDensity(
+        nature=240, home_road=260, home_town=550, road_open=220, road_town=480
+    ),
+}
+
+
+def salted_index(q: int, r: int, salt: int, count: int) -> int:
+    """``variant_index`` with a third hash term ``salt`` (as ``join_variant_index``):
+    an independent stable value in ``[0, count)`` per (hex, salt)."""
+    if count <= 1:
+        return 0
+    h_float = (
+        float(_to_int32(q)) * 0x1F1F1F1F
+        + float(_to_int32(r)) * 0x85EBCA6B
+        + float(salt) * 0x27D4EB2F
+    )
+    h = _to_int32(_to_uint32(h_float) ^ (_to_uint32(h_float) >> 15))
+    h = _imul(h, 0x2C1B3C6D)
+    h = _to_int32(h ^ ((h % (1 << 32)) >> 12))
+    return abs(h) % count
+
+
+@dataclass(frozen=True)
+class VarietySet:
+    """Variety tiles: ``<root>/nature/*.png``, ``<root>/home/*.png`` and
+    ``<root>/road/road-<shape>-<label>.png`` (shape e.g. ``straight_v``)."""
+
+    root: Path
+    nature: list[Path]
+    home: list[Path]
+    road: dict[str, list[Path]]  # oriented shape -> variants
+
+    @classmethod
+    def discover(cls, root: Path) -> VarietySet:
+        if not root.is_dir():
+            raise TileSetError(f"variety directory not found: {root}")
+        nature = [
+            root / "nature" / n
+            for n in locale_sorted(p.name for p in (root / "nature").glob("*.png"))
+        ]
+        home = [
+            root / "home" / n
+            for n in locale_sorted(p.name for p in (root / "home").glob("*.png"))
+        ]
+        road: dict[str, list[Path]] = {}
+        for name in locale_sorted(p.name for p in (root / "road").glob("*.png")):
+            m = re.match(r"^road-([a-z_]+)-[A-Za-z0-9]+\.png$", name)
+            if m is None:
+                raise TileSetError(
+                    f"{root}/road/{name}: expected road-<shape>-<label>.png"
+                )
+            road.setdefault(m.group(1), []).append(root / "road" / name)
+        if not nature or not home:
+            raise TileSetError(
+                f"variety directory needs nature/*.png and home/*.png: {root}"
+            )
+        return cls(root, nature, home, road)
+
+
+@dataclass(frozen=True)
+class VarietyPick:
+    kind: str  # one of VARIETY_KINDS
+    path: Path
+
+
+def site_hexes(game_map: GameMap) -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
+    """(every hex covered by a ``[sites]`` site, the hexes covered by bases)."""
+    covered: set[tuple[int, int]] = set()
+    bases: set[tuple[int, int]] = set()
+    for (aq, ar), (kind, level) in game_map.sites.items():
+        footprint = BASE_STAGES[level] if kind == "base" else ((0, 0),)
+        for dq, dr in footprint:
+            covered.add((aq + dq, ar + dr))
+            if kind == "base":
+                bases.add((aq + dq, ar + dr))
+    return covered, bases
+
+
+def _neighbours(q: int, r: int) -> list[tuple[int, int]]:
+    return [(q + dq, r + dr) for dq, dr in AXIAL_DIRECTIONS]
+
+
+def _rank(q: int, r: int) -> tuple[int, int, int]:
+    return salted_index(q, r, VARIETY_SALT_RANK, 1000), q, r
+
+
+def _settlement_within(game_map: GameMap, q: int, r: int, radius: int) -> bool:
+    for dq in range(-radius, radius + 1):
+        for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1):
+            if game_map.terrain_at(q + dq, r + dr) in SETTLEMENTS:
+                return True
+    return False
+
+
+def variety_picks(
+    game_map: GameMap,
+    road_tiles: dict[str, RoadTileRef],
+    variety: VarietySet,
+    density: VarietyDensity,
+) -> dict[tuple[int, int], VarietyPick]:
+    """The decorated hexes of the whole map (see the rule above)."""
+    covered, bases = site_hexes(game_map)
+    roll = salted_index
+    home_c: set[tuple[int, int]] = set()
+    nature_c: set[tuple[int, int]] = set()
+    road_c: dict[tuple[int, int], str] = {}  # hex -> oriented shape
+    for h in game_map.hexes:
+        at = (h.q, h.r)
+        if at in covered or h.terrain != "plains":
+            continue
+        nbrs = [game_map.hex_at(*n) for n in _neighbours(h.q, h.r)]
+        if h.road:
+            ref = road_tiles.get(_hex_key(h.q, h.r))
+            if ref is None:
+                continue
+            shape = ref.lookup.removeprefix("road/plains_")
+            if shape not in variety.road:
+                continue
+            p = (
+                density.road_town
+                if _settlement_within(game_map, h.q, h.r, 2)
+                else density.road_open
+            )
+            if roll(h.q, h.r, VARIETY_SALT_ROAD, 1000) < p:
+                road_c[at] = shape
+            continue
+        near_town = any(n is not None and n.terrain in SETTLEMENTS for n in nbrs)
+        near_road = any(_is_road_like(n) for n in nbrs)
+        near_base = any(n in bases for n in _neighbours(h.q, h.r))
+        if (near_town or near_road) and not near_base:
+            p = density.home_town if near_town else density.home_road
+            if roll(h.q, h.r, VARIETY_SALT_HOME, 1000) < p:
+                home_c.add(at)
+                continue
+        if roll(h.q, h.r, VARIETY_SALT_NATURE, 1000) < density.nature:
+            nature_c.add(at)
+
+    def outranks(at: tuple[int, int], rivals: set[tuple[int, int]] | dict) -> bool:
+        return all(n not in rivals or _rank(*at) > _rank(*n) for n in _neighbours(*at))
+
+    homes = {at for at in home_c if outranks(at, home_c)}
+    others = nature_c | set(road_c)  # nature and roadside rank as one pool
+    picks: dict[tuple[int, int], VarietyPick] = {}
+    for at in homes:
+        picks[at] = VarietyPick(
+            "home", variety.home[roll(*at, VARIETY_SALT_PICK, len(variety.home))]
+        )
+    for at in others:
+        if not outranks(at, others) or any(n in homes for n in _neighbours(*at)):
+            continue
+        if at in road_c:
+            files = variety.road[road_c[at]]
+            picks[at] = VarietyPick(
+                "road", files[roll(*at, VARIETY_SALT_PICK, len(files))]
+            )
+        else:
+            picks[at] = VarietyPick(
+                "nature",
+                variety.nature[roll(*at, VARIETY_SALT_PICK, len(variety.nature))],
+            )
+    return picks
+
+
+def variety_shares(
+    game_map: GameMap, picks: dict[tuple[int, int], VarietyPick]
+) -> dict[str, float]:
+    """Decorated share of each eligible pool: open plains (nature), plains next
+    to a road or town (home), plains road hexes (road), and of all plains."""
+    covered, _ = site_hexes(game_map)
+    plains = [
+        h for h in game_map.hexes if h.terrain == "plains" and (h.q, h.r) not in covered
+    ]
+    open_plains = [h for h in plains if not h.road]
+    beside = [
+        h
+        for h in open_plains
+        if any(
+            (n := game_map.hex_at(*at)) is not None
+            and (n.terrain in SETTLEMENTS or _is_road_like(n))
+            for at in _neighbours(h.q, h.r)
+        )
+    ]
+    roads = [h for h in plains if h.road]
+    count = Counter(p.kind for p in picks.values())
+    by_town = [
+        h
+        for h in beside
+        if any(game_map.terrain_at(*at) in SETTLEMENTS for at in _neighbours(h.q, h.r))
+    ]
+    town_homes = sum(
+        1
+        for h in by_town
+        if (p := picks.get((h.q, h.r))) is not None and p.kind == "home"
+    )
+
+    def share(n: int, pool: list[Hex]) -> float:
+        return round(n / len(pool), 4) if pool else 0.0
+
+    return {
+        "plains_hexes": len(plains),
+        "nature_of_open_plains": share(count["nature"], open_plains),
+        "home_of_plains_beside_road_or_town": share(count["home"], beside),
+        "home_of_plains_beside_town": share(town_homes, by_town),
+        "road_of_plains_road_hexes": share(count["road"], roads),
+        "decorated_of_all_plains": share(sum(count.values()), plains),
+    }
+
+
 @dataclass(frozen=True)
 class TileChoice:
     """What a hex draws and why (``hexTile.ts hexTileRef`` plus provenance)."""
@@ -1749,6 +2016,8 @@ class RenderReport:
     edge_outlets: dict[str, int] = field(default_factory=dict)  # edge rule results
     # lake hexes whose mask has no tile in a mask-painted set (hex, mask)
     lake_missing: list[tuple[Hex, int]] = field(default_factory=list)
+    # hexes drawn with a variety tile (only with --variety)
+    variety: list[tuple[Hex, VarietyPick]] = field(default_factory=list)
 
 
 def render(
@@ -1762,6 +2031,8 @@ def render(
     grid_style: str = "dark",
     draw_vector_roads: bool = True,
     sites: SiteSet | None = None,
+    variety: VarietySet | None = None,
+    variety_density: str = "medium",
 ) -> tuple[Image.Image, RenderReport]:
     """Render the map; tile selection always sees the whole map, even when cropped.
 
@@ -1773,6 +2044,9 @@ def render(
     renderer does: a road hex without a baked road tile shows its base tile.
     ``sites`` (opt-in) draws the map's ``[sites]`` hexes from that set in place of
     their plains tile; without it the sites section is ignored.
+    ``variety`` (opt-in, candidates) decorates open country by ``variety_picks``
+    at ``variety_density`` (a ``VARIETY_DENSITIES`` key); site hexes need
+    ``sites`` to be excluded, so the map's ``[sites]`` count either way.
     """
     if grid_style not in GRID_STYLES:
         raise ValueError(f"grid_style must be one of {GRID_STYLES}, got {grid_style!r}")
@@ -1826,6 +2100,12 @@ def render(
             anchor = game_map.by_axial[(aq, ar)]
             for (dq, dr), tile in sites.footprint_tiles(anchor, kind, level).items():
                 site_tiles[(aq + dq, ar + dr)] = tile
+    picks: dict[tuple[int, int], VarietyPick] = {}
+    if variety is not None:
+        picks = variety_picks(
+            game_map, road_tiles, variety, VARIETY_DENSITIES[variety_density]
+        )
+    variety_used: list[tuple[Hex, VarietyPick]] = []
     for h, (x, y) in zip(shown, centres):
         choice = choose_tile(h, library, river_course, road_tiles, road_course, masks)
         if choice is None:
@@ -1840,6 +2120,15 @@ def render(
         if (h.q, h.r) in site_tiles:
             path, mirror = site_tiles[(h.q, h.r)], False
             site_choices.append((h, path))
+        elif (h.q, h.r) in picks:
+            pick = picks[(h.q, h.r)]
+            if pick.kind == "road" and choice.kind != "road":
+                raise TileSetError(
+                    f"roadside variety at col={h.col}, row={h.row} but the hex drew "
+                    f"no baked road tile ({choice.group.key})"
+                )
+            path, mirror = pick.path, mirror if pick.kind == "road" else False
+            variety_used.append((h, pick))
         canvas.composite(
             sprites.tile(path, mirror),
             *canvas.to_screen(x, y),
@@ -1906,6 +2195,7 @@ def render(
         mouths,
         edge_outlets,
         lake_missing,
+        variety_used,
     )
 
 
@@ -1949,6 +2239,11 @@ def format_report(report: RenderReport) -> str:
         )  # a staged base lists one entry per member hex
         listed = ", ".join(f"{f} x{n}" for f, n in sorted(site_usage.items()))
         lines.append(f"  sites   {len(report.sites)} hexes: {listed}")
+
+    if report.variety:
+        kinds = Counter(p.kind for _, p in report.variety)
+        listed = ", ".join(f"{k} x{kinds[k]}" for k in VARIETY_KINDS if kinds[k])
+        lines.append(f"  variety {len(report.variety)} hexes: {listed}")
 
     if report.mouths:
         listed = ", ".join(
@@ -2036,6 +2331,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="skip the vector road fallback (the world renderer draws none)",
     )
+    parser.add_argument(
+        "--variety",
+        type=Path,
+        default=None,
+        help="variety tiles dir (nature/, home/, road/road-<shape>-*.png): opt-in "
+        "decoration of open country (candidates; see variety_picks)",
+    )
+    parser.add_argument(
+        "--variety-density", choices=tuple(VARIETY_DENSITIES), default="medium"
+    )
     args = parser.parse_args(argv)
     if not 0.0 <= args.drift < 1.0:
         parser.error(f"--drift must be in [0, 1), got {args.drift}")
@@ -2060,6 +2365,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         grid_style=args.grid_style,
         draw_vector_roads=not args.no_vector_roads,
         sites=None if args.sites is None else SiteSet.discover(args.sites),
+        variety=None if args.variety is None else VarietySet.discover(args.variety),
+        variety_density=args.variety_density,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     image.save(args.out)
