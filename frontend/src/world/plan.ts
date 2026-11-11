@@ -14,6 +14,7 @@ import {
   add,
   covers,
   levelOf,
+  levelThisTurn,
   NO_STOCKS,
   RESOURCES,
   stocksOf,
@@ -26,6 +27,7 @@ import type { SiteKind, WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
 type Unit = WorldState["units"][number];
+type Player = WorldState["players"][number];
 type UnitType = components["schemas"]["UnitType"];
 type Posture = components["schemas"]["Posture"];
 export type Submission = components["schemas"]["SubmitOrdersRequest"];
@@ -268,13 +270,34 @@ export function recruitOptions(
     const needs = RECRUIT_NEEDS[type];
     const cost = economy.recruitCost[type];
     const blocked: string[] = [];
-    if (needs !== undefined && levelOf(player, needs) < 1) blocked.push(`needs a ${needs}`);
+    if (needs !== undefined && levelThisTurn(player, needs, state.turn) < 1) blocked.push(needsText(player, needs, state.turn));
     if (occupied) blocked.push("a unit stands on the hex");
-    if (fielded >= armySize) blocked.push(`army is full (${armySize})`);
+    if (fielded >= armySize) blocked.push(armyFullText(player, economy, armySize, state.turn));
     const short = shortfall(free, cost);
     if (short !== null) blocked.push(short);
     return { type, cost, blocked };
   });
+}
+
+/**
+ * Why the army is full, and when a barracks being built will make room. A level
+ * finishing this turn already counts in `armySize` (`levelThisTurn`), so this
+ * names only one that finishes later.
+ */
+function armyFullText(player: Player, economy: Economy, armySize: number, turn: number): string {
+  const work = player.construction ?? null;
+  if (work === null || work.building !== "barracks" || work.completes_on <= turn) return `army is full (${armySize})`;
+  const grown = Math.min(economy.army.ceiling, armySize + economy.army.per_barracks * (work.level - levelOf(player, "barracks")));
+  return `army is full (${armySize}); barracks ${work.level} raises it to ${grown} from turn ${work.completes_on}`;
+}
+
+/** "needs a workshop", saying when one under construction will be ready. */
+function needsText(player: Player, building: Building, turn: number): string {
+  const work = player.construction ?? null;
+  if (work !== null && work.building === building && work.completes_on > turn) {
+    return `needs a ${building} (ready from turn ${work.completes_on})`;
+  }
+  return `needs a ${building}`;
 }
 
 function recruitsCost(plan: WorldPlan, economy: Economy): Stocks {

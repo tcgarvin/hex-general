@@ -343,6 +343,17 @@ class Player(BaseModel):
         """The completed level of ``building`` (0 if never built)."""
         return self.buildings.get(building, 0)
 
+    def level_on(self, building: Building, turn: int) -> int:
+        """The level of ``building`` once construction due by ``turn`` is done.
+
+        The economy phase finishes that construction before recruitment, so this
+        is the level a recruit ordered for turn ``turn`` meets.
+        """
+        work = self.construction
+        if work is not None and work.building is building and work.completes_on <= turn:
+            return work.level
+        return self.level(building)
+
 
 class VictoryConfig(BaseModel):
     """Scenario-defined victory parameters (SPEC §15).
@@ -516,6 +527,17 @@ class GameState(BaseModel):
 
     def unit_cap_for(self, player: PlayerId) -> int:
         """How many units ``player`` may field right now (SPEC §6.1, WORLD_SPEC §7)."""
+        return self._unit_cap(player, recruiting=False)
+
+    def recruit_cap_for(self, player: PlayerId) -> int:
+        """The army size this turn's recruits are checked against.
+
+        As `unit_cap_for`, except that a barracks level finishing this turn already
+        counts: the economy phase completes it before recruitment runs.
+        """
+        return self._unit_cap(player, recruiting=True)
+
+    def _unit_cap(self, player: PlayerId, *, recruiting: bool) -> int:
         economy = self.config.economy
         if economy is not None:
             sites = self.map.site_index
@@ -525,7 +547,12 @@ class GameState(BaseModel):
                 if s.controlled_by == player
                 and sites[s.coord].kind is not SiteKind.BASE
             )
-            barracks = self.player(player).level(Building.BARRACKS)
+            owner = self.player(player)
+            barracks = (
+                owner.level_on(Building.BARRACKS, self.turn)
+                if recruiting
+                else owner.level(Building.BARRACKS)
+            )
             return min(self.config.unit_cap, economy.army.size(barracks, held))
         rule = self.config.command_cap
         if rule is None:

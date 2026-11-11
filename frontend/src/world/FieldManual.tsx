@@ -82,7 +82,7 @@ export function FieldManual({
 }: {
   view: WorldView;
   economy: Economy;
-  /** Your army size now (the header's `/N`). */
+  /** Your army size for this turn's recruits (the header's `/N`). */
   armySize: number;
   section: ManualSection;
   onSection: (section: ManualSection) => void;
@@ -577,8 +577,9 @@ function BasePage({ ctx }: { ctx: Ctx }) {
       <H>Army size</H>
       <P>
         You can field <N>{a.base}</N> units, plus <N>{a.per_barracks}</N> per barracks level, plus 1 for every{" "}
-        <N>{a.sites_per_point}</N> sites you hold, up to <N>{a.ceiling}</N>. Yours is <N>{armySize}</N> now. Recruiting
-        stops at it.
+        <N>{a.sites_per_point}</N> sites you hold, up to <N>{a.ceiling}</N>. Yours is <N>{armySize}</N> this turn. Recruiting
+        stops at it. A building finishes before recruits appear, so a barracks level due this turn already counts for
+        this turn's recruits (and a workshop due this turn already lets you recruit guns).
       </P>
       <H>Recruiting</H>
       <Terms items={UNIT_TYPES.map((t) => [UNIT_NAME[t], `At ${recruitWhere(t)}, for ${stocks(economy.recruitCost[t], "nothing")}.`] as const)} />

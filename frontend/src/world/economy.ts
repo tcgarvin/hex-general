@@ -91,6 +91,23 @@ export function levelOf(player: Player, building: Building): number {
   return player.buildings?.[building] ?? 0;
 }
 
+/**
+ * The level of `building` this turn's economy and recruits meet: a construction
+ * due by `turn` counts, because the economy phase finishes it before settling
+ * stocks and before recruitment (`Player.level_on` in api/app/engine/models.py).
+ */
+export function levelThisTurn(player: Player, building: Building, turn: number): number {
+  const work = player.construction ?? null;
+  if (work !== null && work.building === building && work.completes_on <= turn) return work.level;
+  return levelOf(player, building);
+}
+
+/** The army size for a barracks level and a count of held sites (`ArmySize.size`). */
+export function armySizeFor(economy: Economy, barracks: number, heldSites: number): number {
+  const a = economy.army;
+  return Math.min(a.ceiling, a.base + a.per_barracks * barracks + Math.floor(heldSites / a.sites_per_point));
+}
+
 export function stocksOf(player: Player): Stocks {
   return player.stocks ?? NO_STOCKS;
 }
@@ -132,14 +149,10 @@ export function forecast(state: WorldState, map: WorldMap, slot: string): Foreca
   }
   const net = sub(income, upkeep);
   const raw = add(stocksOf(player), net);
-  const storage = economy.storage[levelOf(player, "depot")];
+  const storage = economy.storage[levelThisTurn(player, "depot", state.turn)];
   const clamp = (n: number) => Math.max(0, Math.min(storage, n));
   const short = (["fuel", "manpower"] as const).filter((r) => raw[r] < 0);
-  const a = economy.army;
-  const armySize = Math.min(
-    a.ceiling,
-    a.base + a.per_barracks * levelOf(player, "barracks") + Math.floor(heldSites / a.sites_per_point),
-  );
+  const armySize = armySizeFor(economy, levelThisTurn(player, "barracks", state.turn), heldSites);
   return {
     income,
     upkeep,

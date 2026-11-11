@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/lib/api/schema";
 
-import { economyOf } from "./economy";
+import { economyOf, forecast } from "./economy";
 import {
   buildOption,
   EMPTY_PLAN,
@@ -196,6 +196,34 @@ describe("base orders", () => {
       ["a unit stands on the hex", "army is full (4)", "needs 2 more manpower"],
       ["needs a workshop", "a unit stands on the hex", "army is full (4)", "needs 1 more manpower and 3 more steel"],
     ]);
+  });
+
+  it("counts a barracks or workshop finishing this turn, as the engine does", () => {
+    // Four units fill an army of 4. The barracks finishes with this turn (5):
+    // the economy phase completes it before recruits appear, so the army is 6.
+    const full = [unit(1, 4), unit(2, 4), unit(3, 4), unit(4, 4)];
+    const finishing = state({ units: full, construction: { building: "barracks", level: 1, completes_on: 5 } });
+    const size = forecast(finishing, map, "p").armySize;
+    expect(size).toBe(6);
+    expect(recruitOptions(finishing, map, economyOf(finishing), "p", at(0), EMPTY_PLAN, size)[0].blocked).toEqual([]);
+    const plan: WorldPlan = { ...EMPTY_PLAN, recruits: { a: { coord: at(0), type: "infantry" } } };
+    expect(planProblems(plan, finishing, economyOf(finishing), "p", size)).toEqual([]);
+
+    // One that finishes next turn does not count yet, and the reason says when it will.
+    const later = state({ units: full, construction: { building: "barracks", level: 1, completes_on: 6 } });
+    const laterSize = forecast(later, map, "p").armySize;
+    expect(laterSize).toBe(4);
+    expect(recruitOptions(later, map, economyOf(later), "p", at(0), EMPTY_PLAN, laterSize)[0].blocked).toEqual([
+      "army is full (4); barracks 1 raises it to 6 from turn 6",
+    ]);
+
+    const workshop = state({ construction: { building: "workshop", level: 1, completes_on: 5 } });
+    const guns = recruitOptions(workshop, map, economyOf(workshop), "p", at(0));
+    expect(guns.find((o) => o.type === "artillery")?.blocked).toEqual([]);
+    const slowWorkshop = state({ construction: { building: "workshop", level: 1, completes_on: 7 } });
+    expect(
+      recruitOptions(slowWorkshop, map, economyOf(slowWorkshop), "p", at(0)).find((o) => o.type === "artillery")?.blocked,
+    ).toEqual(["needs a workshop (ready from turn 7)"]);
   });
 
   it("lets a recruit staged here be swapped without counting itself", () => {

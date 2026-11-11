@@ -302,7 +302,9 @@ def _validate_world_recruitments(
     sites = state.map.site_index
     control_at = {s.coord: s.controlled_by for s in state.settlements}
     unit_count = sum(1 for u in state.units if u.owner == slot)
-    cap = state.unit_cap_for(slot)
+    # Buildings finishing this turn count: the economy phase completes them
+    # before recruitment, so the engine checks the bigger army and the workshop.
+    cap = state.recruit_cap_for(slot)
     claimed: set[Axial] = set()
     for recruit in recruitments:
         if recruit.owner != slot:
@@ -316,7 +318,7 @@ def _validate_world_recruitments(
                 f"{recruit.type} recruits only at {allowed}, not {recruit.coord}"
             )
         needs = WORLD_RECRUIT_NEEDS.get(recruit.type)
-        if needs is not None and player.level(needs) < 1:
+        if needs is not None and player.level_on(needs, state.turn) < 1:
             raise OrderValidationError(f"{recruit.type} needs a {needs}")
         if control_at.get(recruit.coord) != slot:
             raise OrderValidationError(f"{recruit.coord} is not held by {slot!r}")

@@ -7,6 +7,8 @@ from collections.abc import Sequence
 import pytest
 
 from app.engine.economy_rules import Building, Stocks
+from app.engine.events import WorldUnitRecruited
+from app.engine.execution import resolve_execution
 from app.engine.models import Construction, EconomyOrders, GameState, Recruitment
 from app.engine.stats import UnitType
 from app.games.validation import OrderValidationError, validate_submission
@@ -119,3 +121,40 @@ def test_base_orders_are_refused_in_a_v01_game() -> None:
     )
     with pytest.raises(OrderValidationError, match="world games"):
         _validate(v01, economy=EconomyOrders(owner="p"))
+
+
+def _full_army(construction: Construction, turn: int) -> GameState:
+    # Four units fill the army size of 4 (no barracks, only the base held).
+    units = [unit(i, INF, 2 + i, 3) for i in range(1, 5)]
+    return world(units=units, stocks=RICH, construction=construction, turn=turn)
+
+
+def test_a_recruit_counts_a_barracks_that_finishes_this_turn() -> None:
+    # The economy phase completes the barracks before recruits appear, so the
+    # engine checks the bigger army; validation must agree (playtest 2026-11-11).
+    barracks = Construction(building=Building.BARRACKS, level=1, completes_on=3)
+    state = _full_army(barracks, turn=3)
+    recruit = Recruitment(owner="p", type=INF, coord=BASE)
+    _validate(state, [recruit])
+
+    _, events = resolve_execution(state, [], [recruit])
+    assert [e.kind for e in events if isinstance(e, WorldUnitRecruited)] == [
+        "world_unit_recruited"
+    ]
+
+
+def test_a_recruit_does_not_count_a_barracks_finishing_later() -> None:
+    barracks = Construction(building=Building.BARRACKS, level=1, completes_on=4)
+    with pytest.raises(OrderValidationError, match="army size of 4"):
+        _validate(
+            _full_army(barracks, turn=3), [Recruitment(owner="p", type=INF, coord=BASE)]
+        )
+
+
+def test_a_gun_recruit_counts_a_workshop_that_finishes_this_turn() -> None:
+    workshop = Construction(building=Building.WORKSHOP, level=1, completes_on=3)
+    recruit = Recruitment(owner="p", type=ART, coord=BASE)
+    _validate(world(stocks=RICH, construction=workshop, turn=3), [recruit])
+    later = Construction(building=Building.WORKSHOP, level=1, completes_on=4)
+    with pytest.raises(OrderValidationError, match="needs a workshop"):
+        _validate(world(stocks=RICH, construction=later, turn=3), [recruit])
