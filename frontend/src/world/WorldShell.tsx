@@ -768,13 +768,15 @@ function ArmyPanel({
                     selected ? "bg-wood-700 text-parchment-200" : "hover:bg-parchment-400/40"
                   }`}
                 >
+                  {/* Sized for glyph, "4th Inf" and a column glyph, so "no orders" fits beside
+                      the pips in the 240 px column. */}
                   <span
-                    className="flex w-[5.5rem] shrink-0 items-center gap-1"
+                    className="flex w-[4.75rem] shrink-0 items-center gap-1"
                     title={`${name} (#${u.id})${u.posture === "column" ? ", packed column" : ""}`}
                   >
-                    <Glyph name={u.type} size={15} />
+                    <Glyph name={u.type} size={14} />
                     <span className="truncate">{short}</span>
-                    {u.posture === "column" && <Glyph name="column" size={14} label="Packed column" />}
+                    {u.posture === "column" && <Glyph name="column" size={12} label="Packed column" className="-ml-0.5" />}
                   </span>
                   <HpPips hp={u.hp} onDark={selected} />
                   <span className="ml-auto truncate text-xs" title={text}>
