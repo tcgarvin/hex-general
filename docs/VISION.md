@@ -266,6 +266,36 @@ non-world games and drops `games.invite_token`. The deployed site still runs the
 build until the cutover deploy, and the turn-clock infra
 (`infra/setup-world-clock.sh`) is still not applied.
 
+**Cutover runbook (audited 2026-11-11).** In order:
+
+1. Decide the world size and who may join. Agreed: a rehearsal world of about 60
+   slots with about 30 bots on the `twice_daily` clock.
+2. Dump the old games: declined. Losing the 6 old 2-player games is accepted.
+3. Push `main`. The API, frontend and Supabase workflows run in parallel (plus the
+   tests-only `scripts.yml`), so expect a few minutes where the new SPA and the old
+   API disagree. The API deploys with `--memory 1Gi` (owner-approved, 2026-11-11).
+4. Confirm the remote has all 14 migrations and a `game_maps` table.
+5. Run `infra/setup-world-clock.sh` (owner confirmation first: it creates the
+   `hex-clock` service account and the `hex-world-clock` Scheduler job).
+6. `gcloud scheduler jobs run hex-world-clock` and check the job got a 200, not a
+   403. The API requires `email_verified` in the OIDC token, which is unverified for
+   Scheduler's tokens until this run. Then `verify-stack` (it checks the world routes,
+   the clock config and the live commit).
+7. Create the world with `scripts/prod-world.py create --slots 60 --bots 30`.
+8. Join, submit a plan, and watch the first 01:00 or 13:00 America/New_York tick.
+9. Add alerting on clock failures (the endpoint answers 500 when a world fails).
+
+Facts the audit established:
+- `retire_matches` deletes all 6 production games (auth users survive) and drops
+  `invite_token`, so the old API revision cannot be rolled back to after it runs.
+- Cloud Run ran at 512 MiB / 1 CPU / 300 s timeout / scale to zero, and `api.yml`
+  set none of these; it now sets only the memory (1 GiB). One 200-slot world measured
+  387-410 MiB across ticks in the production image, and `MapCache` holds 4 maps, so
+  more than one big world per instance would not have fit in 512 MiB.
+- Clients poll every 10 s (every 2 s once a turn is due).
+- A failed tick leaves the turn due: plan submission answers 409 until a tick
+  succeeds. `turns.state_after` is the natural restore point.
+
 **Before the live playtest (decided, 2026-11-09):**
 - **Fun before contact.** The pre-contact loop of expansion and economy has to be fun
   on its own.

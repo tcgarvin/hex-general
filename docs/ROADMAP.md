@@ -860,7 +860,10 @@ vs the bot: the AI opponent workstream — [`AI_SPEC.md`](./AI_SPEC.md) §10
 Phases 0–4, evaluation/scripted/search policies + vs-bot service integration and
 frontend hub — shipped in parallel with Phases 8–10).*
 
-## Phase 11 — Tuning, scenario polish, success criteria ← current
+## Phase 11: Tuning, scenario polish, success criteria (superseded)
+
+*Not current: the 2-player game is retired. Current work is `WORLD_SPEC.md` §12
+(W7, the live world playtest) and the cutover runbook in `VISION.md` §13.*
 
 **Goal:** §18 / §13.2.
 
