@@ -29,7 +29,12 @@ from app.engine.victory import VictoryReason, VictoryStatus
 from app.engine.visibility import visible_hexes
 from app.games.auth import AuthIdentity
 from app.games.deps import current_identity, get_repo, real_identity
-from app.games.schemas import DevProfile, WorldState
+from app.games.schemas import (
+    MAX_PATH_STEPS,
+    MAX_PLAN_ENTRIES,
+    DevProfile,
+    WorldState,
+)
 from app.main import app
 from games.fake_repo import FakeGameRepo
 
@@ -249,6 +254,45 @@ def test_an_illegal_order_is_a_422(client: TestClient) -> None:
     )
     assert response.status_code == 422
     assert "unknown unit" in response.json()["detail"]
+
+
+@pytest.mark.parametrize(
+    ("field", "entry"),
+    [
+        ("orders", {"kind": "hold", "unit_id": 1}),
+        (
+            "recruitments",
+            {"owner": "s003", "type": "infantry", "coord": {"q": 0, "r": 0}},
+        ),
+        ("disband", 1),
+    ],
+)
+def test_an_oversized_plan_is_a_422_before_any_validation(
+    client: TestClient, repo: FakeGameRepo, field: str, entry: object
+) -> None:
+    game_id = _create(client)
+    _join(client, game_id)
+    plan = {field: [entry] * (MAX_PLAN_ENTRIES + 1)}
+
+    response = client.post(f"/worlds/{game_id}/orders", json=plan, headers=_as(PLAYER))
+
+    assert response.status_code == 422
+    assert [e["type"] for e in response.json()["detail"]] == ["too_long"]
+    assert f"at most {MAX_PLAN_ENTRIES} items" in response.text
+    assert repo.list_turn_orders(game_id, 0) == []
+
+
+def test_an_overlong_path_is_a_422_naming_the_bound(client: TestClient) -> None:
+    game_id = _create(client)
+    _join(client, game_id)
+    path = [{"q": 0, "r": 0}] * (MAX_PATH_STEPS + 1)
+    response = client.post(
+        f"/worlds/{game_id}/orders",
+        json={"orders": [{"kind": "march", "unit_id": 1, "path": path}]},
+        headers=_as(PLAYER),
+    )
+    assert response.status_code == 422
+    assert f"at most {MAX_PATH_STEPS} are accepted" in response.text
 
 
 def test_orders_for_a_finished_world_are_a_409(

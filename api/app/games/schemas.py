@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.engine.economy_rules import Building
 from app.engine.fog import ReplayEvent
@@ -20,6 +20,8 @@ from app.engine.hex_coords import Axial
 from app.engine.models import (
     GameConfig,
     GameState,
+    MarchOrder,
+    MoveOrder,
     Order,
     Player,
     PlayerId,
@@ -29,6 +31,19 @@ from app.engine.models import (
     Unit,
     UnitId,
 )
+from app.engine.stats import UNIT_CAP
+
+MAX_PLAN_ENTRIES = 5 * UNIT_CAP
+"""Most orders, recruits or disbands one plan may carry (HTTP boundary bound).
+
+A player fields at most `UNIT_CAP` units and each takes one order, so a legal
+plan never comes near this; it only stops an oversized body from costing a
+validation pass over a huge list.
+"""
+
+MAX_PATH_STEPS = 2_000
+"""Most hexes one move or march path may list: four times the side of the
+largest world map (494 hexes at 400 slots), so no real route is refused."""
 
 
 class SubmitOrdersRequest(BaseModel):
@@ -37,17 +52,33 @@ class SubmitOrdersRequest(BaseModel):
     Every field defaults to empty: a player may legitimately submit no orders
     (every unit holds or keeps travelling), no recruits and no base orders.
     FastAPI parses ``orders`` into the discriminated `Order` union, so unknown
-    order shapes are rejected as 422 at the wire.
+    order shapes are rejected as 422 at the wire, as is a plan longer than
+    `MAX_PLAN_ENTRIES` entries per list or a path longer than `MAX_PATH_STEPS`.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    orders: list[Order] = Field(default_factory=list)
-    recruitments: list[Recruitment] = Field(default_factory=list)
+    orders: list[Order] = Field(default_factory=list, max_length=MAX_PLAN_ENTRIES)
+    recruitments: list[Recruitment] = Field(
+        default_factory=list, max_length=MAX_PLAN_ENTRIES
+    )
     # Base orders: start the next level of this building at your base, and who
     # to let go first if a shortage forces a disband this turn.
     build: Building | None = None
-    disband: list[UnitId] = Field(default_factory=list)
+    disband: list[UnitId] = Field(default_factory=list, max_length=MAX_PLAN_ENTRIES)
+
+    @field_validator("orders")
+    @classmethod
+    def _paths_are_bounded(cls, orders: list[Order]) -> list[Order]:
+        for order in orders:
+            if isinstance(order, MoveOrder | MarchOrder) and (
+                len(order.path) > MAX_PATH_STEPS
+            ):
+                raise ValueError(
+                    f"unit {order.unit_id} path has {len(order.path)} steps; "
+                    f"at most {MAX_PATH_STEPS} are accepted"
+                )
+        return orders
 
 
 class PlayerCredentials(BaseModel):
