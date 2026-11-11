@@ -36,10 +36,27 @@ describe("eventLines", () => {
       }),
     ).toEqual([
       "Blue Armor barraged Red Infantry at (5,6).",
-      "Red Infantry had +2 terrain defense.",
+      "Red Infantry had +2 terrain defence.",
       "Dealt 4 damage.",
       "Red Infantry was destroyed.",
     ]);
+  });
+
+  it("writes your unit in lower case inside a sentence", () => {
+    const naming = { player: (id: string) => id, unit: (owner: string, type: string) => (owner === "me" ? `Your ${type}` : `${owner} ${type}`) };
+    const [line] = eventLines(
+      events([
+        {
+          kind: "barrage_resolved",
+          artillery_id: 2,
+          target: { q: 1, r: 1 },
+          hit: { owner: "me", unit_type: "infantry", damage: 1, destroyed: false, hp_after: 5, terrain_bonus: 0, hold_bonus: 0 },
+        },
+      ])[0],
+      nameOf,
+      naming,
+    );
+    expect(line.text).toBe("Red Infantry barraged your infantry at (1,1).");
   });
 
   it("renders a barrage into an empty hex", () => {
@@ -85,7 +102,7 @@ describe("eventLines", () => {
       }),
     ).toEqual([
       "Blue Armor attacked Red Infantry at (3,3).",
-      "Red Infantry had +2 terrain defense.",
+      "Red Infantry had +2 terrain defence.",
       "Blue Armor dealt 3 damage.",
       "Red Infantry dealt 1 damage.",
       "Red Infantry was destroyed.",

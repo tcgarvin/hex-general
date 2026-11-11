@@ -91,6 +91,9 @@ const stocksText = (s: Stocks): string => {
   return parts.length === 0 ? "nothing" : parts.join(", ");
 };
 
+/** "Your infantry" reads "your infantry" inside a sentence. */
+const mid = (name: string): string => name.replace(/^Your /, "your ");
+
 /**
  * Render a single resolved event as one or more log lines (SPEC §16.3). `nameOf`
  * resolves the display name of units the event references only by id.
@@ -109,7 +112,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       }
       const target = naming.unit(hit.owner, hit.unit_type);
       const lines: LogLine[] = [
-        { indent: 0, text: `${firer} barraged ${target} at ${coord(event.target)}.` },
+        { indent: 0, text: `${firer} barraged ${mid(target)} at ${coord(event.target)}.` },
       ];
       const bonus = defenseBonusText(hit.terrain_bonus, hit.hold_bonus);
       if (bonus !== null) lines.push({ indent: 1, text: `${target} ${bonus}.` });
@@ -135,7 +138,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       if (defender !== undefined) {
         lines.push({
           indent: 0,
-          text: `${attackerLabel} attacked ${nameOfP(defender)} at ${coord(event.coord)}.`,
+          text: `${attackerLabel} attacked ${mid(nameOfP(defender))} at ${coord(event.coord)}.`,
         });
         const bonus = defenseBonusText(defender.terrain_bonus, defender.hold_bonus);
         if (bonus !== null) lines.push({ indent: 1, text: `${nameOfP(defender)} ${bonus}.` });
@@ -305,7 +308,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
         { indent: 0, text: `${nameOf(event.unit_id)} deployed ${where} ${DEPLOY_CAUSE[event.cause]}.` },
       ];
       if (event.disordered) {
-        lines.push({ indent: 1, text: "It is disordered: weaker defense, and it cannot attack next turn." });
+        lines.push({ indent: 1, text: "It is disordered: weaker defence, and it cannot attack next turn." });
       }
       return lines;
     }
@@ -347,11 +350,11 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
   }
 }
 
-/** "+2 terrain +1 hold defense" style suffix, or null when there is no bonus. */
+/** "+2 terrain +1 hold defence" style suffix, or null when there is no bonus. */
 function defenseBonusText(terrainBonus: number, holdBonus: number): string | null {
   const parts: string[] = [];
   if (terrainBonus > 0) parts.push(`+${terrainBonus} terrain`);
   if (holdBonus > 0) parts.push(`+${holdBonus} hold`);
   if (parts.length === 0) return null;
-  return `had ${parts.join(" ")} defense`;
+  return `had ${parts.join(" ")} defence`;
 }

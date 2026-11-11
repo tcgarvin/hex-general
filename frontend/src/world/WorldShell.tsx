@@ -597,8 +597,9 @@ function orderText(order: WorldOrder | undefined, route: PlannedRoute | undefine
     case "move":
       if (swap !== null) {
         if (swap.role === "relieves") return `relieve ${at(swap.partner.coord)}`;
-        if (swap.role === "relieved") return `relieved by ${unitTag(swap.partner)}`;
-        return `swap with ${unitTag(swap.partner)}`;
+        // The partner by number only: the Army row has no room for "Infantry #211".
+        if (swap.role === "relieved") return `relieved by #${swap.partner.id}`;
+        return `swap with #${swap.partner.id}`;
       }
       return route?.attack ? `attack ${at(route.attack)}` : `move ${order.path.length} hex${order.path.length === 1 ? "" : "es"}`;
     case "march":
