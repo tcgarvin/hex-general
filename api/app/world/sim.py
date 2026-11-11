@@ -25,11 +25,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.ai.policy import Policy
 from app.ai.world import WorldPolicy
 from app.engine.events import (
+    BarrageResolved,
     ColumnHeld,
     ColumnStuck,
     CombatResolved,
+    CombatRole,
     DeployCause,
     Event,
+    SettlementCaptured,
     TrafficJam,
     TravelEnded,
     UnitDeployed,
@@ -103,7 +106,20 @@ class SimReport(BaseModel):
     # Mean deployed units per side, per engagement per turn (see `_engagements`).
     engagement_sizes: list[float] = Field(default_factory=list)
     eliminated: dict[PlayerId, int] = Field(default_factory=dict)
+    # Sieges of garrisoned neutral sites (see `_Sieges`): captures, turns from the
+    # first attack on a site's garrison to its capture, player units destroyed
+    # fighting garrisons, and attacking units per besieged site per turn.
+    neutral_captures: int = 0
+    player_captures: int = 0
+    siege_turns: list[int] = Field(default_factory=list)
+    losses_to_garrisons: int = 0
+    siege_attackers: list[int] = Field(default_factory=list)
+    # Melee attacks on another player's unit, and how many went in with more own
+    # deployed units than the defender's within two hexes of the fight.
+    player_attacks: int = 0
+    player_attacks_superior: int = 0
     think_ms_mean: float = 0.0
+    think_ms_max: float = 0.0
     think_ms_p95: float = 0.0
     resolve_ms_max: float = 0.0
     gates: dict[str, bool] = Field(default_factory=dict)
@@ -135,6 +151,7 @@ def run_sim(
     issued_at: dict[int, int] = {}
     travel_turns: list[int] = []
     think_all: list[float] = []
+    sieges = _Sieges(state)
 
     for _ in range(turns):
         live = [p for p in ids if p not in report.eliminated]
@@ -174,6 +191,7 @@ def run_sim(
                 if event.unit_id in issued_at:
                     travel_turns.append(state.turn - issued_at.pop(event.unit_id))
         _tally(report, before, state, events, resolve_ms, max(think, default=0.0))
+        sieges.fold(report, before, state.turn, events)
         for player in live:
             if not any(u.owner == player for u in state.units) and not any(
                 s.controlled_by == player for s in state.settlements
@@ -186,6 +204,7 @@ def run_sim(
     )
     report.think_ms_mean = round(statistics.fmean(think_all), 1) if think_all else 0.0
     report.think_ms_p95 = round(_percentile(think_all, 95), 1)
+    report.think_ms_max = round(max(think_all, default=0.0), 1)
     report.resolve_ms_max = max((t.resolve_ms for t in report.turn_stats), default=0.0)
     report.gates = _gates(report)
     return report
@@ -273,6 +292,86 @@ def _tally(
     )
 
 
+_LOCAL_RADIUS = 3  # "local superiority" counts deployed units this close to a fight
+
+
+class _Sieges:
+    """Folds each turn's fights against neutral garrisons and other players.
+
+    Each garrison unit belongs to the site it was placed around (the nearest
+    site at turn 0). A site is under attack in a turn when a player's unit fights
+    one of its garrison units in melee or barrages one; its siege runs from the
+    first such turn to the turn it is captured.
+    """
+
+    def __init__(self, state: GameState) -> None:
+        sites = [s.coord for s in state.map.sites]
+        self.site_of: dict[int, Axial] = {
+            u.id: min(sites, key=lambda c: (distance(c, u.coord), c.q, c.r))
+            for u in state.units
+            if u.owner == NEUTRAL
+        }
+        self.first_attack: dict[Axial, int] = {}
+
+    def fold(
+        self, report: SimReport, before: GameState, turn: int, events: list[Event]
+    ) -> None:
+        """Add one resolved turn's sieges, captures and attacks to ``report``."""
+        owner_of = {u.id: u.owner for u in before.units}
+        attackers: dict[Axial, set[int]] = {}
+        for event in events:
+            if isinstance(event, CombatResolved):
+                garrison = [p for p in event.participants if p.owner == NEUTRAL]
+                if garrison:
+                    site = self.site_of[garrison[0].unit_id]
+                    for p in event.participants:
+                        if p.owner != NEUTRAL:
+                            attackers.setdefault(site, set()).add(p.unit_id)
+                            report.losses_to_garrisons += int(p.destroyed)
+                else:
+                    self._player_attack(report, before, event)
+            elif isinstance(event, BarrageResolved):
+                hits = ([event.hit] if event.hit is not None else []) + event.extra_hits
+                struck = [h for h in hits if h.owner == NEUTRAL]
+                if struck and owner_of[event.artillery_id] != NEUTRAL:
+                    site = self.site_of[struck[0].unit_id]
+                    attackers.setdefault(site, set()).add(event.artillery_id)
+            elif isinstance(event, SettlementCaptured):
+                if event.previous_owner is None:
+                    report.neutral_captures += 1
+                    if event.coord in self.first_attack:
+                        report.siege_turns.append(
+                            turn - self.first_attack.pop(event.coord) + 1
+                        )
+                else:
+                    report.player_captures += 1
+        for site in sorted(attackers, key=lambda c: (c.q, c.r)):
+            self.first_attack.setdefault(site, turn)
+            report.siege_attackers.append(len(attackers[site]))
+
+    @staticmethod
+    def _player_attack(
+        report: SimReport, before: GameState, event: CombatResolved
+    ) -> None:
+        defenders = [p for p in event.participants if p.role is CombatRole.DEFENDER]
+        if not defenders:
+            return  # two moving units met in an empty hex: nobody attacked a position
+        defender = defenders[0].owner
+        near = Counter(
+            u.owner
+            for u in before.units
+            if u.posture is Posture.DEPLOYED
+            and distance(u.coord, event.coord) <= _LOCAL_RADIUS
+        )
+        for owner in sorted(
+            {p.owner for p in event.participants if p.role is CombatRole.ATTACKER}
+        ):
+            if owner == defender:
+                continue
+            report.player_attacks += 1
+            report.player_attacks_superior += int(near[owner] > near[defender])
+
+
 def _engagements(front: set[Axial], deployed: dict[Axial, PlayerId]) -> list[float]:
     """Mean units per side in each engagement on the board.
 
@@ -322,6 +421,10 @@ def _neighbor_pairs(world: GeneratedWorld, ids: list[PlayerId]) -> list[str]:
                 if b is not None and b != a:
                     pairs.add("|".join(sorted((a, b))))
     return sorted(pairs)
+
+
+def _median(values: list[int]) -> float:
+    return statistics.median(values) if values else 0.0
 
 
 def _percentile(values: list[float], pct: float) -> float:
@@ -440,6 +543,16 @@ def main() -> None:
         f"think mean {report.think_ms_mean} ms, p95 {report.think_ms_p95} ms; resolve max {report.resolve_ms_max} ms"
     )
     print(f"eliminated {report.eliminated}")
+    print(
+        f"captures: neutral {report.neutral_captures}, player {report.player_captures}; "
+        f"siege turns median {_median(report.siege_turns)}, attackers per besieged "
+        f"site median {_median(report.siege_attackers)}; losses to garrisons "
+        f"{report.losses_to_garrisons}"
+    )
+    print(
+        f"attacks on players {report.player_attacks}, with local superiority "
+        f"{report.player_attacks_superior}"
+    )
     print(json.dumps(report.gates, indent=1))
     print(f"wall {elapsed:.1f} s")
 

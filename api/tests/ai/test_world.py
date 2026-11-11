@@ -34,7 +34,7 @@ def world() -> GeneratedWorld:
 
 def _timeless(report: SimReport) -> dict[str, object]:
     data = report.model_dump()
-    for key in ("think_ms_mean", "think_ms_p95", "resolve_ms_max"):
+    for key in ("think_ms_mean", "think_ms_p95", "think_ms_max", "resolve_ms_max"):
         data.pop(key)
     data.pop("gates")
     for turn in data["turn_stats"]:
@@ -144,3 +144,8 @@ def test_sim_runs_legal_plans_and_is_deterministic(world: GeneratedWorld) -> Non
     assert first.travel_issued > 0
     assert sum(first.travel_ended.values()) > 0
     assert first.turn_stats[-1].settlements  # somebody holds something
+    # Siege metrics: every besieged site-turn has an attacker, and every timed
+    # siege ended in a capture.
+    assert first.siege_attackers and min(first.siege_attackers) >= 1
+    assert len(first.siege_turns) <= first.neutral_captures
+    assert first.player_attacks_superior <= first.player_attacks
