@@ -22,7 +22,7 @@ export type EngagementResult =
   | "traded"
   /** The viewer's defender stood its ground. */
   | "held"
-  /** The viewer's attack went in and was thrown back (no one destroyed). */
+  /** The viewer's attack went in and failed: no one destroyed, nobody moved (nobody retreats). */
   | "repulsed"
   /** The viewer's barrage struck (or shelled an empty hex: `missed`). */
   | "shelled"
@@ -55,9 +55,16 @@ export interface Engagement {
 
 const coordText = (a: Axial) => `(${a.q},${a.r})`;
 
-function joinNames(names: string[]): string {
+/**
+ * "Your armor and infantry": names that share an owner word ("Your", "Garrison",
+ * a slot) carry it once, at the front.
+ */
+export function joinNames(names: string[]): string {
   if (names.length <= 1) return names.join("");
-  return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  const owner = names[0].split(" ")[0];
+  const shared = names.every((n) => n.startsWith(`${owner} `));
+  const parts = shared ? [names[0], ...names.slice(1).map((n) => n.slice(owner.length + 1))] : names;
+  return `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
 }
 
 /** The viewer's engagements in playback order. */
@@ -89,7 +96,7 @@ export function engagements(pb: Playback, book: UnitBook): Engagement[] {
           lost: "lost to",
           won: entered ? `took ${coordText(a.at)} from` : "beat",
           held: "held off",
-          repulsed: "were thrown back by",
+          repulsed: "could not dislodge",
         }[result as "traded" | "lost" | "won" | "held" | "repulsed"];
         const strip = (u: (typeof sides)[number]): EngagementUnit => ({
           unitId: u.unitId,

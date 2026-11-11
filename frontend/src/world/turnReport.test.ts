@@ -122,6 +122,36 @@ describe("turnReport", () => {
   });
 });
 
+describe("turnReport: units out of sight", () => {
+  it("calls a gun that fired from out of sight an unseen gun, not by its id", () => {
+    const shot = events([
+      {
+        kind: "barrage_resolved",
+        artillery_id: 16,
+        target: coord(3, 3),
+        hit: {
+          unit_id: 50,
+          unit_type: "infantry",
+          owner: "neutral",
+          terrain_bonus: 2,
+          hold_bonus: 1,
+          damage: 1,
+          hp_after: 9,
+          destroyed: false,
+          defense_penalty: 0,
+        },
+        extra_hits: [],
+      },
+    ]);
+    const book = unitBook(shot, [], ME);
+    expect(book.nameOf(16)).toBe("An unseen gun");
+    expect(book.nameOf(77)).toBe("An unseen unit");
+    const text = turnReport(shot, ME, book).map((i) => i.text).join(" ");
+    expect(text).toContain("An unseen gun barraged Garrison infantry");
+    expect(text).not.toContain("16");
+  });
+});
+
 describe("turnReport: spending and contact", () => {
   const stocks = (manpower: number, fuel: number, steel: number) => ({ manpower, fuel, steel });
   const spendLog = events([

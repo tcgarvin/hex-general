@@ -584,12 +584,16 @@ const unitTag = (u: Unit) => `${UNIT_LABEL[u.type]} #${u.id}`;
 const at = (a: Axial) => `(${a.q},${a.r})`;
 
 function orderText(order: WorldOrder | undefined, route: PlannedRoute | undefined, swap: SwapInfo | null = null): string {
+  // Kept short: the Army row has room for about "no orders (stays put)".
   if (order === undefined) {
-    return route?.kind === "standing" ? `travelling, ${etaText(route.eta)}` : "no orders (holds)";
+    if (route?.kind !== "standing") return "no orders (stays put)";
+    return route.eta !== null && route.eta <= 1 ? "arriving this turn" : `travelling${turnsText(route.eta)}`;
   }
   switch (order.kind) {
-    case "travel":
-      return `travel, ${etaText(route?.eta ?? null)}`;
+    case "travel": {
+      const eta = route?.eta ?? null;
+      return eta !== null && eta <= 1 ? "travel, this turn" : `travel${turnsText(eta)}`;
+    }
     case "move":
       if (swap !== null) {
         if (swap.role === "relieves") return `relieve ${at(swap.partner.coord)}`;
@@ -608,6 +612,11 @@ function orderText(order: WorldOrder | undefined, route: PlannedRoute | undefine
     case "deploy":
       return "deploy";
   }
+}
+
+/** ", 3 turns" for a travel taking more than one turn, else nothing. */
+function turnsText(eta: number | null): string {
+  return eta !== null && eta > 1 ? `, ${eta} turns` : "";
 }
 
 function etaText(eta: number | null): string {
@@ -970,7 +979,7 @@ function UnitPanel({ unit, view, planning }: { unit: Unit; view: WorldView; plan
           : order === undefined
             ? route?.kind === "standing"
               ? `Carrying on its travel order: ${etaText(route.eta)}. Click a hex to send it elsewhere.`
-              : KIND_HELP.travel
+              : `No orders: it stays put, without the Hold bonus. ${KIND_HELP.travel}`
             : `Ordered: ${orderText(order, route, swap)}.`}
       </p>
       {order?.kind === "travel" && (

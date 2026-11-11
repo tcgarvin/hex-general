@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { unitBook } from "../turnReport";
 import { casePlayback, FIXTURE_CASES } from "./testFixtures";
-import { engagements } from "./watchList";
+import { engagements, joinNames } from "./watchList";
 
 describe("your fights", () => {
   it("lists the viewer's combat, barrage and capture with beats to jump to", () => {
@@ -30,5 +30,12 @@ describe("your fights", () => {
         expect(e.kind === "capture" || e.ours.length > 0 || e.result === "shelled" || e.result === "missed").toBe(true);
       }
     }
+  });
+
+  it("names a side's owner once", () => {
+    expect(joinNames(["Your infantry", "Your armor"])).toBe("Your infantry and armor");
+    expect(joinNames(["Your infantry", "Your armor", "Your infantry"])).toBe("Your infantry, armor and infantry");
+    expect(joinNames(["Garrison infantry", "s004 armor"])).toBe("Garrison infantry and s004 armor");
+    expect(joinNames(["Your armor"])).toBe("Your armor");
   });
 });

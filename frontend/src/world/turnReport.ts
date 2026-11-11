@@ -73,6 +73,8 @@ export interface ReportContext {
 
 export function unitBook(events: readonly ReplayEvent[], units: readonly Unit[], viewer: string): UnitBook {
   const known = new Map<number, { owner: string; type: UnitType }>();
+  // Guns that fired from out of sight: the event names no owner.
+  const guns = new Set<number>();
   for (const u of units) known.set(u.id, { owner: u.owner, type: u.type });
   for (const e of events) {
     switch (e.kind) {
@@ -80,6 +82,7 @@ export function unitBook(events: readonly ReplayEvent[], units: readonly Unit[],
         for (const p of e.participants) known.set(p.unit_id, { owner: p.owner, type: p.unit_type });
         break;
       case "barrage_resolved":
+        guns.add(e.artillery_id);
         for (const h of [...(e.hit ? [e.hit] : []), ...(e.extra_hits ?? [])]) {
           known.set(h.unit_id, { owner: h.owner, type: h.unit_type });
         }
@@ -97,7 +100,9 @@ export function unitBook(events: readonly ReplayEvent[], units: readonly Unit[],
     owner === viewer ? `Your ${type}` : owner === NEUTRAL_OWNER ? `Garrison ${type}` : `${owner} ${type}`;
   const nameOf: NameOf = (id) => {
     const u = known.get(id);
-    return u === undefined ? `Unit ${id}` : unit(u.owner, u.type);
+    if (u !== undefined) return unit(u.owner, u.type);
+    // Out of sight, the replay gives an id but no owner: don't print the id.
+    return guns.has(id) ? "An unseen gun" : "An unseen unit";
   };
   const player = (id: string) => (id === viewer ? "You" : id === NEUTRAL_OWNER ? "The garrison" : id);
   return { owner: (id) => known.get(id)?.owner ?? null, nameOf, naming: { player, unit } };
@@ -338,7 +343,7 @@ const cap = (s: string): string => (s.length === 0 ? s : s[0].toUpperCase() + s.
 
 /** A unit name for the middle of a sentence ("your armor", "garrison infantry"). */
 function mid(name: string): string {
-  return name.replace(/^(Your|Garrison) /, (m) => m.toLowerCase());
+  return name.replace(/^(Your|Garrison|An unseen) /, (m) => m.toLowerCase());
 }
 
 /**
