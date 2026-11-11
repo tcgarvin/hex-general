@@ -189,6 +189,30 @@ def test_units_are_matched_to_targets_as_whole_groups() -> None:
     assert assignment[3].coord == weak
 
 
+def test_units_already_at_a_siege_stay_with_it() -> None:
+    weak = at(9, 6)  # tier 1: a group of two would do
+    elsewhere = at(14, 1)
+    sides = neighbors(weak)
+    state = small_world(
+        {
+            BASE: (SiteKind.BASE, 0),
+            weak: (SiteKind.FARM, 1),
+            elsewhere: (SiteKind.FARM, 1),
+        },
+        [
+            garrison(100, weak, hp=5),
+            garrison(101, elsewhere, hp=5),
+            *(make_unit(k + 1, INF, sides[k]) for k in range(3)),
+        ],
+        held={BASE: "p"},
+    )
+    view = redact_state(state, "p")
+    intel = Intel(view, "p", Box.around([u.coord for u in view.units], 60))
+    board = BoardIndex(view, "p")
+    assignment, _ = _assign(view, "p", board.own_units, intel, EXPAND, set())
+    assert all(assignment[k + 1].coord == weak for k in range(3))
+
+
 def test_siege_groups_grow_with_the_garrison() -> None:
     sizes = [siege_group(hp) for hp in (0, 5, 10, 20, 30)]
     assert sizes[0] == (1, 1)

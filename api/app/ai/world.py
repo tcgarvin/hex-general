@@ -110,6 +110,7 @@ _FINISH_HP = 3  # a player unit this weak may be struck by a lone attacker
 _RESERVE_SPREAD = 2  # idle units gather within this many hexes of the front
 _GROUP_SLACK = 6  # a group takes units this much farther than its min_group-th
 _CORRIDOR_SLACK = 4  # travel skips routing when no garrison is this near the way
+_COMMIT_RADIUS = 3  # a unit this close to a target is matched as if on it
 
 
 class Stance(StrEnum):
@@ -720,7 +721,9 @@ def _assign(
         key=lambda u: u.id,
     )
     targets = _targets(view, slot, intel, args, [u.coord for u in combat])
-    assignment = _match_groups(combat, targets)
+    # A marching column is effectively where it is going.
+    heading = {o.unit_id: o.destination for o in view.standing_orders}
+    assignment = _match_groups(combat, targets, heading)
     for gun in (u for u in own if not is_combat_unit(u)):
         escorts = [u for u in combat if u.id in assignment]
         if escorts:
@@ -731,21 +734,24 @@ def _assign(
     return assignment, {t.objective.coord: t.min_group for t in targets}
 
 
-def _match_groups(combat: list[Unit], targets: list[_Target]) -> dict[int, Objective]:
+def _match_groups(
+    combat: list[Unit], targets: list[_Target], heading: dict[int, Axial]
+) -> dict[int, Objective]:
     """Greedy group matching: the best target first, with the units nearest it.
 
     A target is scored by its value over the distance of its `min_group`-th
     nearest free unit (a group moves at its farthest member's pace), so it is
     only taken when a whole group can be sent. The group is its nearest free
     units, up to its capacity, among those no more than `_GROUP_SLACK` hexes
-    farther than that unit. Matching whole groups keeps a unit's objective
+    farther than that unit, plus every free unit already at it. Matching whole groups keeps a unit's objective
     stable from turn to turn: matching unit by unit flipped lone units between
-    targets as they moved.
+    targets as they moved. A column on the march counts from its destination
+    (``heading``), so it keeps the target it set out for.
     """
     free = {u.id for u in combat}
     near = [
         sorted(
-            (distance(u.coord, t.objective.coord), u.id)
+            (_effective_gap(heading.get(u.id, u.coord), t.objective.coord), u.id)
             for u in combat
             if t.near_focus or _within_horizon(u.coord, t.objective.coord)
         )
@@ -765,10 +771,12 @@ def _match_groups(combat: list[Unit], targets: list[_Target]) -> dict[int, Objec
             key = (target.objective.value / (1.0 + gap / 4.0), -k)
             if best is None or key > best:
                 best = key
+                # Units already at the target stay with it past its capacity.
                 group = [
                     pair
-                    for pair in avail[: target.capacity]
-                    if pair[0] <= gap + _GROUP_SLACK
+                    for k, pair in enumerate(avail)
+                    if pair[0] == 0
+                    or (k < target.capacity and pair[0] <= gap + _GROUP_SLACK)
                 ]
         if best is None:
             break
@@ -778,6 +786,13 @@ def _match_groups(combat: list[Unit], targets: list[_Target]) -> dict[int, Objec
             assignment[unit_id] = targets[chosen].objective
             free.discard(unit_id)
     return assignment
+
+
+def _effective_gap(where: Axial, target: Axial) -> int:
+    """Distance for matching: a unit already at a target (within
+    `_COMMIT_RADIUS`) counts as on it, so it sees its fight through."""
+    gap = distance(where, target)
+    return 0 if gap <= _COMMIT_RADIUS else gap
 
 
 def _within_horizon(a: Axial, b: Axial) -> bool:
