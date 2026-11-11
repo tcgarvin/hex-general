@@ -6,8 +6,8 @@
 // held sites; start a building; pick who disbands first in a shortage; and
 // submit, revising as often as you like until the turn resolves.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router";
 
 import { axialEqual, hexKey, type Axial } from "@/board/hex";
 import { AccountMenu } from "@/components/AccountMenu";
@@ -31,6 +31,10 @@ import {
 import { HoverInfo } from "./HoverInfo";
 import { MapControls } from "./MapControls";
 import { overlayOf } from "./overlay";
+import { PlaybackBar, type BeatJump } from "./PlaybackBar";
+import { reportItemBeats } from "./playback/session";
+import { useTurnPlayback, type TurnPlayback } from "./playback/useTurnPlayback";
+import { engagements, type Engagement } from "./playback/watchList";
 import {
   buildOption,
   inBarrageRange,
@@ -131,15 +135,51 @@ function WorldScreen({
   const [renderer, setRenderer] = useState<WorldRenderer | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [hoveredUnit, setHoveredUnit] = useState<number | null>(null);
-  const report = useTurnReport(view.game_id, view.turn > 0 ? view.turn - 1 : null);
+  // Dev builds only: `?turn=N` shows (and plays) an earlier resolved turn, for checks.
+  const [search] = useSearchParams();
+  const devTurn = import.meta.env.DEV ? Number(search.get("turn") ?? NaN) : NaN;
+  const reportTurn =
+    Number.isInteger(devTurn) && devTurn >= 0 && devTurn < view.turn ? devTurn : view.turn > 0 ? view.turn - 1 : null;
+  const report = useTurnReport(view.game_id, reportTurn);
   const digest = useMemo(() => {
     if (report.status !== "ready") return null;
     const { events, state_after } = report.replay;
     const units = state_after.units ?? [];
     const book = unitBook(events, units, view.your_slot);
     const context = { sites: map.sites, settlements: state_after.settlements ?? [], units };
-    return { items: turnReport(events, view.your_slot, book, context), trails: turnTrails(events, book) };
+    return { book, items: turnReport(events, view.your_slot, book, context), trails: turnTrails(events, book) };
   }, [report, view.your_slot, map]);
+  // Turn playback: watching the last resolved turn on the board (`PlaybackBar`).
+  const lastTurn = report.status === "none" ? null : report.turn;
+  const [watch, setWatch] = useState<{ turn: number; autoplay: boolean; jump: BeatJump | null } | null>(null);
+  const watching = watch !== null && watch.turn === lastTurn ? watch : null;
+  const turnPlayback = useTurnPlayback({ gameId: view.game_id, report, viewer: view.your_slot, map, wanted: watching !== null });
+  const playback = watching !== null && turnPlayback.status === "ready" && renderer !== null ? turnPlayback.playback : null;
+  const [beatNow, setBeatNow] = useState(-1);
+  const watchTurn = useCallback(
+    (beat: number | null) => {
+      if (lastTurn === null) return;
+      setWatch((w) => {
+        const seq = (w?.jump?.seq ?? 0) + 1;
+        if (w !== null && w.turn === lastTurn) return beat === null ? w : { ...w, jump: { beat, seq } };
+        return { turn: lastTurn, autoplay: beat === null, jump: beat === null ? null : { beat, seq } };
+      });
+    },
+    [lastTurn],
+  );
+  const exitWatch = useCallback(() => {
+    setWatch(null);
+    setBeatNow(-1);
+  }, []);
+  const fights = useMemo(
+    () =>
+      digest !== null && "provisional" in turnPlayback ? engagements(turnPlayback.provisional, digest.book) : [],
+    [digest, turnPlayback],
+  );
+  const itemBeats = useMemo(
+    () => (digest !== null && "provisional" in turnPlayback ? reportItemBeats(digest.items, turnPlayback.provisional.beats) : null),
+    [digest, turnPlayback],
+  );
   // The report opens with each new turn; closing it also hides the trails. On a
   // short screen it starts closed, so the Army list keeps its room.
   const short = useShortScreen();
@@ -155,7 +195,7 @@ function WorldScreen({
     !planning.submitting &&
     planProblems(planning.plan, view.state, economy, view.your_slot, outlook.armySize).length === 0 &&
     (planning.dirty || !planning.submitted);
-  useWorldHotkeys({ renderer, planning, home: base, canSubmit, helpOpen, setHelpOpen });
+  useWorldHotkeys({ renderer, planning, home: base, canSubmit, helpOpen, setHelpOpen, playback: watching !== null });
   // A unit standing on a site also shows that hex's panel (recruiting, garrison).
   const unitHex = planning.selectedUnit?.coord ?? null;
   const panelHex =
@@ -179,9 +219,15 @@ function WorldScreen({
           onHexClick={planning.onHexClick}
           onRenderer={setRenderer}
         />
-        {renderer !== null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} />}
+        {renderer !== null && watching === null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} />}
         <MapControls renderer={renderer} home={base} helpOpen={helpOpen} setHelpOpen={setHelpOpen} />
-        {resolved !== null && <ResolvedBanner turn={resolved.turn} key={resolved.seq} />}
+        {resolved !== null && (
+          <ResolvedBanner
+            turn={resolved.turn}
+            key={resolved.seq}
+            onWatch={turnPlayback.status === "idle" ? () => watchTurn(null) : null}
+          />
+        )}
         {/* The minimap and its buttons sit under this column, bottom left. */}
         <div className="pointer-events-none absolute left-3 top-3 flex max-h-[calc(100%-244px)] w-60 flex-col gap-3 min-[1100px]:w-72">
           <ArmyPanel view={view} planning={planning} onJump={reveal} onHoverUnit={setHoveredUnit} />
@@ -192,6 +238,15 @@ function WorldScreen({
             flash={resolved?.seq ?? null}
             onToggle={() => setReportToggle({ turn: view.turn, open: !reportOpen })}
             onJump={jump}
+            play={{
+              turnPlayback,
+              watching: watching !== null,
+              beat: playback !== null ? beatNow : -1,
+              itemBeats,
+              fights,
+              onPlay: () => watchTurn(null),
+              onBeat: (beat) => watchTurn(beat),
+            }}
           />
         </div>
         <div className="pointer-events-none absolute right-3 top-3 flex max-h-[calc(100%-24px)] w-64 flex-col gap-3 overflow-y-auto min-[1100px]:w-80">
@@ -210,7 +265,27 @@ function WorldScreen({
             />
           )}
         </div>
-        <PlanBar view={view} economy={economy} armySize={outlook.armySize} planning={planning} />
+        {watching === null ? (
+          <PlanBar view={view} economy={economy} armySize={outlook.armySize} planning={planning} />
+        ) : playback !== null && renderer !== null ? (
+          <PlaybackBar
+            key={playback.turn}
+            playback={playback}
+            renderer={renderer}
+            autoplay={watching.autoplay}
+            jump={watching.jump}
+            note={turnPlayback.status === "ready" ? turnPlayback.message : null}
+            onBeat={setBeatNow}
+            onExit={exitWatch}
+          />
+        ) : (
+          <div className="fhq-wood pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2 rounded-sm border-2 border-brass-600/70 px-4 py-2 font-label text-xs uppercase tracking-wide shadow-lg">
+            Loading turn {watching.turn}…{" "}
+            <button type="button" onClick={exitWatch} className="ml-2 text-ivory-400 hover:text-ivory-100">
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -268,7 +343,7 @@ function useTurnResolved(turn: number): { turn: number; seq: number } | null {
   return resolved;
 }
 
-function ResolvedBanner({ turn }: { turn: number }) {
+function ResolvedBanner({ turn, onWatch }: { turn: number; onWatch: (() => void) | null }) {
   return (
     <div
       role="status"
@@ -278,6 +353,15 @@ function ResolvedBanner({ turn }: { turn: number }) {
       <p className="font-label text-xs uppercase tracking-wider text-ivory-100">
         The report is open on the left; orders for turn {turn + 1} start now
       </p>
+      {onWatch !== null && (
+        <button
+          type="button"
+          onClick={onWatch}
+          className="pointer-events-auto mt-1.5 rounded-sm border border-brass-600 bg-brass-600 px-3 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 hover:bg-brass-400"
+        >
+          Watch turn {turn}
+        </button>
+      )}
     </div>
   );
 }
@@ -411,11 +495,14 @@ function Panel({
   title,
   children,
   onClose,
+  actions,
   className = "",
 }: {
   title: string;
   children: React.ReactNode;
   onClose?: () => void;
+  /** Extra header controls, left of Close. */
+  actions?: React.ReactNode;
   className?: string;
 }) {
   return (
@@ -424,11 +511,14 @@ function Panel({
     >
       <div className="mb-2 flex items-center justify-between">
         <h2 className="font-display text-sm uppercase tracking-wide">{title}</h2>
-        {onClose !== undefined && (
-          <button type="button" onClick={onClose} className="font-label text-xs uppercase text-wood-500 hover:text-ink-900">
-            Close
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {actions}
+          {onClose !== undefined && (
+            <button type="button" onClick={onClose} className="font-label text-xs uppercase text-wood-500 hover:text-ink-900">
+              Close
+            </button>
+          )}
+        </div>
       </div>
       {children}
     </section>
@@ -608,6 +698,51 @@ const SECTION_LABEL = { fighting: "Fighting", base: "Base", movement: "Movement"
 // The status greens and reds are tuned for dark wood; on parchment they need more ink.
 const TONE_CLASS = { good: "text-[#466428]", bad: "text-invalid", neutral: "" } as const;
 
+/** What the report panel needs for turn playback. */
+interface ReportPlay {
+  turnPlayback: TurnPlayback;
+  watching: boolean;
+  /** The beat on the board during playback (`-1`: not playing). */
+  beat: number;
+  /** The beat each report item shows in (`-1`: none), aligned with `items`. */
+  itemBeats: readonly number[] | null;
+  fights: readonly Engagement[];
+  onPlay: () => void;
+  /** Watch from this beat, paused there (or jump to it if already watching). */
+  onBeat: (beat: number) => void;
+}
+
+const FIGHT_RESULT: Record<Engagement["result"], { text: string; tone: keyof typeof TONE_CLASS }> = {
+  won: { text: "Won", tone: "good" },
+  took: { text: "Took", tone: "good" },
+  shelled: { text: "Shelled", tone: "good" },
+  held: { text: "Held", tone: "good" },
+  lost: { text: "Lost", tone: "bad" },
+  lost_site: { text: "Lost", tone: "bad" },
+  under_fire: { text: "Shelled", tone: "bad" },
+  traded: { text: "Traded", tone: "neutral" },
+  repulsed: { text: "Repulsed", tone: "bad" },
+  missed: { text: "Missed", tone: "neutral" },
+};
+
+function PlayButton({ play, turn }: { play: ReportPlay; turn: number }) {
+  const status = play.turnPlayback.status;
+  if (status === "none" || status === "waiting" || play.watching) return null;
+  if (status === "empty") {
+    return <span className="font-label text-[11px] uppercase tracking-wide text-wood-500">Nothing moved in your sight</span>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={play.onPlay}
+      title={`Watch turn ${turn} on the board, pulse by pulse`}
+      className="rounded-sm border border-brass-600 bg-brass-600 px-2 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 transition-colors hover:bg-brass-400"
+    >
+      ▶ Play turn {turn}
+    </button>
+  );
+}
+
 function ReportPanel({
   load,
   items,
@@ -615,6 +750,7 @@ function ReportPanel({
   flash,
   onToggle,
   onJump,
+  play,
 }: {
   load: ReportLoad;
   items: readonly ReportItem[] | null;
@@ -623,6 +759,7 @@ function ReportPanel({
   flash: number | null;
   onToggle: () => void;
   onJump: (hex: Axial) => void;
+  play: ReportPlay;
 }) {
   if (load.status === "none") return null;
   const title = `Turn ${load.turn} report`;
@@ -639,12 +776,52 @@ function ReportPanel({
       </button>
     );
   }
+  // During playback a line jumps to its beat; otherwise it jumps the camera.
+  const lineProps = (item: ReportItem) => {
+    const k = items === null ? -1 : items.indexOf(item);
+    const beat = play.itemBeats?.[k] ?? -1;
+    return {
+      item,
+      current: play.beat >= 0 && beat === play.beat,
+      onClick: play.watching && beat >= 0 ? () => play.onBeat(beat) : item.at === null ? null : () => onJump(item.at!),
+    };
+  };
   return (
-    <Panel key={flash ?? "still"} title={title} onClose={onToggle} className={`flex min-h-[6rem] flex-col ${flashing}`}>
+    <Panel
+      key={flash ?? "still"}
+      title={title}
+      onClose={onToggle}
+      actions={<PlayButton play={play} turn={load.turn} />}
+      className={`flex min-h-[6rem] flex-col ${flashing}`}
+    >
       {load.status === "loading" && <p className="text-xs text-wood-500">Loading…</p>}
       {load.status === "error" && <p className="text-xs text-invalid">{load.message}</p>}
       {items !== null && (
         <div className="-mx-1 flex min-h-0 flex-col gap-2 overflow-y-auto px-1">
+          {play.fights.length > 0 && (
+            <div>
+              <p className="font-label text-[11px] uppercase tracking-wider text-wood-500">Your fights</p>
+              <ul className="flex flex-col">
+                {play.fights.map((f) => (
+                  <li key={f.eventIndex} className="text-xs leading-snug">
+                    <button
+                      type="button"
+                      onClick={() => play.onBeat(f.beat)}
+                      title="Watch this fight"
+                      className={`flex w-full items-baseline gap-2 rounded-sm px-1 py-0.5 text-left hover:bg-parchment-400/40 ${
+                        play.beat === f.beat ? "bg-brass-400/40" : ""
+                      }`}
+                    >
+                      <span className={`w-14 shrink-0 font-label uppercase ${TONE_CLASS[FIGHT_RESULT[f.result].tone]}`}>
+                        {FIGHT_RESULT[f.result].text}
+                      </span>
+                      <span>{f.summary}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {items.length === 0 && <p className="text-xs text-wood-500">A quiet turn.</p>}
           {(["fighting", "base", "movement"] as const).map((section) => {
             const list = items.filter((i) => i.section === section);
@@ -653,14 +830,14 @@ function ReportPanel({
                 <p className="font-label text-[11px] uppercase tracking-wider text-wood-500">{SECTION_LABEL[section]}</p>
                 <ul className="flex flex-col">
                   {list.map((item, k) => (
-                    <ReportLine key={k} item={item} onJump={onJump} />
+                    <ReportLine key={k} {...lineProps(item)} />
                   ))}
                 </ul>
               </div>
             );
           })}
           {items.some((i) => i.section === "seen") && (
-            <details>
+            <details open={play.watching || undefined}>
               <summary className="cursor-pointer font-label text-[11px] uppercase tracking-wider text-wood-500">
                 {SECTION_LABEL.seen} ({items.filter((i) => i.section === "seen").length})
               </summary>
@@ -668,7 +845,7 @@ function ReportPanel({
                 {items
                   .filter((i) => i.section === "seen")
                   .map((item, k) => (
-                    <ReportLine key={k} item={item} onJump={onJump} />
+                    <ReportLine key={k} {...lineProps(item)} />
                   ))}
               </ul>
             </details>
@@ -679,7 +856,11 @@ function ReportPanel({
   );
 }
 
-function ReportLine({ item, onJump }: { item: ReportItem; onJump: (hex: Axial) => void }) {
+function ReportLine({ item, current, onClick }: { item: ReportItem; current: boolean; onClick: (() => void) | null }) {
+  const ref = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (current) ref.current?.scrollIntoView({ block: "nearest" });
+  }, [current]);
   const body = (
     <>
       <span className={TONE_CLASS[item.tone]}>{item.text}</span>
@@ -690,16 +871,16 @@ function ReportLine({ item, onJump }: { item: ReportItem; onJump: (hex: Axial) =
       ))}
     </>
   );
-  const at = item.at;
+  const highlight = current ? "bg-brass-400/40 ring-1 ring-brass-600" : "";
   return (
-    <li className="text-xs leading-snug">
-      {at === null ? (
-        <span className="block px-1 py-0.5">{body}</span>
+    <li ref={ref} className="text-xs leading-snug" aria-current={current || undefined}>
+      {onClick === null ? (
+        <span className={`block rounded-sm px-1 py-0.5 ${highlight}`}>{body}</span>
       ) : (
         <button
           type="button"
-          onClick={() => onJump(at)}
-          className="block w-full rounded-sm px-1 py-0.5 text-left hover:bg-parchment-400/40"
+          onClick={onClick}
+          className={`block w-full rounded-sm px-1 py-0.5 text-left hover:bg-parchment-400/40 ${highlight}`}
         >
           {body}
         </button>
@@ -707,8 +888,6 @@ function ReportLine({ item, onJump }: { item: ReportItem; onJump: (hex: Axial) =
     </li>
   );
 }
-
-// --- the selected unit ----------------------------------------------------------------
 
 const KIND_LABEL: Record<OrderKind, string> = {
   travel: "Travel",

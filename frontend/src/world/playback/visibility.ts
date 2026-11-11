@@ -16,19 +16,13 @@
 
 import { hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
+import { UNIT_STATS } from "@/planning/rules";
 
 type Terrain = components["schemas"]["Terrain"];
 type UnitType = components["schemas"]["UnitType"];
 
 /** Terrain at an axial hex, `undefined` off the map (e.g. `WorldMap.hexAt(q, r)?.terrain`). */
 export type TerrainAt = (q: number, r: number) => Terrain | undefined;
-
-/**
- * Sight radius per unit type (`UNIT_STATS[...].vision` in api/app/engine/stats.py).
- * Kept here rather than read from `planning/rules.ts`, whose mirror still says 2
- * (the engine moved to 3); the fixture parity test pins this to the engine.
- */
-export const VISION: Record<UnitType, number> = { infantry: 3, armor: 3, artillery: 3 };
 
 /** Terrain that blocks a sightline passing through it (`TERRAIN_STATS[...].blocks_line_of_sight`). */
 function blocksSight(terrain: Terrain): boolean {
@@ -120,7 +114,7 @@ export function visibleHexKeys(
   const seen = new Set<string>();
   for (const unit of units) {
     if (unit.owner !== viewer) continue;
-    forDisc(unit.coord, VISION[unit.type], (c) => {
+    forDisc(unit.coord, UNIT_STATS[unit.type].vision, (c) => {
       const key = hexKey(c.q, c.r);
       if (seen.has(key) || terrainAt(c.q, c.r) === undefined) return;
       if (hasLineOfSight(terrainAt, unit.coord, c)) seen.add(key);

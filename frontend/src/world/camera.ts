@@ -138,3 +138,47 @@ export function comfortablyVisible(sx: number, sy: number, view: Viewport, inset
   const [top, bottom] = shrink(insets.top, insets.bottom, view.height);
   return sx >= left && sx <= view.width - right && sy >= top && sy <= view.height - bottom;
 }
+
+/** A world-pixel rectangle (`minX..maxX`, `minY..maxY`). */
+export interface PixelBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+/**
+ * Where turn playback's camera should go to show `box` (the viewer's action in
+ * a beat), or `null` to stay put because it is already comfortably on screen.
+ *
+ * It keeps the current zoom when the box fits, zooms out only as far as it must
+ * and never below `minScale` (the tile/overview switch) unless the box cannot
+ * fit even there; from the overview it zooms in to `preferredScale`.
+ */
+export function followCamera(
+  current: Camera,
+  box: PixelBox,
+  view: Viewport,
+  insets: Insets,
+  minScale: number,
+  preferredScale = minScale,
+): Camera | null {
+  const toScreen = (wx: number, wy: number, cam: Camera) => ({ x: cam.x + wx * cam.scale, y: cam.y + wy * cam.scale });
+  const shown = (cam: Camera) =>
+    [toScreen(box.minX, box.minY, cam), toScreen(box.maxX, box.maxY, cam)].every((p) =>
+      comfortablyVisible(p.x, p.y, view, insets),
+    );
+  if (current.scale >= minScale && shown(current)) return null;
+  const roomW = Math.max(view.width / 3, view.width - insets.left - insets.right);
+  const roomH = Math.max(view.height / 3, view.height - insets.top - insets.bottom);
+  const fit = Math.min(roomW / Math.max(1, box.maxX - box.minX), roomH / Math.max(1, box.maxY - box.minY));
+  // From the overview, come in to the preferred close-up zoom (if the box fits).
+  const wanted = current.scale < minScale ? Math.max(preferredScale, minScale) : current.scale;
+  const scale = fit >= minScale ? Math.min(wanted, fit) : fit;
+  // Centre the box in the part of the screen the panels leave clear.
+  const clearW = view.width - insets.left - insets.right >= view.width / 3;
+  const clearH = view.height - insets.top - insets.bottom >= view.height / 3;
+  const sx = clearW ? (insets.left + view.width - insets.right) / 2 : view.width / 2;
+  const sy = clearH ? (insets.top + view.height - insets.bottom) / 2 : view.height / 2;
+  return { scale, x: sx - ((box.minX + box.maxX) / 2) * scale, y: sy - ((box.minY + box.maxY) / 2) * scale };
+}

@@ -20,6 +20,12 @@
 // eased jumps. The camera is clamped (`camera.ts`) so the map never leaves the
 // screen. Hover (outline, travel preview) is drawn here too, so moving the
 // pointer never renders React; listeners hear only when the hovered hex changes.
+//
+// Turn playback (`setPlayback`) swaps the live units for a supplied list drawn
+// at fractional positions with alpha, adds an effects layer (fights, shells,
+// floaters, capture rings), takes fog and site owners per beat, and suspends
+// planning marks, hover and clicks until it is cleared. Frames (`setPlaybackFrame`)
+// redraw only the units and effects, never the tiles.
 
 import {
   Application,
@@ -61,6 +67,7 @@ import {
   clampCamera,
   comfortablyVisible,
   fitCamera,
+  followCamera,
   fitScale,
   JUMP_MS,
   panStep,
@@ -72,6 +79,7 @@ import {
 import { NEUTRAL_OWNER, ownerColor } from "./colors";
 import { dashSegments } from "./dashes";
 import type { LoadedColumns } from "./columnArt";
+import type { DrawnUnit, Effect } from "./playback/interpolate";
 import type { LoadedSites } from "./siteArt";
 import { siteTileTexture } from "./siteTiles";
 import { axialToOffset, visibleCells, worldPixelBounds, type CellRange, type WorldMap } from "./worldMap";
@@ -181,6 +189,22 @@ export interface Hover {
   y: number;
 }
 
+/** What a playback beat changes on the board beyond its units: sight and site owners. */
+export interface PlaybackBeatScene {
+  /** The viewer's visible hexes at this beat (`hexKey` keys). */
+  visible: ReadonlySet<string>;
+  /** Owners of the sites that change hands this turn, as of this beat (`null`: neutral). */
+  control: ReadonlyMap<string, string | null>;
+}
+
+/** A unit group drawn together: one hex's units at rest, or one unit on the move. */
+interface UnitGroup {
+  x: number;
+  y: number;
+  list: Unit[];
+  alpha: number;
+}
+
 export interface WorldRendererOptions {
   /** A click on a map hex; `shift` was held (Shift+click orders a swap). */
   onHexClick?: (hex: Axial, mods: { shift: boolean }) => void;
@@ -267,6 +291,17 @@ export class WorldRenderer {
   private jump: { from: Camera; to: Camera; start: number; duration: number } | null = null;
   /** The scene needs redrawing for the camera or data; done once per frame by `tick`. */
   private dirty = true;
+  /** Only the units and effects need redrawing (a playback frame). */
+  private unitsDirty = false;
+  /** Turn playback in progress: its beat scene and the current frame. */
+  private playback: { beat: PlaybackBeatScene; units: readonly DrawnUnit[]; effects: readonly Effect[] } | null = null;
+  /** Settlement control from the live scene (playback overrides it per beat). */
+  private liveControl = new Map<string, string | null>();
+  private readonly effectsLayer = new Graphics();
+  private readonly effectLabelLayer = new Container();
+  private readonly effectLabels: Text[] = [];
+  private effectLabelsUsed = 0;
+  private readonly cameraListeners = new Set<() => void>();
   /** Minimap pixels per world pixel (set when the minimap is built). */
   private minimapScale = 1;
 
@@ -307,6 +342,8 @@ export class WorldRenderer {
       this.hoverLayer,
       this.unitLayer,
       this.selection,
+      this.effectsLayer,
+      this.effectLabelLayer,
     );
     this.unitLayer.addChild(this.unitTokens, this.unitSpriteLayer, this.unitMarks, this.unitLabelLayer);
     app.stage.addChild(this.world, this.minimap);
@@ -341,6 +378,7 @@ export class WorldRenderer {
     this.app.canvas.removeEventListener("pointerleave", this.onPointerLeave);
     this.app.renderer.off("resize", this.onResize);
     this.hoverListeners.clear();
+    this.cameraListeners.clear();
     this.app.destroy(true, { children: true });
   }
 
@@ -372,9 +410,98 @@ export class WorldRenderer {
     this.armyHexes = new Set(
       scene.state.units.filter((u) => u.owner !== NEUTRAL_OWNER).map((u) => hexKey(u.coord.q, u.coord.r)),
     );
-    this.control = new Map(scene.state.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
+    this.liveControl = new Map(scene.state.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
+    this.applyControl();
     this.drawMinimapSites();
     this.invalidate();
+  }
+
+  // --- turn playback ------------------------------------------------------------
+
+  /** Whether turn playback has the board. */
+  get playbackActive(): boolean {
+    return this.playback !== null;
+  }
+
+  /**
+   * Enter playback, or move it to a new beat (fog and site owners), or with
+   * `null` leave it and restore the live scene exactly. Entering suspends the
+   * planning marks, the hover outline and preview, and board clicks.
+   */
+  setPlayback(beat: PlaybackBeatScene | null): void {
+    if (this.destroyed) return;
+    if (beat === null) {
+      if (this.playback === null) return;
+      this.playback = null;
+      this.effectsLayer.clear();
+      for (const label of this.effectLabels) label.visible = false;
+    } else {
+      this.playback = { beat, units: this.playback?.units ?? [], effects: this.playback?.effects ?? [] };
+      this.setHovered(null);
+    }
+    this.applyControl();
+    this.drawOverlay();
+    this.invalidate();
+  }
+
+  /** The units and effects of one playback frame; redraws only those layers. */
+  setPlaybackFrame(units: readonly DrawnUnit[], effects: readonly Effect[]): void {
+    if (this.playback === null || this.destroyed) return;
+    this.playback.units = units;
+    this.playback.effects = effects;
+    this.unitsDirty = true;
+  }
+
+  /**
+   * Bring `hexes` (a beat's action) into view for playback: no move if they are
+   * already comfortably on screen, else an animated pan that keeps the zoom when
+   * they fit (`followCamera`). Not reported as a manual camera move.
+   */
+  followHexes(hexes: readonly Axial[], animate = true): void {
+    if (hexes.length === 0 || this.destroyed) return;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const h of hexes) {
+      const { x, y } = axialToPixel(h.q, h.r, HEX_SIZE);
+      minX = Math.min(minX, x - HEX_SIZE);
+      maxX = Math.max(maxX, x + HEX_SIZE);
+      minY = Math.min(minY, y - HEX_SIZE);
+      maxY = Math.max(maxY, y + HEX_SIZE);
+    }
+    const from = this.jump?.to ?? this.camera;
+    const to = followCamera(
+      from,
+      { minX, minY, maxX, maxY },
+      this.app.screen,
+      PANEL_INSETS,
+      TILE_MIN_SCALE,
+      TACTICAL_SCALE,
+    );
+    if (to !== null) this.moveCamera(to, animate);
+  }
+
+  /** Hear when the player moves the camera themselves (drag, wheel, keys, buttons). */
+  onUserCamera(listener: () => void): () => void {
+    this.cameraListeners.add(listener);
+    return () => this.cameraListeners.delete(listener);
+  }
+
+  private userMovedCamera(): void {
+    for (const listener of this.cameraListeners) listener();
+  }
+
+  /** Site owners as drawn: the live scene's, overridden per beat during playback. */
+  private applyControl(): void {
+    const overrides = this.playback?.beat.control;
+    if (overrides === undefined || overrides.size === 0) {
+      this.control = this.liveControl;
+      return;
+    }
+    const control = new Map(this.liveControl);
+    for (const [key, owner] of overrides) control.set(key, owner);
+    this.control = control;
   }
 
   setOverlay(overlay: WorldOverlay): void {
@@ -397,7 +524,10 @@ export class WorldRenderer {
 
   /** The pan keys currently held; the ticker pans while any are. */
   setPanInput(input: PanInput): void {
-    if (input.x !== 0 || input.y !== 0) this.jump = null;
+    if (input.x !== 0 || input.y !== 0) {
+      this.jump = null;
+      this.userMovedCamera();
+    }
     this.panInput = input;
   }
 
@@ -414,11 +544,13 @@ export class WorldRenderer {
 
   /** Centre the view on `hex`, keeping the zoom (at least tile zoom). */
   panTo(hex: Axial, animate = true): void {
+    this.userMovedCamera();
     this.centerOn(hex, Math.max(this.world.scale.x, TILE_MIN_SCALE), animate);
   }
 
   /** Centre the view on `hex` at `scale` (default: a comfortable tactical zoom). */
   centerOn(hex: Axial, scale = TACTICAL_SCALE, animate = true): void {
+    this.userMovedCamera();
     const { x, y } = axialToPixel(hex.q, hex.r, HEX_SIZE);
     this.moveCamera(centredOn(x, y, scale, this.app.screen), animate);
   }
@@ -447,6 +579,7 @@ export class WorldRenderer {
   /** Zoom by `factor` about the screen centre. */
   zoomBy(factor: number, animate = true): void {
     // Chain off an unfinished jump, so repeated presses compound.
+    this.userMovedCamera();
     const from = this.jump?.to ?? this.camera;
     const { width, height } = this.app.screen;
     this.moveCamera(zoomAbout(from, from.scale * factor, width / 2, height / 2), animate);
@@ -454,6 +587,7 @@ export class WorldRenderer {
 
   /** Zoom out to show the whole world, centred. */
   fitAll(animate = true): void {
+    this.userMovedCamera();
     this.moveCamera(fitCamera(this.bounds, this.app.screen), animate);
   }
 
@@ -512,7 +646,14 @@ export class WorldRenderer {
     }
     if (this.dirty) {
       this.dirty = false;
+      this.unitsDirty = false;
       this.refresh();
+    } else if (this.unitsDirty) {
+      // A playback frame: just the units and effects, the tiles stay as they are.
+      this.unitsDirty = false;
+      const { range, tileMode } = this.viewRange();
+      this.drawUnits(range, tileMode);
+      this.drawEffects();
     }
   };
 
@@ -563,7 +704,10 @@ export class WorldRenderer {
     const dx = x - this.drag.x;
     const dy = y - this.drag.y;
     if (!this.drag.moved && Math.hypot(dx, dy) < 4) return;
-    if (!this.drag.moved) this.setHovered(null);
+    if (!this.drag.moved) {
+      this.setHovered(null);
+      this.userMovedCamera();
+    }
     this.drag = { x, y, moved: true };
     this.setCamera({ ...this.camera, x: this.world.x + dx, y: this.world.y + dy });
   };
@@ -575,6 +719,7 @@ export class WorldRenderer {
     const dist = Math.hypot(a.x - b.x, a.y - b.y);
     const midX = (a.x + b.x) / 2;
     const midY = (a.y + b.y) / 2;
+    this.userMovedCamera();
     const zoomed = zoomAbout(this.camera, this.world.scale.x * (dist / Math.max(1, pinch.dist)), pinch.midX, pinch.midY);
     this.setCamera({ ...zoomed, x: zoomed.x + midX - pinch.midX, y: zoomed.y + midY - pinch.midY });
     this.pinch = { dist, midX, midY };
@@ -599,6 +744,8 @@ export class WorldRenderer {
       if (e.pointerType === "mouse") this.updateHover();
       return;
     }
+    // Playback owns the board: a click gives no orders.
+    if (this.playback !== null) return;
     const local = this.world.toLocal(e.global);
     const hex = pixelToAxial(local.x, local.y, HEX_SIZE);
     if (this.map.hexAt(hex.q, hex.r) !== undefined) this.options.onHexClick?.(hex, { shift: e.shiftKey });
@@ -611,6 +758,7 @@ export class WorldRenderer {
 
   private onWheel = (e: WheelEvent): void => {
     e.preventDefault();
+    this.userMovedCamera();
     const rect = this.app.canvas.getBoundingClientRect();
     const factor = Math.exp(-e.deltaY * 0.0015);
     this.setCamera(zoomAbout(this.camera, this.world.scale.x * factor, e.clientX - rect.left, e.clientY - rect.top));
@@ -621,7 +769,7 @@ export class WorldRenderer {
   /** Re-read the hex under the mouse (it moved, or the camera moved under it). */
   private updateHover(): void {
     const p = this.pointer;
-    if (p === null || this.drag?.moved === true || this.pinch !== null || this.minimapHit(p.x, p.y)) {
+    if (p === null || this.playback !== null || this.drag?.moved === true || this.pinch !== null || this.minimapHit(p.x, p.y)) {
       this.setHovered(null);
       return;
     }
@@ -643,6 +791,7 @@ export class WorldRenderer {
   /** The hover outline (tile zoom only) and the travel preview. */
   private drawHover(): void {
     const g = this.hoverLayer.clear();
+    if (this.playback !== null) return;
     const scale = this.world.scale.x;
     const px = (n: number) => n / scale;
     const centre = (a: Axial) => axialToPixel(a.q, a.r, HEX_SIZE);
@@ -665,14 +814,19 @@ export class WorldRenderer {
 
   // --- drawing ----------------------------------------------------------------------
 
-  private refresh(): void {
+  /** The cells on screen (plus a margin) and whether tiles are shown at this zoom. */
+  private viewRange(): { range: CellRange; tileMode: boolean; x0: number; y0: number; x1: number; y1: number } {
     const s = this.world.scale.x;
     const tileMode = s >= TILE_MIN_SCALE && this.tiles !== null;
     const x0 = -this.world.x / s;
     const y0 = -this.world.y / s;
     const x1 = x0 + this.app.screen.width / s;
     const y1 = y0 + this.app.screen.height / s;
-    const range = visibleCells(this.map, x0, y0, x1, y1, HEX_SIZE);
+    return { range: visibleCells(this.map, x0, y0, x1, y1, HEX_SIZE), tileMode, x0, y0, x1, y1 };
+  }
+
+  private refresh(): void {
+    const { range, tileMode, x0, y0, x1, y1 } = this.viewRange();
 
     this.overview.visible = !tileMode;
     this.tileLayer.visible = tileMode;
@@ -681,6 +835,7 @@ export class WorldRenderer {
     if (tileMode) this.syncTiles(range);
     this.drawSites(range, tileMode);
     this.drawUnits(range, tileMode);
+    this.drawEffects();
     this.drawOverlay();
     this.drawMinimapFrame(x0, y0, x1, y1);
     // The camera may have moved under a still mouse (keys, a jump).
@@ -691,7 +846,7 @@ export class WorldRenderer {
   private syncTiles(range: CellRange): void {
     const want = new Set<number>();
     const { width } = this.map;
-    const visible = this.scene?.visible;
+    const visible = this.playback?.beat.visible ?? this.scene?.visible;
     for (let row = range.row0; row <= range.row1; row++) {
       for (let col = range.col0; col <= range.col1; col++) {
         const index = row * width + col;
@@ -936,65 +1091,51 @@ export class WorldRenderer {
     sprite.position.set(underUnit ? x - HEX_SIZE * 0.5 : x, underUnit ? y - HEX_SIZE * 0.5 : y);
   }
 
-  private drawUnits(
-    range: { col0: number; col1: number; row0: number; row1: number },
-    tileMode: boolean,
-  ): void {
+  private drawUnits(range: CellRange, tileMode: boolean): void {
     const tokens = this.unitTokens.clear();
     const marks = this.unitMarks.clear();
     this.unitSpritesUsed = 0;
     this.unitLabelsUsed = 0;
     const scene = this.scene;
-    if (scene !== null) this.drawUnitHexes(scene, range, tileMode, tokens, marks);
+    if (scene !== null) {
+      const groups = this.playback === null ? liveGroups(scene.state.units, range) : playbackGroups(this.playback.units, range);
+      this.drawUnitGroups(groups, scene.viewer, tileMode, tokens, marks);
+    }
     // Pooled sprites and labels not used this draw stay around, hidden.
     for (let i = this.unitSpritesUsed; i < this.unitSprites.length; i++) this.unitSprites[i].visible = false;
     for (let i = this.unitLabelsUsed; i < this.unitLabels.length; i++) this.unitLabels[i].visible = false;
   }
 
-  private drawUnitHexes(
-    scene: WorldScene,
-    range: { col0: number; col1: number; row0: number; row1: number },
-    tileMode: boolean,
-    tokens: Graphics,
-    marks: Graphics,
-  ): void {
-    const byHex = new Map<string, Unit[]>();
-    for (const u of scene.state.units) {
-      const col = u.coord.q;
-      const row = u.coord.r + (col - (col & 1)) / 2;
-      if (col < range.col0 || col > range.col1 || row < range.row0 || row > range.row1) continue;
-      const key = hexKey(u.coord.q, u.coord.r);
-      const list = byHex.get(key);
-      if (list === undefined) byHex.set(key, [u]);
-      else list.push(u);
-    }
+  private drawUnitGroups(groups: Iterable<UnitGroup>, viewer: string, tileMode: boolean, tokens: Graphics, marks: Graphics): void {
     const units = this.units;
     const scale = this.world.scale.x;
-    for (const list of byHex.values()) {
+    for (const { x, y, list, alpha } of groups) {
       const lead = list.find((u) => u.posture !== "column") ?? list[0];
-      const { x, y } = axialToPixel(lead.coord.q, lead.coord.r, HEX_SIZE);
-      const color = ownerColor(lead.owner, scene.viewer);
-      const mine = lead.owner === scene.viewer;
+      const color = ownerColor(lead.owner, viewer);
+      const mine = lead.owner === viewer;
       const columns = list.filter((u) => u.posture === "column").length;
       if (tileMode && lead.posture === "column" && lead.owner !== NEUTRAL_OWNER) {
         // A hex of nothing but columns: every column drawn, side by side.
-        this.drawConvoy(tokens, marks, list, x, y, color);
+        this.drawConvoy(tokens, marks, list, x, y, color, alpha);
         continue;
       }
       if (tileMode && lead.owner === NEUTRAL_OWNER && this.siteArt !== null) {
-        this.drawGarrisonBadge(marks, list, x, y);
+        this.drawGarrisonBadge(marks, list, x, y, alpha);
         continue;
       }
       if (tileMode && units !== null && lead.posture !== "column" && lead.owner !== NEUTRAL_OWNER) {
-        this.placeUnitSprite(units[lead.type], x, y, 1, lead.facing, color);
+        this.placeUnitSprite(units[lead.type], x, y, 1, lead.facing, color, alpha);
       } else {
         const r = tileMode ? HEX_SIZE * 0.42 : Math.max(HEX_SIZE * 0.6, 4 / scale);
         // Your own units carry a light rim on the overview, so they read apart from everyone else's.
-        const rim = !tileMode && mine ? { color: IVORY, width: Math.max(r * 0.22, 1.5 / scale) } : { color: DARK, width: r * 0.15 };
+        const rim =
+          !tileMode && mine
+            ? { color: IVORY, width: Math.max(r * 0.22, 1.5 / scale), alpha }
+            : { color: DARK, width: r * 0.15, alpha };
         if (lead.posture === "column") {
-          tokens.roundRect(x - r * 1.2, y - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill(color).stroke(rim);
+          tokens.roundRect(x - r * 1.2, y - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill({ color, alpha }).stroke(rim);
         } else {
-          tokens.circle(x, y, r).fill(color).stroke(rim);
+          tokens.circle(x, y, r).fill({ color, alpha }).stroke(rim);
         }
       }
       if (tileMode && columns > 0 && lead.posture !== "column") {
@@ -1003,16 +1144,16 @@ export class WorldRenderer {
         const w = 4 + n * 3.5;
         const bx = x + HEX_SIZE * 0.5;
         const by = y - HEX_SIZE * 0.45;
-        marks.roundRect(bx - w / 2, by - 4, w, 8, 4).fill(DARK);
-        for (let k = 0; k < n; k++) marks.circle(bx + (k - (n - 1) / 2) * 3.5, by, 1.2).fill(0xffffff);
+        marks.roundRect(bx - w / 2, by - 4, w, 8, 4).fill({ color: DARK, alpha });
+        for (let k = 0; k < n; k++) marks.circle(bx + (k - (n - 1) / 2) * 3.5, by, 1.2).fill({ color: 0xffffff, alpha });
       }
       if (tileMode && lead.posture !== "column" && lead.disordered) {
-        drawDisorderBadge(marks, x - HEX_SIZE * 0.6, y - HEX_SIZE * 0.1, HEX_SIZE * 0.26);
+        drawDisorderBadge(marks, x - HEX_SIZE * 0.6, y - HEX_SIZE * 0.1, HEX_SIZE * 0.26, alpha);
       }
       if (tileMode && lead.hp < 10) {
         const w = HEX_SIZE * 1.1;
-        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, w, 4).fill(DARK);
-        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / 10, 4).fill(lead.hp > 5 ? 0x7bd389 : 0xe0a040);
+        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, w, 4).fill({ color: DARK, alpha });
+        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / 10, 4).fill({ color: hpColor(lead.hp), alpha });
       }
     }
   }
@@ -1022,7 +1163,7 @@ export class WorldRenderer {
    * of defenders on it, and their combined HP once they've taken damage, so an
    * attacker can see progress. The site's painted tile stays the main read.
    */
-  private drawGarrisonBadge(marks: Graphics, list: readonly Unit[], x: number, y: number): void {
+  private drawGarrisonBadge(marks: Graphics, list: readonly Unit[], x: number, y: number, alpha: number): void {
     const bx = x + HEX_SIZE * 0.44;
     const by = y + HEX_SIZE * 0.24;
     const w = HEX_SIZE * 0.36;
@@ -1030,11 +1171,12 @@ export class WorldRenderer {
     const shoulder = by + HEX_SIZE * 0.18;
     marks
       .poly([bx - w, top, bx + w, top, bx + w, shoulder, bx, by + HEX_SIZE * 0.52, bx - w, shoulder])
-      .fill({ color: 0x2b2f36, alpha: 0.95 })
-      .stroke({ color: 0xe8dcc0, width: 1.8, join: "round" });
+      .fill({ color: 0x2b2f36, alpha: 0.95 * alpha })
+      .stroke({ color: 0xe8dcc0, width: 1.8, join: "round", alpha });
     const label = this.nextLabel();
     const count = String(list.length);
     if (label.text !== count) label.text = count;
+    label.alpha = alpha;
     label.position.set(bx, by - HEX_SIZE * 0.17);
     const hp = list.reduce((sum, u) => sum + u.hp, 0);
     const max = list.length * 10;
@@ -1042,8 +1184,8 @@ export class WorldRenderer {
       // Inside the shield, under the count: it never hangs over the next hex.
       const bw = w * 1.5;
       const bar = by + HEX_SIZE * 0.13;
-      marks.rect(bx - bw / 2, bar, bw, 4).fill(DARK);
-      marks.rect(bx - bw / 2, bar, (bw * hp) / max, 4).fill(hp > max / 2 ? 0x7bd389 : 0xe0a040);
+      marks.rect(bx - bw / 2, bar, bw, 4).fill({ color: DARK, alpha });
+      marks.rect(bx - bw / 2, bar, (bw * hp) / max, 4).fill({ color: hp > max / 2 ? 0x7bd389 : 0xe0a040, alpha });
     }
   }
 
@@ -1079,7 +1221,15 @@ export class WorldRenderer {
   }
 
   /** One unit's base + tinted mask, `scale` × the standard unit size. */
-  private placeUnitSprite(pair: UnitSpritePair, x: number, y: number, scale: number, facing: Unit["facing"], color: number): void {
+  private placeUnitSprite(
+    pair: UnitSpritePair,
+    x: number,
+    y: number,
+    scale: number,
+    facing: Unit["facing"],
+    color: number,
+    alpha = 1,
+  ): void {
     // The art faces west; a unit facing right is mirrored (as on the 2-player board).
     const s = (1.5 * HEX_SIZE * scale) / pair.base.width;
     const base = this.nextSprite();
@@ -1089,6 +1239,7 @@ export class WorldRenderer {
     for (const sp of [base, mask]) {
       sp.scale.set(facing === "right" ? -s : s, s);
       sp.position.set(x, y);
+      sp.alpha = alpha;
     }
     base.tint = 0xffffff;
     mask.tint = color;
@@ -1099,7 +1250,15 @@ export class WorldRenderer {
    * the stack grows, so the whole stack reads at a glance (no count badge). A
    * type without column art falls back to a small token.
    */
-  private drawConvoy(tokens: Graphics, marks: Graphics, list: readonly Unit[], x: number, y: number, color: number): void {
+  private drawConvoy(
+    tokens: Graphics,
+    marks: Graphics,
+    list: readonly Unit[],
+    x: number,
+    y: number,
+    color: number,
+    alpha = 1,
+  ): void {
     const stack = [...list].sort((a, b) => a.id - b.id).slice(0, CONVOY_SLOTS.length);
     const { scale, slots } = CONVOY_SLOTS[stack.length - 1];
     stack.forEach((unit, k) => {
@@ -1107,25 +1266,151 @@ export class WorldRenderer {
       const cy = y + slots[k][1] * HEX_SIZE;
       const pair = this.columnArt[unit.type];
       if (pair !== undefined) {
-        this.placeUnitSprite(pair, cx, cy, scale, unit.facing, color);
+        this.placeUnitSprite(pair, cx, cy, scale, unit.facing, color, alpha);
       } else {
         const r = HEX_SIZE * 0.42 * scale;
-        tokens.roundRect(cx - r * 1.2, cy - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill(color).stroke({ color: DARK, width: r * 0.15 });
+        tokens
+          .roundRect(cx - r * 1.2, cy - r * 0.7, r * 2.4, r * 1.4, r * 0.3)
+          .fill({ color, alpha })
+          .stroke({ color: DARK, width: r * 0.15, alpha });
       }
       if (unit.hp < 10) {
         const w = HEX_SIZE * 0.9 * scale;
         const by = cy + HEX_SIZE * 0.5 * scale;
-        marks.rect(cx - w / 2, by, w, 3).fill(DARK);
-        marks.rect(cx - w / 2, by, (w * unit.hp) / 10, 3).fill(unit.hp > 5 ? 0x7bd389 : 0xe0a040);
+        marks.rect(cx - w / 2, by, w, 3).fill({ color: DARK, alpha });
+        marks.rect(cx - w / 2, by, (w * unit.hp) / 10, 3).fill({ color: hpColor(unit.hp), alpha });
       }
     });
+  }
+
+  // --- playback effects ---------------------------------------------------------
+
+  private nextEffectLabel(): Text {
+    let label = this.effectLabels[this.effectLabelsUsed];
+    if (label === undefined) {
+      label = new Text({
+        text: "",
+        style: {
+          fontFamily: "Archivo Narrow, Arial Narrow, sans-serif",
+          fontSize: 20,
+          fontWeight: "700",
+          fill: 0xffffff,
+          stroke: { color: DARK, width: 4 },
+        },
+        resolution: 3,
+      });
+      label.anchor.set(0.5);
+      this.effectLabelLayer.addChild(label);
+      this.effectLabels.push(label);
+    }
+    this.effectLabelsUsed += 1;
+    label.visible = true;
+    return label;
+  }
+
+  /** The current playback frame's effects, in Graphics (no image assets). */
+  private drawEffects(): void {
+    const g = this.effectsLayer.clear();
+    this.effectLabelsUsed = 0;
+    const pb = this.playback;
+    const viewer = this.scene?.viewer ?? "";
+    if (pb !== null) {
+      const px = (n: number) => n / this.world.scale.x;
+      for (const e of pb.effects) this.drawEffect(g, e, viewer, px);
+    }
+    for (let i = this.effectLabelsUsed; i < this.effectLabels.length; i++) this.effectLabels[i].visible = false;
+  }
+
+  private drawEffect(g: Graphics, e: Effect, viewer: string, px: (n: number) => number): void {
+    const centre = (a: { q: number; r: number }) => axialToPixel(a.q, a.r, HEX_SIZE);
+    const p = e.progress;
+    const fade = (u: number) => Math.min(1, (1 - u) * 3); // full until the last third, then out
+    switch (e.kind) {
+      case "combat": {
+        const { x, y } = centre(e.at);
+        const r = HEX_SIZE * (0.35 + 0.65 * p);
+        const color = e.viewerInvolved ? 0xffb347 : 0xd9c7a0;
+        g.circle(x, y, r).stroke({ color, width: px(3), alpha: fade(p) });
+        starPoints(g, x, y, HEX_SIZE * (0.3 + 0.25 * Math.sin(Math.PI * p)), HEX_SIZE * 0.12, 8);
+        g.fill({ color: 0xfff1c2, alpha: 0.9 * Math.sin(Math.PI * p) });
+        break;
+      }
+      case "shell": {
+        const to = centre(e.to);
+        const from = e.from === null ? { x: to.x, y: to.y - HEX_SIZE * 6 } : centre(e.from);
+        const lift = Math.max(HEX_SIZE * 1.2, Math.hypot(to.x - from.x, to.y - from.y) * 0.35);
+        const at = (u: number) => ({
+          x: from.x + (to.x - from.x) * u,
+          y: from.y + (to.y - from.y) * u - (e.from === null ? 0 : 4 * u * (1 - u) * lift),
+        });
+        const start = at(0);
+        g.moveTo(start.x, start.y);
+        for (let i = 1; i <= 12; i++) {
+          const q = at((p * i) / 12);
+          g.lineTo(q.x, q.y);
+        }
+        g.stroke({ color: 0xf2e6c8, width: px(2), alpha: 0.55, cap: "round" });
+        const head = at(p);
+        g.circle(head.x, head.y, Math.max(px(4), HEX_SIZE * 0.12)).fill({ color: 0xffe08a }).stroke({ color: DARK, width: px(1.5) });
+        break;
+      }
+      case "impact": {
+        const { x, y } = centre(e.at);
+        const r = HEX_SIZE * (0.3 + 0.8 * p);
+        g.circle(x, y, r).fill({ color: ATTACK_COLOR, alpha: 0.35 * (1 - p) });
+        g.circle(x, y, r).stroke({ color: 0xffd25a, width: px(3), alpha: 1 - p });
+        break;
+      }
+      case "damage":
+      case "heal": {
+        const { x, y } = centre(e.at);
+        const label = this.nextEffectLabel();
+        const text = `${e.kind === "damage" ? "-" : "+"}${e.amount}`;
+        if (label.text !== text) label.text = text;
+        const fill = e.kind === "damage" ? 0xff6b5a : 0x7bd389;
+        if (label.style.fill !== fill) label.style.fill = fill;
+        label.alpha = fade(p);
+        label.scale.set(px(1) * Math.max(1, this.world.scale.x) * 0.9);
+        label.position.set(x + HEX_SIZE * 0.35, y - HEX_SIZE * (0.4 + 0.7 * p));
+        break;
+      }
+      case "capture": {
+        const { x, y } = centre(e.at);
+        const color = ownerColor(e.owner, viewer);
+        g.poly(hexCornerPoints(x, y, HEX_SIZE * (0.6 + 0.6 * p))).stroke({ color, width: px(4), alpha: fade(p) });
+        g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.95)).stroke({ color, width: px(3), alpha: Math.min(1, p * 2) });
+        break;
+      }
+      case "blocked": {
+        const a = centre(e.from);
+        const b = centre(e.toward);
+        const x = (a.x + b.x) / 2;
+        const y = (a.y + b.y) / 2;
+        const r = HEX_SIZE * 0.22;
+        const alpha = Math.sin(Math.PI * p);
+        g.moveTo(x - r, y - r).lineTo(x + r, y + r).moveTo(x + r, y - r).lineTo(x - r, y + r);
+        g.stroke({ color: ATTACK_COLOR, width: px(4), alpha, cap: "round" });
+        break;
+      }
+      case "halt": {
+        const { x, y } = centre(e.at);
+        drawDisorderBadge(g, x, y - HEX_SIZE * 0.75, HEX_SIZE * (0.28 + 0.06 * Math.sin(Math.PI * 4 * p)), Math.sin(Math.PI * p));
+        break;
+      }
+      case "recruit": {
+        const { x, y } = centre(e.at);
+        g.poly(hexCornerPoints(x, y, HEX_SIZE * (0.4 + 0.55 * p))).stroke({ color: 0x7bd389, width: px(3), alpha: fade(p) });
+        break;
+      }
+    }
   }
 
   private drawOverlay(): void {
     const g = this.overlay.clear();
     const top = this.selection.clear();
     const o = this.overlayData;
-    if (o === null) return;
+    // Playback hides the plan and last turn's trails: the turn is replaying itself.
+    if (o === null || this.playback !== null) return;
     const scale = this.world.scale.x;
     // Line widths in screen pixels, so marks stay readable at every zoom.
     const px = (n: number) => n / scale;
@@ -1267,6 +1552,7 @@ export class WorldRenderer {
 
   /** Centre the view on the world point under minimap point `(x, y)`. */
   private jumpFromMinimap(x: number, y: number, animate: boolean): void {
+    this.userMovedCamera();
     const b = this.bounds;
     const s = this.minimapScale;
     const box = this.minimapBox;
@@ -1347,12 +1633,78 @@ function drawAttackMark(g: Graphics, x: number, y: number, r: number, px: (n: nu
 }
 
 /** The disordered marker: a small amber warning triangle with a "!". */
-function drawDisorderBadge(g: Graphics, x: number, y: number, r: number): void {
+function drawDisorderBadge(g: Graphics, x: number, y: number, r: number, alpha = 1): void {
   g.poly([x, y - r, x + r * 0.95, y + r * 0.7, x - r * 0.95, y + r * 0.7])
-    .fill(DISORDER_COLOR)
-    .stroke({ color: DARK, width: 1.4, join: "round" });
-  g.moveTo(x, y - r * 0.4).lineTo(x, y + r * 0.15).stroke({ color: DARK, width: 1.8, cap: "round" });
-  g.circle(x, y + r * 0.42, 1).fill(DARK);
+    .fill({ color: DISORDER_COLOR, alpha })
+    .stroke({ color: DARK, width: 1.4, join: "round", alpha });
+  g.moveTo(x, y - r * 0.4).lineTo(x, y + r * 0.15).stroke({ color: DARK, width: 1.8, cap: "round", alpha });
+  g.circle(x, y + r * 0.42, 1).fill({ color: DARK, alpha });
+}
+
+function hpColor(hp: number): number {
+  return hp > 5 ? 0x7bd389 : 0xe0a040;
+}
+
+/** A star path (`points` tips) centred on `(x, y)`; the caller fills it. */
+function starPoints(g: Graphics, x: number, y: number, outer: number, inner: number, points: number): void {
+  const coords: number[] = [];
+  for (let i = 0; i < points * 2; i++) {
+    const a = (Math.PI / points) * i - Math.PI / 2;
+    const r = i % 2 === 0 ? outer : inner;
+    coords.push(x + r * Math.cos(a), y + r * Math.sin(a));
+  }
+  g.poly(coords);
+}
+
+/** The live scene's units in range, one group per hex. */
+function liveGroups(units: readonly Unit[], range: CellRange): UnitGroup[] {
+  const byHex = new Map<string, UnitGroup>();
+  for (const u of units) {
+    if (!inRange(u.coord, range)) continue;
+    const key = hexKey(u.coord.q, u.coord.r);
+    const group = byHex.get(key);
+    if (group === undefined) {
+      const { x, y } = axialToPixel(u.coord.q, u.coord.r, HEX_SIZE);
+      byHex.set(key, { x, y, list: [u], alpha: 1 });
+    } else group.list.push(u);
+  }
+  return [...byHex.values()];
+}
+
+/**
+ * A playback frame's units in range: those standing on their hex grouped by hex
+ * (stacks and convoys as usual), and each one in motion (sliding, lunging) on
+ * its own at its fractional position, so a moving unit never regroups.
+ */
+function playbackGroups(units: readonly DrawnUnit[], range: CellRange): UnitGroup[] {
+  const groups: UnitGroup[] = [];
+  const byHex = new Map<string, UnitGroup>();
+  for (const u of units) {
+    if (!inRange(u.coord, range)) continue;
+    const atRest = u.at.q === u.coord.q && u.at.r === u.coord.r;
+    if (!atRest) {
+      const { x, y } = axialToPixel(u.at.q, u.at.r, HEX_SIZE);
+      groups.push({ x, y, list: [u], alpha: u.alpha });
+      continue;
+    }
+    const key = hexKey(u.coord.q, u.coord.r);
+    const group = byHex.get(key);
+    if (group === undefined) {
+      const { x, y } = axialToPixel(u.coord.q, u.coord.r, HEX_SIZE);
+      const made = { x, y, list: [u as Unit], alpha: u.alpha };
+      byHex.set(key, made);
+      groups.push(made);
+    } else {
+      group.list.push(u);
+      group.alpha = Math.max(group.alpha, u.alpha);
+    }
+  }
+  return groups;
+}
+
+function inRange(a: Axial, range: CellRange): boolean {
+  const row = a.r + (a.q - (a.q & 1)) / 2;
+  return a.q >= range.col0 - 1 && a.q <= range.col1 + 1 && row >= range.row0 - 1 && row <= range.row1 + 1;
 }
 
 /** A white flat-top hex the size of a board hex, for tinted overlays (fog). */

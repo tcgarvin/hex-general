@@ -59,7 +59,16 @@ export interface HotkeyOptions {
   canSubmit: boolean;
   helpOpen: boolean;
   setHelpOpen: (open: boolean) => void;
+  /**
+   * Turn playback has the board: only the camera keys act here (the transport
+   * bar takes Space, Left/Right and Esc), and no orders are given.
+   */
+  playback?: boolean;
 }
+
+/** Camera keys that stay live during playback (Left/Right step the playback instead). */
+const PLAYBACK_PAN_CODES = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown"]);
+const PLAYBACK_KEYS = new Set(["+", "=", "e", "-", "_", "q", "f", "0", "Home", "?"]);
 
 function typingIn(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -96,6 +105,11 @@ export function useWorldHotkeys(options: HotkeyOptions): void {
     const onKeyDown = (e: KeyboardEvent) => {
       if (typingIn(e.target)) return;
       const o = latest.current;
+      if (o.playback === true) {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+        if (!PLAYBACK_PAN_CODES.has(e.code) && !PLAYBACK_KEYS.has(key)) return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
         if (o.canSubmit) void o.planning.submit();

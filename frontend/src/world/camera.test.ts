@@ -6,6 +6,7 @@ import {
   comfortablyVisible,
   fitCamera,
   fitScale,
+  followCamera,
   panStep,
   PAN_SPEED,
   zoomAbout,
@@ -117,5 +118,38 @@ describe("comfortablyVisible", () => {
     const narrow = { width: 600, height: 600 };
     expect(comfortablyVisible(300, 300, narrow, insets)).toBe(true);
     expect(comfortablyVisible(150, 300, narrow, insets)).toBe(false);
+  });
+});
+
+describe("followCamera (turn playback)", () => {
+  const view = { width: 1600, height: 900 };
+  const insets = { left: 300, right: 300, top: 20, bottom: 80 };
+  const box = { minX: 1000, minY: 1000, maxX: 1200, maxY: 1100 };
+
+  it("stays put when the box is already comfortably on screen", () => {
+    const cam = { scale: 1, x: 800 - 1100, y: 450 - 1050 };
+    expect(followCamera(cam, box, view, insets, 0.4)).toBeNull();
+  });
+
+  it("pans to the box keeping the zoom when it fits", () => {
+    const cam = { scale: 1, x: 0, y: 0 };
+    const to = followCamera(cam, box, view, insets, 0.4)!;
+    expect(to.scale).toBe(1);
+    // The box centre lands in the middle of the clear area.
+    expect(to.x + 1100 * to.scale).toBeCloseTo((300 + 1600 - 300) / 2);
+    expect(to.y + 1050 * to.scale).toBeCloseTo((20 + 900 - 80) / 2);
+  });
+
+  it("zooms out only as far as needed, not past the tile switch", () => {
+    const wide = { minX: 0, minY: 0, maxX: 3000, maxY: 500 };
+    const to = followCamera({ scale: 1, x: 0, y: 0 }, wide, view, insets, 0.2)!;
+    expect(to.scale).toBeCloseTo(1000 / 3000);
+    const tooWide = { minX: 0, minY: 0, maxX: 30000, maxY: 500 };
+    expect(followCamera({ scale: 1, x: 0, y: 0 }, tooWide, view, insets, 0.2)!.scale).toBeLessThan(0.2);
+  });
+
+  it("zooms in from the overview to the preferred close-up zoom", () => {
+    expect(followCamera({ scale: 0.05, x: 0, y: 0 }, box, view, insets, 0.4)!.scale).toBe(0.4);
+    expect(followCamera({ scale: 0.05, x: 0, y: 0 }, box, view, insets, 0.4, 0.9)!.scale).toBe(0.9);
   });
 });
