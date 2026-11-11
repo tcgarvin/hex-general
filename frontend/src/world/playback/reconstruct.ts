@@ -438,8 +438,12 @@ function resolve(a: BeatAction, snap: ReadonlyMap<number, PlaybackUnit>, ctx: Co
       if (a.entrantId === null) return a;
       const entrant = snap.get(a.entrantId);
       // An edge swap reports the hex of one side; if that is the entrant's own
-      // hex, it took the other side's hex (`movement._resolve_one_swap`).
-      if (entrant !== undefined && same(entrant.coord, a.at)) {
+      // hex, it took the other side's hex (`movement._resolve_one_swap`). A swap
+      // has two attackers and no defender: with a defender the entrant took the
+      // defender's hex, even when a rewound start picture (which cannot know
+      // where an entrant stood before its first event) has put it there already.
+      const swap = !a.sides.some((s) => s.role === "defender");
+      if (swap && entrant !== undefined && same(entrant.coord, a.at)) {
         const other = a.sides.find((s) => s.unitId !== a.entrantId);
         const otherAt = other === undefined ? undefined : snap.get(other.unitId)?.coord;
         return { ...a, entrantTo: otherAt ?? a.at };

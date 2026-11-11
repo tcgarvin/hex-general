@@ -97,26 +97,69 @@ describe("reconstruction on recorded turns", () => {
     }
   });
 
+  it("covers the shapes the server redacts and other players crossing the fog", () => {
+    const served = FIXTURE_CASES.flatMap((c) => c.replay.events.map((e) => ({ viewer: c.viewer, e })));
+    expect(served.some(({ e }) => e.kind === "barrage_resolved" && e.artillery_id === null)).toBe(true);
+    expect(
+      served.some(
+        ({ viewer, e }) => e.kind === "world_unit_recruited" && e.owner !== viewer && e.cost === null && e.stocks_after === null,
+      ),
+    ).toBe(true);
+    const isPlayer = (owner: string, viewer: string) => owner !== viewer && owner !== "neutral";
+    let revealed = false;
+    let concealed = false;
+    for (const c of FIXTURE_CASES) {
+      if (c.before === null) continue;
+      const ownerOf = new Map(c.before.units.map((u) => [u.id, u.owner]));
+      for (const a of casePlayback(c).beats.flatMap((b) => b.actions)) {
+        if (a.kind === "reveal" && isPlayer(a.unit.owner, c.viewer)) revealed = true;
+        if (a.kind === "conceal" && isPlayer(ownerOf.get(a.unitId) ?? c.viewer, c.viewer)) concealed = true;
+      }
+    }
+    expect(revealed).toBe(true);
+    expect(concealed).toBe(true);
+  });
+
+  it("lands a barrage from a gun the viewer cannot see", () => {
+    const c = FIXTURE_CASES.find((x) => x.turn === 20 && x.viewer === "b003")!;
+    const pb = casePlayback(c);
+    const k = pb.beats.findIndex((b) => b.phase === "barrage");
+    const unseen = pb.beats[k].actions.find((a) => a.kind === "barrage" && a.gunId === null)!;
+    expect(unseen).toMatchObject({ from: null, target: { q: 23, r: 15 }, strikes: [{ unitId: 74, owner: "b003", hpAfter: 2 }] });
+    expect(pb.snapshots[k].get(74)!.hp).toBe(3);
+    expect(pb.snapshots[k + 1].get(74)!.hp).toBe(2);
+  });
+
+  it("draws another player's recruit, served without its cost", () => {
+    const c = FIXTURE_CASES.find((x) => x.turn === 32 && x.viewer === "b001")!;
+    const pb = casePlayback(c);
+    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 91));
+    expect(pb.beats[k].phase).toBe("recruit");
+    expect(pb.snapshots[k].has(91)).toBe(false);
+    expect(pb.snapshots[k + 1].get(91)).toMatchObject({ owner: "b002", type: "armor", coord: { q: 22, r: 16 } });
+  });
+
   it("resolves barrage guns and recruits from the board", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 6 && x.viewer === "b002")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 11 && x.viewer === "b001")!;
     const pb = casePlayback(c);
     const barrage = pb.beats.flatMap((b) => b.actions).find((a) => a.kind === "barrage")!;
-    expect(barrage.kind === "barrage" && barrage.from).toEqual(c.before!.units.find((u) => u.id === 12)!.coord);
+    expect(barrage.kind === "barrage" && barrage.from).toEqual(c.before!.units.find((u) => u.id === 8)!.coord);
     const combat = pb.beats.flatMap((b) => b.actions).find((a) => a.kind === "combat")!;
-    expect(combat.kind === "combat" && combat.entrantTo).toEqual({ q: 25, r: 32 });
-    expect(pb.control[0].get(hexKey(25, 32))).toBe(null);
-    expect(pb.control.at(-1)!.get(hexKey(25, 32))).toBe("b002");
+    expect(combat.kind === "combat" && combat.entrantTo).toEqual({ q: 38, r: 20 });
+    expect(pb.control[0].get(hexKey(38, 20))).toBe(null);
+    expect(pb.control.at(-1)!.get(hexKey(38, 20))).toBe("b001");
   });
 
   it("draws every site's owner as of the played turn, not just the ones that change", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 6 && x.viewer === "b002")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 11 && x.viewer === "b001")!;
     const pb = casePlayback(c);
     const end = new Map(c.replay.state_after.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
     // The end boundary is exactly the turn's own end state, whatever the live board holds now.
     expect(new Map(pb.control.at(-1)!)).toEqual(end);
-    // The start differs only where a site changed hands during the turn.
+    // The start differs only where a site changed hands during the turn: the
+    // viewer's capture, and an oil field b000 took out of the viewer's sight.
     const changed = [...end].filter(([key, owner]) => pb.control[0].get(key) !== owner).map(([key]) => key);
-    expect(changed).toEqual([hexKey(25, 32)]);
+    expect(changed).toEqual([hexKey(26, -9), hexKey(38, 20)]);
     expect(pb.control[0].size).toBe(end.size);
   });
 });

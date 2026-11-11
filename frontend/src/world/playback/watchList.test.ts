@@ -6,7 +6,7 @@ import { engagements, joinNames } from "./watchList";
 
 describe("your fights", () => {
   it("lists the viewer's combat, barrage and capture with beats to jump to", () => {
-    const c = FIXTURE_CASES.find((x) => x.viewer === "b002" && x.turn === 6)!;
+    const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 11)!;
     const pb = casePlayback(c);
     const list = engagements(pb, unitBook(c.replay.events, c.replay.state_after.units, c.viewer));
     expect(list.map((e) => [e.kind, e.result])).toEqual([
@@ -16,11 +16,25 @@ describe("your fights", () => {
     ]);
     const fight = list[1];
     expect(pb.beats[fight.beat].actions.some((a) => a.kind === "combat")).toBe(true);
-    expect(fight.at).toEqual({ q: 25, r: 32 });
-    expect(fight.ours.map((u) => u.unitId)).toEqual([9]);
-    expect(fight.theirs).toMatchObject([{ unitId: 61, destroyed: true }]);
-    expect(fight.summary).toBe("Your infantry took (25,32) from Garrison infantry.");
+    expect(fight.at).toEqual({ q: 38, r: 20 });
+    expect(fight.ours.map((u) => u.unitId)).toEqual([6]);
+    expect(fight.theirs).toMatchObject([{ unitId: 52, destroyed: true }]);
+    expect(fight.summary).toBe("Your infantry took (38,20) from Garrison infantry.");
     expect(list.map((e) => e.beat)).toEqual([...list.map((e) => e.beat)].sort((a, b) => a - b));
+  });
+
+  it("lists fire from a gun the viewer cannot see on their own unit", () => {
+    const c = FIXTURE_CASES.find((x) => x.viewer === "b003" && x.turn === 20)!;
+    const pb = casePlayback(c);
+    const list = engagements(pb, unitBook(c.replay.events, c.replay.state_after.units, c.viewer));
+    const unseen = c.replay.events.findIndex((e) => e.kind === "barrage_resolved" && e.artillery_id === null);
+    expect(list.find((e) => e.eventIndex === unseen)).toMatchObject({
+      kind: "barrage",
+      result: "under_fire",
+      at: { q: 23, r: 15 },
+      ours: [{ unitId: 74 }],
+      summary: "Your infantry came under fire at (23,15).",
+    });
   });
 
   it("skips fights the viewer only watched", () => {

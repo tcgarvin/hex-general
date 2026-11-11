@@ -5,15 +5,17 @@ import { beatDurationMs, cameraHint } from "./interpolate";
 import { BLANK_BEAT_MS, beatMarks, beatTitle, playDurationMs, QUIET_PACE, reportItemBeats, turnHasPlayback } from "./session";
 import { casePlayback, FIXTURE_CASES, FIXTURE_MAP } from "./testFixtures";
 
-const turn6 = FIXTURE_CASES.find((x) => x.viewer === "b002" && x.turn === 6)!;
+const turn11 = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 11)!;
 
 describe("playback session helpers", () => {
   it("titles pulses by their place among the turn's pulses", () => {
-    const pb = casePlayback(turn6);
+    const pb = casePlayback(turn11);
     expect(pb.beats.map((_, k) => beatTitle(pb.beats, k))).toEqual([
       "Barrage",
-      "Pulse 1 of 2",
-      "Pulse 2 of 2",
+      "Pulse 1 of 4",
+      "Pulse 2 of 4",
+      "Pulse 3 of 4",
+      "Pulse 4 of 4",
       "Captures",
       "Supply and building",
     ]);
@@ -32,12 +34,12 @@ describe("playback session helpers", () => {
   });
 
   it("marks the viewer's fights for the scrubber", () => {
-    const pb = casePlayback(turn6);
-    expect(beatMarks(pb)).toEqual(["own_fight", "own_fight", null, null, null]);
+    const pb = casePlayback(turn11);
+    expect(beatMarks(pb)).toEqual(["own_fight", "own_fight", null, null, null, null, null]);
   });
 
   it("maps report lines to the beats that show their events", () => {
-    const c = turn6;
+    const c = turn11;
     const book = unitBook(c.replay.events, c.replay.state_after.units, c.viewer);
     const items = turnReport(c.replay.events, c.viewer, book, {
       sites: FIXTURE_MAP.sites,
@@ -50,13 +52,13 @@ describe("playback session helpers", () => {
       if (item.eventIndex === undefined) expect(beats[i]).toBe(-1);
       else expect(pb.beats[beats[i]].eventIndices).toContain(item.eventIndex);
     });
-    const fight = items.findIndex((it) => it.section === "fighting" && it.text.includes("(25,32)"));
+    const fight = items.findIndex((it) => it.section === "fighting" && it.text.includes("(38,20)"));
     expect(pb.beats[beats[fight]].phase).not.toBe("economy");
   });
 
   it("knows a turn with only bookkeeping has nothing to play", () => {
-    expect(turnHasPlayback(turn6.replay.events)).toBe(true);
-    const quiet = turn6.replay.events.filter((e) => e.kind === "stocks_resolved" || e.kind === "unit_repaired");
+    expect(turnHasPlayback(turn11.replay.events)).toBe(true);
+    const quiet = turn11.replay.events.filter((e) => e.kind === "stocks_resolved" || e.kind === "unit_repaired");
     expect(turnHasPlayback(quiet)).toBe(false);
   });
 });
