@@ -80,6 +80,31 @@ SELECTION: dict[str, dict[str, object]] = {
 }
 
 
+STATUS = (
+    "sites round 5 (2026-11-10); ratified 2026-11-11 (owner: 'proceed with site round 5, "
+    "use your best judgment'), applied by sites_ratified_build.py"
+)
+# Kept label -> the file it became in candidates/sites-ratified/ (2026-11-11). Kept
+# labels not listed were not used: oil-l3-B (bund squared to the hex rim) and
+# base-s1-A, C, E (stage 1 keeps two flavours).
+RATIFIED: dict[str, str] = {
+    "factory-l1-A": "factory/l1_00.png",
+    "factory-l1-B": "factory/l1_01.png",
+    "factory-l1-C": "factory/l1_02.png",
+    "factory-l1-D": "factory/l1_03.png",
+    "factory-l3-A": "factory/l3_00.png",
+    "factory-l3-B": "factory/l3_01.png",
+    "factory-l3-C": "factory/l3_02.png",
+    "factory-l3-D": "factory/l3_03.png",
+    "oil-l3-A": "oil_field/l3_00.png",
+    "oil-l3-C": "oil_field/l3_01.png",
+    "oil-l3-D": "oil_field/l3_02.png",
+    "oil-l3-E": "oil_field/l3_03.png",
+    "base-s1-B": "base/stage1_a/h0.png",
+    "base-s1-D": "base/stage1_b/h0.png",
+}
+
+
 def sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
@@ -158,6 +183,7 @@ def main() -> int:
                     "label": label,
                     "target": target,
                     "kept": True,
+                    "ratified": RATIFIED.get(label),
                     "tile": str(dst.relative_to(ROUND)),
                     "sha256": sha(dst),
                     **{k: v for k, v in c.items() if k != "tile"},
@@ -178,6 +204,10 @@ def main() -> int:
         spec["targets"][target]["cells_total"] = len(cells)
         spec["targets"][target]["cells_passed"] = len(passing)
         spec["targets"][target]["cells_failed_gates"] = failed
+    unknown = set(RATIFIED) - {c["label"] for c in candidates if c["kept"]}
+    if unknown:
+        raise SystemExit(f"RATIFIED names labels that are not kept: {sorted(unknown)}")
+    spec["round"] = STATUS
     spec["candidates"] = candidates
     spec_path.write_text(json.dumps(spec, indent=1) + "\n")
     print(f"wrote {rel(spec_path)}: {sum(c['kept'] for c in candidates)} kept")

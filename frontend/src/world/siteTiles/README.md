@@ -2,7 +2,8 @@
 
 Painted 128px flat-top RGBA hex tiles for economic sites and the player base.
 
-- Source: `art/codex/terrain/candidates/sites-ratified/`, ratified by the user on 2026-11-10.
+- Source: `art/codex/terrain/candidates/sites-ratified/`, ratified by the user on 2026-11-10;
+  factory L1 and L3, oil field L3 and base stage 1 replaced from sites round 5 on 2026-11-11.
 - Naming: `farm|oil_field|steel_mill|factory/l<level>_<nn>.png` (level 1-3, variants `nn`), and
   `base/stage<N>_<v>/h<i>.png` (stage N = 1..4, variants `a`/`b`, one file per footprint hex).
 - These files are byte-for-byte copies. To regenerate, re-copy from the ratified set (provenance

@@ -348,3 +348,78 @@ art/codex/terrain/candidates/lake2/w0.png`), route `mouth`, from W0.
 | `joins/lake/mouth_s_00.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (85, -35) |
 | `joins/lake/mouth_s_01.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (114, -24) |
 | `joins/lake/mouth_s_02.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (143, -13) |
+
+## Site and base tiles
+
+`frontend/src/world/siteTiles/<file>`, byte copies of
+`art/codex/terrain/candidates/sites-ratified/` (ratified 2026-11-10; round 5
+replaced factory L1 and L3, oil field L3 and base stage 1 on 2026-11-11). Built by
+`art/codex/terrain/sites_ratified_build.py`, which also writes `SITES.md`; full
+digests, gates and each replaced tile's previous source are in each kind's
+`picks.json`. Single-hex tiles replay like the terrain paint-in tiles above; base
+cells (cluster column: work dir name and cluster) replay with
+`python3 scripts/tile-foundry/paintin_cluster.py run --from-raw <raw>`.
+
+| Shipped site tile | Ratified | Work dir | Raw Codex sheet | Cell / cluster | sha256 |
+| --- | --- | --- | --- | --- | --- |
+| `farm/l1_00.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-a` | `art/codex/terrain/sites/farm/s2-a/raw/farm-s2-a.png` | l1_00 | `4b0a83cc151c` |
+| `farm/l1_01.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-a` | `art/codex/terrain/sites/farm/s2-a/raw/farm-s2-a.png` | l1_01 | `84466658e2c6` |
+| `farm/l2_00.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-b` | `art/codex/terrain/sites/farm/s2-b/raw/farm-s2-b.png` | l2_13 | `eded38f9e271` |
+| `farm/l2_01.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-b` | `art/codex/terrain/sites/farm/s2-b/raw/farm-s2-b.png` | l2_15 | `52d0584b4241` |
+| `farm/l2_02.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-b` | `art/codex/terrain/sites/farm/s2-b/raw/farm-s2-b.png` | l2_10 | `fa081eeb9314` |
+| `farm/l3_00.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-b` | `art/codex/terrain/sites/farm/s2-b/raw/farm-s2-b.png` | l3_10 | `dc07c6a4d128` |
+| `farm/l3_01.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-b` | `art/codex/terrain/sites/farm/s2-b/raw/farm-s2-b.png` | l3_11 | `92668a78739e` |
+| `farm/l3_02.png` | 2026-11-10 | `art/codex/terrain/sites/farm/s2-a` | `art/codex/terrain/sites/farm/s2-a/raw/farm-s2-a.png` | l3_02 | `24e6fea20fb9` |
+| `steel_mill/l1_00.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-a` | `art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png` | l1_00 | `724857c9ee78` |
+| `steel_mill/l1_01.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-a` | `art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png` | l1_01 | `b89b48fec4f7` |
+| `steel_mill/l1_02.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-a` | `art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png` | l1_02 | `6a4976aaeca7` |
+| `steel_mill/l2_00.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-d` | `art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png` | l2_30 | `31b331cfd4a0` |
+| `steel_mill/l2_01.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-d` | `art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png` | l2_33 | `8e59788c9461` |
+| `steel_mill/l2_02.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-d` | `art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png` | l2_36 | `1684991ce750` |
+| `steel_mill/l3_00.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-b` | `art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png` | l3_10 | `0fbe3c75387f` |
+| `steel_mill/l3_01.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-b` | `art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png` | l3_12 | `83a220ee98f9` |
+| `steel_mill/l3_02.png` | 2026-11-10 | `art/codex/terrain/sites/steel_mill/s2-b` | `art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png` | l3_11 | `6873e4339561` |
+| `oil_field/l1_00.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l1` | `art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png` | l1_150 | `af4e8fc13d6e` |
+| `oil_field/l1_01.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l1` | `art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png` | l1_151 | `9e21add399f9` |
+| `oil_field/l1_02.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l1` | `art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png` | l1_152 | `ee7620c06184` |
+| `oil_field/l1_03.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l1` | `art/codex/terrain/sites/oil_field/s4-tanks-l1/raw/oil_field-s4-tanks-l1.png` | l1_153 | `d1dbdf5f16e9` |
+| `oil_field/l2_00.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l2` | `art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png` | l2_130 | `8ea66074c780` |
+| `oil_field/l2_01.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l2` | `art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png` | l2_131 | `058e45ad7441` |
+| `oil_field/l2_02.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l2` | `art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png` | l2_132 | `2bcb19c096d6` |
+| `oil_field/l2_03.png` | 2026-11-10 | `art/codex/terrain/sites/oil_field/s4-tanks-l2` | `art/codex/terrain/sites/oil_field/s4-tanks-l2/raw/oil_field-s4-tanks-l2.png` | l2_133 | `7bced40eba05` |
+| `oil_field/l3_00.png` | 2026-11-11 (round 5 `oil-l3-A`) | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a` | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a/raw/oil_field-r5-l3a.png` | l3_501 | `42718079aee4` |
+| `oil_field/l3_01.png` | 2026-11-11 (round 5 `oil-l3-C`) | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a` | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a/raw/oil_field-r5-l3a.png` | l3_503 | `243880c88f30` |
+| `oil_field/l3_02.png` | 2026-11-11 (round 5 `oil-l3-D`) | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b` | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b/raw/oil_field-r5-l3b.png` | l3_511 | `4886ca361667` |
+| `oil_field/l3_03.png` | 2026-11-11 (round 5 `oil-l3-E`) | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b` | `art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b/raw/oil_field-r5-l3b.png` | l3_518 | `e7ad09c29fc6` |
+| `factory/l1_00.png` | 2026-11-11 (round 5 `factory-l1-A`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a` | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png` | l1_500 | `9ca226d51e0f` |
+| `factory/l1_01.png` | 2026-11-11 (round 5 `factory-l1-B`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a` | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png` | l1_501 | `ca6491b342e8` |
+| `factory/l1_02.png` | 2026-11-11 (round 5 `factory-l1-C`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a` | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png` | l1_502 | `bed9c014018a` |
+| `factory/l1_03.png` | 2026-11-11 (round 5 `factory-l1-D`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a` | `art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png` | l1_508 | `8927ff3b216b` |
+| `factory/l2_00.png` | 2026-11-10 | `art/codex/terrain/sites/factory/s4-l2` | `art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png` | l2_71 | `3deb61a7b80f` |
+| `factory/l2_01.png` | 2026-11-10 | `art/codex/terrain/sites/factory/s4-l2` | `art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png` | l2_73 | `74601cc4a626` |
+| `factory/l2_02.png` | 2026-11-10 | `art/codex/terrain/sites/factory/s4-l2` | `art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png` | l2_75 | `f38aeede9778` |
+| `factory/l2_03.png` | 2026-11-10 | `art/codex/terrain/sites/factory/s4-l2` | `art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png` | l2_70 | `9b82e45e2fbe` |
+| `factory/l3_00.png` | 2026-11-11 (round 5 `factory-l3-A`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b` | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png` | l3_510 | `ed0938620831` |
+| `factory/l3_01.png` | 2026-11-11 (round 5 `factory-l3-B`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b` | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png` | l3_513 | `5a1fe7b89fc4` |
+| `factory/l3_02.png` | 2026-11-11 (round 5 `factory-l3-C`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b` | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png` | l3_516 | `ae99fe36f316` |
+| `factory/l3_03.png` | 2026-11-11 (round 5 `factory-l3-D`) | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b` | `art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png` | l3_518 | `bda1f4c40ebe` |
+| `base/stage1_a/h0.png` | 2026-11-11 (round 5 `base-s1-B`) | `art/codex/terrain/candidates/sites-r5/base/r5-s1c` | `art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png` | r5-s1c:s1_o | `7f0426a0bd47` |
+| `base/stage1_b/h0.png` | 2026-11-11 (round 5 `base-s1-D`) | `art/codex/terrain/candidates/sites-r5/base/r5-s1c` | `art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png` | r5-s1c:s1_m | `67fa6c523097` |
+| `base/stage2_a/h0.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-mix-s2` | `art/codex/terrain/sites/base/s4-mix-s2/raw/base-s4-mix-s2.png` | s4-mix-s2:full_g | `acd6e8a48dba` |
+| `base/stage2_a/h1.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-mix-s2` | `art/codex/terrain/sites/base/s4-mix-s2/raw/base-s4-mix-s2.png` | s4-mix-s2:full_g | `5bfd45b8e9e0` |
+| `base/stage2_b/h0.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-mix-s2` | `art/codex/terrain/sites/base/s4-mix-s2/raw/base-s4-mix-s2.png` | s4-mix-s2:full_h | `526698e65c3b` |
+| `base/stage2_b/h1.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-mix-s2` | `art/codex/terrain/sites/base/s4-mix-s2/raw/base-s4-mix-s2.png` | s4-mix-s2:full_h | `ef1a68a54ed0` |
+| `base/stage3_a/h0.png` | 2026-11-10 | `art/codex/terrain/sites/base/s3-a` | `art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png` | s3-a:stage3_a | `1b40fb8f8603` |
+| `base/stage3_a/h1.png` | 2026-11-10 | `art/codex/terrain/sites/base/s3-a` | `art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png` | s3-a:stage3_a | `3ad8dd3d0c9d` |
+| `base/stage3_a/h2.png` | 2026-11-10 | `art/codex/terrain/sites/base/s3-a` | `art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png` | s3-a:stage3_a | `dfd6e3e6edb0` |
+| `base/stage3_b/h0.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-late-a` | `art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png` | s4-late-a:stage3_g | `a90a17063cf0` |
+| `base/stage3_b/h1.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-late-a` | `art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png` | s4-late-a:stage3_g | `71f72972a38a` |
+| `base/stage3_b/h2.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-late-a` | `art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png` | s4-late-a:stage3_g | `42872b6fe6ba` |
+| `base/stage4_a/h0.png` | 2026-11-10 | `art/codex/terrain/sites/base/s3-a` | `art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png` | s3-a:stage4_a | `e8ee5b91b81e` |
+| `base/stage4_a/h1.png` | 2026-11-10 | `art/codex/terrain/sites/base/s3-a` | `art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png` | s3-a:stage4_a | `ef87f0b82a52` |
+| `base/stage4_a/h2.png` | 2026-11-10 | `art/codex/terrain/sites/base/s3-a` | `art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png` | s3-a:stage4_a | `2bec37904b01` |
+| `base/stage4_a/h3.png` | 2026-11-10 | `art/codex/terrain/sites/base/s3-a` | `art/codex/terrain/sites/base/s3-a/raw/base-s3-a.png` | s3-a:stage4_a | `49e950911131` |
+| `base/stage4_b/h0.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-late-a` | `art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png` | s4-late-a:stage4_g | `e88560587802` |
+| `base/stage4_b/h1.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-late-a` | `art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png` | s4-late-a:stage4_g | `dc21d8e07814` |
+| `base/stage4_b/h2.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-late-a` | `art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png` | s4-late-a:stage4_g | `4bc168a678a8` |
+| `base/stage4_b/h3.png` | 2026-11-10 | `art/codex/terrain/sites/base/s4-late-a` | `art/codex/terrain/sites/base/s4-late-a/raw/base-s4-late-a.png` | s4-late-a:stage4_g | `5e927fe84614` |

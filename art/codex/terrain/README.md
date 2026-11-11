@@ -4,10 +4,10 @@
 
 The economic-site and army-base tiles (farm, oil field, steel mill, factory; base
 stages 1-4) were ratified 2026-11-10 and live in `candidates/sites-ratified/`
-(README there; provenance in `SITES.md`, built by `sites_ratified_build.py`). They
-are **not yet applied**: the game needs sites off town hexes, a renderable site
-level and a four-hex base footprint first. The "Sites round" sections below are the
-history.
+(README there; provenance in `SITES.md`, built by `sites_ratified_build.py`); round 5
+replaced factory L1 and L3, oil field L3 and base stage 1 on 2026-11-11. The world
+renderer draws them from byte copies in `frontend/src/world/siteTiles/`. The "Sites
+round" sections below are the history.
 
 The user approved the look of `candidates/review1/` with tan-peak hills and the
 join sprites of `candidates/review1-joins/`. Both are applied: the tiles to
@@ -505,12 +505,23 @@ failures, guide arc, sites3 sha check), `sites4_base_review.py --scratch <dir>` 
 per flavour, wall options vs sites3, all variants, board renders per flavour from temporary
 sites dirs). Map: `scripts/board-mock-maps/sites4-base.txt` (sites1 board, bases only).
 
-## Sites round 5 (candidates, unratified), 2026-11-10 (`candidates/sites-r5/`)
+## Sites round 5 (ratified 2026-11-11), painted 2026-11-10 (`candidates/sites-r5/`)
 
 Candidates for the three "Known shortfalls" of `candidates/sites-ratified/`: the factory
 size ladder (L1 hall as big as an L2 hall, L3 filling about three-quarters), oil L3 light
-on industry, and the tight one-hex base. Nothing applied; the ratified set and
-`frontend/` are unchanged. 9 Codex calls (1 smoke test, 8 sheets), same recipe as rounds
+on industry, and the tight one-hex base.
+
+**Ratified and applied 2026-11-11** (owner: "proceed with site round 5, use your best
+judgment"): factory `l1_00..03` = factory-l1-A, B, C, D; factory `l3_00..03` =
+factory-l3-A, B, C, D; oil field `l3_00..03` = oil-l3-A, C, D, E; base `stage1_a` =
+base-s1-B and `stage1_b` = base-s1-D. Not used: oil-l3-B (its bund is squared to the hex
+rim) and base-s1-A, C, E (stage 1 keeps two flavours). Everything else in the set is
+unchanged. `sites_ratified_build.py` puts the picks in place (`ROUND5_SINGLE`,
+`ROUND5_BASE`) and records each replaced tile under `replaced` in `picks.json`;
+`candidates.json` carries the decision (`round`, per-candidate `ratified`). Records:
+`.dev/sites-r5-applied/` (board before/after of `sites5-ladder.txt`, shipped montage).
+
+9 Codex calls (1 smoke test, 8 sheets), same recipe as rounds
 3-4 (G2 `r1-bases/`, concept1 + `refs/r1/town_2x.png`, restore on, rim pin, gates). Work
 dirs (job, prompt, refs, raw, manifest, report, run.log) are `candidates/sites-r5/<kind>/r5-*`;
 `refs/` holds the attached L2 yardstick images (`sites4_oilfac_l2ref.py` on the ratified

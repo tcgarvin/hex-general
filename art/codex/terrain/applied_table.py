@@ -25,8 +25,11 @@ JOINS = TERRAIN / "candidates" / "review1-joins"
 LAKE_TILES = TERRAIN / "candidates" / "lake2"
 LAKE_JOINS = TERRAIN / "candidates" / "lake2-joins"
 VARIETY = TERRAIN / "candidates" / "variety-ratified"
+SITES = TERRAIN / "candidates" / "sites-ratified"
+SITE_KINDS = ("farm", "steel_mill", "oil_field", "factory")
 SHIPPED_TILES = REPO / "frontend" / "src" / "board" / "tiles"
 SHIPPED_JOINS = REPO / "frontend" / "src" / "board" / "joins"
+SHIPPED_SITES = REPO / "frontend" / "src" / "world" / "siteTiles"
 OUT = TERRAIN / "APPLIED.md"
 
 
@@ -152,6 +155,33 @@ def plains_rows() -> list[tuple[str, str, str, str, str]]:
     return rows
 
 
+def site_rows() -> list[tuple[str, str, str, str, str, str]]:
+    """Site and base tiles: candidates/sites-ratified/<kind>/picks.json, one entry
+    per shipped `frontend/src/world/siteTiles/` file with when it was ratified
+    (and the round 5 label for a replacement), its work dir, raw and cell."""
+    rows = []
+    for kind in SITE_KINDS:
+        for t in json.loads((SITES / kind / "picks.json").read_text())["tiles"]:
+            rows.append(site_row(f"{kind}/{t['file']}", t, t["sha256"], t["cell"]))
+    for s in json.loads((SITES / "base" / "picks.json").read_text())["stages"]:
+        for name, digest in s["files"].items():
+            rows.append(site_row(f"base/{s['dir']}/{name}", s, digest, s["work_cluster"]))
+    return rows
+
+
+def site_row(
+    file: str, record: dict, digest: str, cell: str
+) -> tuple[str, str, str, str, str, str]:
+    """One site table row, after checking the shipped file against `digest`."""
+    if sha256(SHIPPED_SITES / file) != digest:
+        raise ProvenanceError(f"siteTiles/{file}: shipped file != sites-ratified picks.json sha256")
+    raw = require(rel(record["raw"]), f"siteTiles/{file} raw")
+    ratified = record["ratified"]
+    if "label" in record:
+        ratified += f" (round 5 `{record['label']}`)"
+    return (file, ratified, record["work_dir"], raw, cell, digest[:12])
+
+
 def join_rows() -> list[tuple[str, str, str]]:
     rows = []
     for source in (JOINS, LAKE_JOINS):
@@ -184,6 +214,13 @@ def main() -> int:
     shipped_joins = {str(p.relative_to(SHIPPED_JOINS)) for p in SHIPPED_JOINS.glob("*/*.png")}
     if shipped_joins != {r[0].removeprefix("joins/") for r in joins}:
         raise ProvenanceError("shipped join sprites do not match joins.json")
+    sites = site_rows()
+    shipped_sites = {str(p.relative_to(SHIPPED_SITES)) for p in SHIPPED_SITES.rglob("*.png")}
+    if shipped_sites != {r[0] for r in sites}:
+        raise ProvenanceError(
+            f"shipped site tiles do not match sites-ratified picks.json: "
+            f"{sorted(shipped_sites ^ {r[0] for r in sites})}"
+        )
 
     lines = [
         "# Applied terrain tiles: provenance",
@@ -226,8 +263,28 @@ def main() -> int:
         "| --- | --- | --- |",
     ]
     lines += [f"| `{a}` | `{b}` | {c} |" for a, b, c in joins]
+    lines += [
+        "",
+        "## Site and base tiles",
+        "",
+        "`frontend/src/world/siteTiles/<file>`, byte copies of",
+        "`art/codex/terrain/candidates/sites-ratified/` (ratified 2026-11-10; round 5",
+        "replaced factory L1 and L3, oil field L3 and base stage 1 on 2026-11-11). Built by",
+        "`art/codex/terrain/sites_ratified_build.py`, which also writes `SITES.md`; full",
+        "digests, gates and each replaced tile's previous source are in each kind's",
+        "`picks.json`. Single-hex tiles replay like the terrain paint-in tiles above; base",
+        "cells (cluster column: work dir name and cluster) replay with",
+        "`python3 scripts/tile-foundry/paintin_cluster.py run --from-raw <raw>`.",
+        "",
+        "| Shipped site tile | Ratified | Work dir | Raw Codex sheet | Cell / cluster | sha256 |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    lines += [f"| `{a}` | {b} | `{c}` | `{d}` | {e} | `{f}` |" for a, b, c, d, e, f in sites]
     OUT.write_text("\n".join(lines) + "\n")
-    print(f"wrote {OUT.relative_to(REPO)}: {len(rows)} tiles, {len(joins)} joins")
+    print(
+        f"wrote {OUT.relative_to(REPO)}: {len(rows)} tiles, {len(joins)} joins, "
+        f"{len(sites)} site tiles"
+    )
     return 0
 
 

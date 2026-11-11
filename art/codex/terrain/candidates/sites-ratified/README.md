@@ -1,7 +1,8 @@
-# Ratified site and base tiles (2026-11-10)
+# Ratified site and base tiles (2026-11-10, round 5 replacements 2026-11-11)
 
 The set the user approved after two review rounds (sites round 3 and round 4, see
-`art/codex/terrain/README.md`). **Used by the game:** byte copies live in
+`art/codex/terrain/README.md`), with factory L1 and L3, oil field L3 and base stage 1
+replaced from sites round 5 on 2026-11-11 (see "Round 5 replacements" below). **Used by the game:** byte copies live in
 `frontend/src/world/siteTiles/` and the world renderer draws them via
 `frontend/src/world/siteTiles.ts` (`scripts/tests/test_site_tiles_sync.py` keeps the
 copies in sync with this dir). Changing a tile here is hex art under the sign-off rule
@@ -69,12 +70,34 @@ sites dir lacks a tile a map asks for.
    drawn yet; when they are, all hexes of one `stage<N>_*` dir are drawn together.
 3. City sites keep their city terrain tile and round emblem.
 
+## Round 5 replacements (ratified 2026-11-11)
+
+The owner signed off on sites round 5 ("proceed with site round 5, use your best
+judgment"), which fixed three shortfalls of the 2026-11-10 set: the factory L1 hall
+was as large as an L2 hall and L3 filled only about three-quarters of the hex; oil L3
+was light on industry (read like a bigger L2); the one-hex base (stage 1) was tight.
+Files replaced, from `candidates/sites-r5/kept/` (sources and gates in
+`candidates/sites-r5/candidates.json`, the replaced tiles under `replaced` in
+`picks.json`):
+
+| files | round 5 picks | what changed |
+|---|---|---|
+| `factory/l1_00..03` | `factory-l1-A`, `B`, `C`, `D` | one small hall, about half an L2 hall (occupied .26-.27, was .31-.37) |
+| `factory/l3_00..03` | `factory-l3-A`, `B`, `C`, `D` | three staggered halls of different lengths over most of the hex, ragged edge (occupied .75-.82) |
+| `oil_field/l3_00..03` | `oil-l3-A`, `C`, `D`, `E` | refinery block (columns, stack, tank farm, pipe runs, wagons) beside three derricks |
+| `base/stage1_a`, `stage1_b` | `base-s1-B`, `base-s1-D` | complete bank with a gate, open trodden centre, few things inside |
+
+Not used: `oil-l3-B` (its bund is squared to the hex rim) and `base-s1-A`, `C`, `E`
+(stage 1 keeps two flavours). Stage 1 is still one hex at `(0,0)`; its
+`positions.json` now comes from the round 5 cluster. Farm, steel mill, factory L2, oil
+L1-L2 and base stages 2-4 are byte-identical to 2026-11-10.
+
+Caveats recorded with round 5: the new factory L1 hall has brick-red walls rather than
+timber; the oil L3 tanks are larger than L2's (and C sits in a walled bund); the base
+trucks stay a little large, and the stage 1 gun pits are a motif stages 2-4 lack.
+
 ## Known shortfalls
 
-- Factory L1 hall is as large as an L2 hall; factory L3 fills about three-quarters
-  of the hex.
-- Oil L3 is light on industry (reads like a bigger L2).
-- The one-hex base (stage 1) is tight.
 - `stage4_b` has one internal seam at 4.86 against the 4.0 limit
   (`seam_failures` in `base/picks.json`); no visible line at 3x.
 - Sites have no road connection of their own (no track to the rim by design).

@@ -1,10 +1,12 @@
 {
  "kind": "steel_mill",
  "ratified": "2026-11-10",
+ "updated": "2026-11-10",
  "tiles": [
   {
    "file": "l1_00.png",
    "level": 1,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l1_00.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-a",
    "raw": "art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png",
@@ -20,6 +22,7 @@
   {
    "file": "l1_01.png",
    "level": 1,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l1_01.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-a",
    "raw": "art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png",
@@ -35,6 +38,7 @@
   {
    "file": "l1_02.png",
    "level": 1,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l1_02.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-a",
    "raw": "art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png",
@@ -50,6 +54,7 @@
   {
    "file": "l2_00.png",
    "level": 2,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l2_00.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-d",
    "raw": "art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png",
@@ -65,6 +70,7 @@
   {
    "file": "l2_01.png",
    "level": 2,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l2_01.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-d",
    "raw": "art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png",
@@ -80,6 +86,7 @@
   {
    "file": "l2_02.png",
    "level": 2,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l2_02.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-d",
    "raw": "art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png",
@@ -95,6 +102,7 @@
   {
    "file": "l3_00.png",
    "level": 3,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l3_00.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-b",
    "raw": "art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png",
@@ -110,6 +118,7 @@
   {
    "file": "l3_01.png",
    "level": 3,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l3_01.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-b",
    "raw": "art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png",
@@ -125,6 +134,7 @@
   {
    "file": "l3_02.png",
    "level": 3,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites3/steel_mill/l3_02.png",
    "work_dir": "art/codex/terrain/sites/steel_mill/s2-b",
    "raw": "art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png",

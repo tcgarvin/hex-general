@@ -85,6 +85,8 @@ base slots keep terrain. The files in `frontend/src/world/siteTiles/` are byte c
 `art/codex/terrain/candidates/sites-ratified/` (README there, provenance in
 `art/codex/terrain/SITES.md`; `scripts/tests/test_site_tiles_sync.py` checks the copies).
 Bases are drawn at stage 1 only until base growth is designed (`baseStageOf`).
+Round 5 replacements (factory L1 and L3, oil field L3, base stage 1) were ratified
+2026-11-11 (`sites_ratified_build.py` builds the set and `SITES.md`).
 Changing these tiles is hex art under the sign-off rule below.
 
 Variety tiles (**ratified 2026-11-11**) decorate open country: now and then a plains

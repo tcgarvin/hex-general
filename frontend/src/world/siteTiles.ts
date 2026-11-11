@@ -1,4 +1,5 @@
-// Painted site and base hex tiles (ratified 2026-11-10; see siteTiles/README.md).
+// Painted site and base hex tiles (ratified 2026-11-10, round 5 replacements
+// 2026-11-11; see siteTiles/README.md).
 // Single-hex sites pick `<kind>/l<level>_<nn>.png`; the player base grows over 1-4
 // hexes and is drawn from one `base/stage<N>_<v>/` variant directory. Variant choice
 // is the cosmetic coordinate hash `variantIndex` and must match `scripts/board-mock.py`

@@ -1,70 +1,120 @@
 {
  "kind": "factory",
  "ratified": "2026-11-10",
+ "updated": "2026-11-11",
  "tiles": [
   {
    "file": "l1_00.png",
    "level": 1,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l1_00.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l1",
-   "raw": "art/codex/terrain/sites/factory/s4-l1/raw/factory-s4-l1.png",
-   "raw_sha256": "145bf2628979ce6e0915b6cdbd814f7eb90564f0ca35d6e0e848cbc03d8f81fe",
-   "cell": "l1_63",
-   "source": "art/codex/terrain/sites/factory/s4-l1/tiles/l1_63.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l1-A",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l1/factory-l1-A.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "raw_sha256": "a46aec7fcc4891c00a2c1db65b7d0cd6cf60b9deaff0383d28bf9adb195aae84",
+   "cell": "l1_500",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/tiles/l1_500.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.371,
-   "grade": "none",
-   "sha256": "a8a569138a2fb0ea5e40e7368c8bddf9844bf62e15b1c1f1a4e649329e2d0419"
+   "gates": {
+    "registration_residual": 0.0221,
+    "registration_iou": 0.9988,
+    "rim_exact": 0.0,
+    "rim_clear": 0.003,
+    "rim_touch": 1.0
+   },
+   "occupied": 0.257,
+   "built": 0.2,
+   "sha256": "9ca226d51e0fe1d255d56f400c4e1bbb9eacde0a1941c77cababcda418145cba",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l1_00.png",
+    "sha256": "a8a569138a2fb0ea5e40e7368c8bddf9844bf62e15b1c1f1a4e649329e2d0419"
+   }
   },
   {
    "file": "l1_01.png",
    "level": 1,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l1_01.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l1",
-   "raw": "art/codex/terrain/sites/factory/s4-l1/raw/factory-s4-l1.png",
-   "raw_sha256": "145bf2628979ce6e0915b6cdbd814f7eb90564f0ca35d6e0e848cbc03d8f81fe",
-   "cell": "l1_65",
-   "source": "art/codex/terrain/sites/factory/s4-l1/tiles/l1_65.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l1-B",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l1/factory-l1-B.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "raw_sha256": "a46aec7fcc4891c00a2c1db65b7d0cd6cf60b9deaff0383d28bf9adb195aae84",
+   "cell": "l1_501",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/tiles/l1_501.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.365,
-   "grade": "none",
-   "sha256": "4f4ec485f7a535d26c1a2a2666b2b06a3dbb392735a299f514d7d2bd8f5210ef"
+   "gates": {
+    "registration_residual": 0.015,
+    "registration_iou": 0.9989,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0011,
+    "rim_touch": 1.0
+   },
+   "occupied": 0.258,
+   "built": 0.191,
+   "sha256": "ca6491b342e883de3b8603210166f4039f24cce2eaaf9e38f3177951947e6950",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l1_01.png",
+    "sha256": "4f4ec485f7a535d26c1a2a2666b2b06a3dbb392735a299f514d7d2bd8f5210ef"
+   }
   },
   {
    "file": "l1_02.png",
    "level": 1,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l1_02.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l1",
-   "raw": "art/codex/terrain/sites/factory/s4-l1/raw/factory-s4-l1.png",
-   "raw_sha256": "145bf2628979ce6e0915b6cdbd814f7eb90564f0ca35d6e0e848cbc03d8f81fe",
-   "cell": "l1_67",
-   "source": "art/codex/terrain/sites/factory/s4-l1/tiles/l1_67.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l1-C",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l1/factory-l1-C.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "raw_sha256": "a46aec7fcc4891c00a2c1db65b7d0cd6cf60b9deaff0383d28bf9adb195aae84",
+   "cell": "l1_502",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/tiles/l1_502.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.311,
-   "grade": "none",
-   "sha256": "ee28feb465f56750aea26ae504c067a4e58fdf62b1e36fa9db54179e051a31e2"
+   "gates": {
+    "registration_residual": 0.0278,
+    "registration_iou": 0.9981,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.266,
+   "built": 0.198,
+   "sha256": "bed9c014018a6bd630d252fabde7b9e494f40465750f0126794125508740f0a9",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l1_02.png",
+    "sha256": "ee28feb465f56750aea26ae504c067a4e58fdf62b1e36fa9db54179e051a31e2"
+   }
   },
   {
    "file": "l1_03.png",
    "level": 1,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l1_03.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l1",
-   "raw": "art/codex/terrain/sites/factory/s4-l1/raw/factory-s4-l1.png",
-   "raw_sha256": "145bf2628979ce6e0915b6cdbd814f7eb90564f0ca35d6e0e848cbc03d8f81fe",
-   "cell": "l1_68",
-   "source": "art/codex/terrain/sites/factory/s4-l1/tiles/l1_68.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l1-D",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l1/factory-l1-D.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "raw_sha256": "a46aec7fcc4891c00a2c1db65b7d0cd6cf60b9deaff0383d28bf9adb195aae84",
+   "cell": "l1_508",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/tiles/l1_508.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.33,
-   "grade": "none",
-   "sha256": "98b85630bdab4b4881567d8b2ee71760f3e54628647a8c8a0cfc34e274c84b1f"
+   "gates": {
+    "registration_residual": 0.0388,
+    "registration_iou": 0.9957,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.274,
+   "built": 0.204,
+   "sha256": "8927ff3b216b57b075ae11e81667f25774929ca15161331b4b7aa09c79acb60b",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l1_03.png",
+    "sha256": "98b85630bdab4b4881567d8b2ee71760f3e54628647a8c8a0cfc34e274c84b1f"
+   }
   },
   {
    "file": "l2_00.png",
    "level": 2,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites4/factory/l2_00.png",
    "work_dir": "art/codex/terrain/sites/factory/s4-l2",
    "raw": "art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png",
@@ -80,6 +130,7 @@
   {
    "file": "l2_01.png",
    "level": 2,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites4/factory/l2_01.png",
    "work_dir": "art/codex/terrain/sites/factory/s4-l2",
    "raw": "art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png",
@@ -95,6 +146,7 @@
   {
    "file": "l2_02.png",
    "level": 2,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites4/factory/l2_02.png",
    "work_dir": "art/codex/terrain/sites/factory/s4-l2",
    "raw": "art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png",
@@ -110,6 +162,7 @@
   {
    "file": "l2_03.png",
    "level": 2,
+   "ratified": "2026-11-10",
    "candidate": "art/codex/terrain/candidates/sites4/factory/l2_03.png",
    "work_dir": "art/codex/terrain/sites/factory/s4-l2",
    "raw": "art/codex/terrain/sites/factory/s4-l2/raw/factory-s4-l2.png",
@@ -125,62 +178,110 @@
   {
    "file": "l3_00.png",
    "level": 3,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l3_00.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l3c",
-   "raw": "art/codex/terrain/sites/factory/s4-l3c/raw/factory-s4-l3c.png",
-   "raw_sha256": "ec6d66bbeb8f440a11598bb787de9fd26929380d6a214adfed518b6578507093",
-   "cell": "l3_100",
-   "source": "art/codex/terrain/sites/factory/s4-l3c/tiles/l3_100.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l3-A",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l3/factory-l3-A.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "raw_sha256": "230101e8e20b4a206b8da4844afc00256fedeb676a73a5d26b5d11b354aac7fa",
+   "cell": "l3_510",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/tiles/l3_510.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.762,
-   "grade": "none",
-   "sha256": "b24294c5b35ea528165320fed32f0911e6411a4298fce9d16cba13643c3c424e"
+   "gates": {
+    "registration_residual": 0.0122,
+    "registration_iou": 0.9838,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0209,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.803,
+   "built": 0.663,
+   "sha256": "ed09386208319534b4f98945844258bdad18266e0a61716f93edbb3044a9f6d9",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l3_00.png",
+    "sha256": "b24294c5b35ea528165320fed32f0911e6411a4298fce9d16cba13643c3c424e"
+   }
   },
   {
    "file": "l3_01.png",
    "level": 3,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l3_01.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l3c",
-   "raw": "art/codex/terrain/sites/factory/s4-l3c/raw/factory-s4-l3c.png",
-   "raw_sha256": "ec6d66bbeb8f440a11598bb787de9fd26929380d6a214adfed518b6578507093",
-   "cell": "l3_104",
-   "source": "art/codex/terrain/sites/factory/s4-l3c/tiles/l3_104.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l3-B",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l3/factory-l3-B.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "raw_sha256": "230101e8e20b4a206b8da4844afc00256fedeb676a73a5d26b5d11b354aac7fa",
+   "cell": "l3_513",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/tiles/l3_513.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.745,
-   "grade": "none",
-   "sha256": "520cdeeecc8af4941a62f7e1be46507634a20fdb00d197320aa4e4ddffb9ad11"
+   "gates": {
+    "registration_residual": 0.0261,
+    "registration_iou": 0.984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0171,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.824,
+   "built": 0.697,
+   "sha256": "5a1fe7b89fc4eba96b2242958ee3799cc94451a79b30fb680312c3478a722815",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l3_01.png",
+    "sha256": "520cdeeecc8af4941a62f7e1be46507634a20fdb00d197320aa4e4ddffb9ad11"
+   }
   },
   {
    "file": "l3_02.png",
    "level": 3,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l3_02.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l3c",
-   "raw": "art/codex/terrain/sites/factory/s4-l3c/raw/factory-s4-l3c.png",
-   "raw_sha256": "ec6d66bbeb8f440a11598bb787de9fd26929380d6a214adfed518b6578507093",
-   "cell": "l3_106",
-   "source": "art/codex/terrain/sites/factory/s4-l3c/tiles/l3_106.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l3-C",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l3/factory-l3-C.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "raw_sha256": "230101e8e20b4a206b8da4844afc00256fedeb676a73a5d26b5d11b354aac7fa",
+   "cell": "l3_516",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/tiles/l3_516.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.74,
-   "grade": "none",
-   "sha256": "02a72845742f7fec98bcf9d64741a941ab24c5cfb8de463916118570fd70f6c1"
+   "gates": {
+    "registration_residual": 0.0262,
+    "registration_iou": 0.984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0175,
+    "rim_touch": 2.0
+   },
+   "occupied": 0.747,
+   "built": 0.627,
+   "sha256": "ae99fe36f31642bd22221be870c2e8d158c5c5a81d7767b01eca7eb5608bd611",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l3_02.png",
+    "sha256": "02a72845742f7fec98bcf9d64741a941ab24c5cfb8de463916118570fd70f6c1"
+   }
   },
   {
    "file": "l3_03.png",
    "level": 3,
-   "candidate": "art/codex/terrain/candidates/sites4/factory/l3_03.png",
-   "work_dir": "art/codex/terrain/sites/factory/s4-l3c",
-   "raw": "art/codex/terrain/sites/factory/s4-l3c/raw/factory-s4-l3c.png",
-   "raw_sha256": "ec6d66bbeb8f440a11598bb787de9fd26929380d6a214adfed518b6578507093",
-   "cell": "l3_108",
-   "source": "art/codex/terrain/sites/factory/s4-l3c/tiles/l3_108.png",
+   "ratified": "2026-11-11",
+   "label": "factory-l3-D",
+   "candidate": "art/codex/terrain/candidates/sites-r5/kept/factory_l3/factory-l3-D.png",
+   "work_dir": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "raw_sha256": "230101e8e20b4a206b8da4844afc00256fedeb676a73a5d26b5d11b354aac7fa",
+   "cell": "l3_518",
+   "source": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/tiles/l3_518.png",
    "gate_passed": true,
-   "failed_checks": [],
-   "occupied": 0.709,
-   "grade": "none",
-   "sha256": "f2ab255fb496954f6f3ab0978f358ff436a57343fceeedbf03dcc438234dc8e1"
+   "gates": {
+    "registration_residual": 0.0261,
+    "registration_iou": 0.9839,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0171,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.769,
+   "built": 0.656,
+   "sha256": "bda1f4c40ebe68800d243d3ffb91476e66b11ce01c922e87534c3f831e06c44c",
+   "replaced": {
+    "candidate": "art/codex/terrain/candidates/sites4/factory/l3_03.png",
+    "sha256": "f2ab255fb496954f6f3ab0978f358ff436a57343fceeedbf03dcc438234dc8e1"
+   }
   }
  ]
 }
