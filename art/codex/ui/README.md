@@ -1,8 +1,32 @@
-# Codex UI art candidates, round 1 (2026-11-10)
+# Codex UI art, round 1 (made 2026-11-10, ratified 2026-11-11)
 
-Unratified candidates for three pieces of UI art, made overnight with Codex's
-built-in image generation for the owner to review. Nothing here is applied to
-the game; nothing under `frontend/` was touched. Review pages (built with
+## Ratified 2026-11-11
+
+The owner signed off on these picks (he delegated the choice; they are final):
+
+- **Glyphs:** the first choice for every slot in `picks.json`, ignoring the alts:
+  manpower-A, fuel-A, steel-A, barracks-A, depot-A, workshop-A, infantry-D, armor-A,
+  artillery-C, army-C, turn-A, column-A, garrison-D, base-A, city-A, farm-A,
+  oilfield-A, steelmill-C, factory-A, travel-A, deploy-A, disband-A. Not used: every
+  other take, including the recorded alts fuel-B, infantry-A, army-A, base-B, farm-B.
+- **Emblem:** emblem-1 `s1-winghex` for the header wordmark and the sign-in and start
+  cards; emblem-3 `s2-compactwing` for the favicon and small app icons. Not used:
+  the runner-up emblem-2 `s2-wingshield` and the other five.
+- **Sign-in key art:** keyart-3-centre `centre-3` behind the login and start screens.
+  `right-3` (keyart-6-right) is the recorded alternate and is not used; nor are the
+  other four.
+
+`apply_ui_art.py` builds the shipped files (glyph masks in
+`frontend/src/ui-art/glyphs/`, `emblem/emblem-1.webp`, `keyart/centre-3.webp`, and
+`favicon.ico`, `favicon-32.png`, `apple-touch-icon.png` in `frontend/public/`) and
+writes `APPLIED.md` and `applied.json` (source, sha256s, the resize or convert done);
+`scripts/tests/test_ui_art_sync.py` checks them. How the frontend uses them:
+`docs/UI-STYLE.md` §4.
+
+## Round 1 (as made, 2026-11-10)
+
+Candidates for three pieces of UI art, made overnight with Codex's
+built-in image generation for the owner to review. Review pages (built with
 `scripts/review-page.py`, notes added with `add_notes.py`):
 `.dev/review-pages/ui-glyphs-r1.html`, `emblem-r1.html`, `keyart-r1.html`.
 

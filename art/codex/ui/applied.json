@@ -1,0 +1,191 @@
+[
+ {
+  "output": "frontend/src/ui-art/glyphs/manpower.png",
+  "output_sha256": "9c8b064580da811292725386089c2e8856c350e1195373a42e3a19560949ecc2",
+  "source": "art/codex/ui/glyphs/cut/manpower-A.png",
+  "source_sha256": "dce1c03642f3f59cb1eef1ed1531ca3c39a1e153fb851d19942c0c28b9b2b889",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/fuel.png",
+  "output_sha256": "49eaf9f3f366897772bcc5263e1f39e4f17302c972f64677147bdff0455b43d6",
+  "source": "art/codex/ui/glyphs/cut/fuel-A.png",
+  "source_sha256": "006b17162d74551e39942a292e3e0f4279c381f055fb3d3835a49a7bf9683415",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/steel.png",
+  "output_sha256": "fc60517bd9b4c5a9c54c1092b9df5d3ddb3a45a493b5aa036df13005a4745d27",
+  "source": "art/codex/ui/glyphs/cut/steel-A.png",
+  "source_sha256": "d7f376577a4716e7d2153269d45da2219bddb79e76650ac0fc6a0d194ebb40cf",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/barracks.png",
+  "output_sha256": "4ad7811f035557817e9e02c32f431bda58ca25b2a337660c5f0a0d6678c285ca",
+  "source": "art/codex/ui/glyphs/cut/barracks-A.png",
+  "source_sha256": "e737e1dbcaafa8aded8d8d0f5f5a9dd9ef1e1dd6cc55395d66d58effb27b4941",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/depot.png",
+  "output_sha256": "4cbd45c5aa39d78f3a7e9efcd6fcb9ae326ad31887a11d1492bf9a3a7fbe2ef5",
+  "source": "art/codex/ui/glyphs/cut/depot-A.png",
+  "source_sha256": "fe9661ecf6cb22ab1403ddaed7769963255b42d8dd0675538bf750d13a77f054",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/workshop.png",
+  "output_sha256": "91b27486c711336636ea9dc4eb446c36cd4e3d0e519265620699e5dbbf291b27",
+  "source": "art/codex/ui/glyphs/cut/workshop-A.png",
+  "source_sha256": "b145321f2cc82bb8a43ecc1685ad28b965fdda09edaf17f85b92d8cbc1ec222e",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/infantry.png",
+  "output_sha256": "bf62e4df89aaaffb552bb8873f53f7454a5235f3ec2ca0d776ab31cf302320e7",
+  "source": "art/codex/ui/glyphs/cut/infantry-D.png",
+  "source_sha256": "67fee2de4c96e7adb96ca2c57820b7c1c6b65722a281f08ea766c8294c0e37e6",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/armor.png",
+  "output_sha256": "08752f9adec717baf280cd1232756d1983a02369eda334c9b5d271a2627089c4",
+  "source": "art/codex/ui/glyphs/cut/armor-A.png",
+  "source_sha256": "6c6d5e97c13ff0a5005bccb43545e2af3582389a4b8e34ddec0aa04dbea91c57",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/artillery.png",
+  "output_sha256": "3d95c95c44a3be597ea6efb12033669618f3a5e86eeafde5f55a1b82107479b1",
+  "source": "art/codex/ui/glyphs/cut/artillery-C.png",
+  "source_sha256": "a018679d9bb79e3e329f1f76ecd57e4fe1da9638968993bf0c10428aa0f04278",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/army.png",
+  "output_sha256": "18716be5874dbe16970a688be80d1fda48b601e4e8f63d04950940775f22ae4b",
+  "source": "art/codex/ui/glyphs/cut/army-C.png",
+  "source_sha256": "fb2703014600fb4c691c9ac855c5463b92b6f6e70164a23e69ade7bf3eee21e8",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/turn.png",
+  "output_sha256": "964ab08fe942beb26ea0dc52effcff1eca658da7afc07a6dc2ad7cdff6ba4e0c",
+  "source": "art/codex/ui/glyphs/cut/turn-A.png",
+  "source_sha256": "d96736cd6650a085f4f26d4bee8b89b6b4e5707ab2d5b3c110a7002d4509cce5",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/column.png",
+  "output_sha256": "18fadabb8aa3a88ff474d4e5afa8996a467987265651817376136a29c2079849",
+  "source": "art/codex/ui/glyphs/cut/column-A.png",
+  "source_sha256": "a908504311e0ad14f97a46917b946b674cbb2aefa99bee81830aa289847fc2c3",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/garrison.png",
+  "output_sha256": "0bc186573614947040f64e29abfef0d06aa33d642e09de71164dcd13fde7da4f",
+  "source": "art/codex/ui/glyphs/cut/garrison-D.png",
+  "source_sha256": "adefe14520431d293362ae7bc3129dda914ecf8a187e0adae1ab8a0917d81e61",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/base.png",
+  "output_sha256": "65999494ad5f011f79eda85b627befd8731d746a7069f1ac087a8aafb02ff8e4",
+  "source": "art/codex/ui/glyphs/cut/base-A.png",
+  "source_sha256": "267acef459b888977b78d485f2e6b05f1dbf5cf19bb871fa597fee825c347770",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/city.png",
+  "output_sha256": "b8b302908b0ece6accacc64922495972459e03a8f6eb72cae32e74d7da02288d",
+  "source": "art/codex/ui/glyphs/cut/city-A.png",
+  "source_sha256": "02c768216ec0b69899cb83fe55403ec0f6e5d48d2c00aac58db7a0f8c3719c05",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/farm.png",
+  "output_sha256": "41d13db24fb74dea28b0d7db6d523031d197e262a027ab5b3fdbf944195d50a4",
+  "source": "art/codex/ui/glyphs/cut/farm-A.png",
+  "source_sha256": "6035d9bd67c71d174443b5221f37439580365629a4f05848294a6f2bb6cea836",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/oil_field.png",
+  "output_sha256": "e0b14da502b4b7ca1e9817c28d463c931b6c08c73dadb1d4c214a2b51cb3e2b9",
+  "source": "art/codex/ui/glyphs/cut/oilfield-A.png",
+  "source_sha256": "b71999f4adeee5bd972d95618bf8dc78ee50b50db3c88ced6efef240ee3e476f",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/steel_mill.png",
+  "output_sha256": "034cb0ff6947439b55adf1a4e13e595963fc7eb5174c434560166787a9879529",
+  "source": "art/codex/ui/glyphs/cut/steelmill-C.png",
+  "source_sha256": "e1297c4d7ffe8637e69b19a3706011be8e6e2f84f6455282097e48c15a4524e9",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/factory.png",
+  "output_sha256": "a9fea0afe8db0eabf94a1de413892ee4e9f1d70573d9854d53fd29ba6404dc6d",
+  "source": "art/codex/ui/glyphs/cut/factory-A.png",
+  "source_sha256": "caa57c12b0159dc9a45e46801cd639b33c74f2f64da2a010c9d6ac1f4a0f8757",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/travel.png",
+  "output_sha256": "bdd429a0802dab374b223a0f988399c70f9962b8cd8cd199381b0a8d78dd858a",
+  "source": "art/codex/ui/glyphs/cut/travel-A.png",
+  "source_sha256": "c26603ecacc14e2498638c89920d212d8df37ff0ee7e0d6483fe8f4727f72125",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/deploy.png",
+  "output_sha256": "7446df7be9aef2b5b8c19b4840a9809189a6ff169ffe13ecc1e5358904238271",
+  "source": "art/codex/ui/glyphs/cut/deploy-A.png",
+  "source_sha256": "fdd90942f8f66594f5ee4bc3aa77006c0b2fd682805486d418a709619df406f6",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/glyphs/disband.png",
+  "output_sha256": "6249fb367d63bbe431482114420479b49d31245e8357f11a55ea1086a607db9f",
+  "source": "art/codex/ui/glyphs/cut/disband-A.png",
+  "source_sha256": "96eba881714d3fd736ae4c4cdf10d8d242d5931b1b4be302a9cdf170cb1b973b",
+  "how": "alpha, Lanczos to 48 px, grey+alpha PNG"
+ },
+ {
+  "output": "frontend/src/ui-art/emblem/emblem-1.webp",
+  "output_sha256": "e41215324066af83edf2e2270b35044a841cb937c12e454b8c225cd5cd0f026c",
+  "source": "art/codex/ui/emblem/cut/s1-winghex.png",
+  "source_sha256": "f24543f66bc06a471c04e26d6fa4edd0e4a7c1f15d01692726b5bdc5036e84bc",
+  "how": "crop to alpha box + 4 px, Lanczos to 240 px wide, WebP q90"
+ },
+ {
+  "output": "frontend/public/favicon.ico",
+  "output_sha256": "42bfa65505bdb4d9a5a3e343a482f5e00252ff59ad11e6c7cd759dcb684169f9",
+  "source": "art/codex/ui/emblem/cut/s2-compactwing.png",
+  "source_sha256": "76ef26b419a1ba1da1aa021644588e9b1f0b76ca6edb4304d14076863829e88f",
+  "how": "crop + 4 px, centred square, Lanczos 48 px, ICO 16/32/48"
+ },
+ {
+  "output": "frontend/public/favicon-32.png",
+  "output_sha256": "e66bd0c9727c82e3019ebda91c7edd09b823e3a64fffe0e79e5db0eac6290949",
+  "source": "art/codex/ui/emblem/cut/s2-compactwing.png",
+  "source_sha256": "76ef26b419a1ba1da1aa021644588e9b1f0b76ca6edb4304d14076863829e88f",
+  "how": "crop + 4 px, centred square, Lanczos to 32 px PNG"
+ },
+ {
+  "output": "frontend/public/apple-touch-icon.png",
+  "output_sha256": "aed1ec7256165b5d81566635ad4dd3f85f4aaf98592331f1c5dc40ed9705bce7",
+  "source": "art/codex/ui/emblem/cut/s2-compactwing.png",
+  "source_sha256": "76ef26b419a1ba1da1aa021644588e9b1f0b76ca6edb4304d14076863829e88f",
+  "how": "crop + 4 px, Lanczos to 150 px wide on #321f14 180 px square"
+ },
+ {
+  "output": "frontend/src/ui-art/keyart/centre-3.webp",
+  "output_sha256": "00376a2925abaf329273ff3442ec05101e71b7c6af8c31442df6f19be77df682",
+  "source": "art/codex/ui/keyart/raw/centre-3.png",
+  "source_sha256": "eb15cf26ea0c44aa7d53c0e0f1b48802acd2198c71437afb4b2ff548257c6b1c",
+  "how": "native 1536x1024, WebP q80 method 6"
+ }
+]
