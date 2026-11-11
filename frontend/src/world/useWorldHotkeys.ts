@@ -34,7 +34,7 @@ export const SHORTCUTS: readonly { keys: string; does: string }[] = [
   { keys: "Shift+click", does: "Swap places with a neighbouring unit of yours" },
   { keys: "Esc", does: "Leave the mode, then deselect" },
   { keys: "Ctrl+Enter", does: "Submit the plan" },
-  { keys: "?", does: "This list" },
+  { keys: "?", does: "This field manual" },
   { keys: "Space", does: "Playback: play / pause" },
   { keys: "← / →", does: "Playback: step back / forward a beat" },
   { keys: "Esc", does: "Playback: back to planning" },
@@ -60,6 +60,7 @@ export interface HotkeyOptions {
   home: Axial | null;
   /** Whether the plan's submit button is enabled. */
   canSubmit: boolean;
+  /** The field manual (`?`), which Esc closes first. */
   helpOpen: boolean;
   setHelpOpen: (open: boolean) => void;
   /**

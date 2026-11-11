@@ -80,7 +80,8 @@ body {
    Kit files used here: frame.png (panel and card frame, bar trays), plate.png (panel
    title nameplate), parchment.png (panel face grain), commit-{up,pressed,disabled}.png
    (the Submit plan plate), iconbtn-{up,pressed}.png (square map and transport keys),
-   well.png (the minimap well), wood.png (trays, header; see .fhq-wood above). */
+   well.png (the minimap well), wood.png (trays, header; see .fhq-wood above),
+   tab-{active,inactive}.png (the field manual's folder tabs). */
 @layer components {
   /* Wood-and-brass frame with L-shaped corner brackets around a parchment face.
      frame.png's 70 px corner slice holds the whole bracket; drawn at 22 px the rail
@@ -337,6 +338,41 @@ body {
     border-bottom-width: 0;
     border-image-width: 15px 15px 0;
     border-image-outset: 3px 3px 0;
+  }
+
+  /* Folder tabs (tab-active.png / tab-inactive.png): the active one is a parchment
+     face in a brass rim that opens into the page below it, the others dark canvas. */
+  .fhq-tab {
+    position: relative;
+    padding: 5px 10px 3px;
+    border: solid transparent;
+    border-width: 9px 7px 3px;
+    border-image: url("./board/panels/chrome/tab-inactive.png") 36 26 10 fill / 9px 7px 3px stretch;
+    margin-bottom: -1px;
+    line-height: 14px;
+    color: var(--color-ivory-100);
+    cursor: pointer;
+  }
+  .fhq-tab:hover {
+    filter: brightness(1.15);
+  }
+  .fhq-tab-active {
+    z-index: 1;
+    border-image-source: url("./board/panels/chrome/tab-active.png");
+    color: var(--color-ink-900);
+  }
+  .fhq-tab-active:hover {
+    filter: none;
+  }
+  .fhq-tab:focus-visible {
+    outline: 2px solid var(--color-ink-900);
+    outline-offset: -2px;
+  }
+  /* The page under the tabs: a lighter sheet with a brass rule along its top. */
+  .fhq-page {
+    background-color: rgb(240 226 196 / 0.55);
+    border-top: 1px solid var(--color-brass-600);
+    box-shadow: inset 0 1px 0 rgb(255 248 228 / 0.6);
   }
 
   /* Recessed brass-lipped well (well.png; no fill: what it frames shows through). */

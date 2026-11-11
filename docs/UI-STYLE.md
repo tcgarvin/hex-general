@@ -18,6 +18,7 @@
 > - `iconbtn-up/pressed.png`: the square map keys and playback transport keys (`.fhq-key`).
 > - `well.png`: the recessed well around the minimap (a DOM overlay in `MapControls`).
 > - `wood.png`: the header and trays (`.fhq-wood`, `.fhq-tray`).
+> - `tab-active/inactive.png`: the field manual's folder tabs (`.fhq-tab`).
 >
 > CSS stand-ins, from the tokens: the small text buttons (order chips, Build, Recruit,
 > Play, Exit, page buttons) are `.fhq-btn`, a flat brushed-brass face with an octagonal

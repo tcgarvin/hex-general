@@ -144,6 +144,8 @@ export function PlaybackBar({
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target;
+      // A dialog over the board (the field manual) takes its own keys, Esc included.
+      if (t instanceof Element && t.closest('[role="dialog"]') !== null) return;
       if (t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) {
         if (!(t instanceof HTMLInputElement && t.type === "range")) return;
       }

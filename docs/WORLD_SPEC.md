@@ -597,9 +597,18 @@ twice as fast), + and - or E and Q zoom, Home or Space centre on your base, F or
 the whole world, Tab and Shift+Tab (or . and ,) step through your units with idle ones
 first, T, M and B pick Travel, Move and Barrage mode, R and H order Rest and Hold, X or
 Delete clear the unit's order, Esc leaves the mode and then deselects, Ctrl+Enter
-submits the plan, and ? lists all of these. Keys do nothing while typing in a field or
+submits the plan, and ? opens the field manual. Keys do nothing while typing in a field or
 with Ctrl, Meta or Alt held (except Ctrl+Enter). The same camera actions are buttons
-above the minimap. Move reach follows the engine's occupancy rules: your own deployed
+above the minimap.
+
+**As built (2026-11-11): field manual.** `?` (key or button) and the account menu open
+a field manual over the board (`frontend/src/world/FieldManual.tsx`): folder-tab pages
+for the turn, your army, orders, columns and contact, sites and garrisons, your base
+and economy, reading the turn, and the key list, with a search box; Esc closes it. Its
+numbers come from the world's economy config and `state.config`, the planner's mirrors
+of the engine (`UNIT_STATS`, `COLUMN_RULES`, `DEPLOY_DISTANCE`), and
+`world/manualRules.ts` for the rest, which `manualRules.test.ts` checks against the
+engine's Python source. Move reach follows the engine's occupancy rules: your own deployed
 units block unless they are leaving this turn, a hostile hex can end a move (an attack)
 but not be passed, and an engaged unit can't step from one hostile-adjacent hex to
 another.

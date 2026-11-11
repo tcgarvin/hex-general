@@ -1,14 +1,12 @@
-// On-screen camera buttons (zoom, centre on base, whole world) and the keyboard
-// shortcut list, in a wood console in the board's bottom-left corner, under the
-// left panels: a row of brass keys over the recessed well that frames the minimap
-// (the minimap itself is drawn by the renderer; the well is see-through, so clicks
-// reach it). The list opens beside the console, where it has the height it needs
-// without covering a panel.
+// On-screen camera buttons (zoom, centre on base, whole world) and the field manual
+// key, in a wood console in the board's bottom-left corner, under the left panels: a
+// row of brass keys over the recessed well that frames the minimap (the minimap
+// itself is drawn by the renderer; the well is see-through, so clicks reach it).
 
 import type { Axial } from "@/board/hex";
 
 import { TRAY_MIN_W, TRAY_OVERLAP, WELL, type MinimapSize } from "./minimapConsole";
-import { SHORTCUTS, ZOOM_STEP } from "./useWorldHotkeys";
+import { ZOOM_STEP } from "./useWorldHotkeys";
 import { MINIMAP_MARGIN, TACTICAL_SCALE, type WorldRenderer } from "./WorldRenderer";
 
 function Icon({ d }: { d: string }) {
@@ -23,15 +21,15 @@ export function MapControls({
   renderer,
   minimap,
   home,
-  helpOpen,
-  setHelpOpen,
+  manualOpen,
+  setManualOpen,
 }: {
   renderer: WorldRenderer | null;
   /** From `useMinimapSize`. */
   minimap: MinimapSize | null;
   home: Axial | null;
-  helpOpen: boolean;
-  setHelpOpen: (open: boolean) => void;
+  manualOpen: boolean;
+  setManualOpen: (open: boolean) => void;
 }) {
   const off = renderer === null;
   // The well's outer edge, and the tray over it: as wide as the well, or wider
@@ -40,33 +38,6 @@ export function MapControls({
   const wellW = minimap === null ? TRAY_MIN_W : minimap.width + 2 * WELL;
   return (
     <div className="pointer-events-none absolute flex flex-col items-start" style={{ left, bottom: MINIMAP_MARGIN.y - WELL }}>
-      {helpOpen && (
-        <div
-          role="dialog"
-          aria-label="Keyboard shortcuts"
-          className="fhq-frame pointer-events-auto absolute bottom-0 left-full z-20 ml-4 w-72 px-1.5 pb-1.5 pt-1 text-xs"
-        >
-          <div className="mb-1 flex items-center justify-between">
-            <h2 className="fhq-plate font-display text-sm uppercase tracking-wide">Keys</h2>
-            <button
-              type="button"
-              onClick={() => setHelpOpen(false)}
-              className="font-label text-xs uppercase text-wood-500 hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-brass-600"
-            >
-              Close
-            </button>
-          </div>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
-            {SHORTCUTS.map((s) => (
-              <div key={s.keys} className="contents">
-                <dt className="font-label font-semibold whitespace-nowrap">{s.keys}</dt>
-                <dd>{s.does}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-1.5 text-wood-500">Drag or use the minimap to move; scroll or pinch to zoom.</p>
-        </div>
-      )}
       <div
         className="fhq-tray fhq-tray-open fhq-on-wood pointer-events-auto relative z-[1] flex justify-center gap-0.5 py-px"
         style={{ width: Math.max(TRAY_MIN_W, wellW - 6), marginLeft: 3, marginBottom: -TRAY_OVERLAP }}
@@ -95,10 +66,10 @@ export function MapControls({
         <button
           type="button"
           className="fhq-key size-7 font-label text-sm font-bold"
-          onClick={() => setHelpOpen(!helpOpen)}
-          title="Keyboard shortcuts (?)"
-          aria-label="Keyboard shortcuts"
-          aria-expanded={helpOpen}
+          onClick={() => setManualOpen(!manualOpen)}
+          title="Field manual: rules and keys (?)"
+          aria-label="Field manual"
+          aria-expanded={manualOpen}
         >
           ?
         </button>

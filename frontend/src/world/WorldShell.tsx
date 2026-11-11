@@ -28,6 +28,7 @@ import {
   type Forecast,
   type Stocks,
 } from "./economy";
+import { FieldManual, type ManualSection } from "./FieldManual";
 import { HoverInfo } from "./HoverInfo";
 import { MapControls } from "./MapControls";
 import { consoleHeight, useMinimapSize } from "./minimapConsole";
@@ -135,7 +136,9 @@ function WorldScreen({
   const reveal = useCallback((hex: Axial) => setPanTo((p) => ({ hex, seq: (p?.seq ?? 0) + 1, reveal: true })), []);
   const [renderer, setRenderer] = useState<WorldRenderer | null>(null);
   const minimap = useMinimapSize(renderer);
-  const [helpOpen, setHelpOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  // The manual reopens on the page it was left on.
+  const [manualSection, setManualSection] = useState<ManualSection>("turn");
   const [hoveredUnit, setHoveredUnit] = useState<number | null>(null);
   // Dev builds only: `?turn=N` shows (and plays) an earlier resolved turn, for checks.
   const [search] = useSearchParams();
@@ -197,7 +200,7 @@ function WorldScreen({
     !planning.submitting &&
     planProblems(planning.plan, view.state, economy, view.your_slot, outlook.armySize).length === 0 &&
     (planning.dirty || !planning.submitted);
-  useWorldHotkeys({ renderer, planning, home: base, canSubmit, helpOpen, setHelpOpen, playback: watching !== null });
+  useWorldHotkeys({ renderer, planning, home: base, canSubmit, helpOpen: manualOpen, setHelpOpen: setManualOpen, playback: watching !== null });
   // A unit standing on a site also shows that hex's panel (recruiting, garrison).
   const unitHex = planning.selectedUnit?.coord ?? null;
   const panelHex =
@@ -205,7 +208,7 @@ function WorldScreen({
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#1a1d22] text-ivory-100">
-      <WorldHeader view={view} plan={outlook} />
+      <WorldHeader view={view} plan={outlook} onFieldManual={() => setManualOpen(true)} />
       {error !== null && (
         <div className="absolute left-1/2 top-14 z-10 -translate-x-1/2">
           <ErrorBanner message={error} />
@@ -253,7 +256,7 @@ function WorldScreen({
             }}
           />
         </div>
-        <MapControls renderer={renderer} minimap={minimap} home={base} helpOpen={helpOpen} setHelpOpen={setHelpOpen} />
+        <MapControls renderer={renderer} minimap={minimap} home={base} manualOpen={manualOpen} setManualOpen={setManualOpen} />
         {/* Padded so the scroll box does not clip the panel frames' outset and shadow. */}
         <div className="pointer-events-none absolute right-2 top-2 flex max-h-[calc(100%-16px)] w-[16.5rem] flex-col gap-4 overflow-y-auto p-1 pb-4 min-[1100px]:w-[20.5rem]">
           <BasePanel state={view.state} economy={economy} slot={view.your_slot} planning={planning} />
@@ -291,6 +294,16 @@ function WorldScreen({
               Cancel
             </button>
           </div>
+        )}
+        {manualOpen && (
+          <FieldManual
+            view={view}
+            economy={economy}
+            armySize={outlook.armySize}
+            section={manualSection}
+            onSection={setManualSection}
+            onClose={() => setManualOpen(false)}
+          />
         )}
       </div>
     </div>
@@ -388,48 +401,51 @@ const RESOURCE_ABBR = { manpower: "MP", fuel: "Fuel", steel: "Stl" } as const;
  * One line at any width: below 1280 px the per-turn forecast goes, below 1100 px
  * the labels shorten, so the bar never wraps.
  */
-function WorldHeader({ view, plan }: { view: WorldView; plan: Forecast }) {
+function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: Forecast; onFieldManual: () => void }) {
   const player = view.state.players.find((p) => p.id === view.your_slot);
   const stocks = player === undefined ? null : stocksOf(player);
   return (
-    <header className="fhq-wood flex h-12 shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-b-2 border-brass-600/70 px-4 text-sm min-[1100px]:gap-5">
-      <Link to="/worlds" title="All worlds" className="font-display text-base uppercase tracking-wide text-ivory-100">
-        hex-general
-      </Link>
-      <Stat label="Turn">
-        <span className="font-data">{view.turn}</span>
-      </Stat>
-      <Countdown clock={view.clock} nextTickAt={view.next_tick_at ?? null} />
-      {stocks !== null &&
-        RESOURCES.map((r) => (
-          <Stat key={r} label={RESOURCE_LABEL[r]} abbr={RESOURCE_ABBR[r]}>
-            <span className={`font-data ${plan.short.includes(r as "fuel" | "manpower") ? "text-invalid" : ""}`}>
-              {stocks[r]}
-              <span className="text-ivory-400">/{plan.storage}</span>
-            </span>
-            <span className={`hidden xl:inline ${plan.net[r] >= 0 ? "text-valid" : "text-invalid"}`}>
-              ({plan.net[r] >= 0 ? "+" : ""}
-              {plan.net[r]})
-            </span>
-          </Stat>
-        ))}
-      <Stat label="Army">
-        <span className="font-data">
-          {plan.units}
-          <span className="text-ivory-400">/{plan.armySize}</span>
-        </span>
-      </Stat>
-      {plan.short.length > 0 && (
-        <span
-          title={`Out of ${plan.short.join(" and ")} next turn: a unit will disband`}
-          className="font-label text-xs font-semibold uppercase tracking-wider text-invalid"
-        >
-          <span className="hidden xl:inline">Out of {plan.short.join(" and ")} next turn: a unit will disband</span>
-          <span className="xl:hidden">Short of {plan.short.join(", ")}</span>
-        </span>
-      )}
-      <div className="ml-auto">
-        <AccountMenu />
+    // Only the stats clip, so the account menu's dropdown can hang below the bar.
+    <header className="fhq-wood relative z-40 flex h-12 shrink-0 items-center gap-3 whitespace-nowrap border-b-2 border-brass-600/70 px-4 text-sm">
+      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden min-[1100px]:gap-5">
+        <Link to="/worlds" title="All worlds" className="font-display text-base uppercase tracking-wide text-ivory-100">
+          hex-general
+        </Link>
+        <Stat label="Turn">
+          <span className="font-data">{view.turn}</span>
+        </Stat>
+        <Countdown clock={view.clock} nextTickAt={view.next_tick_at ?? null} />
+        {stocks !== null &&
+          RESOURCES.map((r) => (
+            <Stat key={r} label={RESOURCE_LABEL[r]} abbr={RESOURCE_ABBR[r]}>
+              <span className={`font-data ${plan.short.includes(r as "fuel" | "manpower") ? "text-invalid" : ""}`}>
+                {stocks[r]}
+                <span className="text-ivory-400">/{plan.storage}</span>
+              </span>
+              <span className={`hidden xl:inline ${plan.net[r] >= 0 ? "text-valid" : "text-invalid"}`}>
+                ({plan.net[r] >= 0 ? "+" : ""}
+                {plan.net[r]})
+              </span>
+            </Stat>
+          ))}
+        <Stat label="Army">
+          <span className="font-data">
+            {plan.units}
+            <span className="text-ivory-400">/{plan.armySize}</span>
+          </span>
+        </Stat>
+        {plan.short.length > 0 && (
+          <span
+            title={`Out of ${plan.short.join(" and ")} next turn: a unit will disband`}
+            className="font-label text-xs font-semibold uppercase tracking-wider text-invalid"
+          >
+            <span className="hidden xl:inline">Out of {plan.short.join(" and ")} next turn: a unit will disband</span>
+            <span className="xl:hidden">Short of {plan.short.join(", ")}</span>
+          </span>
+        )}
+      </div>
+      <div className="shrink-0">
+        <AccountMenu onFieldManual={onFieldManual} />
       </div>
     </header>
   );

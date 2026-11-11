@@ -23,7 +23,8 @@ import type { DevProfile } from "@/lib/api/types";
  * acting as oneself). Switching identity reloads to the dispatcher so the chosen
  * user's active game is re-resolved cleanly rather than leaving stale state.
  */
-export function AccountMenu() {
+/** `onFieldManual`: on the world screen, a menu item opens the field manual. */
+export function AccountMenu({ onFieldManual }: { onFieldManual?: () => void } = {}) {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [isDev, setIsDev] = useState(false);
@@ -117,6 +118,18 @@ export function AccountMenu() {
             >
               Account
             </Link>
+            {onFieldManual !== undefined && (
+              <button
+                type="button"
+                className="px-3 py-1.5 text-left text-ivory-100 hover:bg-ink-900/60"
+                onClick={() => {
+                  setOpen(false);
+                  onFieldManual();
+                }}
+              >
+                Field manual
+              </button>
+            )}
 
             {isDev && profiles.length > 0 && (
               <div className="mt-1 border-t border-wood-500/40 pt-1">
