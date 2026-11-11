@@ -541,6 +541,25 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   new art, generated with Codex (VISION §11). They go through Artifact review for the
   user's pick before they're applied.
 
+**As built (2026-11-11): camera and keys.** The camera is clamped so the map always
+fills most of the screen: on an axis where the map is smaller than the view it is
+centred, otherwise at most 30% of the view may be empty past the map's edge. The clamp
+applies after drags, the wheel, keys, minimap jumps and window resizes, so zooming all
+the way out ends with the world centred. Jumps (centre on base, fit, minimap, a unit
+picked from the Army panel) ease over 200 ms, or happen at once when the browser asks
+for reduced motion. Picking a unit in the Army panel only moves the camera when the unit
+is off screen or under a panel. Keys: W A S D or the arrows pan while held (Shift is
+twice as fast), + and - or E and Q zoom, Home or Space centre on your base, F or 0 show
+the whole world, Tab and Shift+Tab (or . and ,) step through your units with idle ones
+first, T, M and B pick Travel, Move and Barrage mode, R and H order Rest and Hold, X or
+Delete clear the unit's order, Esc leaves the mode and then deselects, Ctrl+Enter
+submits the plan, and ? lists all of these. Keys do nothing while typing in a field or
+with Ctrl, Meta or Alt held (except Ctrl+Enter). The same camera actions are buttons
+above the minimap. Move reach follows the engine's occupancy rules: your own deployed
+units block unless they are leaving this turn, a hostile hex can end a move (an attack)
+but not be passed, and an engaged unit can't step from one hostile-adjacent hex to
+another.
+
 ## 12. Implementation phases
 
 | Phase | Delivers | Gate |
