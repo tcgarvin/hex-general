@@ -28,6 +28,9 @@ import {
   type Forecast,
   type Stocks,
 } from "./economy";
+import { HoverInfo } from "./HoverInfo";
+import { MapControls } from "./MapControls";
+import { overlayOf } from "./overlay";
 import {
   buildOption,
   inBarrageRange,
@@ -40,12 +43,13 @@ import {
 } from "./plan";
 import { siteIconUrl } from "./siteArt";
 import { SITE_TILE_KINDS } from "./siteTiles";
-import { turnReport, turnTrails, unitBook, type ReportItem, type TurnTrails } from "./turnReport";
+import { turnReport, turnTrails, unitBook, type ReportItem } from "./turnReport";
 import { useTurnReport, type ReportLoad } from "./useTurnReport";
 import { useWorld, type WorldView } from "./useWorld";
+import { useWorldHotkeys } from "./useWorldHotkeys";
 import { useWorldPlan, type PlannedRoute, type WorldPlanning } from "./useWorldPlan";
 import { WorldBoard } from "./WorldBoard";
-import type { WorldOverlay } from "./WorldRenderer";
+import type { WorldRenderer } from "./WorldRenderer";
 import type { MapSite, WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -84,8 +88,12 @@ function WorldScreen({
   const economy = useMemo(() => economyOf(view.state), [view.state]);
   const outlook = useMemo(() => forecast(view.state, map, view.your_slot), [view, map]);
   const base = useMemo(() => baseOf(view.state, map, view.your_slot), [view, map]);
-  const [panTo, setPanTo] = useState<{ hex: Axial; seq: number } | null>(null);
+  const [panTo, setPanTo] = useState<{ hex: Axial; seq: number; reveal?: boolean } | null>(null);
   const jump = useCallback((hex: Axial) => setPanTo((p) => ({ hex, seq: (p?.seq ?? 0) + 1 })), []);
+  const reveal = useCallback((hex: Axial) => setPanTo((p) => ({ hex, seq: (p?.seq ?? 0) + 1, reveal: true })), []);
+  const [renderer, setRenderer] = useState<WorldRenderer | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [hoveredUnit, setHoveredUnit] = useState<number | null>(null);
   const report = useTurnReport(view.game_id, view.turn > 0 ? view.turn - 1 : null);
   const digest = useMemo(() => {
     if (report.status !== "ready") return null;
@@ -97,16 +105,19 @@ function WorldScreen({
   const [reportClosedFor, setReportClosedFor] = useState<number | null>(null);
   const reportOpen = reportClosedFor !== view.turn;
   const trails = reportOpen ? (digest?.trails ?? null) : null;
-  const overlay = useMemo(() => overlayOf(planning, view.state.units, trails), [planning, view.state.units, trails]);
-
-  const { selectUnit } = planning;
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") selectUnit(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [selectUnit]);
+  const overlay = useMemo(
+    () => overlayOf(planning, view.state.units, trails, hoveredUnit),
+    [planning, view.state.units, trails, hoveredUnit],
+  );
+  const canSubmit =
+    !planning.submitting &&
+    planProblems(planning.plan, view.state, economy, view.your_slot, outlook.armySize).length === 0 &&
+    (planning.dirty || !planning.submitted);
+  useWorldHotkeys({ renderer, planning, home: base, canSubmit, helpOpen, setHelpOpen });
+  // A unit standing on a site also shows that hex's panel (recruiting, garrison).
+  const unitHex = planning.selectedUnit?.coord ?? null;
+  const panelHex =
+    unitHex === null ? planning.selectedHex : map.siteAt(unitHex.q, unitHex.r) !== undefined ? unitHex : null;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#1a1d22] text-ivory-100">
@@ -124,9 +135,12 @@ function WorldScreen({
           overlay={overlay}
           panTo={panTo}
           onHexClick={planning.onHexClick}
+          onRenderer={setRenderer}
         />
-        <div className="pointer-events-none absolute left-3 top-3 flex max-h-[calc(100%-260px)] w-72 flex-col gap-3">
-          <ArmyPanel view={view} planning={planning} onJump={jump} />
+        {renderer !== null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} />}
+        <MapControls renderer={renderer} home={base} helpOpen={helpOpen} setHelpOpen={setHelpOpen} />
+        <div className="pointer-events-none absolute left-3 top-3 flex max-h-[calc(100%-300px)] w-72 flex-col gap-3">
+          <ArmyPanel view={view} planning={planning} onJump={reveal} onHoverUnit={setHoveredUnit} />
           <ReportPanel
             load={report}
             items={digest?.items ?? null}
@@ -137,21 +151,18 @@ function WorldScreen({
         </div>
         <div className="pointer-events-none absolute right-3 top-3 flex max-h-[calc(100%-24px)] w-80 flex-col gap-3 overflow-y-auto">
           <BasePanel state={view.state} economy={economy} slot={view.your_slot} planning={planning} />
-          {planning.selectedUnit !== null ? (
-            <UnitPanel unit={planning.selectedUnit} planning={planning} />
-          ) : (
-            planning.selectedHex !== null && (
-              <HexPanel
-                map={map}
-                state={view.state}
-                economy={economy}
-                slot={view.your_slot}
-                hex={planning.selectedHex}
-                armySize={outlook.armySize}
-                planning={planning}
-                onClose={() => planning.selectUnit(null)}
-              />
-            )
+          {planning.selectedUnit !== null && <UnitPanel unit={planning.selectedUnit} planning={planning} />}
+          {panelHex !== null && (
+            <HexPanel
+              map={map}
+              state={view.state}
+              economy={economy}
+              slot={view.your_slot}
+              hex={panelHex}
+              armySize={outlook.armySize}
+              planning={planning}
+              onClose={() => planning.selectUnit(null)}
+            />
           )}
         </div>
         <PlanBar view={view} economy={economy} armySize={outlook.armySize} planning={planning} />
@@ -165,23 +176,6 @@ function baseOf(state: WorldState, map: WorldMap, slot: string): Axial | null {
     (s) => s.controlled_by === slot && map.siteAt(s.coord.q, s.coord.r)?.kind === "base",
   );
   return held?.coord ?? state.units.find((u) => u.owner === slot)?.coord ?? null;
-}
-
-function overlayOf(planning: WorldPlanning, units: readonly Unit[], trails: TurnTrails | null): WorldOverlay {
-  const selectedId = planning.selectedUnit?.id ?? null;
-  const barrages = units.flatMap((u) => {
-    const order = planning.plan.orders[u.id];
-    return order?.kind === "barrage" ? [{ from: u.coord, target: order.target }] : [];
-  });
-  return {
-    selectedUnit: planning.selectedUnit?.coord ?? null,
-    selectedHex: planning.selectedUnit === null ? planning.selectedHex : null,
-    routes: planning.routes.map((r) => ({ from: r.from, path: r.path, kind: r.kind, selected: r.unitId === selectedId })),
-    barrages,
-    reach: [...planning.moveReach.values()].map((path) => path[path.length - 1]),
-    recruits: Object.values(planning.plan.recruits).map((r) => r.coord),
-    lastTurn: trails,
-  };
 }
 
 // --- header -----------------------------------------------------------------------
@@ -350,7 +344,7 @@ function orderText(order: WorldOrder | undefined, route: PlannedRoute | undefine
     case "travel":
       return `travel, ${etaText(route?.eta ?? null)}`;
     case "move":
-      return `move ${order.path.length} hex${order.path.length === 1 ? "" : "es"}`;
+      return route?.attack ? `attack (${route.attack.q},${route.attack.r})` : `move ${order.path.length} hex${order.path.length === 1 ? "" : "es"}`;
     case "march":
       return "march";
     case "barrage":
@@ -374,10 +368,12 @@ function ArmyPanel({
   view,
   planning,
   onJump,
+  onHoverUnit,
 }: {
   view: WorldView;
   planning: WorldPlanning;
   onJump: (hex: Axial) => void;
+  onHoverUnit: (unitId: number | null) => void;
 }) {
   const units = view.state.units.filter((u) => u.owner === view.your_slot).sort((a, b) => a.id - b.id);
   return (
@@ -390,7 +386,7 @@ function ArmyPanel({
             const route = planning.routes.find((r) => r.unitId === u.id);
             const selected = planning.selectedUnit?.id === u.id;
             return (
-              <li key={u.id}>
+              <li key={u.id} onMouseEnter={() => onHoverUnit(u.id)} onMouseLeave={() => onHoverUnit(null)}>
                 <button
                   type="button"
                   onClick={() => {

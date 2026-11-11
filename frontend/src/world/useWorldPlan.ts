@@ -7,17 +7,25 @@
 // A world player may resubmit until the clock resolves the turn, and each submit
 // replaces the whole plan (WORLD_SPEC §10.1), so the local copy is always sent in
 // full.
+//
+// Board clicks: one of your own units always selects it (a stack cycles). With a
+// unit selected, Move and Barrage clicks outside the reach keep the selection and
+// leave a `notice` saying why, rather than silently dropping it. Move reach is
+// occupancy-aware (`moveRules.ts`), so a plan doesn't route through your own
+// units or past an enemy.
 
 import { useCallback, useMemo, useState } from "react";
 
-import { axialEqual, axialNeighbors, hexKey, type Axial, type Hex } from "@/board/hex";
+import { axialDistance, axialEqual, axialNeighbors, hexKey, type Axial, type Hex } from "@/board/hex";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 import { reachableContinuations, type HexIndex } from "@/planning/reach";
-import { isPassable, UNIT_MOVE } from "@/planning/rules";
+import { ARTILLERY_RANGE, isPassable, UNIT_MOVE } from "@/planning/rules";
 import type { components } from "@/lib/api/schema";
 
+import { contactSources, contactZone, runsIntoContact } from "./contact";
 import type { Building } from "./economy";
+import { hostileHexes, moveStepRules } from "./moveRules";
 import {
   inBarrageRange,
   planFromSubmission,
@@ -27,6 +35,7 @@ import {
   type WorldPlan,
 } from "./plan";
 import { columnCosts, findRoute, travelEta, type ColumnCosts } from "./routing";
+import { cycleUnit } from "./unitCycle";
 import type { WorldView } from "./useWorld";
 import type { WorldMap } from "./worldMap";
 
@@ -46,7 +55,27 @@ export interface PlannedRoute {
   kind: "travel" | "standing" | "move" | "march";
   /** Turns to arrive (travel and standing only). */
   eta: number | null;
+  /** The hostile-held hex a move ends on: the move is an attack. */
+  attack: Axial | null;
 }
+
+/** A short message about a click that did nothing (`seq` makes repeats count). */
+export interface Notice {
+  text: string;
+  seq: number;
+}
+
+/** The travel route a click on a hex would order, shown before the click. */
+export interface TravelPreview {
+  from: Axial;
+  path: Axial[];
+  eta: number;
+  /** The route comes within auto-deploy distance of a hostile or a garrisoned site. */
+  caution: boolean;
+}
+
+export const NOT_REACHABLE = "Not reachable this turn: use Travel for longer trips";
+export const OUT_OF_RANGE = `Out of range: guns reach ${ARTILLERY_RANGE} hexes`;
 
 export interface WorldPlanning {
   plan: WorldPlan;
@@ -62,8 +91,19 @@ export interface WorldPlanning {
   routes: readonly PlannedRoute[];
   /** Hexes a click would extend the selected unit's move to (move mode). */
   moveReach: ReadonlyMap<string, Axial[]>;
+  /** Hexes holding a visible hostile unit (by `hexKey`): a move there is an attack. */
+  hostile: ReadonlySet<string>;
+  /** Hexes the selected artillery could shell (barrage mode). */
+  barrageRange: readonly Axial[];
+  notice: Notice | null;
   onHexClick: (hex: Axial) => void;
   selectUnit: (unitId: number | null) => void;
+  /** Select the next (1) or previous (-1) own unit, idle ones first; returns it. */
+  cycleUnit: (dir: 1 | -1) => Unit | null;
+  /** Escape: leave Move or Barrage mode, else drop the selection. */
+  cancel: () => void;
+  /** The travel route a click on `hex` would order for the selected unit. */
+  previewTravel: (hex: Axial) => TravelPreview | null;
   setMode: (mode: PlanMode) => void;
   setOrder: (unitId: number, order: WorldOrder | null) => void;
   setOnArrival: (unitId: number, posture: Posture) => void;
@@ -99,6 +139,11 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   const selectedUnit = ownUnits.find((u) => u.id === sel.unitId) ?? null;
 
   const costs = useMemo(() => columnCosts(map), [map]);
+  const hostile = useMemo(() => hostileHexes(state.units, slot), [state.units, slot]);
+  const zone = useMemo(() => contactZone(contactSources(state, map, slot)), [state, map, slot]);
+  const standing = useMemo(() => state.standing_orders ?? [], [state.standing_orders]);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const warn = useCallback((text: string) => setNotice((n) => ({ text, seq: (n?.seq ?? 0) + 1 })), []);
 
   const edit = useCallback(
     (change: (p: WorldPlan) => WorldPlan) => {
@@ -122,8 +167,8 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   );
 
   const routes = useMemo(
-    () => plannedRoutes(ownUnits, plan, state.standing_orders ?? [], costs),
-    [ownUnits, plan, state.standing_orders, costs],
+    () => plannedRoutes(ownUnits, plan, standing, costs, hostile),
+    [ownUnits, plan, standing, costs, hostile],
   );
 
   const moveReach = useMemo(() => {
@@ -131,10 +176,25 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     const order = plan.orders[selectedUnit.id];
     const base = order?.kind === "move" ? order.path : [];
     const index = localIndex(map, selectedUnit.coord, UNIT_MOVE[selectedUnit.type] + 2);
-    const reach = reachableContinuations(selectedUnit, [], index);
-    if (base.length > 0) for (const [k, v] of reachableContinuations(selectedUnit, base, index)) reach.set(k, v);
+    const rules = moveStepRules(selectedUnit, { units: state.units, viewer: slot, orders: plan.orders, standing });
+    const reach = reachableContinuations(selectedUnit, [], index, rules);
+    if (base.length > 0) for (const [k, v] of reachableContinuations(selectedUnit, base, index, rules)) reach.set(k, v);
     return reach;
-  }, [selectedUnit, sel.mode, plan.orders, map]);
+  }, [selectedUnit, sel.mode, plan.orders, map, state.units, slot, standing]);
+
+  const barrageRange = useMemo(() => {
+    if (selectedUnit === null || sel.mode !== "barrage") return [];
+    const { q, r } = selectedUnit.coord;
+    const hexes: Axial[] = [];
+    for (let dq = -ARTILLERY_RANGE; dq <= ARTILLERY_RANGE; dq++) {
+      for (let dr = -ARTILLERY_RANGE; dr <= ARTILLERY_RANGE; dr++) {
+        const at = { q: q + dq, r: r + dr };
+        const d = axialDistance(at, selectedUnit.coord);
+        if (d >= 1 && d <= ARTILLERY_RANGE && map.hexAt(at.q, at.r) !== undefined) hexes.push(at);
+      }
+    }
+    return hexes;
+  }, [selectedUnit, sel.mode, map]);
 
   const select = useCallback(
     (unitId: number | null, hex: Axial | null, mode: PlanMode = "travel") =>
@@ -145,30 +205,27 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   const onHexClick = useCallback(
     (hex: Axial) => {
       const key = hexKey(hex.q, hex.r);
+      const here = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
+      if (here.length > 0) {
+        // Your own unit always selects, in every mode. Clicking a stack again
+        // steps through its units, then the hex itself.
+        const at = here.findIndex((u) => u.id === sel.unitId);
+        select(at < here.length - 1 ? here[at + 1].id : null, hex);
+        return;
+      }
       if (selectedUnit !== null && sel.mode === "barrage") {
-        if (inBarrageRange(selectedUnit, hex) && !axialEqual(hex, selectedUnit.coord)) {
+        if (inBarrageRange(selectedUnit, hex)) {
           setOrder(selectedUnit.id, { kind: "barrage", target: hex });
+          select(selectedUnit.id, sel.hex, "travel");
+        } else {
+          warn(OUT_OF_RANGE);
         }
-        select(selectedUnit.id, sel.hex, "travel");
         return;
       }
       if (selectedUnit !== null && sel.mode === "move") {
         const path = moveReach.get(key);
-        if (path !== undefined) {
-          setOrder(selectedUnit.id, { kind: "move", path });
-          return;
-        }
-      }
-      const here = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
-      const at = here.findIndex((u) => u.id === sel.unitId);
-      if (here.length > 0 && at < here.length - 1) {
-        // Clicking a stack again steps through its units, then the hex itself
-        // (its site panel: recruiting, garrison).
-        select(here[at + 1].id, hex);
-        return;
-      }
-      if (at >= 0) {
-        select(null, hex);
+        if (path !== undefined) setOrder(selectedUnit.id, { kind: "move", path });
+        else warn(NOT_REACHABLE);
         return;
       }
       if (selectedUnit !== null && sel.mode === "travel") {
@@ -182,7 +239,30 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       }
       select(null, hex);
     },
-    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, setOrder, select],
+    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, setOrder, select, warn],
+  );
+
+  const previewTravel = useCallback(
+    (hex: Axial): TravelPreview | null => {
+      if (selectedUnit === null || axialEqual(hex, selectedUnit.coord)) return null;
+      const cell = map.hexAt(hex.q, hex.r);
+      if (cell === undefined || !isPassable(cell.terrain)) return null;
+      const path = cachedRoute(costs, selectedUnit.coord, hex, []);
+      if (path === null) return null;
+      const packed = selectedUnit.posture === "column";
+      return {
+        from: selectedUnit.coord,
+        path,
+        eta: travelEta(costs, path, { packed }),
+        caution: runsIntoContact(selectedUnit.coord, path, zone),
+      };
+    },
+    [selectedUnit, map, costs, zone],
+  );
+
+  const busy = useCallback(
+    (u: Unit) => plan.orders[u.id] !== undefined || standing.some((s) => s.unit_id === u.id),
+    [plan.orders, standing],
   );
 
   const [submitting, setSubmitting] = useState(false);
@@ -218,11 +298,24 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     mode: selectedUnit === null ? "travel" : sel.mode,
     routes,
     moveReach,
+    hostile,
+    barrageRange,
+    notice,
     onHexClick,
     selectUnit: (unitId) => {
       const unit = ownUnits.find((u) => u.id === unitId);
       select(unitId, unit?.coord ?? null);
     },
+    cycleUnit: (dir) => {
+      const next = cycleUnit(ownUnits, selectedUnit?.id ?? null, dir, busy);
+      if (next !== null) select(next.id, next.coord);
+      return next;
+    },
+    cancel: () => {
+      if (selectedUnit !== null && sel.mode !== "travel") select(sel.unitId, sel.hex, "travel");
+      else select(null, null);
+    },
+    previewTravel,
     setMode: (mode) => select(sel.unitId, sel.hex, mode),
     setOrder,
     setOnArrival: (unitId, posture) =>
@@ -258,6 +351,7 @@ function plannedRoutes(
   plan: WorldPlan,
   standing: readonly components["schemas"]["StandingTravel"][],
   costs: ColumnCosts,
+  hostile: ReadonlySet<string>,
 ): PlannedRoute[] {
   const routes: PlannedRoute[] = [];
   const standingBy = new Map(standing.map((s) => [s.unit_id, s]));
@@ -267,15 +361,25 @@ function plannedRoutes(
     if (order === undefined) {
       const s = standingBy.get(unit.id);
       if (s !== undefined) {
-        routes.push({ unitId: unit.id, from: unit.coord, path: s.route, kind: "standing", eta: travelEta(costs, s.route, { packed }) });
+        routes.push({
+          unitId: unit.id,
+          from: unit.coord,
+          path: s.route,
+          kind: "standing",
+          eta: travelEta(costs, s.route, { packed }),
+          attack: null,
+        });
       }
     } else if (order.kind === "travel") {
       const path = cachedRoute(costs, unit.coord, order.destination, order.via);
       // The server re-checks reachability; a staged order always had a route when set.
       if (path === null) throw new Error(`staged travel for unit ${unit.id} has no route`);
-      routes.push({ unitId: unit.id, from: unit.coord, path, kind: "travel", eta: travelEta(costs, path, { packed }) });
+      routes.push({ unitId: unit.id, from: unit.coord, path, kind: "travel", eta: travelEta(costs, path, { packed }), attack: null });
     } else if (order.kind === "move" || order.kind === "march") {
-      routes.push({ unitId: unit.id, from: unit.coord, path: order.path, kind: order.kind, eta: null });
+      // Only a deployed Move can attack; a column halts on contact instead.
+      const end = order.path[order.path.length - 1];
+      const attack = order.kind === "move" && end !== undefined && hostile.has(hexKey(end.q, end.r)) ? end : null;
+      routes.push({ unitId: unit.id, from: unit.coord, path: order.path, kind: order.kind, eta: null, attack });
     }
   }
   return routes;
@@ -292,6 +396,8 @@ function cachedRoute(costs: ColumnCosts, from: Axial, to: Axial, via: readonly A
     routeCache.set(costs, cache);
   }
   const key = [from, ...via, to].map((a) => hexKey(a.q, a.r)).join(">");
+  // Hover previews search a route per hex the pointer rests on; keep the cache bounded.
+  if (cache.size > 4000) cache.clear();
   if (!cache.has(key)) cache.set(key, findRoute(costs, from, to, via));
   return cache.get(key) ?? null;
 }

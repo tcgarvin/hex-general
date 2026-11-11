@@ -1,7 +1,8 @@
 // Hosts the Pixi canvas for a world and hands it to `WorldRenderer`.
 //
 // React mounts the application once per map and pushes scene updates; panning
-// and zooming happen inside the renderer without re-rendering React.
+// and zooming happen inside the renderer without re-rendering React. The live
+// renderer is handed up (`onRenderer`) for the camera controls, hotkeys and hover.
 
 import { Application } from "pixi.js";
 import { useEffect, useRef, useState } from "react";
@@ -25,15 +26,20 @@ export function WorldBoard({
   overlay,
   panTo,
   onHexClick,
+  onRenderer,
 }: {
   map: WorldMap;
   view: WorldView;
   /** Where to centre the camera when the board first opens (e.g. the player's base). */
   focus: Axial | null;
   overlay: WorldOverlay;
-  /** Pan the camera here whenever the request changes (`seq` makes repeats count). */
-  panTo: { hex: Axial; seq: number } | null;
+  /**
+   * Pan the camera here whenever the request changes (`seq` makes repeats
+   * count). `reveal`: only if the hex is off-screen or under a panel.
+   */
+  panTo: { hex: Axial; seq: number; reveal?: boolean } | null;
   onHexClick: (hex: Axial) => void;
+  onRenderer: (renderer: WorldRenderer | null) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const [renderer, setRenderer] = useState<WorldRenderer | null>(null);
@@ -42,6 +48,10 @@ export function WorldBoard({
     clickRef.current = onHexClick;
   }, [onHexClick]);
   const focusRef = useRef(focus);
+  const rendererRef = useRef(onRenderer);
+  useEffect(() => {
+    rendererRef.current = onRenderer;
+  }, [onRenderer]);
 
   useEffect(() => {
     const el = host.current;
@@ -58,8 +68,9 @@ export function WorldBoard({
         }
         el.appendChild(app.canvas);
         made = new WorldRenderer(app, map, { onHexClick: (hex) => clickRef.current(hex) });
-        if (focusRef.current !== null) made.centerOn(focusRef.current);
+        if (focusRef.current !== null) made.centerOn(focusRef.current, undefined, false);
         setRenderer(made);
+        rendererRef.current(made);
         void Promise.all([
           loadTerrainTextures(),
           loadJoinTextures(),
@@ -79,6 +90,7 @@ export function WorldBoard({
       disposed = true;
       made?.destroy();
       setRenderer(null);
+      rendererRef.current(null);
     };
   }, [map]);
 
@@ -95,7 +107,9 @@ export function WorldBoard({
   }, [renderer, overlay]);
 
   useEffect(() => {
-    if (panTo !== null) renderer?.panTo(panTo.hex);
+    if (panTo === null || renderer === null) return;
+    if (panTo.reveal === true) renderer.reveal(panTo.hex);
+    else renderer.panTo(panTo.hex);
   }, [renderer, panTo]);
 
   return <div ref={host} className="absolute inset-0 touch-none select-none" />;

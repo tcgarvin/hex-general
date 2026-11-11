@@ -15,11 +15,25 @@
 //   in the corner that doubles as a jump-to control.
 //
 // React owns only the canvas element and feeds this class view updates; camera
-// moves never go through React.
+// moves never go through React. Camera changes only mark the scene dirty: the
+// ticker redraws at most once per frame, and also drives keyboard panning and
+// eased jumps. The camera is clamped (`camera.ts`) so the map never leaves the
+// screen. Hover (outline, travel preview) is drawn here too, so moving the
+// pointer never renders React; listeners hear only when the hovered hex changes.
 
-import { Application, Container, Graphics, Rectangle, Sprite, Texture, type FederatedPointerEvent } from "pixi.js";
+import {
+  Application,
+  Container,
+  Graphics,
+  Rectangle,
+  Sprite,
+  Text,
+  Texture,
+  type FederatedPointerEvent,
+  type Ticker,
+} from "pixi.js";
 
-import { axialToPixel, hexCornerPoints, hexKey, HEX_SIZE, pixelToAxial, type Axial } from "@/board/hex";
+import { axialEqual, axialToPixel, hexCornerPoints, hexKey, HEX_SIZE, pixelToAxial, type Axial } from "@/board/hex";
 import { hexTileRef } from "@/board/hexTile";
 import {
   JOIN_CODE_COUNT,
@@ -41,7 +55,22 @@ import type { LoadedTiles } from "@/board/tiles";
 import type { LoadedUnits, UnitSpritePair } from "@/board/units";
 import type { components } from "@/lib/api/schema";
 
+import {
+  cameraBetween,
+  centredOn,
+  clampCamera,
+  comfortablyVisible,
+  fitCamera,
+  fitScale,
+  JUMP_MS,
+  panStep,
+  zoomAbout,
+  type Camera,
+  type Insets,
+  type PanInput,
+} from "./camera";
 import { NEUTRAL_OWNER, ownerColor } from "./colors";
+import { dashSegments } from "./dashes";
 import type { LoadedColumns } from "./columnArt";
 import type { LoadedSites } from "./siteArt";
 import { siteTileTexture } from "./siteTiles";
@@ -60,10 +89,23 @@ type Unit = WorldState["units"][number];
 
 /** Below this zoom the tile layer gives way to the overview texture. */
 export const TILE_MIN_SCALE = 0.4;
+/** The comfortable close-up zoom a "centre on" jump lands at. */
+export const TACTICAL_SCALE = 0.9;
 /** Below this zoom neutral sites are hidden on the overview. */
 const NEUTRAL_SITE_MIN_SCALE = 0.12;
 const MIN_SCALE = 0.02;
 const MAX_SCALE = 2.5;
+/** How far out past "whole world" the wheel may zoom (the map then sits centred). */
+const FIT_ZOOM_SLACK = 0.85;
+/**
+ * Where the shell's panels cover the board (left column, right column, plan
+ * bar): a unit under them counts as hidden for `reveal`.
+ */
+const PANEL_INSETS: Insets = { left: 312, right: 344, top: 16, bottom: 76 };
+const ATTACK_COLOR = 0xe0503a;
+const DISORDER_COLOR = 0xf5b342;
+const IVORY = 0xf2e6c8;
+const DARK = 0x101114;
 const OVERVIEW_HEX = 2; // overview texture: hex radius in texture pixels
 const MINIMAP_SIZE = 220;
 const MINIMAP_MARGIN = 12;
@@ -97,15 +139,12 @@ export interface WorldOverlay {
   selectedUnit: Axial | null;
   /** The hex being inspected. */
   selectedHex: Axial | null;
-  routes: readonly {
-    from: Axial;
-    path: readonly Axial[];
-    kind: "travel" | "standing" | "move" | "march";
-    selected: boolean;
-  }[];
+  routes: readonly OverlayRoute[];
   barrages: readonly { from: Axial; target: Axial }[];
-  /** Hexes a click would move the selected unit to. */
-  reach: readonly Axial[];
+  /** Hexes a click would move the selected unit to; `attack`: a hostile holds it. */
+  reach: readonly { hex: Axial; attack: boolean }[];
+  /** Hexes the selected artillery can shell (barrage mode). */
+  barrageRange: readonly Axial[];
   recruits: readonly Axial[];
   /** Last turn's trails and fights (`null`: hidden). */
   lastTurn: {
@@ -116,15 +155,37 @@ export interface WorldOverlay {
   } | null;
 }
 
+export interface OverlayRoute {
+  from: Axial;
+  path: readonly Axial[];
+  kind: "travel" | "standing" | "move" | "march";
+  selected: boolean;
+  /** Emphasised without being selected (its Army-panel row is hovered). */
+  highlighted: boolean;
+  /** The hostile-held hex a move ends on (drawn as an attack), else `null`. */
+  attack: Axial | null;
+}
+
+/** A travel route previewed under the pointer before a click commits it. */
+export interface RoutePreview {
+  from: Axial;
+  path: readonly Axial[];
+  /** The route runs within auto-deploy distance of a hostile (drawn amber). */
+  caution: boolean;
+}
+
+/** The hex under the pointer, with the pointer's position on the canvas. */
+export interface Hover {
+  hex: Axial;
+  x: number;
+  y: number;
+}
+
 export interface WorldRendererOptions {
   onHexClick?: (hex: Axial) => void;
 }
 
-export interface Camera {
-  x: number;
-  y: number;
-  scale: number;
-}
+export type { Camera };
 
 export class WorldRenderer {
   readonly app: Application;
@@ -142,13 +203,29 @@ export class WorldRenderer {
   private columnArt: LoadedColumns = {};
   /** Hexes where a player's (not a garrison's) unit stands; refreshed per scene. */
   private armyHexes = new Set<string>();
+  /** Settlement control by hex key (absent: a vacant base site); refreshed per scene. */
+  private control = new Map<string, string | null>();
   private readonly unitLayer = new Container();
+  /** Unit tokens drawn as shapes (overview tokens, columns without art), under the sprites. */
+  private readonly unitTokens = new Graphics();
+  private readonly unitSpriteLayer = new Container();
+  /** Badges over the units: HP bars, disorder, garrison shields, stack pips. */
+  private readonly unitMarks = new Graphics();
+  private readonly unitLabelLayer = new Container();
+  /** Pooled unit sprites and labels: reused every draw, the spare ones hidden. */
+  private readonly unitSprites: Sprite[] = [];
+  private unitSpritesUsed = 0;
+  private readonly unitLabels: Text[] = [];
+  private unitLabelsUsed = 0;
   private readonly overlay = new Graphics();
+  private readonly hoverLayer = new Graphics();
   private readonly selection = new Graphics();
   private overlayData: WorldOverlay | null = null;
+  private preview: RoutePreview | null = null;
   private readonly minimap = new Container();
   private readonly minimapFrame = new Graphics();
   private readonly minimapSites = new Graphics();
+  private readonly minimapMask = new Graphics();
   private readonly tileSprites = new Map<number, Sprite>();
   private readonly joinSprites = new Map<number, Sprite>();
   private readonly joinPool: Sprite[] = [];
@@ -175,7 +252,20 @@ export class WorldRenderer {
   private units: LoadedUnits | null = null;
   private scene: WorldScene | null = null;
   private readonly options: WorldRendererOptions;
+  private readonly bounds: ReturnType<typeof worldPixelBounds>;
   private drag: { x: number; y: number; moved: boolean } | null = null;
+  /** Live pointers on the canvas (two of them pinch-zoom). */
+  private readonly pointers = new Map<number, { x: number; y: number }>();
+  private pinch: { dist: number; midX: number; midY: number } | null = null;
+  private minimapDrag = false;
+  /** The last mouse position over the canvas (`null`: outside it). */
+  private pointer: { x: number; y: number } | null = null;
+  private hovered: Axial | null = null;
+  private readonly hoverListeners = new Set<(hover: Hover | null) => void>();
+  private panInput: PanInput = { x: 0, y: 0, fast: false };
+  private jump: { from: Camera; to: Camera; start: number; duration: number } | null = null;
+  /** The scene needs redrawing for the camera or data; done once per frame by `tick`. */
+  private dirty = true;
   /** Minimap pixels per world pixel (set when the minimap is built). */
   private minimapScale = 1;
 
@@ -213,10 +303,13 @@ export class WorldRenderer {
       this.siteLayer,
       this.sites,
       this.overlay,
+      this.hoverLayer,
       this.unitLayer,
       this.selection,
     );
+    this.unitLayer.addChild(this.unitTokens, this.unitSpriteLayer, this.unitMarks, this.unitLabelLayer);
     app.stage.addChild(this.world, this.minimap);
+    this.bounds = worldPixelBounds(map, HEX_SIZE);
     this.buildMinimap(overviewTexture);
 
     app.stage.eventMode = "static";
@@ -226,14 +319,19 @@ export class WorldRenderer {
     app.stage.on("pointerup", this.onPointerUp);
     app.stage.on("pointerupoutside", this.onPointerUp);
     app.canvas.addEventListener("wheel", this.onWheel, { passive: false });
-    app.renderer.on("resize", this.refresh);
+    app.canvas.addEventListener("pointerleave", this.onPointerLeave);
+    app.renderer.on("resize", this.onResize);
+    app.ticker.add(this.tick);
 
-    this.fitAll();
+    this.fitAll(false);
   }
 
   destroy(): void {
+    this.app.ticker.remove(this.tick);
     this.app.canvas.removeEventListener("wheel", this.onWheel);
-    this.app.renderer.off("resize", this.refresh);
+    this.app.canvas.removeEventListener("pointerleave", this.onPointerLeave);
+    this.app.renderer.off("resize", this.onResize);
+    this.hoverListeners.clear();
     this.app.destroy(true, { children: true });
   }
 
@@ -253,7 +351,7 @@ export class WorldRenderer {
     this.tileSprites.clear();
     for (const sprite of this.joinSprites.values()) this.releaseJoin(sprite);
     this.joinSprites.clear();
-    this.refresh();
+    this.invalidate();
   }
 
   setScene(scene: WorldScene): void {
@@ -265,8 +363,9 @@ export class WorldRenderer {
     this.armyHexes = new Set(
       scene.state.units.filter((u) => u.owner !== NEUTRAL_OWNER).map((u) => hexKey(u.coord.q, u.coord.r)),
     );
+    this.control = new Map(scene.state.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
     this.drawMinimapSites();
-    this.refresh();
+    this.invalidate();
   }
 
   setOverlay(overlay: WorldOverlay): void {
@@ -274,93 +373,280 @@ export class WorldRenderer {
     this.drawOverlay();
   }
 
+  /** Show (or with `null` clear) a dashed travel route preview. */
+  setPreview(preview: RoutePreview | null): void {
+    this.preview = preview;
+    this.drawHover();
+  }
+
+  /** Hear when the hovered hex changes (`null`: none, e.g. while dragging). Returns an unsubscribe. */
+  onHover(listener: (hover: Hover | null) => void): () => void {
+    this.hoverListeners.add(listener);
+    return () => this.hoverListeners.delete(listener);
+  }
+
+  /** The pan keys currently held; the ticker pans while any are. */
+  setPanInput(input: PanInput): void {
+    if (input.x !== 0 || input.y !== 0) this.jump = null;
+    this.panInput = input;
+  }
+
   get camera(): Camera {
     return { x: this.world.x, y: this.world.y, scale: this.world.scale.x };
   }
 
-  /** Centre the view on `hex`, keeping the zoom unless `scale` is given. */
-  panTo(hex: Axial): void {
-    this.centerOn(hex, Math.max(this.world.scale.x, TILE_MIN_SCALE));
+  /** The minimap's box on the canvas, so DOM controls can sit clear of it. */
+  get minimapBox(): { x: number; y: number; width: number; height: number } {
+    const b = this.bounds;
+    const s = this.minimapScale;
+    return { x: this.minimap.x, y: this.minimap.y, width: (b.maxX - b.minX) * s, height: (b.maxY - b.minY) * s };
+  }
+
+  /** Centre the view on `hex`, keeping the zoom (at least tile zoom). */
+  panTo(hex: Axial, animate = true): void {
+    this.centerOn(hex, Math.max(this.world.scale.x, TILE_MIN_SCALE), animate);
   }
 
   /** Centre the view on `hex` at `scale` (default: a comfortable tactical zoom). */
-  centerOn(hex: Axial, scale = 0.9): void {
+  centerOn(hex: Axial, scale = TACTICAL_SCALE, animate = true): void {
     const { x, y } = axialToPixel(hex.q, hex.r, HEX_SIZE);
-    const s = clamp(scale, MIN_SCALE, MAX_SCALE);
-    this.world.scale.set(s);
-    this.world.position.set(this.app.screen.width / 2 - x * s, this.app.screen.height / 2 - y * s);
-    this.refresh();
+    this.moveCamera(centredOn(x, y, scale, this.app.screen), animate);
   }
 
-  /** The zoom that shows the whole world. */
-  private fitScale(): number {
-    const b = worldPixelBounds(this.map, HEX_SIZE);
-    return Math.min(this.app.screen.width / (b.maxX - b.minX), this.app.screen.height / (b.maxY - b.minY));
+  /** Bring `hex` into view only if it is off-screen or under a panel. */
+  reveal(hex: Axial): void {
+    if (!this.comfortablyVisible(hex)) this.panTo(hex);
   }
 
-  /** Zoom out to show the whole world. */
-  fitAll(): void {
-    const b = worldPixelBounds(this.map, HEX_SIZE);
-    const s = clamp(
-      Math.min(this.app.screen.width / (b.maxX - b.minX), this.app.screen.height / (b.maxY - b.minY)),
-      MIN_SCALE,
-      MAX_SCALE,
-    );
-    this.world.scale.set(s);
-    this.world.position.set(
-      (this.app.screen.width - (b.maxX - b.minX) * s) / 2 - b.minX * s,
-      (this.app.screen.height - (b.maxY - b.minY) * s) / 2 - b.minY * s,
-    );
-    this.refresh();
+  /** Whether `hex` is on screen and clear of the panels. */
+  comfortablyVisible(hex: Axial): boolean {
+    const { x, y } = axialToPixel(hex.q, hex.r, HEX_SIZE);
+    const s = this.world.scale.x;
+    return comfortablyVisible(this.world.x + x * s, this.world.y + y * s, this.app.screen, PANEL_INSETS);
   }
 
-  // --- camera input ---------------------------------------------------------------
+  /** Zoom by `factor` about the screen centre. */
+  zoomBy(factor: number, animate = true): void {
+    // Chain off an unfinished jump, so repeated presses compound.
+    const from = this.jump?.to ?? this.camera;
+    const { width, height } = this.app.screen;
+    this.moveCamera(zoomAbout(from, from.scale * factor, width / 2, height / 2), animate);
+  }
 
-  private onPointerDown = (e: FederatedPointerEvent): void => {
-    if (this.minimapHit(e.global.x, e.global.y)) {
-      this.jumpFromMinimap(e.global.x, e.global.y);
+  /** Zoom out to show the whole world, centred. */
+  fitAll(animate = true): void {
+    this.moveCamera(fitCamera(this.bounds, this.app.screen), animate);
+  }
+
+  // --- camera -----------------------------------------------------------------------
+
+  /** The lowest zoom: a little past the whole world. */
+  private minScale(): number {
+    return Math.max(MIN_SCALE, fitScale(this.bounds, this.app.screen) * FIT_ZOOM_SLACK);
+  }
+
+  /** `cam` with its zoom and position held inside the camera limits. */
+  private limit(cam: Camera): Camera {
+    const scale = clamp(cam.scale, this.minScale(), MAX_SCALE);
+    const scaled = scale === cam.scale ? cam : zoomAbout(cam, scale, this.app.screen.width / 2, this.app.screen.height / 2);
+    return clampCamera(scaled, this.bounds, this.app.screen);
+  }
+
+  /** Apply a camera now (limited), dropping any jump in flight. */
+  private setCamera(cam: Camera): void {
+    this.jump = null;
+    this.applyCamera(this.limit(cam));
+  }
+
+  private applyCamera(cam: Camera): void {
+    this.world.scale.set(cam.scale);
+    this.world.position.set(cam.x, cam.y);
+    this.invalidate();
+  }
+
+  /** Go to `cam` (limited), easing over `JUMP_MS` unless reduced motion is asked for. */
+  private moveCamera(cam: Camera, animate: boolean): void {
+    const to = this.limit(cam);
+    if (!animate || prefersReducedMotion()) {
+      this.setCamera(to);
       return;
     }
-    this.drag = { x: e.global.x, y: e.global.y, moved: false };
+    this.jump = { from: this.camera, to, start: performance.now(), duration: JUMP_MS };
+  }
+
+  private invalidate(): void {
+    this.dirty = true;
+  }
+
+  private tick = (ticker: Ticker): void => {
+    // A long frame (a background tab) shouldn't fling the map.
+    const dt = Math.min(ticker.deltaMS, 50) / 1000;
+    if (this.panInput.x !== 0 || this.panInput.y !== 0) {
+      const { dx, dy } = panStep(this.panInput, dt);
+      this.setCamera({ ...this.camera, x: this.world.x + dx, y: this.world.y + dy });
+    }
+    if (this.jump !== null) {
+      const { from, to, start, duration } = this.jump;
+      const t = (performance.now() - start) / duration;
+      this.applyCamera(cameraBetween(from, to, t, this.app.screen));
+      if (t >= 1) this.jump = null;
+    }
+    if (this.dirty) {
+      this.dirty = false;
+      this.refresh();
+    }
+  };
+
+  private onResize = (): void => {
+    this.positionMinimap();
+    this.setCamera(this.camera);
+  };
+
+  // --- pointer input ----------------------------------------------------------------
+
+  private onPointerDown = (e: FederatedPointerEvent): void => {
+    const { x, y } = e.global;
+    if (this.pointers.size === 0 && this.minimapHit(x, y)) {
+      this.minimapDrag = true;
+      this.jumpFromMinimap(x, y, true);
+      return;
+    }
+    this.jump = null;
+    this.pointers.set(e.pointerId, { x, y });
+    if (this.pointers.size === 2) {
+      // A second finger: pinch-zoom about the midpoint, and never a click.
+      const [a, b] = [...this.pointers.values()];
+      this.pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), midX: (a.x + b.x) / 2, midY: (a.y + b.y) / 2 };
+      this.drag = null;
+      this.setHovered(null);
+    } else if (this.pointers.size === 1) {
+      this.drag = { x, y, moved: false };
+    }
   };
 
   private onPointerMove = (e: FederatedPointerEvent): void => {
-    if (this.drag === null) return;
-    const dx = e.global.x - this.drag.x;
-    const dy = e.global.y - this.drag.y;
+    const { x, y } = e.global;
+    if (this.minimapDrag) {
+      this.jumpFromMinimap(x, y, false);
+      return;
+    }
+    // Pixi hears moves over the whole document; over a panel the map isn't hovered.
+    if (e.pointerType === "mouse") this.pointer = e.nativeEvent.target === this.app.canvas ? { x, y } : null;
+    if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x, y });
+    if (this.pinch !== null && this.pointers.size >= 2) {
+      this.pinchMove();
+      return;
+    }
+    if (this.drag === null) {
+      if (e.pointerType === "mouse") this.updateHover();
+      return;
+    }
+    const dx = x - this.drag.x;
+    const dy = y - this.drag.y;
     if (!this.drag.moved && Math.hypot(dx, dy) < 4) return;
-    this.drag = { x: e.global.x, y: e.global.y, moved: true };
-    this.world.position.set(this.world.x + dx, this.world.y + dy);
-    this.refresh();
+    if (!this.drag.moved) this.setHovered(null);
+    this.drag = { x, y, moved: true };
+    this.setCamera({ ...this.camera, x: this.world.x + dx, y: this.world.y + dy });
   };
 
+  private pinchMove(): void {
+    const pinch = this.pinch;
+    if (pinch === null) throw new Error("pinch move without a pinch");
+    const [a, b] = [...this.pointers.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    const zoomed = zoomAbout(this.camera, this.world.scale.x * (dist / Math.max(1, pinch.dist)), pinch.midX, pinch.midY);
+    this.setCamera({ ...zoomed, x: zoomed.x + midX - pinch.midX, y: zoomed.y + midY - pinch.midY });
+    this.pinch = { dist, midX, midY };
+  }
+
   private onPointerUp = (e: FederatedPointerEvent): void => {
+    if (this.minimapDrag) {
+      this.minimapDrag = false;
+      return;
+    }
+    this.pointers.delete(e.pointerId);
+    if (this.pinch !== null) {
+      // Lifting one finger of a pinch carries on as a drag with the other.
+      this.pinch = null;
+      const rest = [...this.pointers.values()][0];
+      this.drag = rest === undefined ? null : { x: rest.x, y: rest.y, moved: true };
+      return;
+    }
     const drag = this.drag;
     this.drag = null;
-    if (drag === null || drag.moved) return;
+    if (drag === null || drag.moved) {
+      if (e.pointerType === "mouse") this.updateHover();
+      return;
+    }
     const local = this.world.toLocal(e.global);
     const hex = pixelToAxial(local.x, local.y, HEX_SIZE);
     if (this.map.hexAt(hex.q, hex.r) !== undefined) this.options.onHexClick?.(hex);
   };
 
+  private onPointerLeave = (): void => {
+    this.pointer = null;
+    this.setHovered(null);
+  };
+
   private onWheel = (e: WheelEvent): void => {
     e.preventDefault();
     const rect = this.app.canvas.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
     const factor = Math.exp(-e.deltaY * 0.0015);
-    const old = this.world.scale.x;
-    const next = clamp(old * factor, Math.max(MIN_SCALE, this.fitScale() * 0.85), MAX_SCALE);
-    const wx = (px - this.world.x) / old;
-    const wy = (py - this.world.y) / old;
-    this.world.scale.set(next);
-    this.world.position.set(px - wx * next, py - wy * next);
-    this.refresh();
+    this.setCamera(zoomAbout(this.camera, this.world.scale.x * factor, e.clientX - rect.left, e.clientY - rect.top));
   };
+
+  // --- hover ------------------------------------------------------------------------
+
+  /** Re-read the hex under the mouse (it moved, or the camera moved under it). */
+  private updateHover(): void {
+    const p = this.pointer;
+    if (p === null || this.drag?.moved === true || this.pinch !== null || this.minimapHit(p.x, p.y)) {
+      this.setHovered(null);
+      return;
+    }
+    const local = this.world.toLocal(p);
+    const hex = pixelToAxial(local.x, local.y, HEX_SIZE);
+    this.setHovered(this.map.hexAt(hex.q, hex.r) === undefined ? null : hex);
+  }
+
+  private setHovered(hex: Axial | null): void {
+    const same = hex === null ? this.hovered === null : this.hovered !== null && axialEqual(hex, this.hovered);
+    if (same) return;
+    this.hovered = hex;
+    this.drawHover();
+    const p = this.pointer;
+    const hover = hex === null || p === null ? null : { hex, x: p.x, y: p.y };
+    for (const listener of this.hoverListeners) listener(hover);
+  }
+
+  /** The hover outline (tile zoom only) and the travel preview. */
+  private drawHover(): void {
+    const g = this.hoverLayer.clear();
+    const scale = this.world.scale.x;
+    const px = (n: number) => n / scale;
+    const centre = (a: Axial) => axialToPixel(a.q, a.r, HEX_SIZE);
+    if (this.hovered !== null && scale >= TILE_MIN_SCALE) {
+      const { x, y } = centre(this.hovered);
+      g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.97)).stroke({ color: IVORY, width: px(1.5), alpha: 0.85 });
+    }
+    const preview = this.preview;
+    if (preview === null || preview.path.length === 0) return;
+    const color = preview.caution ? DISORDER_COLOR : 0x3d7eff;
+    const pts = [preview.from, ...preview.path].map(centre);
+    const dashes = dashSegments(pts, px(9), px(6));
+    for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
+    g.stroke({ color: DARK, width: px(5), alpha: 0.45, cap: "round" });
+    for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
+    g.stroke({ color, width: px(3), alpha: 0.95, cap: "round" });
+    const end = pts[pts.length - 1];
+    g.circle(end.x, end.y, Math.max(px(6), HEX_SIZE * 0.24)).stroke({ color, width: px(2.5) });
+  }
 
   // --- drawing ----------------------------------------------------------------------
 
-  private refresh = (): void => {
+  private refresh(): void {
     const s = this.world.scale.x;
     const tileMode = s >= TILE_MIN_SCALE && this.tiles !== null;
     const x0 = -this.world.x / s;
@@ -378,7 +664,10 @@ export class WorldRenderer {
     this.drawUnits(range, tileMode);
     this.drawOverlay();
     this.drawMinimapFrame(x0, y0, x1, y1);
-  };
+    // The camera may have moved under a still mouse (keys, a jump).
+    if (this.drag === null) this.updateHover();
+    this.drawHover();
+  }
 
   private syncTiles(range: CellRange): void {
     const want = new Set<number>();
@@ -562,8 +851,7 @@ export class WorldRenderer {
     g.clear();
     const scene = this.scene;
     if (scene === null) return;
-    const control = new Map<string, string | null>();
-    for (const s of scene.state.settlements) control.set(hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null);
+    const control = this.control;
     const scale = this.world.scale.x;
     const radius = HEX_SIZE * 0.92;
     const art = tileMode ? this.siteArt : null;
@@ -588,9 +876,13 @@ export class WorldRenderer {
       } else if (owner === null) {
         // Neutral sites are context, not news: small, and gone when far out.
         if (scale >= NEUTRAL_SITE_MIN_SCALE) g.circle(x, y, 2.2 / scale).fill({ color, alpha: 0.7 });
+      } else if (owner === scene.viewer && site.kind === "base") {
+        // Your own base: a ringed marker that stands out from every other dot.
+        g.circle(x, y, 9 / scale).stroke({ color: IVORY, width: 2.5 / scale });
+        g.circle(x, y, 5.5 / scale).fill({ color }).stroke({ color: DARK, width: 1.2 / scale });
       } else {
         const r = (site.kind === "base" ? 5 : 3.5) / scale;
-        g.circle(x, y, r).fill({ color }).stroke({ color: 0x101114, width: 1 / scale });
+        g.circle(x, y, r).fill({ color }).stroke({ color: owner === scene.viewer ? IVORY : DARK, width: 1 / scale });
       }
     }
     for (const [key, sprite] of this.siteSprites) {
@@ -629,11 +921,24 @@ export class WorldRenderer {
     range: { col0: number; col1: number; row0: number; row1: number },
     tileMode: boolean,
   ): void {
-    this.unitLayer.removeChildren().forEach((c) => c.destroy());
+    const tokens = this.unitTokens.clear();
+    const marks = this.unitMarks.clear();
+    this.unitSpritesUsed = 0;
+    this.unitLabelsUsed = 0;
     const scene = this.scene;
-    if (scene === null) return;
-    const tokens = new Graphics();
-    this.unitLayer.addChild(tokens);
+    if (scene !== null) this.drawUnitHexes(scene, range, tileMode, tokens, marks);
+    // Pooled sprites and labels not used this draw stay around, hidden.
+    for (let i = this.unitSpritesUsed; i < this.unitSprites.length; i++) this.unitSprites[i].visible = false;
+    for (let i = this.unitLabelsUsed; i < this.unitLabels.length; i++) this.unitLabels[i].visible = false;
+  }
+
+  private drawUnitHexes(
+    scene: WorldScene,
+    range: { col0: number; col1: number; row0: number; row1: number },
+    tileMode: boolean,
+    tokens: Graphics,
+    marks: Graphics,
+  ): void {
     const byHex = new Map<string, Unit[]>();
     for (const u of scene.state.units) {
       const col = u.coord.q;
@@ -645,34 +950,32 @@ export class WorldRenderer {
       else list.push(u);
     }
     const units = this.units;
+    const scale = this.world.scale.x;
     for (const list of byHex.values()) {
       const lead = list.find((u) => u.posture !== "column") ?? list[0];
       const { x, y } = axialToPixel(lead.coord.q, lead.coord.r, HEX_SIZE);
       const color = ownerColor(lead.owner, scene.viewer);
+      const mine = lead.owner === scene.viewer;
       const columns = list.filter((u) => u.posture === "column").length;
       if (tileMode && lead.posture === "column" && lead.owner !== NEUTRAL_OWNER) {
         // A hex of nothing but columns: every column drawn, side by side.
-        this.drawConvoy(tokens, list, x, y, color);
+        this.drawConvoy(tokens, marks, list, x, y, color);
         continue;
       }
       if (tileMode && lead.owner === NEUTRAL_OWNER && this.siteArt !== null) {
-        // A garrison: a slate badge in the corner with one pip per defender, so
-        // the site's icon stays the main read.
-        const bx = x + HEX_SIZE * 0.5;
-        const by = y + HEX_SIZE * 0.48;
-        tokens.circle(bx, by, HEX_SIZE * 0.26).fill(color).stroke({ color: 0xd9d4c4, width: 1.5 });
-        const n = Math.min(list.length, 4);
-        for (let k = 0; k < n; k++) tokens.circle(bx + (k - (n - 1) / 2) * 4.2, by, 1.5).fill(0xf2e6c8);
+        this.drawGarrisonBadge(marks, list, x, y);
         continue;
       }
       if (tileMode && units !== null && lead.posture !== "column" && lead.owner !== NEUTRAL_OWNER) {
         this.placeUnitSprite(units[lead.type], x, y, 1, lead.facing, color);
       } else {
-        const r = tileMode ? HEX_SIZE * 0.42 : Math.max(HEX_SIZE * 0.6, 4 / this.world.scale.x);
+        const r = tileMode ? HEX_SIZE * 0.42 : Math.max(HEX_SIZE * 0.6, 4 / scale);
+        // Your own units carry a light rim on the overview, so they read apart from everyone else's.
+        const rim = !tileMode && mine ? { color: IVORY, width: Math.max(r * 0.22, 1.5 / scale) } : { color: DARK, width: r * 0.15 };
         if (lead.posture === "column") {
-          tokens.roundRect(x - r * 1.2, y - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill(color).stroke({ color: 0x101114, width: r * 0.15 });
+          tokens.roundRect(x - r * 1.2, y - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill(color).stroke(rim);
         } else {
-          tokens.circle(x, y, r).fill(color).stroke({ color: 0x101114, width: r * 0.15 });
+          tokens.circle(x, y, r).fill(color).stroke(rim);
         }
       }
       if (tileMode && columns > 0 && lead.posture !== "column") {
@@ -681,30 +984,95 @@ export class WorldRenderer {
         const w = 4 + n * 3.5;
         const bx = x + HEX_SIZE * 0.5;
         const by = y - HEX_SIZE * 0.45;
-        tokens.roundRect(bx - w / 2, by - 4, w, 8, 4).fill(0x101114);
-        for (let k = 0; k < n; k++) tokens.circle(bx + (k - (n - 1) / 2) * 3.5, by, 1.2).fill(0xffffff);
+        marks.roundRect(bx - w / 2, by - 4, w, 8, 4).fill(DARK);
+        for (let k = 0; k < n; k++) marks.circle(bx + (k - (n - 1) / 2) * 3.5, by, 1.2).fill(0xffffff);
+      }
+      if (tileMode && lead.posture !== "column" && lead.disordered) {
+        drawDisorderBadge(marks, x - HEX_SIZE * 0.6, y - HEX_SIZE * 0.1, HEX_SIZE * 0.26);
       }
       if (tileMode && lead.hp < 10) {
         const w = HEX_SIZE * 1.1;
-        tokens.rect(x - w / 2, y + HEX_SIZE * 0.62, w, 4).fill(0x101114);
-        tokens.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / 10, 4).fill(lead.hp > 5 ? 0x7bd389 : 0xe0a040);
+        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, w, 4).fill(DARK);
+        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / 10, 4).fill(lead.hp > 5 ? 0x7bd389 : 0xe0a040);
       }
     }
+  }
+
+  /**
+   * A neutral garrison: a shield in the hex's lower-right corner with the number
+   * of defenders on it, and their combined HP once they've taken damage, so an
+   * attacker can see progress. The site's painted tile stays the main read.
+   */
+  private drawGarrisonBadge(marks: Graphics, list: readonly Unit[], x: number, y: number): void {
+    const bx = x + HEX_SIZE * 0.44;
+    const by = y + HEX_SIZE * 0.24;
+    const w = HEX_SIZE * 0.36;
+    const top = by - HEX_SIZE * 0.4;
+    const shoulder = by + HEX_SIZE * 0.18;
+    marks
+      .poly([bx - w, top, bx + w, top, bx + w, shoulder, bx, by + HEX_SIZE * 0.52, bx - w, shoulder])
+      .fill({ color: 0x2b2f36, alpha: 0.95 })
+      .stroke({ color: 0xe8dcc0, width: 1.8, join: "round" });
+    const label = this.nextLabel();
+    const count = String(list.length);
+    if (label.text !== count) label.text = count;
+    label.position.set(bx, by - HEX_SIZE * 0.17);
+    const hp = list.reduce((sum, u) => sum + u.hp, 0);
+    const max = list.length * 10;
+    if (hp < max) {
+      // Inside the shield, under the count: it never hangs over the next hex.
+      const bw = w * 1.5;
+      const bar = by + HEX_SIZE * 0.13;
+      marks.rect(bx - bw / 2, bar, bw, 4).fill(DARK);
+      marks.rect(bx - bw / 2, bar, (bw * hp) / max, 4).fill(hp > max / 2 ? 0x7bd389 : 0xe0a040);
+    }
+  }
+
+  private nextSprite(): Sprite {
+    let sprite = this.unitSprites[this.unitSpritesUsed];
+    if (sprite === undefined) {
+      sprite = new Sprite();
+      sprite.anchor.set(0.5);
+      this.unitSpriteLayer.addChild(sprite);
+      this.unitSprites.push(sprite);
+    }
+    this.unitSpritesUsed += 1;
+    sprite.visible = true;
+    return sprite;
+  }
+
+  private nextLabel(): Text {
+    let label = this.unitLabels[this.unitLabelsUsed];
+    if (label === undefined) {
+      label = new Text({
+        text: "",
+        style: { fontFamily: "Archivo Narrow, Arial Narrow, sans-serif", fontSize: 16, fontWeight: "700", fill: 0xf2e6c8 },
+        // Sharp when zoomed in to the maximum.
+        resolution: 3,
+      });
+      label.anchor.set(0.5);
+      this.unitLabelLayer.addChild(label);
+      this.unitLabels.push(label);
+    }
+    this.unitLabelsUsed += 1;
+    label.visible = true;
+    return label;
   }
 
   /** One unit's base + tinted mask, `scale` × the standard unit size. */
   private placeUnitSprite(pair: UnitSpritePair, x: number, y: number, scale: number, facing: Unit["facing"], color: number): void {
     // The art faces west; a unit facing right is mirrored (as on the 2-player board).
     const s = (1.5 * HEX_SIZE * scale) / pair.base.width;
-    const base = new Sprite(pair.base);
-    const mask = new Sprite(pair.mask);
+    const base = this.nextSprite();
+    const mask = this.nextSprite();
+    base.texture = pair.base;
+    mask.texture = pair.mask;
     for (const sp of [base, mask]) {
-      sp.anchor.set(0.5);
       sp.scale.set(facing === "right" ? -s : s, s);
       sp.position.set(x, y);
     }
+    base.tint = 0xffffff;
     mask.tint = color;
-    this.unitLayer.addChild(base, mask);
   }
 
   /**
@@ -712,7 +1080,7 @@ export class WorldRenderer {
    * the stack grows, so the whole stack reads at a glance (no count badge). A
    * type without column art falls back to a small token.
    */
-  private drawConvoy(tokens: Graphics, list: readonly Unit[], x: number, y: number, color: number): void {
+  private drawConvoy(tokens: Graphics, marks: Graphics, list: readonly Unit[], x: number, y: number, color: number): void {
     const stack = [...list].sort((a, b) => a.id - b.id).slice(0, CONVOY_SLOTS.length);
     const { scale, slots } = CONVOY_SLOTS[stack.length - 1];
     stack.forEach((unit, k) => {
@@ -723,13 +1091,13 @@ export class WorldRenderer {
         this.placeUnitSprite(pair, cx, cy, scale, unit.facing, color);
       } else {
         const r = HEX_SIZE * 0.42 * scale;
-        tokens.roundRect(cx - r * 1.2, cy - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill(color).stroke({ color: 0x101114, width: r * 0.15 });
+        tokens.roundRect(cx - r * 1.2, cy - r * 0.7, r * 2.4, r * 1.4, r * 0.3).fill(color).stroke({ color: DARK, width: r * 0.15 });
       }
       if (unit.hp < 10) {
         const w = HEX_SIZE * 0.9 * scale;
         const by = cy + HEX_SIZE * 0.5 * scale;
-        tokens.rect(cx - w / 2, by, w, 3).fill(0x101114);
-        tokens.rect(cx - w / 2, by, (w * unit.hp) / 10, 3).fill(unit.hp > 5 ? 0x7bd389 : 0xe0a040);
+        marks.rect(cx - w / 2, by, w, 3).fill(DARK);
+        marks.rect(cx - w / 2, by, (w * unit.hp) / 10, 3).fill(unit.hp > 5 ? 0x7bd389 : 0xe0a040);
       }
     });
   }
@@ -746,36 +1114,53 @@ export class WorldRenderer {
 
     if (o.lastTurn !== null) this.drawLastTurn(g, o.lastTurn, px);
 
-    for (const hex of o.reach) {
+    for (const hex of o.barrageRange) {
       const { x, y } = centre(hex);
-      g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.9)).fill({ color: 0xf2e6c8, alpha: 0.22 });
+      g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.9)).fill({ color: ATTACK_COLOR, alpha: 0.2 });
     }
-    for (const route of o.routes) {
+    for (const { hex, attack } of o.reach) {
+      const { x, y } = centre(hex);
+      if (attack) {
+        g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.9))
+          .fill({ color: ATTACK_COLOR, alpha: 0.28 })
+          .stroke({ color: ATTACK_COLOR, width: px(2), alpha: 0.9 });
+      } else {
+        g.poly(hexCornerPoints(x, y, HEX_SIZE * 0.9)).fill({ color: IVORY, alpha: 0.22 });
+      }
+    }
+    // Quiet routes first, so the selected or hovered one is drawn over them.
+    const routes = [...o.routes].sort((a, b) => Number(a.selected || a.highlighted) - Number(b.selected || b.highlighted));
+    for (const route of routes) {
       if (route.path.length === 0) continue;
-      const color = route.kind === "move" ? 0xf2e6c8 : route.kind === "standing" ? 0x9fb7d9 : 0x3d7eff;
-      const width = px(route.selected ? 4 : 2.5);
-      const alpha = route.selected ? 0.95 : route.kind === "standing" ? 0.55 : 0.75;
-      const start = centre(route.from);
-      g.moveTo(start.x, start.y);
-      for (const step of route.path) {
-        const p = centre(step);
-        g.lineTo(p.x, p.y);
-      }
-      g.stroke({ color: 0x101114, width: width + px(2), alpha: alpha * 0.6, cap: "round", join: "round" });
-      g.moveTo(start.x, start.y);
-      for (const step of route.path) {
-        const p = centre(step);
-        g.lineTo(p.x, p.y);
-      }
+      const strong = route.selected || route.highlighted;
+      const color =
+        route.attack !== null ? ATTACK_COLOR : route.kind === "move" ? IVORY : route.kind === "standing" ? 0x9fb7d9 : 0x3d7eff;
+      // Unselected routes are thin and dim, so overlapping ones can be told apart.
+      const width = px(strong ? 4 : 2);
+      const alpha = strong ? 0.95 : route.kind === "standing" ? 0.4 : 0.55;
+      const pts = [route.from, ...route.path].map(centre);
+      const line = () => {
+        g.moveTo(pts[0].x, pts[0].y);
+        for (const p of pts.slice(1)) g.lineTo(p.x, p.y);
+      };
+      line();
+      g.stroke({ color: DARK, width: width + px(2), alpha: alpha * 0.6, cap: "round", join: "round" });
+      line();
       g.stroke({ color, width, alpha, cap: "round", join: "round" });
-      const end = centre(route.path[route.path.length - 1]);
-      g.circle(end.x, end.y, Math.max(px(5), HEX_SIZE * 0.22)).fill({ color, alpha }).stroke({ color: 0x101114, width: px(1.5) });
+      const end = pts[pts.length - 1];
+      if (route.attack !== null) {
+        drawAttackMark(g, end.x, end.y, Math.max(px(11), HEX_SIZE * 0.4), px, strong ? 1 : 0.75);
+      } else {
+        g.circle(end.x, end.y, Math.max(px(strong ? 5 : 4), HEX_SIZE * (strong ? 0.22 : 0.16)))
+          .fill({ color, alpha })
+          .stroke({ color: DARK, width: px(1.5), alpha });
+      }
     }
     for (const b of o.barrages) {
       const from = centre(b.from);
       const to = centre(b.target);
-      g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ color: 0xe0503a, width: px(2.5), alpha: 0.9 });
-      g.poly(hexCornerPoints(to.x, to.y, HEX_SIZE * 0.85)).stroke({ color: 0xe0503a, width: px(3) });
+      g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ color: ATTACK_COLOR, width: px(2.5), alpha: 0.9 });
+      g.poly(hexCornerPoints(to.x, to.y, HEX_SIZE * 0.85)).stroke({ color: ATTACK_COLOR, width: px(3) });
     }
     for (const hex of o.recruits) {
       const { x, y } = centre(hex);
@@ -785,7 +1170,7 @@ export class WorldRenderer {
     }
     if (o.selectedHex !== null) {
       const { x, y } = centre(o.selectedHex);
-      top.poly(hexCornerPoints(x, y, HEX_SIZE)).stroke({ color: 0xf2e6c8, width: px(2), alpha: 0.9 });
+      top.poly(hexCornerPoints(x, y, HEX_SIZE)).stroke({ color: IVORY, width: px(2), alpha: 0.9 });
     }
     if (o.selectedUnit !== null) {
       const { x, y } = centre(o.selectedUnit);
@@ -832,72 +1217,121 @@ export class WorldRenderer {
   // --- minimap ----------------------------------------------------------------------
 
   private buildMinimap(texture: Texture): void {
-    const b = worldPixelBounds(this.map, HEX_SIZE);
+    const b = this.bounds;
     const s = MINIMAP_SIZE / Math.max(b.maxX - b.minX, b.maxY - b.minY);
-    const backdrop = new Graphics()
-      .rect(-4, -4, (b.maxX - b.minX) * s + 8, (b.maxY - b.minY) * s + 8)
-      .fill({ color: 0x15171b, alpha: 0.85 });
+    const w = (b.maxX - b.minX) * s;
+    const h = (b.maxY - b.minY) * s;
+    const backdrop = new Graphics().rect(-4, -4, w + 8, h + 8).fill({ color: 0x15171b, alpha: 0.85 });
     const img = new Sprite(texture);
-    img.scale.set((this.overviewScale * s));
-    this.minimap.addChild(backdrop, img, this.minimapSites, this.minimapFrame);
+    img.scale.set(this.overviewScale * s);
+    // The viewport frame is clipped to the minimap: at close zoom near an edge it
+    // would otherwise spill past the backdrop.
+    this.minimapMask.rect(0, 0, w, h).fill(0xffffff);
+    this.minimapFrame.mask = this.minimapMask;
+    this.minimap.addChild(backdrop, img, this.minimapSites, this.minimapFrame, this.minimapMask);
     this.minimap.label = "minimap";
     this.minimapScale = s;
     this.positionMinimap();
-    this.app.renderer.on("resize", () => this.positionMinimap());
   }
 
   private positionMinimap(): void {
-    const b = worldPixelBounds(this.map, HEX_SIZE);
-    const h = (b.maxY - b.minY) * this.minimapScale;
+    const h = (this.bounds.maxY - this.bounds.minY) * this.minimapScale;
     this.minimap.position.set(MINIMAP_MARGIN, this.app.screen.height - h - MINIMAP_MARGIN);
   }
 
   private minimapHit(x: number, y: number): boolean {
-    const b = worldPixelBounds(this.map, HEX_SIZE);
-    const s = this.minimapScale;
-    const local = { x: x - this.minimap.x, y: y - this.minimap.y };
-    return local.x >= 0 && local.y >= 0 && local.x <= (b.maxX - b.minX) * s && local.y <= (b.maxY - b.minY) * s;
+    const box = this.minimapBox;
+    return x >= box.x && y >= box.y && x <= box.x + box.width && y <= box.y + box.height;
   }
 
-  private jumpFromMinimap(x: number, y: number): void {
-    const b = worldPixelBounds(this.map, HEX_SIZE);
+  /** Centre the view on the world point under minimap point `(x, y)`. */
+  private jumpFromMinimap(x: number, y: number, animate: boolean): void {
+    const b = this.bounds;
     const s = this.minimapScale;
-    const wx = (x - this.minimap.x) / s + b.minX;
-    const wy = (y - this.minimap.y) / s + b.minY;
-    const scale = this.world.scale.x;
-    this.world.position.set(this.app.screen.width / 2 - wx * scale, this.app.screen.height / 2 - wy * scale);
-    this.refresh();
+    const box = this.minimapBox;
+    const wx = (clamp(x - box.x, 0, box.width)) / s + b.minX;
+    const wy = (clamp(y - box.y, 0, box.height)) / s + b.minY;
+    this.moveCamera(centredOn(wx, wy, this.world.scale.x, this.app.screen), animate);
   }
 
   private drawMinimapFrame(x0: number, y0: number, x1: number, y1: number): void {
-    const b = worldPixelBounds(this.map, HEX_SIZE);
+    const b = this.bounds;
     const s = this.minimapScale;
     const w = (b.maxX - b.minX) * s;
     const h = (b.maxY - b.minY) * s;
-    const left = clamp((x0 - b.minX) * s, 0, w);
-    const top = clamp((y0 - b.minY) * s, 0, h);
-    const right = clamp((x1 - b.minX) * s, 0, w);
-    const bottom = clamp((y1 - b.minY) * s, 0, h);
-    this.minimapFrame.clear().rect(left, top, right - left, bottom - top).stroke({ color: 0xf2e6c8, width: 1.5 });
+    // Inset by half the stroke so the frame's edge stays on the minimap.
+    const left = clamp((x0 - b.minX) * s, 0.75, w - 0.75);
+    const top = clamp((y0 - b.minY) * s, 0.75, h - 0.75);
+    const right = clamp((x1 - b.minX) * s, 0.75, w - 0.75);
+    const bottom = clamp((y1 - b.minY) * s, 0.75, h - 0.75);
+    this.minimapFrame.clear().rect(left, top, right - left, bottom - top).stroke({ color: IVORY, width: 1.5 });
   }
 
+  /** Held settlements, plus your own units and base, which stand out from everyone else's. */
   private drawMinimapSites(): void {
     const g = this.minimapSites.clear();
     const scene = this.scene;
     if (scene === null) return;
-    const b = worldPixelBounds(this.map, HEX_SIZE);
+    const b = this.bounds;
     const s = this.minimapScale;
+    const at = (a: Axial) => {
+      const { x, y } = axialToPixel(a.q, a.r, HEX_SIZE);
+      return { x: (x - b.minX) * s, y: (y - b.minY) * s };
+    };
+    let base: Axial | null = null;
     for (const settlement of scene.state.settlements) {
       const owner = settlement.controlled_by ?? null;
       if (owner === null) continue;
-      const { x, y } = axialToPixel(settlement.coord.q, settlement.coord.r, HEX_SIZE);
-      g.circle((x - b.minX) * s, (y - b.minY) * s, owner === scene.viewer ? 2.2 : 1.4).fill(ownerColor(owner, scene.viewer));
+      const p = at(settlement.coord);
+      if (owner === scene.viewer && this.map.siteAt(settlement.coord.q, settlement.coord.r)?.kind === "base") {
+        base = settlement.coord;
+        continue;
+      }
+      g.circle(p.x, p.y, owner === scene.viewer ? 2.2 : 1.4).fill(ownerColor(owner, scene.viewer));
+    }
+    const viewer = ownerColor(scene.viewer, scene.viewer);
+    for (const unit of scene.state.units) {
+      if (unit.owner !== scene.viewer) continue;
+      const p = at(unit.coord);
+      g.circle(p.x, p.y, 1.8).fill(viewer).stroke({ color: 0xffffff, width: 0.8 });
+    }
+    if (base !== null) {
+      const p = at(base);
+      g.circle(p.x, p.y, 4.5).stroke({ color: 0xffffff, width: 1.5 });
+      g.circle(p.x, p.y, 2.6).fill(viewer);
     }
   }
 }
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/** An attack's end marker: a red burst with crossed strokes over it. */
+function drawAttackMark(g: Graphics, x: number, y: number, r: number, px: (n: number) => number, alpha: number): void {
+  const points: number[] = [];
+  for (let i = 0; i < 16; i++) {
+    const a = (Math.PI / 8) * i - Math.PI / 2;
+    const rr = i % 2 === 0 ? r : r * 0.55;
+    points.push(x + rr * Math.cos(a), y + rr * Math.sin(a));
+  }
+  g.poly(points).fill({ color: ATTACK_COLOR, alpha }).stroke({ color: DARK, width: px(1.5), alpha });
+  const k = r * 0.42;
+  g.moveTo(x - k, y - k).lineTo(x + k, y + k).moveTo(x + k, y - k).lineTo(x - k, y + k);
+  g.stroke({ color: IVORY, width: Math.max(px(2.5), r * 0.16), alpha, cap: "round" });
+}
+
+/** The disordered marker: a small amber warning triangle with a "!". */
+function drawDisorderBadge(g: Graphics, x: number, y: number, r: number): void {
+  g.poly([x, y - r, x + r * 0.95, y + r * 0.7, x - r * 0.95, y + r * 0.7])
+    .fill(DISORDER_COLOR)
+    .stroke({ color: DARK, width: 1.4, join: "round" });
+  g.moveTo(x, y - r * 0.4).lineTo(x, y + r * 0.15).stroke({ color: DARK, width: 1.8, cap: "round" });
+  g.circle(x, y + r * 0.42, 1).fill(DARK);
 }
 
 /** A white flat-top hex the size of a board hex, for tinted overlays (fog). */
