@@ -352,7 +352,6 @@ def cmd_export(args: argparse.Namespace) -> int:
 
 # Rows of the review page's metrics table: (metrics key, label, format).
 TABLE_ROWS: tuple[tuple[str, str, str], ...] = (
-    ("generate_s", "generation time, s", "{:.0f}"),
     ("road_hexes", "road hexes", "{:.0f}"),
     ("bridges", "bridges", "{:.0f}"),
     ("long_run_share", "road hexes on straight axis runs over 8", "{:.1%}"),
