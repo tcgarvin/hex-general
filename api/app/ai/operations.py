@@ -29,10 +29,9 @@ from collections import Counter
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.engine.economy_rules import SiteKind
-from app.engine.hex_coords import Axial, distance
+from app.engine.hex_coords import Axial, distance, line, within
 from app.engine.models import NEUTRAL, GameState, PlayerId, Unit
-from app.engine.routing import find_route
-from app.engine.stats import UNIT_STATS
+from app.engine.stats import TERRAIN_STATS, UNIT_STATS
 
 
 class Operation(BaseModel):
@@ -99,10 +98,12 @@ _WINNING_MARGIN = 3
 # choice while land is cheap cost 15-25% of the neutral captures (AI_SPEC
 # §12.4).
 _EXPANDING_SHARE = 0.4
-# Staging: an own holding at most this far from the objective, else the hex
-# `_STAGE_GAP` short of it on the route there.
+# Staging: an own holding at most this far from the objective, else the
+# passable hex nearest the point `_STAGE_GAP` short of it on the straight line
+# there (searched within `_STAGE_SEARCH`).
 _STAGE_HOLDING_MAX = 8
 _STAGE_GAP = 5
+_STAGE_SEARCH = 2
 _THREAT_RADIUS = 8
 _HOME_DANGER_RADIUS = 6  # hostile units this close to the base put home in danger
 _HOME_DANGER_UNITS = 2
@@ -328,15 +329,23 @@ def _rank_objectives(
 
 def _staging(view: GameState, objective: Axial, held: list[Axial]) -> Axial:
     """Where the force assembles: the own holding nearest the objective when it
-    is close enough to strike from, else `_STAGE_GAP` hexes short of the
-    objective on the column route from that holding."""
+    is close enough to strike from, else the passable hex nearest the point
+    `_STAGE_GAP` hexes short of the objective on the straight line from that
+    holding (no routing: a column route on a world map can take seconds)."""
     home = min(held, key=lambda h: (distance(h, objective), h.q, h.r))
     if distance(home, objective) <= _STAGE_HOLDING_MAX:
         return home
-    route = find_route(view.map, home, objective)
-    if route is None or len(route) <= _STAGE_GAP:
+    path = line(home, objective)
+    point = path[len(path) - 1 - _STAGE_GAP]
+    index = view.map.index
+    spots = [
+        c
+        for c in within(point, _STAGE_SEARCH)
+        if c in index and TERRAIN_STATS[index[c].terrain].passable
+    ]
+    if not spots:
         return home
-    return route[len(route) - 1 - _STAGE_GAP]
+    return min(spots, key=lambda c: (distance(c, point), c.q, c.r))
 
 
 def _nearest(coord: Axial, others: list[Axial]) -> int:
