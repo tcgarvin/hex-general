@@ -498,6 +498,12 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 
   Orders still go to `POST /games/{id}/orders` and are stored until the tick. The
   2-player `/games` flow stays until the W6 frontend switches to worlds, then goes.
+- **Memory budget (measured 2026-11-10):** one 200-slot world fits the 512 MiB Cloud
+  Run instance. In the production image under a hard 512 MB limit, creating the world
+  left 286 MiB in use, and 25 ticks held between 387 and 410 MiB. That depends on
+  `clear_geometry_caches()` running after every world tick: left alone, the hex
+  geometry caches grow ~15 MB per tick. A decoded map is ~125 MB, so a second big world
+  on the same instance needs more memory (or a `MapCache` of one).
 - **Infra** (written, not applied; confirm at cutover): `infra/setup-world-clock.sh`
   creates the `hex-clock` service account and one Cloud Scheduler job for all worlds
   (`0 1,13 * * *`, America/New_York, OIDC, 5 retries). The API deploy already sets

@@ -8,6 +8,7 @@ from collections.abc import Callable
 
 import pytest
 
+from app.engine import hex_coords
 from app.engine.hex_coords import Axial, neighbors
 from app.engine.economy_rules import Building
 from app.engine.models import EconomyOrders
@@ -240,3 +241,19 @@ def test_a_world_players_build_order_is_stored_and_resolved(
     assert after is not None
     work = after.state.player(player.slot).construction
     assert work is not None and work.building is Building.BARRACKS
+
+
+def test_a_world_tick_leaves_the_geometry_caches_empty(
+    service: GameService,
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=4)
+    hex_coords.line(Axial(q=0, r=0), Axial(q=3, r=-2))
+    hex_coords.neighbors(Axial(q=0, r=0))
+    hex_coords.within(Axial(q=0, r=0), 2)
+    assert hex_coords._line.cache_info().currsize > 0
+
+    service.tick_world(game_id)
+
+    assert hex_coords._neighbors.cache_info().currsize == 0
+    assert hex_coords._within.cache_info().currsize == 0
+    assert hex_coords._line.cache_info().currsize == 0

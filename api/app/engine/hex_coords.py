@@ -131,6 +131,18 @@ def _neighbors(a: Axial) -> tuple[Axial, ...]:
     return tuple(Axial(q=a.q + d.q, r=a.r + d.r) for d in AXIAL_DIRECTIONS)
 
 
+def clear_geometry_caches() -> None:
+    """Drop the memoised neighbour, range and line results.
+
+    The caches are a within-turn speed-up. A long-lived API process must drop
+    them between turns, or they grow by ~15 MB per world turn (units move, so
+    every tick adds new sightlines) toward caps of several GB.
+    """
+    _neighbors.cache_clear()
+    _within.cache_clear()
+    _line.cache_clear()
+
+
 def distance(a: Axial, b: Axial) -> int:
     """Return the hex distance (number of steps) between two coordinates."""
     dq = a.q - b.q

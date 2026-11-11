@@ -36,6 +36,7 @@ from app.ai.arena import REGISTRY as BOT_REGISTRY
 from app.ai.world import WorldPolicy
 from app.engine.execution import resolve_execution
 from app.engine.events import Event
+from app.engine.hex_coords import clear_geometry_caches
 from app.engine.fog import filter_events, redact_state
 from app.engine.map_codec import CompactMap, encode_map
 from app.engine.models import EconomyOrders, GameState, Order, Recruitment
@@ -591,10 +592,14 @@ class GameService:
         if game.status != "active":
             raise GameNotActive(f"world {game.id} is {game.status}; cannot tick")
         players = self._repo.list_players(game.id)
-        bot_orders = self._world_bot_orders(game, players)
-        return self._resolve_turn(
-            game, players, extra=bot_orders, next_tick_at=next_tick_at
-        )
+        try:
+            bot_orders = self._world_bot_orders(game, players)
+            return self._resolve_turn(
+                game, players, extra=bot_orders, next_tick_at=next_tick_at
+            )
+        finally:
+            # Bounds memory on a 512 MiB instance: the caches grow ~15 MB/tick.
+            clear_geometry_caches()
 
     def _world_bot_orders(
         self, game: GameRecord, players: list[PlayerRecord]
