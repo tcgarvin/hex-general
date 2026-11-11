@@ -32,6 +32,13 @@ export type PlaybackAction =
   | { type: "tick"; dt: number; durationMs: (beat: number) => number }
   | { type: "reset"; beatCount: number };
 
+/**
+ * The most wall time one tick may advance playback by. A throttled or stalled
+ * tab delivers frames seconds apart; uncapped, one frame would jump whole beats
+ * and the viewer would never see them. Capped, playback slows down instead.
+ */
+export const MAX_TICK_MS = 100;
+
 export function initialPlayback(beatCount: number, reducedMotion = false): PlaybackState {
   return { beatCount, t: 0, playing: false, speed: 1, reducedMotion, held: 0 };
 }
@@ -60,7 +67,7 @@ export function playbackReducer(s: PlaybackState, a: PlaybackAction): PlaybackSt
       // Leaving tweening mid-beat lands on the beat's start, so nothing is drawn half-done.
       return { ...s, reducedMotion: a.on, t: a.on ? Math.floor(s.t) : s.t, held: 0 };
     case "tick":
-      return s.playing ? advance(s, a.dt * s.speed, a.durationMs) : s;
+      return s.playing ? advance(s, Math.min(a.dt, MAX_TICK_MS) * s.speed, a.durationMs) : s;
     case "reset":
       return initialPlayback(a.beatCount, s.reducedMotion);
   }

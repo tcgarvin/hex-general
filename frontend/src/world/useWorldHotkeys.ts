@@ -23,7 +23,7 @@ export const ZOOM_STEP = 1.25;
 export const SHORTCUTS: readonly { keys: string; does: string }[] = [
   { keys: "W A S D / arrows", does: "Pan (hold Shift: faster)" },
   { keys: "+ / − or E / Q", does: "Zoom in / out" },
-  { keys: "Home or Space", does: "Centre on your base" },
+  { keys: "Home or Space", does: "Centre on your base (Home only in playback)" },
   { keys: "F or 0", does: "Show the whole world" },
   { keys: "Tab / Shift+Tab or . / ,", does: "Next / previous unit (idle first)" },
   { keys: "T", does: "Travel mode" },
@@ -35,6 +35,9 @@ export const SHORTCUTS: readonly { keys: string; does: string }[] = [
   { keys: "Esc", does: "Leave the mode, then deselect" },
   { keys: "Ctrl+Enter", does: "Submit the plan" },
   { keys: "?", does: "This list" },
+  { keys: "Space", does: "Playback: play / pause" },
+  { keys: "← / →", does: "Playback: step back / forward a beat" },
+  { keys: "Esc", does: "Playback: back to planning" },
 ];
 
 const PAN_CODES: Readonly<Record<string, readonly [number, number]>> = {

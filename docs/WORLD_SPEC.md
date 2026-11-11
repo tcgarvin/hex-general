@@ -602,6 +602,29 @@ it, the line names the garrisoned site it most likely met, from the static map. 
 fight is one line with both sides' losses and the HP left. Each report line keeps the
 index of the replay event it came from (`eventIndex`), for playback to highlight it.
 
+**As built (2026-11-11): turn playback.** "Play turn N" on the report header (and
+"Watch turn N" on the turn-resolved banner) replays the last resolved turn on the board:
+a barrage beat, one beat per movement pulse the viewer witnessed, then captures,
+repairs, supply and recruits. Units slide between hexes, attackers lunge, fights flash
+with damage numbers, shells arc from the gun, captured sites ring in the new owner's
+colour, and columns halting on contact show a warning mark. The transport bar replaces
+the plan bar: step back, play/pause, step forward, speed (0.5x to 4x), a scrubber with
+your fights marked, the beat's name ("Pulse 3 of 8") and Exit. Keys: Space plays and
+pauses, Left and Right step a beat, Esc exits; W A S D, Up/Down and the zoom keys still
+move the camera, and moving it by hand pauses camera-follow until the next beat with an
+action of yours (or Follow). The report line of the current beat is highlighted and a
+click on a line jumps to its beat; "Your fights" at the top lists your engagements and
+opens playback paused on one. Beats without any action of yours play at about half
+length; with reduced motion the bar steps beat by beat without tweening. While it
+plays, planning marks, hover previews and board clicks are off; Exit restores the live
+board. The start picture is the previous turn's replay, fetched on Play (turn 0 rewinds
+the end state instead); because the server fogs a replay with the end-of-turn sight,
+enemies appear when an event names them or the viewer's sight reaches them and fade out
+when it leaves them, and anything that moved wholly out of sight is not shown. Dev
+builds only: `?turn=N` on the world URL shows and plays an earlier resolved turn, and
+`window.__hexPlayback` drives the transport from the console. Code:
+`frontend/src/world/playback/`, `PlaybackBar.tsx`, the playback mode in `WorldRenderer.ts`.
+
 ## 12. Implementation phases
 
 | Phase | Delivers | Gate |

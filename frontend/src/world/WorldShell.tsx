@@ -736,9 +736,10 @@ function PlayButton({ play, turn }: { play: ReportPlay; turn: number }) {
       type="button"
       onClick={play.onPlay}
       title={`Watch turn ${turn} on the board, pulse by pulse`}
-      className="rounded-sm border border-brass-600 bg-brass-600 px-2 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 transition-colors hover:bg-brass-400"
+      aria-label={`Play turn ${turn}`}
+      className="whitespace-nowrap rounded-sm border border-brass-600 bg-brass-600 px-2 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 transition-colors hover:bg-brass-400"
     >
-      ▶ Play turn {turn}
+      ▶ Play
     </button>
   );
 }

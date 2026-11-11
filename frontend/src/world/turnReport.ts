@@ -1,9 +1,10 @@
 // What happened last turn, from one player's seat (W6 slice 3).
 //
-// A world turn resolves twice a day while the player is away, so instead of a
-// pulse-by-pulse playback the replay is a report: the player's own news (base,
-// fighting, movement) up top, everything else they witnessed folded into "seen",
-// and trails for the board (who moved where, where fights and captures were).
+// A world turn resolves twice a day while the player is away, so the replay is
+// first a report: the player's own news (base, fighting, movement) up top,
+// everything else they witnessed folded into "seen", and trails for the board (who
+// moved where, where fights and captures were). The pulse-by-pulse playback on the
+// board (`playback/`) highlights these lines in step, through `eventIndex`.
 // Pure over the fogged replay the API serves (`/worlds/{id}/turns/{turn}`).
 //
 // The report's own wording (fights, contact halts, the stock ledger) is written

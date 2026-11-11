@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { initialPlayback, playbackPosition, playbackReducer, type PlaybackAction, type PlaybackState } from "./controller";
+import { initialPlayback, MAX_TICK_MS, playbackPosition, playbackReducer, type PlaybackAction, type PlaybackState } from "./controller";
 
 const durations = [1000, 500, 2000];
 const durationMs = (k: number) => durations[k];
 const run = (s: PlaybackState, ...actions: PlaybackAction[]) => actions.reduce(playbackReducer, s);
 const tick = (dt: number): PlaybackAction => ({ type: "tick", dt, durationMs });
+/** `ms` of wall time as a steady run of 50 ms frames. */
+const frames = (ms: number): PlaybackAction[] =>
+  Array.from({ length: Math.ceil(ms / 50) }, (_, i) => tick(Math.min(50, ms - i * 50)));
 
 describe("playback reducer", () => {
   it("starts paused at the start picture", () => {
@@ -15,14 +18,16 @@ describe("playback reducer", () => {
   });
 
   it("advances through beats by their own lengths", () => {
-    const s = run(initialPlayback(3), { type: "play" }, tick(500));
-    expect(playbackPosition(s)).toEqual({ beat: 0, phase: 0.5 });
-    const s2 = run(s, tick(750)); // 500 finishes beat 0, 250 is half of beat 1
-    expect(playbackPosition(s2)).toEqual({ beat: 1, phase: 0.5 });
+    const s = run(initialPlayback(3), { type: "play" }, ...frames(500));
+    expect(playbackPosition(s).beat).toBe(0);
+    expect(playbackPosition(s).phase).toBeCloseTo(0.5);
+    const s2 = run(s, ...frames(750)); // 500 finishes beat 0, 250 is half of beat 1
+    expect(playbackPosition(s2).beat).toBe(1);
+    expect(playbackPosition(s2).phase).toBeCloseTo(0.5);
   });
 
   it("playing to the end pauses on the final state", () => {
-    const s = run(initialPlayback(3), { type: "play" }, tick(10_000));
+    const s = run(initialPlayback(3), { type: "play" }, ...frames(10_000));
     expect(s.playing).toBe(false);
     expect(s.t).toBe(3);
     expect(playbackPosition(s)).toEqual({ beat: 2, phase: 1 });
@@ -46,10 +51,10 @@ describe("playback reducer", () => {
   });
 
   it("changing speed keeps the position and scales time", () => {
-    const s = run(initialPlayback(3), { type: "play" }, tick(250), { type: "speed", speed: 4 });
+    const s = run(initialPlayback(3), { type: "play" }, ...frames(250), { type: "speed", speed: 4 });
     expect(s.t).toBeCloseTo(0.25);
-    expect(run(s, tick(125)).t).toBeCloseTo(0.75);
-    expect(run(s, { type: "speed", speed: 0.5 }, tick(500)).t).toBeCloseTo(0.5);
+    expect(run(s, ...frames(125)).t).toBeCloseTo(0.75);
+    expect(run(s, { type: "speed", speed: 0.5 }, ...frames(500)).t).toBeCloseTo(0.5);
   });
 
   it("seek clamps and does not start playback", () => {
@@ -63,14 +68,20 @@ describe("playback reducer", () => {
   });
 
   it("reduced motion holds each boundary for the beat's length, then jumps", () => {
-    let s = run(initialPlayback(3, true), { type: "play" }, tick(900));
+    let s = run(initialPlayback(3, true), { type: "play" }, ...frames(900));
     expect(s.t).toBe(0);
-    s = run(s, tick(200));
+    s = run(s, ...frames(200));
     expect(s.t).toBe(1);
-    expect(Number.isInteger(run(s, tick(300)).t)).toBe(true);
+    expect(Number.isInteger(run(s, ...frames(300)).t)).toBe(true);
     // Turning it on mid-beat lands on the beat's start.
     const tweening = run(initialPlayback(3), { type: "seek", t: 1.6 }, { type: "reducedMotion", on: true });
     expect(tweening.t).toBe(1);
+  });
+
+  it("a stalled frame advances at most MAX_TICK_MS, so no beat is skipped", () => {
+    const s = run(initialPlayback(3), { type: "play" }, tick(5000));
+    expect(s.t).toBeCloseTo(MAX_TICK_MS / durations[0]);
+    expect(s.playing).toBe(true);
   });
 
   it("an empty turn never plays", () => {
@@ -80,7 +91,7 @@ describe("playback reducer", () => {
   });
 
   it("reset returns to a paused start and keeps the motion preference", () => {
-    const s = run(initialPlayback(3, true), { type: "play" }, tick(5000), { type: "reset", beatCount: 5 });
+    const s = run(initialPlayback(3, true), { type: "play" }, ...frames(5000), { type: "reset", beatCount: 5 });
     expect(s).toMatchObject({ beatCount: 5, t: 0, playing: false, reducedMotion: true });
   });
 });
