@@ -1,15 +1,20 @@
 name: Deploy API (Cloud Run)
 
+# The frontend fixtures are recorded from the engine and checked by
+# api/tests/test_frontend_fixtures.py, so a change to them runs the tests too.
+# Only an api/** or workflow change deploys (the `changes` job below).
 on:
   push:
     branches: [main]
     paths:
       - "api/**"
       - ".github/workflows/api.yml"
+      - "frontend/src/world/__fixtures__/**"
   pull_request:
     paths:
       - "api/**"
       - ".github/workflows/api.yml"
+      - "frontend/src/world/__fixtures__/**"
 
 env:
   GCP_PROJECT: hex-general
@@ -35,9 +40,32 @@ jobs:
       - run: uv run mypy .
       - run: uv run pytest -q
 
-  deploy:
-    needs: test
+  # Did this push touch the API itself? A fixtures-only push runs the tests
+  # but must not redeploy. If the previous head can't be fetched (a force
+  # push), assume it did: an extra deploy is harmless, a skipped one is not.
+  changes:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.diff.outputs.api }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if git fetch --no-tags --depth=1 origin "$BEFORE" \
+            && git diff --quiet "$BEFORE" HEAD -- api .github/workflows/api.yml; then
+            echo "api=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "api=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: [test, changes]
+    if: >-
+      github.ref == 'refs/heads/main' && github.event_name == 'push'
+      && needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     environment: production
     permissions:

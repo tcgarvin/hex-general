@@ -1,0 +1,39 @@
+name: Art tools checks
+
+# Checks the offline art tools and the byte copies of ratified art the
+# frontend ships (scripts/tests), plus the NBP foundry selftest. Tests only:
+# this workflow has no secrets, no environment and deploys nothing.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - "art/**"
+      - "frontend/src/board/**"
+      - "frontend/src/world/siteTiles/**"
+      - "api/app/**" # scripts/road-study.py runs the world generator
+      - ".github/workflows/scripts.yml"
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "art/**"
+      - "frontend/src/board/**"
+      - "frontend/src/world/siteTiles/**"
+      - "api/app/**"
+      - ".github/workflows/scripts.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      RUN: uv run --no-project --python 3.11 --with-requirements scripts/requirements.txt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: scripts/tests
+        run: $RUN python -m pytest scripts/tests -q
+      - name: tile-foundry selftest
+        run: $RUN python scripts/tile-foundry/selftest.py

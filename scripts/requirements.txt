@@ -1,0 +1,12 @@
+# Python deps of the offline art tools and their checks (scripts/tests,
+# scripts/tile-foundry/selftest.py), pinned to the versions they pass with
+# locally. The foundry selftest compares outputs byte for byte with committed
+# tiles, so a Pillow or numpy bump can change bytes: re-verify before bumping.
+# scripts/road-study.py also imports the API engine (api/app), hence pydantic.
+# CI: .github/workflows/scripts.yml. Locally:
+#   uv run --no-project --python 3.11 --with-requirements scripts/requirements.txt \
+#     python -m pytest scripts/tests -q
+pillow==10.4.0
+numpy==2.1.3
+pydantic==2.12.4
+pytest==8.4.0
