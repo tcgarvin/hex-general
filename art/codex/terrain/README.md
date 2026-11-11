@@ -624,3 +624,38 @@ medium 12.4%, high 15.9% of plains hexes decorated; medium share of decorated he
 Recommended: medium density, mostly-medium mix. Review: `variety2_review.py --out-dir
 <dir> --page <html> --notes candidates/variety-r2/review_notes.json`, page
 `.dev/review-pages/variety-r2.html`.
+
+## Variety (ratified 2026-11-11)
+
+Owner, on round 2: "I think the orchards and the rocky knolls are too much, too close
+to hills and forests. I leave density and small/medium mix to you, we can adjust
+later." Applied to the game the same day.
+
+Ratified set (`candidates/variety-ratified/`, built by `variety_ratified_build.py`,
+`picks.json` maps every file to its round, label, work dir, cell, raw and sha256):
+
+| folder | small (round 1) | medium (round 2) |
+|---|---|---|
+| `plains_nature/` | s01-s11 = nature-01..07, 09, 10, 12, 14 | m01-m08 = nature-m01..m05, m08, m11, m12 |
+| `plains_home/` | s01-s08 = home-01..06, 08, 10 | m01-m08 = home-m01..m08 |
+| `road_variety/` | 13: straight_v x3, straight_d x3, turn_n_se x1, turn_s_nw / turn_se_sw / turn_ne_nw x2 | 18: straights x2, turns x1-2, eight forks (fork_se_n_sw x2) |
+
+Left out for the owner's objection: nature-11 (bright pale outcrop), nature-m06
+(outcrop, a rocky mound), nature-m07 (rocky knoll), nature-m09 and nature-m10
+(orchards). Single small boulders (nature-09, nature-10) stay. Both rounds'
+`candidates.json` carry the decision (`status`, per-candidate `ratified`).
+
+Shipped as byte copies in `frontend/src/board/tiles/{plains_nature,plains_home,
+road_variety}/` (`scripts/tests/test_variety_tiles_sync.py`; rows in `APPLIED.md`).
+Rule: `frontend/src/board/varietyTiles.ts`, a port of `variety_picks`, computed once
+per map in `WorldRenderer` with every site hex and each base's full four-hex footprint
+excluded (`varietyExclusions`), drawn by `hexTileRef`; parity fixture
+`scripts/variety-fixture.py` -> `frontend/src/board/__fixtures__/variety.json` (two
+review windows, the whole seed 3 16-slot world, an edge case). Density **medium** and
+mix **mostly-medium** are in `frontend/src/board/varietySettings.json`, which
+`scripts/board-mock.py` also reads; board-mock now draws the shipped variety by default
+(`--no-variety` for the old look). On the whole seed 1 world (200 slots) this decorates
+12.4% of plains hexes (nature on 7.9% of open plains, homesteads on 16.4% of plains
+beside a road or town and 28.2% beside a town, roadside on 9.5% of plains road hexes),
+75% of them medium; seed 2 within 0.01. The pick pass takes 135-275 ms in Node on
+that 349x349 world, once per map. Records: `.dev/review-pages/variety-applied/`.

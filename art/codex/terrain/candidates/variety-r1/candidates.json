@@ -58,7 +58,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-02",
@@ -80,7 +81,8 @@
     "rim_clear": 0.0004,
     "rim_touch": 1.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-03",
@@ -102,7 +104,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-04",
@@ -124,7 +127,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-05",
@@ -146,7 +150,8 @@
     "rim_clear": 0.0011,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-06",
@@ -168,7 +173,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-07",
@@ -190,7 +196,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-08",
@@ -212,7 +219,8 @@
     "rim_clear": 0.0023,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": false
   },
   {
    "label": "nature-09",
@@ -234,7 +242,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-10",
@@ -256,7 +265,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-11",
@@ -278,7 +288,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": false
   },
   {
    "label": "nature-12",
@@ -300,7 +311,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-13",
@@ -322,7 +334,8 @@
     "rim_clear": 0.008,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": false
   },
   {
    "label": "nature-14",
@@ -344,7 +357,8 @@
     "rim_clear": 0.0053,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "nature-15",
@@ -366,7 +380,8 @@
     "rim_clear": 0.0011,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": false
   },
   {
    "label": null,
@@ -428,7 +443,8 @@
     "rim_clear": 0.003,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "home-02",
@@ -450,7 +466,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "home-03",
@@ -472,7 +489,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "home-04",
@@ -494,7 +512,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "home-05",
@@ -516,7 +535,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "home-06",
@@ -538,7 +558,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "home-07",
@@ -560,7 +581,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": false
   },
   {
    "label": "home-08",
@@ -582,7 +604,8 @@
     "rim_clear": 0.0004,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": "home-09",
@@ -604,7 +627,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": false
   },
   {
    "label": "home-10",
@@ -626,7 +650,8 @@
     "rim_clear": 0.0,
     "rim_touch": 0.0
    },
-   "passed": true
+   "passed": true,
+   "ratified": true
   },
   {
    "label": null,
@@ -815,7 +840,8 @@
     "road_clash": 8,
     "rim_touch": 0
    },
-   "painted_share": 0.019
+   "painted_share": 0.019,
+   "ratified": true
   },
   {
    "label": "road-straight_v-B",
@@ -844,7 +870,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.022
+   "painted_share": 0.022,
+   "ratified": true
   },
   {
    "label": "road-straight_v-C",
@@ -873,7 +900,8 @@
     "road_clash": 2,
     "rim_touch": 0
    },
-   "painted_share": 0.043
+   "painted_share": 0.043,
+   "ratified": true
   },
   {
    "label": "road-straight_d-A",
@@ -902,7 +930,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.02
+   "painted_share": 0.02,
+   "ratified": true
   },
   {
    "label": "road-straight_d-B",
@@ -931,7 +960,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.016
+   "painted_share": 0.016,
+   "ratified": true
   },
   {
    "label": "road-straight_d-C",
@@ -960,7 +990,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.03
+   "painted_share": 0.03,
+   "ratified": true
   },
   {
    "label": "road-turn_n_se-A",
@@ -989,7 +1020,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.013
+   "painted_share": 0.013,
+   "ratified": true
   },
   {
    "label": "road-turn_n_se-B",
@@ -1018,7 +1050,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.012
+   "painted_share": 0.012,
+   "ratified": false
   },
   {
    "label": "road-turn_s_nw-A",
@@ -1047,7 +1080,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.015
+   "painted_share": 0.015,
+   "ratified": true
   },
   {
    "label": "road-turn_s_nw-B",
@@ -1076,7 +1110,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.016
+   "painted_share": 0.016,
+   "ratified": true
   },
   {
    "label": "road-turn_se_sw-A",
@@ -1105,7 +1140,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.019
+   "painted_share": 0.019,
+   "ratified": true
   },
   {
    "label": "road-turn_se_sw-B",
@@ -1134,7 +1170,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.016
+   "painted_share": 0.016,
+   "ratified": true
   },
   {
    "label": "road-turn_ne_nw-A",
@@ -1163,7 +1200,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.015
+   "painted_share": 0.015,
+   "ratified": true
   },
   {
    "label": "road-turn_ne_nw-B",
@@ -1192,7 +1230,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.014
+   "painted_share": 0.014,
+   "ratified": true
   },
   {
    "label": null,
@@ -1302,5 +1341,53 @@
    },
    "painted_share": 0.013
   }
- ]
+ ],
+ "status": {
+  "ratified": "2026-11-11",
+  "owner": "I think the orchards and the rocky knolls are too much, too close to hills and forests. I leave density and small/medium mix to you, we can adjust later.",
+  "applied_as": "frontend/src/board/tiles/ (plains_nature, plains_home, road_variety), via candidates/variety-ratified/",
+  "ratified_labels": {
+   "nature-01": "plains_nature/s01.png",
+   "nature-02": "plains_nature/s02.png",
+   "nature-03": "plains_nature/s03.png",
+   "nature-04": "plains_nature/s04.png",
+   "nature-05": "plains_nature/s05.png",
+   "nature-06": "plains_nature/s06.png",
+   "nature-07": "plains_nature/s07.png",
+   "nature-09": "plains_nature/s08.png",
+   "nature-10": "plains_nature/s09.png",
+   "nature-12": "plains_nature/s10.png",
+   "nature-14": "plains_nature/s11.png",
+   "home-01": "plains_home/s01.png",
+   "home-02": "plains_home/s02.png",
+   "home-03": "plains_home/s03.png",
+   "home-04": "plains_home/s04.png",
+   "home-05": "plains_home/s05.png",
+   "home-06": "plains_home/s06.png",
+   "home-08": "plains_home/s07.png",
+   "home-10": "plains_home/s08.png",
+   "road-straight_v-A": "road_variety/straight_v_s1.png",
+   "road-straight_v-B": "road_variety/straight_v_s2.png",
+   "road-straight_v-C": "road_variety/straight_v_s3.png",
+   "road-straight_d-A": "road_variety/straight_d_s1.png",
+   "road-straight_d-B": "road_variety/straight_d_s2.png",
+   "road-straight_d-C": "road_variety/straight_d_s3.png",
+   "road-turn_n_se-A": "road_variety/turn_n_se_s1.png",
+   "road-turn_s_nw-A": "road_variety/turn_s_nw_s1.png",
+   "road-turn_s_nw-B": "road_variety/turn_s_nw_s2.png",
+   "road-turn_se_sw-A": "road_variety/turn_se_sw_s1.png",
+   "road-turn_se_sw-B": "road_variety/turn_se_sw_s2.png",
+   "road-turn_ne_nw-A": "road_variety/turn_ne_nw_s1.png",
+   "road-turn_ne_nw-B": "road_variety/turn_ne_nw_s2.png"
+  },
+  "excluded": {
+   "nature-08": "not a first-pass pick (low bushes read weakly)",
+   "nature-11": "owner direction: bright pale rock outcrop",
+   "nature-13": "not a first-pass pick (dry-stone wall is a speck at zoom 1)",
+   "nature-15": "not a first-pass pick (fence posts are a speck at zoom 1)",
+   "home-07": "not a first-pass pick (walled yard close to the farm site)",
+   "home-09": "not a first-pass pick (pale walls, brighter than the set)",
+   "road-turn_n_se-B": "not a first-pass pick (kitchen garden in crop rows)"
+  }
+ }
 }

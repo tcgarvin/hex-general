@@ -13,7 +13,11 @@ in `ground/G2/set.json`. Lake tiles (`lake/m<MM>_<VV>.png`, one per
 lake-neighbour mask MM, ratified 2026-11-10) are `paintin_lake.py` cells: replay
 a sheet with `python3 scripts/tile-foundry/paintin_lake.py run --work-dir <work>
 --w0 art/codex/terrain/lake/r2/w0/w0-v2.png --from-raw <raw>`, then `apply` the
-picks (`art/codex/terrain/lake/README.md`, "Round 2").
+picks (`art/codex/terrain/lake/README.md`, "Round 2"). Variety tiles
+(`plains_nature/`, `plains_home/`, `road_variety/`, ratified 2026-11-11) replay
+the same way from their sheet; road variety cells then get
+`python3 art/codex/terrain/variety1.py hold <work>` (the shipped road put back),
+and `variety_ratified_build.py` copies the kept tiles into place.
 
 | Shipped tile | Work dir | Raw Codex sheet | Cell | Grade |
 | --- | --- | --- | --- | --- |
@@ -218,6 +222,72 @@ picks (`art/codex/terrain/lake/README.md`, "Round 2").
 | `lake/m63_03.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_07 (sheet lake2-water, mask 63) |  |
 | `lake/m63_04.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_08 (sheet lake2-water, mask 63) |  |
 | `lake/m63_05.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_12 (sheet lake2-water, mask 63) |  |
+| `plains_home/m01.png` | `art/codex/terrain/candidates/variety-r2/home/m-c` | `art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png` | hm_c1 (variety-r2 home-m01) |  |
+| `plains_home/m02.png` | `art/codex/terrain/candidates/variety-r2/home/m-d` | `art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png` | hm_d1 (variety-r2 home-m02) |  |
+| `plains_home/m03.png` | `art/codex/terrain/candidates/variety-r2/home/m-c` | `art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png` | hm_c2 (variety-r2 home-m03) |  |
+| `plains_home/m04.png` | `art/codex/terrain/candidates/variety-r2/home/m-d` | `art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png` | hm_d7 (variety-r2 home-m04) |  |
+| `plains_home/m05.png` | `art/codex/terrain/candidates/variety-r2/home/m-c` | `art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png` | hm_c3 (variety-r2 home-m05) |  |
+| `plains_home/m06.png` | `art/codex/terrain/candidates/variety-r2/home/m-c` | `art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png` | hm_c4 (variety-r2 home-m06) |  |
+| `plains_home/m07.png` | `art/codex/terrain/candidates/variety-r2/home/m-c` | `art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png` | hm_c8 (variety-r2 home-m07) |  |
+| `plains_home/m08.png` | `art/codex/terrain/candidates/variety-r2/home/m-c` | `art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png` | hm_c5 (variety-r2 home-m08) |  |
+| `plains_home/s01.png` | `art/codex/terrain/candidates/variety-r1/home/h1-b` | `art/codex/terrain/candidates/variety-r1/home/h1-b/raw/variety-h1-b.png` | h_b1 (variety-r1 home-01) |  |
+| `plains_home/s02.png` | `art/codex/terrain/candidates/variety-r1/home/h1-b` | `art/codex/terrain/candidates/variety-r1/home/h1-b/raw/variety-h1-b.png` | h_b2 (variety-r1 home-02) |  |
+| `plains_home/s03.png` | `art/codex/terrain/candidates/variety-r1/home/h1-b` | `art/codex/terrain/candidates/variety-r1/home/h1-b/raw/variety-h1-b.png` | h_b3 (variety-r1 home-03) |  |
+| `plains_home/s04.png` | `art/codex/terrain/candidates/variety-r1/home/h1-b` | `art/codex/terrain/candidates/variety-r1/home/h1-b/raw/variety-h1-b.png` | h_b4 (variety-r1 home-04) |  |
+| `plains_home/s05.png` | `art/codex/terrain/candidates/variety-r1/home/h1-b` | `art/codex/terrain/candidates/variety-r1/home/h1-b/raw/variety-h1-b.png` | h_b6 (variety-r1 home-05) |  |
+| `plains_home/s06.png` | `art/codex/terrain/candidates/variety-r1/home/h1-b` | `art/codex/terrain/candidates/variety-r1/home/h1-b/raw/variety-h1-b.png` | h_b8 (variety-r1 home-06) |  |
+| `plains_home/s07.png` | `art/codex/terrain/candidates/variety-r1/home/h1-a` | `art/codex/terrain/candidates/variety-r1/home/h1-a/raw/variety-h1-a.png` | h_a2 (variety-r1 home-08) |  |
+| `plains_home/s08.png` | `art/codex/terrain/candidates/variety-r1/home/h1-a` | `art/codex/terrain/candidates/variety-r1/home/h1-a/raw/variety-h1-a.png` | h_a7 (variety-r1 home-10) |  |
+| `plains_nature/m01.png` | `art/codex/terrain/candidates/variety-r2/nature/m-a` | `art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png` | nm_a1 (variety-r2 nature-m01) |  |
+| `plains_nature/m02.png` | `art/codex/terrain/candidates/variety-r2/nature/m-b` | `art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png` | nm_b2 (variety-r2 nature-m02) |  |
+| `plains_nature/m03.png` | `art/codex/terrain/candidates/variety-r2/nature/m-a` | `art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png` | nm_a9 (variety-r2 nature-m03) |  |
+| `plains_nature/m04.png` | `art/codex/terrain/candidates/variety-r2/nature/m-a` | `art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png` | nm_a3 (variety-r2 nature-m04) |  |
+| `plains_nature/m05.png` | `art/codex/terrain/candidates/variety-r2/nature/m-b` | `art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png` | nm_b3 (variety-r2 nature-m05) |  |
+| `plains_nature/m06.png` | `art/codex/terrain/candidates/variety-r2/nature/m-a` | `art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png` | nm_a5 (variety-r2 nature-m08) |  |
+| `plains_nature/m07.png` | `art/codex/terrain/candidates/variety-r2/nature/m-a` | `art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png` | nm_a7 (variety-r2 nature-m11) |  |
+| `plains_nature/m08.png` | `art/codex/terrain/candidates/variety-r2/nature/m-a` | `art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png` | nm_a8 (variety-r2 nature-m12) |  |
+| `plains_nature/s01.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-a` | `art/codex/terrain/candidates/variety-r1/nature/n1-a/raw/variety-n1-a.png` | n_a1 (variety-r1 nature-01) |  |
+| `plains_nature/s02.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-a` | `art/codex/terrain/candidates/variety-r1/nature/n1-a/raw/variety-n1-a.png` | n_a2 (variety-r1 nature-02) |  |
+| `plains_nature/s03.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-b` | `art/codex/terrain/candidates/variety-r1/nature/n1-b/raw/variety-n1-b.png` | n_b1 (variety-r1 nature-03) |  |
+| `plains_nature/s04.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-a` | `art/codex/terrain/candidates/variety-r1/nature/n1-a/raw/variety-n1-a.png` | n_a8 (variety-r1 nature-04) |  |
+| `plains_nature/s05.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-b` | `art/codex/terrain/candidates/variety-r1/nature/n1-b/raw/variety-n1-b.png` | n_b2 (variety-r1 nature-05) |  |
+| `plains_nature/s06.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-b` | `art/codex/terrain/candidates/variety-r1/nature/n1-b/raw/variety-n1-b.png` | n_b9 (variety-r1 nature-06) |  |
+| `plains_nature/s07.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-a` | `art/codex/terrain/candidates/variety-r1/nature/n1-a/raw/variety-n1-a.png` | n_a3 (variety-r1 nature-07) |  |
+| `plains_nature/s08.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-a` | `art/codex/terrain/candidates/variety-r1/nature/n1-a/raw/variety-n1-a.png` | n_a4 (variety-r1 nature-09) |  |
+| `plains_nature/s09.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-b` | `art/codex/terrain/candidates/variety-r1/nature/n1-b/raw/variety-n1-b.png` | n_b4 (variety-r1 nature-10) |  |
+| `plains_nature/s10.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-a` | `art/codex/terrain/candidates/variety-r1/nature/n1-a/raw/variety-n1-a.png` | n_a5 (variety-r1 nature-12) |  |
+| `plains_nature/s11.png` | `art/codex/terrain/candidates/variety-r1/nature/n1-b` | `art/codex/terrain/candidates/variety-r1/nature/n1-b/raw/variety-n1-b.png` | n_b6 (variety-r1 nature-14) |  |
+| `road_variety/fork_ne_n_s_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c5 (variety-r2 road-fork_ne_n_s-mA, road hold) |  |
+| `road_variety/fork_ne_nw_s_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c1 (variety-r2 road-fork_ne_nw_s-mA, road hold) |  |
+| `road_variety/fork_se_n_nw_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c4 (variety-r2 road-fork_se_n_nw-mA, road hold) |  |
+| `road_variety/fork_se_n_s_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c8 (variety-r2 road-fork_se_n_s-mA, road hold) |  |
+| `road_variety/fork_se_n_sw_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c2 (variety-r2 road-fork_se_n_sw-mA, road hold) |  |
+| `road_variety/fork_se_n_sw_m2.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c9 (variety-r2 road-fork_se_n_sw-mB, road hold) |  |
+| `road_variety/fork_se_ne_nw_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c6 (variety-r2 road-fork_se_ne_nw-mA, road hold) |  |
+| `road_variety/fork_se_nw_s_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c7 (variety-r2 road-fork_se_nw_s-mA, road hold) |  |
+| `road_variety/fork_se_nw_sw_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-c` | `art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png` | rm_c3 (variety-r2 road-fork_se_nw_sw-mA, road hold) |  |
+| `road_variety/straight_d_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-a` | `art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png` | rm_a4 (variety-r2 road-straight_d-mA, road hold) |  |
+| `road_variety/straight_d_m2.png` | `art/codex/terrain/candidates/variety-r2/road/m-b` | `art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png` | rm_b9 (variety-r2 road-straight_d-mB, road hold) |  |
+| `road_variety/straight_d_s1.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a4 (variety-r1 road-straight_d-A, road hold) |  |
+| `road_variety/straight_d_s2.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a5 (variety-r1 road-straight_d-B, road hold) |  |
+| `road_variety/straight_d_s3.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a6 (variety-r1 road-straight_d-C, road hold) |  |
+| `road_variety/straight_v_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-a` | `art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png` | rm_a1 (variety-r2 road-straight_v-mA, road hold) |  |
+| `road_variety/straight_v_m2.png` | `art/codex/terrain/candidates/variety-r2/road/m-a` | `art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png` | rm_a3 (variety-r2 road-straight_v-mB, road hold) |  |
+| `road_variety/straight_v_s1.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a1 (variety-r1 road-straight_v-A, road hold) |  |
+| `road_variety/straight_v_s2.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a2 (variety-r1 road-straight_v-B, road hold) |  |
+| `road_variety/straight_v_s3.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a3 (variety-r1 road-straight_v-C, road hold) |  |
+| `road_variety/turn_n_se_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-a` | `art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png` | rm_a7 (variety-r2 road-turn_n_se-mA, road hold) |  |
+| `road_variety/turn_n_se_m2.png` | `art/codex/terrain/candidates/variety-r2/road/m-b` | `art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png` | rm_b2 (variety-r2 road-turn_n_se-mB, road hold) |  |
+| `road_variety/turn_n_se_s1.png` | `art/codex/terrain/candidates/variety-r1/road/r1-b` | `art/codex/terrain/candidates/variety-r1/road/r1-b/raw/variety-r1-b.png` | r_b6 (variety-r1 road-turn_n_se-A, road hold) |  |
+| `road_variety/turn_ne_nw_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-b` | `art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png` | rm_b1 (variety-r2 road-turn_ne_nw-mA, road hold) |  |
+| `road_variety/turn_ne_nw_s1.png` | `art/codex/terrain/candidates/variety-r1/road/r1-b` | `art/codex/terrain/candidates/variety-r1/road/r1-b/raw/variety-r1-b.png` | r_b3 (variety-r1 road-turn_ne_nw-A, road hold) |  |
+| `road_variety/turn_ne_nw_s2.png` | `art/codex/terrain/candidates/variety-r1/road/r1-b` | `art/codex/terrain/candidates/variety-r1/road/r1-b/raw/variety-r1-b.png` | r_b9 (variety-r1 road-turn_ne_nw-B, road hold) |  |
+| `road_variety/turn_s_nw_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-a` | `art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png` | rm_a8 (variety-r2 road-turn_s_nw-mA, road hold) |  |
+| `road_variety/turn_s_nw_s1.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a8 (variety-r1 road-turn_s_nw-A, road hold) |  |
+| `road_variety/turn_s_nw_s2.png` | `art/codex/terrain/candidates/variety-r1/road/r1-b` | `art/codex/terrain/candidates/variety-r1/road/r1-b/raw/variety-r1-b.png` | r_b7 (variety-r1 road-turn_s_nw-B, road hold) |  |
+| `road_variety/turn_se_sw_m1.png` | `art/codex/terrain/candidates/variety-r2/road/m-b` | `art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png` | rm_b4 (variety-r2 road-turn_se_sw-mA, road hold) |  |
+| `road_variety/turn_se_sw_s1.png` | `art/codex/terrain/candidates/variety-r1/road/r1-a` | `art/codex/terrain/candidates/variety-r1/road/r1-a/raw/variety-r1-a.png` | r_a9 (variety-r1 road-turn_se_sw-A, road hold) |  |
+| `road_variety/turn_se_sw_s2.png` | `art/codex/terrain/candidates/variety-r1/road/r1-b` | `art/codex/terrain/candidates/variety-r1/road/r1-b/raw/variety-r1-b.png` | r_b8 (variety-r1 road-turn_se_sw-B, road hold) |  |
 
 ## Join sprites
 

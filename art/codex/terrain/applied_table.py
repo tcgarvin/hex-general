@@ -24,6 +24,7 @@ CANDIDATES = TERRAIN / "candidates" / "review1"
 JOINS = TERRAIN / "candidates" / "review1-joins"
 LAKE_TILES = TERRAIN / "candidates" / "lake2"
 LAKE_JOINS = TERRAIN / "candidates" / "lake2-joins"
+VARIETY = TERRAIN / "candidates" / "variety-ratified"
 SHIPPED_TILES = REPO / "frontend" / "src" / "board" / "tiles"
 SHIPPED_JOINS = REPO / "frontend" / "src" / "board" / "joins"
 OUT = TERRAIN / "APPLIED.md"
@@ -120,6 +121,23 @@ def lake_rows() -> list[tuple[str, str, str, str, str]]:
     return sorted(rows)
 
 
+def variety_rows() -> list[tuple[str, str, str, str, str]]:
+    """Variety tiles (ratified 2026-11-11): candidates/variety-ratified/picks.json,
+    one entry per shipped plains_nature/, plains_home/ or road_variety/ file with
+    its round, label, work dir, cell and raw. Road tiles were held to the
+    shipped road after the paint-in (`variety1.py hold`)."""
+    rows = []
+    for e in json.loads((VARIETY / "picks.json").read_text())["picks"]:
+        if sha256(SHIPPED_TILES / e["file"]) != e["sha256"]:
+            raise ProvenanceError(f"{e['file']}: shipped file != variety picks.json sha256")
+        raw = require(rel(e["raw"]), f"{e['file']} raw")
+        note = f"{e['round']} {e['label']}"
+        if e["file"].startswith("road_variety/"):
+            note += ", road hold"
+        rows.append((e["file"], e["work"], raw, f"{e['cell']} ({note})", ""))
+    return sorted(rows)
+
+
 def plains_rows() -> list[tuple[str, str, str, str, str]]:
     """Plains are 1:1 cuts of the recoloured G2 meadow (ground/G2/set.json)."""
     s = json.loads((TERRAIN / "ground" / "G2" / "set.json").read_text())
@@ -154,6 +172,7 @@ def main() -> int:
         rows += oriented_rows(terrain)
     rows += hills_road_rows()
     rows += lake_rows()
+    rows += variety_rows()
     shipped = {str(p.relative_to(SHIPPED_TILES)) for p in SHIPPED_TILES.glob("*/*.png")}
     traced = {r[0] for r in rows}
     if shipped != traced:
@@ -182,7 +201,11 @@ def main() -> int:
         "lake-neighbour mask MM, ratified 2026-11-10) are `paintin_lake.py` cells: replay",
         "a sheet with `python3 scripts/tile-foundry/paintin_lake.py run --work-dir <work>",
         "--w0 art/codex/terrain/lake/r2/w0/w0-v2.png --from-raw <raw>`, then `apply` the",
-        "picks (`art/codex/terrain/lake/README.md`, \"Round 2\").",
+        "picks (`art/codex/terrain/lake/README.md`, \"Round 2\"). Variety tiles",
+        "(`plains_nature/`, `plains_home/`, `road_variety/`, ratified 2026-11-11) replay",
+        "the same way from their sheet; road variety cells then get",
+        "`python3 art/codex/terrain/variety1.py hold <work>` (the shipped road put back),",
+        "and `variety_ratified_build.py` copies the kept tiles into place.",
         "",
         "| Shipped tile | Work dir | Raw Codex sheet | Cell | Grade |",
         "| --- | --- | --- | --- | --- |",

@@ -143,3 +143,5 @@ art/codex/terrain/candidates/variety-r1/**/review/
 !art/codex/terrain/candidates/variety-r2/refs/*.png
 art/codex/terrain/candidates/variety-r2/**/held/
 art/codex/terrain/candidates/variety-r2/**/review/
+# Variety ratified 2026-11-11: byte copies shipped in frontend/src/board/tiles/.
+!art/codex/terrain/candidates/variety-ratified/**/*.png

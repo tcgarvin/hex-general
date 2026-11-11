@@ -72,7 +72,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.263
+   "occupied": 0.263,
+   "ratified": true
   },
   {
    "label": "nature-m02",
@@ -94,7 +95,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.242
+   "occupied": 0.242,
+   "ratified": true
   },
   {
    "label": "nature-m03",
@@ -116,7 +118,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.322
+   "occupied": 0.322,
+   "ratified": true
   },
   {
    "label": "nature-m04",
@@ -138,7 +141,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.321
+   "occupied": 0.321,
+   "ratified": true
   },
   {
    "label": "nature-m05",
@@ -160,7 +164,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.278
+   "occupied": 0.278,
+   "ratified": true
   },
   {
    "label": "nature-m06",
@@ -182,7 +187,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.298
+   "occupied": 0.298,
+   "ratified": false
   },
   {
    "label": "nature-m07",
@@ -204,7 +210,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.518
+   "occupied": 0.518,
+   "ratified": false
   },
   {
    "label": "nature-m08",
@@ -226,7 +233,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.319
+   "occupied": 0.319,
+   "ratified": true
   },
   {
    "label": "nature-m09",
@@ -248,7 +256,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.502
+   "occupied": 0.502,
+   "ratified": false
   },
   {
    "label": "nature-m10",
@@ -270,7 +279,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.419
+   "occupied": 0.419,
+   "ratified": false
   },
   {
    "label": "nature-m11",
@@ -292,7 +302,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.283
+   "occupied": 0.283,
+   "ratified": true
   },
   {
    "label": "nature-m12",
@@ -314,7 +325,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.315
+   "occupied": 0.315,
+   "ratified": true
   },
   {
    "label": null,
@@ -399,7 +411,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.316
+   "occupied": 0.316,
+   "ratified": true
   },
   {
    "label": "home-m02",
@@ -421,7 +434,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.246
+   "occupied": 0.246,
+   "ratified": true
   },
   {
    "label": "home-m03",
@@ -443,7 +457,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.205
+   "occupied": 0.205,
+   "ratified": true
   },
   {
    "label": "home-m04",
@@ -465,7 +480,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.287
+   "occupied": 0.287,
+   "ratified": true
   },
   {
    "label": "home-m05",
@@ -487,7 +503,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.214
+   "occupied": 0.214,
+   "ratified": true
   },
   {
    "label": "home-m06",
@@ -509,7 +526,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.208
+   "occupied": 0.208,
+   "ratified": true
   },
   {
    "label": "home-m07",
@@ -531,7 +549,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.253
+   "occupied": 0.253,
+   "ratified": true
   },
   {
    "label": "home-m08",
@@ -553,7 +572,8 @@
     "rim_touch": 0.0
    },
    "passed": true,
-   "occupied": 0.255
+   "occupied": 0.255,
+   "ratified": true
   },
   {
    "label": null,
@@ -1022,7 +1042,8 @@
     "road_clash": 4,
     "rim_touch": 0
    },
-   "painted_share": 0.043
+   "painted_share": 0.043,
+   "ratified": true
   },
   {
    "label": "road-straight_v-mB",
@@ -1050,7 +1071,8 @@
     "road_clash": 7,
     "rim_touch": 0
    },
-   "painted_share": 0.04
+   "painted_share": 0.04,
+   "ratified": true
   },
   {
    "label": "road-straight_d-mA",
@@ -1078,7 +1100,8 @@
     "road_clash": 3,
     "rim_touch": 0
    },
-   "painted_share": 0.065
+   "painted_share": 0.065,
+   "ratified": true
   },
   {
    "label": "road-straight_d-mB",
@@ -1106,7 +1129,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.04
+   "painted_share": 0.04,
+   "ratified": true
   },
   {
    "label": "road-turn_n_se-mA",
@@ -1134,7 +1158,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.047
+   "painted_share": 0.047,
+   "ratified": true
   },
   {
    "label": "road-turn_n_se-mB",
@@ -1162,7 +1187,8 @@
     "road_clash": 10,
     "rim_touch": 0
    },
-   "painted_share": 0.043
+   "painted_share": 0.043,
+   "ratified": true
   },
   {
    "label": "road-turn_s_nw-mA",
@@ -1190,7 +1216,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.038
+   "painted_share": 0.038,
+   "ratified": true
   },
   {
    "label": "road-turn_se_sw-mA",
@@ -1218,7 +1245,8 @@
     "road_clash": 6,
     "rim_touch": 0
    },
-   "painted_share": 0.049
+   "painted_share": 0.049,
+   "ratified": true
   },
   {
    "label": "road-turn_ne_nw-mA",
@@ -1246,7 +1274,8 @@
     "road_clash": 6,
     "rim_touch": 0
    },
-   "painted_share": 0.04
+   "painted_share": 0.04,
+   "ratified": true
   },
   {
    "label": "road-fork_ne_nw_s-mA",
@@ -1274,7 +1303,8 @@
     "road_clash": 1,
     "rim_touch": 0
    },
-   "painted_share": 0.041
+   "painted_share": 0.041,
+   "ratified": true
   },
   {
    "label": "road-fork_se_n_sw-mA",
@@ -1302,7 +1332,8 @@
     "road_clash": 7,
     "rim_touch": 0
    },
-   "painted_share": 0.058
+   "painted_share": 0.058,
+   "ratified": true
   },
   {
    "label": "road-fork_se_n_sw-mB",
@@ -1330,7 +1361,8 @@
     "road_clash": 2,
     "rim_touch": 0
    },
-   "painted_share": 0.075
+   "painted_share": 0.075,
+   "ratified": true
   },
   {
    "label": "road-fork_se_nw_sw-mA",
@@ -1358,7 +1390,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.072
+   "painted_share": 0.072,
+   "ratified": true
   },
   {
    "label": "road-fork_se_n_nw-mA",
@@ -1386,7 +1419,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.053
+   "painted_share": 0.053,
+   "ratified": true
   },
   {
    "label": "road-fork_ne_n_s-mA",
@@ -1414,7 +1448,8 @@
     "road_clash": 3,
     "rim_touch": 0
    },
-   "painted_share": 0.077
+   "painted_share": 0.077,
+   "ratified": true
   },
   {
    "label": "road-fork_se_ne_nw-mA",
@@ -1442,7 +1477,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.07
+   "painted_share": 0.07,
+   "ratified": true
   },
   {
    "label": "road-fork_se_nw_s-mA",
@@ -1470,7 +1506,8 @@
     "road_clash": 0,
     "rim_touch": 0
    },
-   "painted_share": 0.076
+   "painted_share": 0.076,
+   "ratified": true
   },
   {
    "label": "road-fork_se_n_s-mA",
@@ -1498,7 +1535,8 @@
     "road_clash": 5,
     "rim_touch": 0
    },
-   "painted_share": 0.073
+   "painted_share": 0.073,
+   "ratified": true
   },
   {
    "label": null,
@@ -1581,5 +1619,52 @@
    },
    "painted_share": 0.049
   }
- ]
+ ],
+ "status": {
+  "ratified": "2026-11-11",
+  "owner": "I think the orchards and the rocky knolls are too much, too close to hills and forests. I leave density and small/medium mix to you, we can adjust later.",
+  "applied_as": "frontend/src/board/tiles/ (plains_nature, plains_home, road_variety), via candidates/variety-ratified/",
+  "ratified_labels": {
+   "nature-m01": "plains_nature/m01.png",
+   "nature-m02": "plains_nature/m02.png",
+   "nature-m03": "plains_nature/m03.png",
+   "nature-m04": "plains_nature/m04.png",
+   "nature-m05": "plains_nature/m05.png",
+   "nature-m08": "plains_nature/m06.png",
+   "nature-m11": "plains_nature/m07.png",
+   "nature-m12": "plains_nature/m08.png",
+   "home-m01": "plains_home/m01.png",
+   "home-m02": "plains_home/m02.png",
+   "home-m03": "plains_home/m03.png",
+   "home-m04": "plains_home/m04.png",
+   "home-m05": "plains_home/m05.png",
+   "home-m06": "plains_home/m06.png",
+   "home-m07": "plains_home/m07.png",
+   "home-m08": "plains_home/m08.png",
+   "road-straight_v-mA": "road_variety/straight_v_m1.png",
+   "road-straight_v-mB": "road_variety/straight_v_m2.png",
+   "road-straight_d-mA": "road_variety/straight_d_m1.png",
+   "road-straight_d-mB": "road_variety/straight_d_m2.png",
+   "road-turn_n_se-mA": "road_variety/turn_n_se_m1.png",
+   "road-turn_n_se-mB": "road_variety/turn_n_se_m2.png",
+   "road-turn_s_nw-mA": "road_variety/turn_s_nw_m1.png",
+   "road-turn_se_sw-mA": "road_variety/turn_se_sw_m1.png",
+   "road-turn_ne_nw-mA": "road_variety/turn_ne_nw_m1.png",
+   "road-fork_ne_nw_s-mA": "road_variety/fork_ne_nw_s_m1.png",
+   "road-fork_se_n_sw-mA": "road_variety/fork_se_n_sw_m1.png",
+   "road-fork_se_n_sw-mB": "road_variety/fork_se_n_sw_m2.png",
+   "road-fork_se_nw_sw-mA": "road_variety/fork_se_nw_sw_m1.png",
+   "road-fork_se_n_nw-mA": "road_variety/fork_se_n_nw_m1.png",
+   "road-fork_ne_n_s-mA": "road_variety/fork_ne_n_s_m1.png",
+   "road-fork_se_ne_nw-mA": "road_variety/fork_se_ne_nw_m1.png",
+   "road-fork_se_nw_s-mA": "road_variety/fork_se_nw_s_m1.png",
+   "road-fork_se_n_s-mA": "road_variety/fork_se_n_s_m1.png"
+  },
+  "excluded": {
+   "nature-m06": "owner direction: rock outcrop reads as a rocky mound, too close to hills",
+   "nature-m07": "owner direction: rocky knoll, too close to hills",
+   "nature-m09": "owner direction: orchard, too close to forests",
+   "nature-m10": "owner direction: orchard, too close to forests"
+  }
+ }
 }
