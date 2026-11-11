@@ -46,6 +46,23 @@ body {
   background-repeat: repeat;
 }
 
+/* Ground for the login and start screens: a dark warm gradient over optional key
+   art. Drop the key art in by setting --fhq-key-art: url(...), e.g. one line in
+   :root such as `--fhq-key-art: url("/key-art.jpg");` (a file in public/). The
+   gradient stays on top so cards and text read over any image. */
+.fhq-backdrop {
+  background-color: #1a1d22;
+  background-image:
+    radial-gradient(
+      ellipse at 50% 35%,
+      rgb(50 31 20 / 0.35),
+      rgb(26 29 34 / 0.92) 75%
+    ),
+    var(--fhq-key-art, none);
+  background-size: cover;
+  background-position: center;
+}
+
 /* Heavier wash for floating menus, where small text sits directly on the grain. */
 .fhq-wood-deep {
   background-color: var(--color-wood-900);

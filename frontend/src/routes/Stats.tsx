@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { AppHeader } from "@/components/AppHeader";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 
@@ -11,7 +12,8 @@ type State =
 /**
  * Public stats page. Exercises the whole stack (browser → Cloud Run → Supabase)
  * and is the target of the `verify-stack` smoke test, so it stays a real route that
- * fetches an absolute API URL via the typed client.
+ * fetches an absolute API URL via the typed client. It is public, so it carries the
+ * site header itself (with a "Sign in" link when there is no session).
  */
 export function Stats() {
   const [state, setState] = useState<State>({ status: "loading" });
@@ -45,35 +47,51 @@ export function Stats() {
   }, []);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-12 p-8 text-center">
-      {state.status === "error" ? (
-        <p className="max-w-xs text-sm text-red-400">
-          Couldn’t reach the API: {state.message}
-        </p>
-      ) : (
-        <div className="flex justify-center gap-16">
-          <Stat
-            label="Active users"
-            value={state.status === "ready" ? state.activeUsers : undefined}
-          />
-          <Stat
-            label="Games"
-            value={state.status === "ready" ? state.gameCount : undefined}
-          />
-        </div>
-      )}
-      <p className="text-xs text-zinc-600">browser → Cloud Run → Supabase</p>
+    <div className="flex min-h-dvh flex-col bg-[#1a1d22] text-ivory-100">
+      <AppHeader homeTo="/" />
+      <main className="flex flex-1 flex-col items-center justify-center gap-10 px-4 py-10 text-center">
+        {state.status === "error" ? (
+          <p className="max-w-xs rounded-sm border border-invalid bg-parchment-200 px-4 py-2 text-sm text-invalid">
+            Couldn’t reach the API: {state.message}
+          </p>
+        ) : (
+          // The API's own definitions: active_users counts browser sessions seen
+          // in the last 5 minutes (api/app/stats.py ACTIVE_WINDOW), and game_count
+          // is every row of the games table, finished worlds included.
+          <div className="flex w-full max-w-lg flex-col gap-4 sm:flex-row">
+            <Stat
+              label="Sessions online"
+              caption="Browser sessions seen in the last 5 minutes"
+              value={state.status === "ready" ? state.activeUsers : undefined}
+            />
+            <Stat
+              label="Games created"
+              caption="Every world ever created, finished ones included"
+              value={state.status === "ready" ? state.gameCount : undefined}
+            />
+          </div>
+        )}
+        <p className="font-data text-xs text-ivory-400">browser → Cloud Run → Supabase</p>
+      </main>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | undefined }) {
+/** One figure on a parchment card, with a caption saying what it counts. */
+function Stat({
+  label,
+  caption,
+  value,
+}: {
+  label: string;
+  caption: string;
+  value: number | undefined;
+}) {
   return (
-    <div className="flex flex-col items-center gap-4">
-      <h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
-        {label}
-      </h2>
-      <p className="text-7xl font-semibold tabular-nums">{value ?? "…"}</p>
-    </div>
+    <section className="flex flex-1 flex-col items-center gap-2 rounded-sm border border-wood-700 bg-parchment-200 p-5 text-ink-900 shadow-lg shadow-black/40">
+      <h2 className="font-display text-sm uppercase tracking-wide">{label}</h2>
+      <p className="font-data text-6xl tabular-nums">{value ?? "…"}</p>
+      <p className="text-xs text-wood-700">{caption}</p>
+    </section>
   );
 }

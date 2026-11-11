@@ -6,13 +6,15 @@ import { ChromeLayout } from "@/routes/ChromeLayout";
 import { Dispatcher } from "@/routes/Dispatcher";
 import { Login } from "@/routes/Login";
 import { Stats } from "@/routes/Stats";
+import { Worlds } from "@/routes/Worlds";
 import { WorldShell } from "@/world/WorldShell";
 
 /**
  * Route table (FRONTEND.md). A public login gate and stats page, then the
- * authenticated pages. The dispatcher and account pages share the site header
- * (ChromeLayout); the full-bleed world shell carries its own header. Both headers
- * host the same account menu (with the dev switcher).
+ * authenticated pages. The dispatcher (`/`, which sends a seated player into their
+ * world), the world list (`/worlds`, which never redirects) and the account page
+ * share the site header (ChromeLayout); the full-bleed world shell carries its own
+ * header. Both headers host the same account menu (with the dev switcher).
  */
 export function App() {
   return (
@@ -22,6 +24,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<ChromeLayout />}>
           <Route path="/" element={<Dispatcher />} />
+          <Route path="/worlds" element={<Worlds />} />
           <Route path="/account" element={<Account />} />
         </Route>
         <Route path="/world/:id" element={<WorldShell />} />

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation } from "react-router";
 
 import { useAuth } from "@/auth/useAuth";
-import { Button, Centered, ErrorBanner } from "@/components/ui";
+import { Button, Card, ErrorBanner } from "@/components/ui";
 import { isLocalSupabase } from "@/lib/supabase";
 
 /**
@@ -10,9 +10,10 @@ import { isLocalSupabase } from "@/lib/supabase";
  * they were headed (`from`, set by ProtectedRoute) or the dispatcher.
  *
  * The deployed app uses Google SSO. Against a local `supabase start` stack
- * (which has no Google OAuth) it also offers email/password sign-in for the
- * seeded `@hex.local` dev accounts — the laptop playtest entry point
+ * (which has no Google OAuth) it offers email/password sign-in for the seeded
+ * `@hex.local` dev accounts instead: the laptop playtest entry point
  * (docs/LOCAL_DEV.md). From there the dev-profile switcher drives both sides.
+ * The page sits on `.fhq-backdrop`, ready for key art (index.css).
  */
 export function Login() {
   const { session, signInWithGoogle, signInWithPassword } = useAuth();
@@ -28,28 +29,31 @@ export function Login() {
     setError(err instanceof Error ? err.message : "Sign-in failed");
 
   return (
-    <Centered>
-      <h1 className="text-2xl font-semibold">Hex General</h1>
-      <p className="max-w-xs text-center text-sm text-zinc-400">
-        A turn-based hex wargame. Sign in to join a world.
-      </p>
-      {isLocalSupabase ? (
-        <DevPasswordSignIn
-          signIn={(email, password) =>
-            signInWithPassword(email, password).catch(onError)
-          }
-        />
-      ) : (
-        <Button
-          onClick={() => {
-            signInWithGoogle(from).catch(onError);
-          }}
-        >
-          Sign in with Google
-        </Button>
-      )}
-      {error !== null && <ErrorBanner message={error} />}
-    </Centered>
+    <div className="fhq-backdrop flex min-h-dvh flex-col items-center justify-center px-4 py-10 text-ivory-100">
+      <Card className="flex max-w-sm flex-col gap-5">
+        <header className="text-center">
+          <h1 className="font-display text-3xl uppercase tracking-wide">Hex General</h1>
+          <p className="mt-2 text-sm text-wood-700">
+            A turn-based hex wargame. Plan your orders, then every move resolves at once.
+          </p>
+        </header>
+        {isLocalSupabase ? (
+          <DevPasswordSignIn
+            signIn={(email, password) => signInWithPassword(email, password).catch(onError)}
+          />
+        ) : (
+          <Button
+            className="w-full"
+            onClick={() => {
+              signInWithGoogle(from).catch(onError);
+            }}
+          >
+            Sign in with Google
+          </Button>
+        )}
+        {error !== null && <ErrorBanner message={error} />}
+      </Card>
+    </div>
   );
 }
 
@@ -66,36 +70,45 @@ function DevPasswordSignIn({
   const [password, setPassword] = useState("");
 
   const field =
-    "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500";
+    "w-full rounded-sm border border-wood-500 bg-ivory-100 px-3 py-2 text-sm text-ink-900 placeholder:text-ink-900/40 focus:outline-2 focus:outline-brass-600";
+  const label = "font-label text-xs font-semibold uppercase tracking-wider text-wood-700";
 
   return (
     <form
-      className="flex w-64 flex-col gap-2 border-t border-zinc-800 pt-4"
+      className="flex flex-col gap-3 rounded-sm border border-dashed border-wood-500 p-4"
       onSubmit={(e) => {
         e.preventDefault();
         signIn(email, password);
       }}
     >
-      <p className="text-center text-xs text-zinc-500">
-        Local dev sign-in (no Google locally)
+      <p className="font-label text-xs font-semibold uppercase tracking-wider text-canvas-600">
+        Local dev only: seeded test accounts (no Google locally)
       </p>
-      <input
-        className={field}
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="dev1@hex.local"
-        autoComplete="username"
-      />
-      <input
-        className={field}
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="password"
-        autoComplete="current-password"
-      />
-      <Button type="submit" variant="ghost">
+      <label className="flex flex-col gap-1">
+        <span className={label}>Email</span>
+        <input
+          className={field}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="dev1@hex.local"
+          autoComplete="username"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className={label}>Password</span>
+        <input
+          className={field}
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="password"
+          autoComplete="current-password"
+        />
+      </label>
+      {/* normal-case: other agents find this button by its exact text, and
+          innerText reports the uppercase transform. */}
+      <Button type="submit" className="w-full normal-case! tracking-normal!">
         Sign in as dev
       </Button>
     </form>
