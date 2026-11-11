@@ -963,13 +963,20 @@ def _hostile_within(
     ctx: _PulseState, coord: Axial, owner: PlayerId, radius: int
 ) -> bool:
     """Whether any hostile unit, deployed or packed, is within ``radius`` of ``coord``."""
+    # The hottest loop of a world turn (every column, every pulse): locals only.
+    positions = ctx.positions
+    columns = ctx.columns
+    units = ctx.units
+    hostile = ctx.hostile
     for near in within(coord, radius):
-        occupant = ctx.positions.get(near)
-        if occupant is not None and ctx.hostile(ctx.units[occupant].owner, owner):
+        occupant = positions.get(near)
+        if occupant is not None and hostile(units[occupant].owner, owner):
             return True
-        for column_id in ctx.columns.get(near, []):
-            if ctx.hostile(ctx.units[column_id].owner, owner):
-                return True
+        stack = columns.get(near)
+        if stack:
+            for column_id in stack:
+                if hostile(units[column_id].owner, owner):
+                    return True
     return False
 
 
