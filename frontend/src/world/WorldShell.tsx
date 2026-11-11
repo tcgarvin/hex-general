@@ -608,9 +608,10 @@ function orderText(
   swap: SwapInfo | null = null,
   designate: Designate = () => null,
 ): string {
-  // Kept short: the Army row has room for about "no orders (stays put)".
+  // Kept short: beside a designation ("3rd Infantry") and the HP pips the Army row
+  // has room for about a dozen characters. The unit panel says what "no orders" means.
   if (order === undefined) {
-    if (route?.kind !== "standing") return "no orders (stays put)";
+    if (route?.kind !== "standing") return "no orders";
     return route.eta !== null && route.eta <= 1 ? "arriving this turn" : `travelling${turnsText(route.eta)}`;
   }
   switch (order.kind) {
