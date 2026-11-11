@@ -107,6 +107,18 @@ describe("reconstruction on recorded turns", () => {
     expect(pb.control[0].get(hexKey(25, 32))).toBe(null);
     expect(pb.control.at(-1)!.get(hexKey(25, 32))).toBe("b002");
   });
+
+  it("draws every site's owner as of the played turn, not just the ones that change", () => {
+    const c = FIXTURE_CASES.find((x) => x.turn === 6 && x.viewer === "b002")!;
+    const pb = casePlayback(c);
+    const end = new Map(c.replay.state_after.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
+    // The end boundary is exactly the turn's own end state, whatever the live board holds now.
+    expect(new Map(pb.control.at(-1)!)).toEqual(end);
+    // The start differs only where a site changed hands during the turn.
+    const changed = [...end].filter(([key, owner]) => pb.control[0].get(key) !== owner).map(([key]) => key);
+    expect(changed).toEqual([hexKey(25, 32)]);
+    expect(pb.control[0].size).toBe(end.size);
+  });
 });
 
 // Small hand-built turns for the fog cases the recorded ones do not pin down.

@@ -25,7 +25,8 @@ const DUE_POLL_INTERVAL_MS = 2_000;
 export type WorldLoad =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "gone"; message: string }
+  /** `missing`: the world no longer exists (404); `not_player`: the caller holds no seat in it (403). */
+  | { status: "gone"; reason: GoneReason }
   | { status: "ready"; map: WorldMap; view: WorldView; refresh: () => void; error: string | null };
 
 /** How long to wait before the next poll: often once the turn is due, else the normal rate. */
@@ -35,14 +36,17 @@ export function pollDelay(nextTickAt: string | null | undefined, now: number): n
   return Math.min(POLL_INTERVAL_MS, Math.max(DUE_POLL_INTERVAL_MS, until));
 }
 
+export type GoneReason = "missing" | "not_player";
+
 /** A response status that means this world is not ours to view any more. */
 const isGone = (status: number) => status === 403 || status === 404;
+const goneReason = (status: number): GoneReason => (status === 404 ? "missing" : "not_player");
 
 export function useWorld(gameId: string): WorldLoad {
   const [map, setMap] = useState<WorldMap | null>(null);
   const [view, setView] = useState<WorldView | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [gone, setGone] = useState<string | null>(null);
+  const [gone, setGone] = useState<GoneReason | null>(null);
   const [nonce, setNonce] = useState(0);
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -53,7 +57,7 @@ export function useWorld(gameId: string): WorldLoad {
       .then(({ data, error: apiError, response }) => {
         if (cancelled) return;
         if (apiError) {
-          if (isGone(response.status)) setGone(describeApiError(apiError));
+          if (isGone(response.status)) setGone(goneReason(response.status));
           else setError(describeApiError(apiError));
         } else {
           setMap(decodeWorldMap(data));
@@ -79,7 +83,7 @@ export function useWorld(gameId: string): WorldLoad {
         if (cancelled) return;
         if (apiError) {
           if (isGone(response.status)) {
-            setGone(describeApiError(apiError));
+            setGone(goneReason(response.status));
             return; // nothing more to poll for
           }
           setError(describeApiError(apiError));
@@ -100,7 +104,7 @@ export function useWorld(gameId: string): WorldLoad {
     };
   }, [gameId, nonce]);
 
-  if (gone !== null) return { status: "gone", message: gone };
+  if (gone !== null) return { status: "gone", reason: gone };
   if (map !== null && view !== null) return { status: "ready", map, view, refresh, error };
   if (error !== null) return { status: "error", message: error };
   return { status: "loading" };

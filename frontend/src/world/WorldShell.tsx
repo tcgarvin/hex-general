@@ -56,7 +56,7 @@ import { siteIconUrl } from "./siteArt";
 import { SITE_TILE_KINDS } from "./siteTiles";
 import { turnReport, turnTrails, unitBook, type ReportItem } from "./turnReport";
 import { useTurnReport, type ReportLoad } from "./useTurnReport";
-import { useWorld, type WorldView } from "./useWorld";
+import { useWorld, type GoneReason, type WorldView } from "./useWorld";
 import { useDesignations } from "./useDesignations";
 import { useWorldHotkeys } from "./useWorldHotkeys";
 import { useWorldPlan, type PlannedRoute, type WorldPlanning } from "./useWorldPlan";
@@ -72,7 +72,7 @@ export function WorldShell() {
   if (id === undefined) throw new Error("WorldShell needs a world id route param");
   const load = useWorld(id);
   if (load.status === "loading") return <Loading fill label="Loading the world…" />;
-  if (load.status === "gone") return <WorldGone message={load.message} />;
+  if (load.status === "gone") return <WorldGone reason={load.reason} />;
   if (load.status === "error") {
     return (
       <Centered fill>
@@ -90,7 +90,7 @@ export function WorldShell() {
  * The world was deleted, or the viewer is no longer in it: the board is
  * replaced (orders could only fail) by a plain notice and a way out.
  */
-function WorldGone({ message }: { message: string }) {
+function WorldGone({ reason }: { reason: GoneReason }) {
   return (
     <div className="fixed inset-0 flex flex-col bg-[#1a1d22] text-ivory-100">
       <header className="fhq-wood flex h-12 shrink-0 items-center gap-5 border-b-2 border-brass-600/70 px-4 text-sm">
@@ -105,9 +105,11 @@ function WorldGone({ message }: { message: string }) {
         <Card className="flex max-w-md flex-col gap-3">
           <h1 className="font-display text-lg uppercase tracking-wide">This world is closed to you</h1>
           <p className="text-sm">
-            It may have been deleted, or you no longer hold a seat in it. Nothing here can be ordered any more.
+            {reason === "missing"
+              ? "This world no longer exists: it may have been deleted."
+              : "You don't hold a seat in this world, so you can't see or order anything in it."}{" "}
+            Pick a world from the start page.
           </p>
-          <p className="font-data text-xs text-wood-500">Server: {message}</p>
           <ButtonLink to="/" className="self-start">
             Back to the start page
           </ButtonLink>

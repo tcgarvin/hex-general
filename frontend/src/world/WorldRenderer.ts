@@ -203,7 +203,7 @@ export interface Hover {
 export interface PlaybackBeatScene {
   /** The viewer's visible hexes at this beat (`hexKey` keys). */
   visible: ReadonlySet<string>;
-  /** Owners of the sites that change hands this turn, as of this beat (`null`: neutral). */
+  /** Every site's owner as of this beat (`null`: neutral; no key: a vacant base site). */
   control: ReadonlyMap<string, string | null>;
 }
 
@@ -239,7 +239,7 @@ export class WorldRenderer {
   /** Hexes where a player's (not a garrison's) unit stands; refreshed per scene. */
   private armyHexes = new Set<string>();
   /** Settlement control by hex key (absent: a vacant base site); refreshed per scene. */
-  private control = new Map<string, string | null>();
+  private control: ReadonlyMap<string, string | null> = new Map();
   private readonly unitLayer = new Container();
   /** Unit tokens drawn as shapes (overview tokens, columns without art), under the sprites. */
   private readonly unitTokens = new Graphics();
@@ -460,6 +460,7 @@ export class WorldRenderer {
       this.setHovered(null);
     }
     this.applyControl();
+    this.drawMinimapSites();
     this.drawOverlay();
     this.invalidate();
   }
@@ -512,16 +513,9 @@ export class WorldRenderer {
     for (const listener of this.cameraListeners) listener();
   }
 
-  /** Site owners as drawn: the live scene's, overridden per beat during playback. */
+  /** Site owners as drawn: the live scene's, or during playback the beat's (complete) ones. */
   private applyControl(): void {
-    const overrides = this.playback?.beat.control;
-    if (overrides === undefined || overrides.size === 0) {
-      this.control = this.liveControl;
-      return;
-    }
-    const control = new Map(this.liveControl);
-    for (const [key, owner] of overrides) control.set(key, owner);
-    this.control = control;
+    this.control = this.playback?.beat.control ?? this.liveControl;
   }
 
   setOverlay(overlay: WorldOverlay): void {
@@ -1608,12 +1602,13 @@ export class WorldRenderer {
       return { x: (x - b.minX) * s, y: (y - b.minY) * s };
     };
     let base: Axial | null = null;
-    for (const settlement of scene.state.settlements) {
-      const owner = settlement.controlled_by ?? null;
+    // Owners as drawn (`control`), so playback of an earlier turn shows that turn's.
+    for (const site of this.map.sites) {
+      const owner = this.control.get(hexKey(site.coord.q, site.coord.r)) ?? null;
       if (owner === null) continue;
-      const p = at(settlement.coord);
-      if (owner === scene.viewer && this.map.siteAt(settlement.coord.q, settlement.coord.r)?.kind === "base") {
-        base = settlement.coord;
+      const p = at(site.coord);
+      if (owner === scene.viewer && site.kind === "base") {
+        base = site.coord;
         continue;
       }
       g.circle(p.x, p.y, owner === scene.viewer ? 2.2 : 1.4).fill(ownerColor(owner, scene.viewer));

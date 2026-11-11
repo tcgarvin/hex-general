@@ -80,7 +80,12 @@ export interface Playback {
   snapshots: ReadonlyMap<number, PlaybackUnit>[];
   /** The viewer's visible hex keys at each boundary (mirror of the engine's fog). */
   visible: ReadonlySet<string>[];
-  /** Settlements whose owner changes this turn: hex key → owner at each boundary (`null`: neutral). */
+  /**
+   * Every settlement's owner at each boundary (hex key → owner, `null`: neutral;
+   * no key: a vacant base site). The played turn's own end state, with the sites
+   * that change hands this turn set as of the boundary, so an earlier turn
+   * (dev `?turn=N`) shows that turn's ownership, not today's.
+   */
   control: ReadonlyMap<string, string | null>[];
 }
 
@@ -631,6 +636,10 @@ export function buildPlayback(input: PlaybackInput): Playback {
     visible: pass.snapshots.map((snap, b) =>
       visibleHexKeys(snap.values(), settlementsAt(replay.state_after.settlements, finalControl[b]), viewer, terrainAt),
     ),
-    control: finalControl,
+    control: finalControl.map((changes) => {
+      const owners = new Map(replay.state_after.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
+      for (const [key, owner] of changes) owners.set(key, owner);
+      return owners;
+    }),
   };
 }

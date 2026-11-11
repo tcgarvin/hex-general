@@ -8,6 +8,7 @@ import type { components } from "@/lib/api/schema";
 import { worldName, worldTag } from "@/lib/worldName";
 
 import type { ActiveWorld } from "./useActiveWorld";
+import { clockText } from "./worldClock";
 
 type WorldSummary = components["schemas"]["WorldSummary"];
 
@@ -154,15 +155,7 @@ function WorldRow({
           Turn <Num>{world.turn}</Num> · <Num>{world.players}</Num> {plural(world.players, "player")} (
           <Num>{world.humans}</Num> {plural(world.humans, "human")}) · <Num>{world.slots}</Num> slots
         </p>
-        <p className="text-xs text-wood-700">
-          {world.clock === "manual" ? "Manual clock" : "Twice daily"}
-          {world.next_tick_at !== null && (
-            <>
-              {" · next resolve "}
-              <span className="font-data">{formatResolveTime(world.next_tick_at)}</span>
-            </>
-          )}
-        </p>
+        <p className="text-xs text-wood-700">{clockText(world.clock, world.next_tick_at, new Date())}</p>
       </div>
       {isHere ? (
         <ButtonLink to={`/world/${world.game_id}`}>Open</ButtonLink>
@@ -186,15 +179,4 @@ function Num({ children }: { children: number }) {
 
 function plural(count: number, noun: string): string {
   return count === 1 ? noun : `${noun}s`;
-}
-
-/** The next resolve in the viewer's local time, e.g. "Tue, Nov 11, 2:00 PM". */
-function formatResolveTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
