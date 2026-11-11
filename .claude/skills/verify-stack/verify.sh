@@ -35,6 +35,38 @@ ver=$(curl -fsS "$API/version" 2>/dev/null)
 grep -q '"version"' <<<"$ver" \
   && pass "/version: $ver" || bad "/version missing version"
 
+# World build (exists only after the 2026-11-10 cutover; the old API 404s these).
+# Expected commit: the last one that touched the API (a fixtures-only push runs
+# the API tests but does not redeploy). Override with HEX_EXPECT_COMMIT.
+echo "[api] world build"
+expect="${HEX_EXPECT_COMMIT:-$(git -C "$(dirname "$0")" rev-list -1 HEAD -- api .github/workflows/api.yml 2>/dev/null)}"
+commit=$(jq -r '.commit // empty' <<<"$ver" 2>/dev/null)
+if [ -z "$expect" ]; then
+  bad "no expected commit (set HEX_EXPECT_COMMIT); /version commit is '${commit:-<none>}'"
+elif [ "$commit" = "$expect" ]; then
+  pass "/version commit is $expect"
+else
+  bad "/version commit '${commit:-<none>}' is not $expect (old build still serving, or deploy not done)"
+fi
+code=$(curl -sS -o /dev/null -w '%{http_code}' "$API/worlds" 2>/dev/null)
+[ "$code" = "401" ] \
+  && pass "GET /worlds without a token -> 401" \
+  || bad "GET /worlds without a token -> ${code:-<error>} (expected 401; 404 means the pre-world API)"
+code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$API/internal/clock" 2>/dev/null)
+[ "$code" = "401" ] \
+  && pass "POST /internal/clock without a token -> 401" \
+  || bad "POST /internal/clock without a token -> ${code:-<error>} (expected 401; 404 means the pre-world API)"
+# A missing token is refused before the clock config is read, so only a
+# (malformed) token shows whether CLOCK_AUDIENCE / CLOCK_INVOKER_EMAIL are set:
+# 403 = configured and the token rejected, 503 = the clock env vars are missing.
+code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$API/internal/clock" \
+  -H "Authorization: Bearer not-a-real-token" 2>/dev/null)
+case "$code" in
+  403) pass "POST /internal/clock with a bad token -> 403 (clock configured)" ;;
+  503) bad "POST /internal/clock -> 503: CLOCK_AUDIENCE / CLOCK_INVOKER_EMAIL not set on the service" ;;
+  *)   bad "POST /internal/clock with a bad token -> ${code:-<error>} (expected 403)" ;;
+esac
+
 echo "[api] /stats (Cloud Run -> Supabase)"
 stats=$(curl -fsS "$API/stats" 2>/dev/null)
 if echo "$stats" | jq -e '(.active_users|type) == "number"' >/dev/null 2>&1; then

@@ -85,7 +85,7 @@ jobs:
         run: |
           IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT}/${AR_REPO}/${SERVICE}:${GITHUB_SHA}"
           echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
-          docker build -t "$IMAGE" api
+          docker build --build-arg GIT_COMMIT="$GITHUB_SHA" -t "$IMAGE" api
           docker push "$IMAGE"
       - name: Deploy to Cloud Run
         run: |

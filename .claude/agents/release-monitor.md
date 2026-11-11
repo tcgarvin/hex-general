@@ -24,7 +24,8 @@ output, full logs, or full curl bodies.
    commit and capture their IDs:
    `gh run list --limit 10 --json databaseId,headSha,workflowName,status,conclusion`
    then keep the entries whose `headSha` equals `$SHA`. Deploys are path-filtered,
-   so not every push starts all three workflows — work with whatever actually ran.
+   so not every push starts all four workflows (`api.yml`, `frontend.yml`,
+   `supabase.yml`, and the tests-only `scripts.yml`) — work with whatever actually ran.
    If no run appears within ~30s, report that nothing was triggered (e.g. the
    change touched no deployable path) and stop.
 3. **Wait.** For each run ID, block until it finishes:

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import Client
@@ -36,8 +38,13 @@ def health() -> dict[str, str]:
 
 @app.get("/version")
 def version() -> dict[str, str]:
-    """Return the running API version."""
-    return {"version": __version__}
+    """Return the running API version and the commit its image was built from.
+
+    ``commit`` is the ``GIT_COMMIT`` the deploy bakes into the image (the pushed
+    commit's SHA), so a smoke test can tell which build is live; ``"local"``
+    means a process not started from a CI-built image.
+    """
+    return {"version": __version__, "commit": os.environ.get("GIT_COMMIT") or "local"}
 
 
 @app.get("/me")

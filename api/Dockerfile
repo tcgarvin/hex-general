@@ -18,6 +18,11 @@ RUN uv sync --frozen --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH"
 
+# The commit this image was built from, reported by GET /version. The deploy
+# passes it (--build-arg GIT_COMMIT=$GITHUB_SHA); unset, /version says "local".
+ARG GIT_COMMIT=""
+ENV GIT_COMMIT=$GIT_COMMIT
+
 # Cloud Run injects PORT at runtime; default to 8080 for local runs.
 ENV PORT=8080
 EXPOSE 8080
