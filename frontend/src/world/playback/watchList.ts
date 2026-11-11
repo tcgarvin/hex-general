@@ -116,7 +116,8 @@ export function engagements(pb: Playback, book: UnitBook): Engagement[] {
           summary: `${names(ours)} ${verb} ${names(theirs)}${entered ? "" : ` at ${coordText(a.at)}`}.`,
         });
       } else if (a.kind === "barrage") {
-        const gun = pb.snapshots[k].get(a.gunId);
+        const gun = a.gunId === null ? undefined : pb.snapshots[k].get(a.gunId);
+        const gunName = a.gunId === null ? "An unseen gun" : book.nameOf(a.gunId);
         const firedByUs = gun?.owner === pb.viewer;
         const strikes = a.strikes.map((s) => ({
           unitId: s.unitId,
@@ -133,8 +134,8 @@ export function engagements(pb: Playback, book: UnitBook): Engagement[] {
           result === "under_fire"
             ? `${names(ours)} came under fire at ${coordText(a.target)}.`
             : result === "shelled"
-              ? `${book.nameOf(a.gunId)} shelled ${names(theirs)} at ${coordText(a.target)}.`
-              : `${book.nameOf(a.gunId)} shelled an empty ${coordText(a.target)}.`;
+              ? `${gunName} shelled ${names(theirs)} at ${coordText(a.target)}.`
+              : `${gunName} shelled an empty ${coordText(a.target)}.`;
         out.push({ beat: k, eventIndex: a.eventIndex, kind: "barrage", at: a.target, result, ours, theirs, summary });
       } else if (a.kind === "capture") {
         if (a.owner !== pb.viewer && a.previousOwner !== pb.viewer) continue;

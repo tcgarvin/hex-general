@@ -161,7 +161,9 @@ def test_filter_keeps_barrage_that_hits_your_unit() -> None:
             destroyed=False,
         ),
     )
-    assert filter_events([barrage], state, "blue") == [barrage]
+    # Blue sees the hit on its unit but not the hidden gun that fired.
+    [seen] = filter_events([barrage], state, "blue")
+    assert seen.model_dump() == {**barrage.model_dump(), "artillery_id": None}
 
 
 def test_filter_makes_economy_private_to_its_owner() -> None:

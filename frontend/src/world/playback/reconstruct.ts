@@ -241,7 +241,7 @@ function touchesOf(a: BeatAction): Touch[] {
       });
     case "barrage":
       return [
-        touch(a.gunId, {}),
+        ...(a.gunId === null ? [] : [touch(a.gunId, {})]),
         ...a.strikes.map((s) =>
           touch(s.unitId, {
             pre: a.target,
@@ -428,7 +428,7 @@ function walk(
 function resolve(a: BeatAction, snap: ReadonlyMap<number, PlaybackUnit>, ctx: Context): BeatAction {
   switch (a.kind) {
     case "barrage":
-      return { ...a, from: snap.get(a.gunId)?.coord ?? null };
+      return { ...a, from: a.gunId === null ? null : (snap.get(a.gunId)?.coord ?? null) };
     case "combat": {
       if (a.entrantId === null) return a;
       const entrant = snap.get(a.entrantId);

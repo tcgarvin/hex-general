@@ -82,7 +82,7 @@ export function unitBook(events: readonly ReplayEvent[], units: readonly Unit[],
         for (const p of e.participants) known.set(p.unit_id, { owner: p.owner, type: p.unit_type });
         break;
       case "barrage_resolved":
-        guns.add(e.artillery_id);
+        if (e.artillery_id !== null) guns.add(e.artillery_id);
         for (const h of [...(e.hit ? [e.hit] : []), ...(e.extra_hits ?? [])]) {
           known.set(h.unit_id, { owner: h.owner, type: h.unit_type });
         }
@@ -208,7 +208,8 @@ export function turnReport(
         if (e.owner === viewer) push("base", "good", e, e.coord, i);
         break;
       case "world_unit_recruited":
-        if (e.owner !== viewer) break;
+        // The server sends the cost only to the recruit's owner.
+        if (e.owner !== viewer || e.cost === null) break;
         items.push({
           section: "base",
           tone: "good",
@@ -240,7 +241,7 @@ export function turnReport(
       }
       case "barrage_resolved": {
         const hits = [...(e.hit ? [e.hit] : []), ...(e.extra_hits ?? [])];
-        const firedByUs = mine(e.artillery_id);
+        const firedByUs = e.artillery_id !== null && mine(e.artillery_id);
         const hitUs = hits.some((h) => h.owner === viewer);
         if (!firedByUs && !hitUs) push("seen", "neutral", e, e.target, i);
         else push("fighting", hitUs ? "bad" : hits.length > 0 ? "good" : "neutral", e, e.target, i);

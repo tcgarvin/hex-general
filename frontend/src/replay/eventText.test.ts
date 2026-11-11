@@ -65,6 +65,37 @@ describe("eventLines", () => {
     ).toEqual(["Blue Armor barraged (0,0) — no unit there."]);
   });
 
+  it("names a gun the server withheld as unseen", () => {
+    expect(
+      linesFor({ kind: "barrage_resolved", artillery_id: null, target: { q: 0, r: 0 }, hit: null }),
+    ).toEqual(["An unseen gun barraged (0,0) — no unit there."]);
+  });
+
+  it("leaves out another player's withheld recruit cost and disband reason", () => {
+    expect(
+      linesFor({
+        kind: "world_unit_recruited",
+        unit_id: 9,
+        unit_type: "infantry",
+        owner: "red",
+        coord: { q: 1, r: 2 },
+        cost: null,
+        stocks_after: null,
+      }),
+    ).toEqual(["Red recruited Infantry at (1,2)."]);
+    expect(
+      linesFor({
+        kind: "unit_disbanded",
+        unit_id: 9,
+        unit_type: "infantry",
+        owner: "red",
+        coord: { q: 1, r: 2 },
+        shortage: null,
+        chosen: null,
+      }),
+    ).toEqual(["Red Infantry at (1,2) disbanded."]);
+  });
+
   it("renders combat with attacker, defender bonus, damage, destruction, and entry", () => {
     expect(
       linesFor({

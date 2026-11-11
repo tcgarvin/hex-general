@@ -73,7 +73,7 @@ export function beatMarks(pb: Playback): BeatMark[] {
         if (a.sides.some((s) => s.owner === pb.viewer)) return "own_fight";
         mark = "fight";
       } else if (a.kind === "barrage") {
-        const gun = pb.snapshots[k].get(a.gunId);
+        const gun = a.gunId === null ? undefined : pb.snapshots[k].get(a.gunId);
         if (gun?.owner === pb.viewer || a.strikes.some((s) => s.owner === pb.viewer)) return "own_fight";
         mark = "fight";
       }

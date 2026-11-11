@@ -461,7 +461,7 @@ export function cameraHint(pb: Playback, k: number): CameraHint | null {
         if (a.sides.some((s) => s.owner === pb.viewer)) fights.push(a.at);
         break;
       case "barrage":
-        if (mine(a.gunId) || a.strikes.some((s) => s.owner === pb.viewer)) fights.push(a.target, ...(a.from ? [a.from] : []));
+        if ((a.gunId !== null && mine(a.gunId)) || a.strikes.some((s) => s.owner === pb.viewer)) fights.push(a.target, ...(a.from ? [a.from] : []));
         break;
       case "capture":
         if (a.owner === pb.viewer || a.previousOwner === pb.viewer) fights.push(a.at);

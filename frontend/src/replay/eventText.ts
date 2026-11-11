@@ -105,7 +105,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       return [{ indent: 0, text: `${nameOf(event.unit_id)} moved to ${coord(event.dest)}.` }];
 
     case "barrage_resolved": {
-      const firer = nameOf(event.artillery_id);
+      const firer = event.artillery_id === null ? "An unseen gun" : nameOf(event.artillery_id);
       const hit = event.hit;
       if (hit === null || hit === undefined) {
         return [{ indent: 0, text: `${firer} barraged ${coord(event.target)} — no unit there.` }];
@@ -235,7 +235,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       return [
         {
           indent: 0,
-          text: `${naming.unit(event.owner, event.unit_type)} at ${coord(event.coord)} disbanded: out of ${event.shortage}${event.chosen ? " (your pick)" : ""}.`,
+          text: `${naming.unit(event.owner, event.unit_type)} at ${coord(event.coord)} ${event.shortage === null ? "disbanded" : `disbanded: out of ${event.shortage}`}${event.chosen ? " (your pick)" : ""}.`,
         },
       ];
 
@@ -261,7 +261,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       return [
         {
           indent: 0,
-          text: `${naming.player(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)} (${stocksText(event.cost)}).`,
+          text: `${naming.player(event.owner)} recruited ${cap(event.unit_type)} at ${coord(event.coord)}${event.cost === null ? "" : ` (${stocksText(event.cost)})`}.`,
         },
       ];
 

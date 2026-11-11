@@ -168,13 +168,20 @@
         "title": "BarrageOrder",
         "type": "object"
       },
-      "BarrageResolved": {
+      "BarrageResolvedView": {
         "additionalProperties": false,
-        "description": "An artillery Barrage order resolved against ``target`` (SPEC \u00a77.2, \u00a711.3).\n\n``hit`` is the struck unit, or ``None`` when the target hex was empty (a\nsingle, well-defined meaning: barrage targets a hex, which may hold nobody).",
+        "description": "`BarrageResolved` as a viewer receives it.\n\n``artillery_id`` is ``None`` when the gun that fired is not the viewer's and\ndoes not stand on a hex the viewer can see: the viewer sees the shells land,\nnot who fired them.",
         "properties": {
           "artillery_id": {
-            "title": "Artillery Id",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artillery Id"
           },
           "extra_hits": {
             "items": {
@@ -207,7 +214,7 @@
           "artillery_id",
           "target"
         ],
-        "title": "BarrageResolved",
+        "title": "BarrageResolvedView",
         "type": "object"
       },
       "Building": {
@@ -1770,13 +1777,20 @@
         "title": "UnitDeployed",
         "type": "object"
       },
-      "UnitDisbanded": {
+      "UnitDisbandedView": {
         "additionalProperties": false,
-        "description": "A shortage disbanded a unit (economy draft \u00a702).\n\n``shortage`` is the resource that ran out. ``chosen`` is whether the unit was\nthe player's own pick, rather than the weakest qualifying unit by default.",
+        "description": "`UnitDisbanded` as a viewer receives it.\n\n``shortage`` and ``chosen`` are ``None`` for anyone but the owner: others see\nthe unit leave, not which stock ran out or whether it was the owner's pick.",
         "properties": {
           "chosen": {
-            "title": "Chosen",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chosen"
           },
           "coord": {
             "$ref": "#/components/schemas/Axial"
@@ -1792,12 +1806,19 @@
             "type": "string"
           },
           "shortage": {
-            "enum": [
-              "fuel",
-              "manpower"
+            "anyOf": [
+              {
+                "enum": [
+                  "fuel",
+                  "manpower"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Shortage",
-            "type": "string"
+            "title": "Shortage"
           },
           "unit_id": {
             "title": "Unit Id",
@@ -1815,7 +1836,7 @@
           "shortage",
           "chosen"
         ],
-        "title": "UnitDisbanded",
+        "title": "UnitDisbandedView",
         "type": "object"
       },
       "UnitMoved": {
@@ -2130,13 +2151,13 @@
         "type": "object"
       },
       "WorldReplay": {
-        "description": "A resolved world turn for one viewer: witnessed events and the fogged state.",
+        "description": "A resolved world turn for one viewer: witnessed events and the fogged state.\n\n``events`` are the engine's events as this viewer witnessed them, with other\nplayers' private fields withheld (`app.engine.fog.filter_events`).",
         "properties": {
           "events": {
             "items": {
               "discriminator": {
                 "mapping": {
-                  "barrage_resolved": "#/components/schemas/BarrageResolved",
+                  "barrage_resolved": "#/components/schemas/BarrageResolvedView",
                   "column_held": "#/components/schemas/ColumnHeld",
                   "column_stuck": "#/components/schemas/ColumnStuck",
                   "combat_resolved": "#/components/schemas/CombatResolved",
@@ -2152,12 +2173,12 @@
                   "traffic_jam": "#/components/schemas/TrafficJam",
                   "travel_ended": "#/components/schemas/TravelEnded",
                   "unit_deployed": "#/components/schemas/UnitDeployed",
-                  "unit_disbanded": "#/components/schemas/UnitDisbanded",
+                  "unit_disbanded": "#/components/schemas/UnitDisbandedView",
                   "unit_moved": "#/components/schemas/UnitMoved",
                   "unit_packed": "#/components/schemas/UnitPacked",
                   "unit_recruited": "#/components/schemas/UnitRecruited",
                   "unit_repaired": "#/components/schemas/UnitRepaired",
-                  "world_unit_recruited": "#/components/schemas/WorldUnitRecruited"
+                  "world_unit_recruited": "#/components/schemas/WorldUnitRecruitedView"
                 },
                 "propertyName": "kind"
               },
@@ -2175,7 +2196,7 @@
                   "$ref": "#/components/schemas/CombatResolved"
                 },
                 {
-                  "$ref": "#/components/schemas/BarrageResolved"
+                  "$ref": "#/components/schemas/BarrageResolvedView"
                 },
                 {
                   "$ref": "#/components/schemas/OrderMooted"
@@ -2214,7 +2235,7 @@
                   "$ref": "#/components/schemas/StocksResolved"
                 },
                 {
-                  "$ref": "#/components/schemas/UnitDisbanded"
+                  "$ref": "#/components/schemas/UnitDisbandedView"
                 },
                 {
                   "$ref": "#/components/schemas/ConstructionStarted"
@@ -2226,7 +2247,7 @@
                   "$ref": "#/components/schemas/ConstructionVoided"
                 },
                 {
-                  "$ref": "#/components/schemas/WorldUnitRecruited"
+                  "$ref": "#/components/schemas/WorldUnitRecruitedView"
                 }
               ]
             },
@@ -2363,15 +2384,22 @@
         "title": "WorldSummary",
         "type": "object"
       },
-      "WorldUnitRecruited": {
+      "WorldUnitRecruitedView": {
         "additionalProperties": false,
-        "description": "A world player recruited a unit, paying ``cost`` from their stocks.",
+        "description": "`WorldUnitRecruited` as a viewer receives it.\n\n``cost`` and ``stocks_after`` are ``None`` for anyone but the owner: others see\na new unit appear at a site they can see, not what it cost or what is left.",
         "properties": {
           "coord": {
             "$ref": "#/components/schemas/Axial"
           },
           "cost": {
-            "$ref": "#/components/schemas/Stocks"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stocks"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "kind": {
             "const": "world_unit_recruited",
@@ -2384,7 +2412,14 @@
             "type": "string"
           },
           "stocks_after": {
-            "$ref": "#/components/schemas/Stocks"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stocks"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "unit_id": {
             "title": "Unit Id",
@@ -2402,7 +2437,7 @@
           "cost",
           "stocks_after"
         ],
-        "title": "WorldUnitRecruited",
+        "title": "WorldUnitRecruitedView",
         "type": "object"
       },
       "WorldView": {

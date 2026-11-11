@@ -101,7 +101,8 @@ export type BeatAction =
   | {
       kind: "barrage";
       eventIndex: number;
-      gunId: number;
+      /** The gun that fired; `null` when the server withheld it (a gun the viewer cannot see). */
+      gunId: number | null;
       /** The gun's hex; `null` when the viewer never saw the gun (fog). Set by `reconstruct.ts`. */
       from: Axial | null;
       target: Axial;
@@ -342,7 +343,7 @@ export function actionUnitIds(a: BeatAction): number[] {
     case "combat":
       return a.sides.map((s) => s.unitId);
     case "barrage":
-      return [a.gunId, ...a.strikes.map((s) => s.unitId)];
+      return [...(a.gunId === null ? [] : [a.gunId]), ...a.strikes.map((s) => s.unitId)];
     case "reveal":
     case "relocate":
     case "correct":

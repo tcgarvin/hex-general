@@ -15,7 +15,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.engine.economy_rules import Building
-from app.engine.events import Event
+from app.engine.fog import ReplayEvent
 from app.engine.hex_coords import Axial
 from app.engine.models import (
     GameConfig,
@@ -199,8 +199,12 @@ class ClockRunView(BaseModel):
 
 
 class WorldReplay(BaseModel):
-    """A resolved world turn for one viewer: witnessed events and the fogged state."""
+    """A resolved world turn for one viewer: witnessed events and the fogged state.
+
+    ``events`` are the engine's events as this viewer witnessed them, with other
+    players' private fields withheld (`app.engine.fog.filter_events`).
+    """
 
     turn: int
-    events: list[Event]
+    events: list[ReplayEvent]
     state_after: WorldState

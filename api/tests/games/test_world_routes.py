@@ -16,8 +16,16 @@ from fastapi.testclient import TestClient
 
 import app.games.world_routes as world_routes
 import app.main as main_module
+from app.engine.economy_rules import Stocks
+from app.engine.events import (
+    BarrageHit,
+    BarrageResolved,
+    UnitDisbanded,
+    WorldUnitRecruited,
+)
 from app.engine.map_codec import CompactMap, decode_map
 from app.engine.models import GameState, Player
+from app.engine.victory import VictoryReason, VictoryStatus
 from app.engine.visibility import visible_hexes
 from app.games.auth import AuthIdentity
 from app.games.deps import current_identity, get_repo, real_identity
@@ -296,6 +304,71 @@ def test_a_replay_keeps_other_players_economy_private(client: TestClient) -> Non
     others = [p for p in replay["state_after"]["players"] if p["id"] != slot]
     assert others
     assert all(p == Player(id=p["id"]).model_dump(mode="json") for p in others)
+
+
+def test_a_replay_withholds_other_players_private_event_fields(
+    client: TestClient, repo: FakeGameRepo
+) -> None:
+    # Another player recruits, disbands and fires a gun in the fog, all on a
+    # hex the caller can see: the replay shows what happened there, never that
+    # player's stocks, costs, shortage or hidden gun.
+    game_id = _create(client, bots=3)
+    slot = _join(client, game_id)
+    game = repo.get_game(game_id)
+    assert game is not None
+    mine = next(u for u in game.state.units if u.owner == slot)
+    other = next(u for u in game.state.units if u.owner not in (slot, "neutral"))
+    assert other.coord not in visible_hexes(game.state, slot)
+    events = [
+        WorldUnitRecruited(
+            unit_id=999,
+            unit_type=other.type,
+            owner=other.owner,
+            coord=mine.coord,
+            cost=Stocks(manpower=3),
+            stocks_after=Stocks(manpower=27, fuel=30, steel=10),
+        ),
+        UnitDisbanded(
+            unit_id=998,
+            unit_type=other.type,
+            owner=other.owner,
+            coord=mine.coord,
+            shortage="manpower",
+            chosen=True,
+        ),
+        BarrageResolved(
+            artillery_id=other.id,
+            target=mine.coord,
+            hit=BarrageHit(
+                unit_id=mine.id,
+                unit_type=mine.type,
+                owner=slot,
+                terrain_bonus=0,
+                hold_bonus=0,
+                damage=1,
+                hp_after=mine.hp - 1,
+                destroyed=False,
+            ),
+        ),
+    ]
+    repo.record_turn(
+        game,
+        0,
+        [e.model_dump(mode="json") for e in events],
+        game.state,
+        VictoryStatus(
+            reason=VictoryReason.ONGOING, winner=None, eliminated=[], scores={}
+        ),
+    )
+
+    replay = client.get(f"/worlds/{game_id}/turns/0", headers=_as(PLAYER))
+
+    assert replay.status_code == 200, replay.text
+    recruit, disband, barrage = replay.json()["events"]
+    assert recruit["unit_id"] == 999
+    assert recruit["cost"] is None and recruit["stocks_after"] is None
+    assert disband["shortage"] is None and disband["chosen"] is None
+    assert barrage["artillery_id"] is None and barrage["hit"]["unit_id"] == mine.id
 
 
 def test_me_reports_identity_and_dev_role(

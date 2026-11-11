@@ -465,15 +465,16 @@ export interface components {
             unit_id: number;
         };
         /**
-         * BarrageResolved
-         * @description An artillery Barrage order resolved against ``target`` (SPEC §7.2, §11.3).
+         * BarrageResolvedView
+         * @description `BarrageResolved` as a viewer receives it.
          *
-         *     ``hit`` is the struck unit, or ``None`` when the target hex was empty (a
-         *     single, well-defined meaning: barrage targets a hex, which may hold nobody).
+         *     ``artillery_id`` is ``None`` when the gun that fired is not the viewer's and
+         *     does not stand on a hex the viewer can see: the viewer sees the shells land,
+         *     not who fired them.
          */
-        BarrageResolved: {
+        BarrageResolvedView: {
             /** Artillery Id */
-            artillery_id: number;
+            artillery_id: number | null;
             /** Extra Hits */
             extra_hits?: components["schemas"]["BarrageHit"][];
             hit?: components["schemas"]["BarrageHit"] | null;
@@ -1442,15 +1443,15 @@ export interface components {
             unit_id: number;
         };
         /**
-         * UnitDisbanded
-         * @description A shortage disbanded a unit (economy draft §02).
+         * UnitDisbandedView
+         * @description `UnitDisbanded` as a viewer receives it.
          *
-         *     ``shortage`` is the resource that ran out. ``chosen`` is whether the unit was
-         *     the player's own pick, rather than the weakest qualifying unit by default.
+         *     ``shortage`` and ``chosen`` are ``None`` for anyone but the owner: others see
+         *     the unit leave, not which stock ran out or whether it was the owner's pick.
          */
-        UnitDisbanded: {
+        UnitDisbandedView: {
             /** Chosen */
-            chosen: boolean;
+            chosen: boolean | null;
             coord: components["schemas"]["Axial"];
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -1459,11 +1460,8 @@ export interface components {
             kind: "unit_disbanded";
             /** Owner */
             owner: string;
-            /**
-             * Shortage
-             * @enum {string}
-             */
-            shortage: "fuel" | "manpower";
+            /** Shortage */
+            shortage: ("fuel" | "manpower") | null;
             /** Unit Id */
             unit_id: number;
             unit_type: components["schemas"]["UnitType"];
@@ -1641,10 +1639,13 @@ export interface components {
         /**
          * WorldReplay
          * @description A resolved world turn for one viewer: witnessed events and the fogged state.
+         *
+         *     ``events`` are the engine's events as this viewer witnessed them, with other
+         *     players' private fields withheld (`app.engine.fog.filter_events`).
          */
         WorldReplay: {
             /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"] | components["schemas"]["StocksResolved"] | components["schemas"]["UnitDisbanded"] | components["schemas"]["ConstructionStarted"] | components["schemas"]["ConstructionCompleted"] | components["schemas"]["ConstructionVoided"] | components["schemas"]["WorldUnitRecruited"])[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolvedView"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"] | components["schemas"]["StocksResolved"] | components["schemas"]["UnitDisbandedView"] | components["schemas"]["ConstructionStarted"] | components["schemas"]["ConstructionCompleted"] | components["schemas"]["ConstructionVoided"] | components["schemas"]["WorldUnitRecruitedView"])[];
             state_after: components["schemas"]["WorldState"];
             /** Turn */
             turn: number;
@@ -1696,12 +1697,15 @@ export interface components {
             turn: number;
         };
         /**
-         * WorldUnitRecruited
-         * @description A world player recruited a unit, paying ``cost`` from their stocks.
+         * WorldUnitRecruitedView
+         * @description `WorldUnitRecruited` as a viewer receives it.
+         *
+         *     ``cost`` and ``stocks_after`` are ``None`` for anyone but the owner: others see
+         *     a new unit appear at a site they can see, not what it cost or what is left.
          */
-        WorldUnitRecruited: {
+        WorldUnitRecruitedView: {
             coord: components["schemas"]["Axial"];
-            cost: components["schemas"]["Stocks"];
+            cost: components["schemas"]["Stocks"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -1709,7 +1713,7 @@ export interface components {
             kind: "world_unit_recruited";
             /** Owner */
             owner: string;
-            stocks_after: components["schemas"]["Stocks"];
+            stocks_after: components["schemas"]["Stocks"] | null;
             /** Unit Id */
             unit_id: number;
             unit_type: components["schemas"]["UnitType"];
