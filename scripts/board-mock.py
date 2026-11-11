@@ -62,7 +62,8 @@ The **edge rule** (``edge_direction``, below the mouth rule) does the same for a
 river or bridge hex on the map border: its course runs off the map instead of
 ending in a cap.
 
-``--variety DIR --variety-density low|medium|high`` (opt-in, candidates only, not
+``--variety DIR --variety-density low|medium|high`` (+ ``--variety-medium DIR
+--variety-mix small|mostly-small|even|mostly-medium|medium``) (opt-in, candidates only, not
 in the frontend): decorates open country with plains feature, homestead and
 roadside variants by a deterministic per-hex rule (``variety_picks``, written to
 port to ``hexTile.ts``); off by default, so other renders are unchanged.
@@ -1211,8 +1212,14 @@ class SiteSet:
 #      adjacent homestead candidate (``rank``: ``roll(RANK)``, ties by q then
 #      r). Nature and roadside candidates rank as one pool the same way, and are
 #      also dropped next to a kept homestead. So no two decorated hexes touch.
-#   6. Variant: ``salted_index(q, r, PICK, count)`` over the kind's files (a
-#      roadside pick keeps the road hex's mirror flag).
+#   6. Variant: ``salted_index(q, r, PICK, count)`` over the kind's files,
+#      stepped on (mod count) past any file already used by a higher-ranked
+#      decorated hex within ``VARIETY_REPEAT_RADIUS`` (picks are assigned in
+#      descending rank). A roadside pick keeps the road hex's mirror flag.
+#   7. Size (only with a medium-footprint set): a decorated hex draws from the
+#      medium set when ``roll(SIZE) < medium_share`` (``VARIETY_MIXES``), else
+#      from the small set; a roadside hex whose shape only one set has uses
+#      that set. Which hexes are decorated does not depend on the mix.
 #
 # Probabilities are per mille (``roll`` is ``salted_index(q, r, salt, 1000)``).
 
@@ -1221,6 +1228,16 @@ VARIETY_SALT_HOME = 12
 VARIETY_SALT_ROAD = 13
 VARIETY_SALT_RANK = 14
 VARIETY_SALT_PICK = 15
+VARIETY_SALT_SIZE = 16
+VARIETY_REPEAT_RADIUS = 4  # no two decorated hexes this close share a tile file
+# medium-footprint share per mille of decorated hexes (step 7)
+VARIETY_MIXES: dict[str, int] = {
+    "small": 0,
+    "mostly-small": 250,
+    "even": 500,
+    "mostly-medium": 750,
+    "medium": 1000,
+}
 VARIETY_KINDS = ("nature", "home", "road")
 SETTLEMENTS = ("town", "city")
 
@@ -1306,6 +1323,7 @@ class VarietySet:
 class VarietyPick:
     kind: str  # one of VARIETY_KINDS
     path: Path
+    size: str = "small"  # "small" or "medium" (see VARIETY_MIXES)
 
 
 def site_hexes(game_map: GameMap) -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
@@ -1325,6 +1343,16 @@ def _neighbours(q: int, r: int) -> list[tuple[int, int]]:
     return [(q + dq, r + dr) for dq, dr in AXIAL_DIRECTIONS]
 
 
+def _within(q: int, r: int, radius: int) -> list[tuple[int, int]]:
+    """Every hex within ``radius`` of (q, r), excluding (q, r)."""
+    return [
+        (q + dq, r + dr)
+        for dq in range(-radius, radius + 1)
+        for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1)
+        if (dq, dr) != (0, 0)
+    ]
+
+
 def _rank(q: int, r: int) -> tuple[int, int, int]:
     return salted_index(q, r, VARIETY_SALT_RANK, 1000), q, r
 
@@ -1340,10 +1368,24 @@ def _settlement_within(game_map: GameMap, q: int, r: int, radius: int) -> bool:
 def variety_picks(
     game_map: GameMap,
     road_tiles: dict[str, RoadTileRef],
-    variety: VarietySet,
+    variety: VarietySet | None,
     density: VarietyDensity,
+    medium: VarietySet | None = None,
+    medium_share: int = 0,
 ) -> dict[tuple[int, int], VarietyPick]:
-    """The decorated hexes of the whole map (see the rule above)."""
+    """The decorated hexes of the whole map (see the rule above).
+
+    ``variety`` is the small-feature set, ``medium`` the medium-footprint set;
+    each decorated hex is medium when ``roll(SIZE) < medium_share`` (per mille),
+    else small (step 7). With ``medium`` None the result is exactly the
+    small-only rule.
+    """
+    sizes = {"small": variety, "medium": medium}
+    if variety is None and medium is None:
+        raise ValueError("variety_picks needs a small or a medium variety set")
+    road_shapes = {
+        shape for vs in sizes.values() if vs is not None for shape in vs.road
+    }
     covered, bases = site_hexes(game_map)
     roll = salted_index
     home_c: set[tuple[int, int]] = set()
@@ -1359,7 +1401,7 @@ def variety_picks(
             if ref is None:
                 continue
             shape = ref.lookup.removeprefix("road/plains_")
-            if shape not in variety.road:
+            if shape not in road_shapes:
                 continue
             p = (
                 density.road_town
@@ -1383,26 +1425,55 @@ def variety_picks(
     def outranks(at: tuple[int, int], rivals: set[tuple[int, int]] | dict) -> bool:
         return all(n not in rivals or _rank(*at) > _rank(*n) for n in _neighbours(*at))
 
+    def size_of(at: tuple[int, int], has: Callable[[VarietySet], bool]) -> str:
+        """The hex's size by roll, or the other size when that set lacks it."""
+        want = (
+            "medium"
+            if medium is not None and roll(*at, VARIETY_SALT_SIZE, 1000) < medium_share
+            else "small"
+        )
+        chosen = sizes[want]
+        if chosen is None or not has(chosen):
+            want = "small" if want == "medium" else "medium"
+        return want
+
+    def files_for(at: tuple[int, int], kind: str, shape: str) -> tuple[str, list[Path]]:
+        if kind == "road":
+            size = size_of(at, lambda vs: shape in vs.road)
+        else:
+            size = size_of(at, lambda vs: True)
+        vs = sizes[size]
+        assert vs is not None
+        return size, (vs.road[shape] if kind == "road" else getattr(vs, kind))
+
     homes = {at for at in home_c if outranks(at, home_c)}
     others = nature_c | set(road_c)  # nature and roadside rank as one pool
-    picks: dict[tuple[int, int], VarietyPick] = {}
-    for at in homes:
-        picks[at] = VarietyPick(
-            "home", variety.home[roll(*at, VARIETY_SALT_PICK, len(variety.home))]
-        )
+    chosen: dict[tuple[int, int], tuple[str, str]] = {at: ("home", "") for at in homes}
     for at in others:
         if not outranks(at, others) or any(n in homes for n in _neighbours(*at)):
             continue
-        if at in road_c:
-            files = variety.road[road_c[at]]
-            picks[at] = VarietyPick(
-                "road", files[roll(*at, VARIETY_SALT_PICK, len(files))]
-            )
-        else:
-            picks[at] = VarietyPick(
-                "nature",
-                variety.nature[roll(*at, VARIETY_SALT_PICK, len(variety.nature))],
-            )
+        chosen[at] = ("road", road_c[at]) if at in road_c else ("nature", "")
+    # Variant: the hashed index, stepped past any file a higher-ranked decorated
+    # hex within VARIETY_REPEAT_RADIUS already uses (when the set has another).
+    picks: dict[tuple[int, int], VarietyPick] = {}
+    for at in sorted(chosen, key=lambda h: _rank(*h), reverse=True):
+        kind, shape = chosen[at]
+        size, files = files_for(at, kind, shape)
+        near = {
+            picks[n].path
+            for n in _within(at[0], at[1], VARIETY_REPEAT_RADIUS)
+            if n in picks
+        }
+        start = roll(*at, VARIETY_SALT_PICK, len(files))
+        index = next(
+            (
+                (start + k) % len(files)
+                for k in range(len(files))
+                if files[(start + k) % len(files)] not in near
+            ),
+            start,
+        )
+        picks[at] = VarietyPick(kind, files[index], size)
     return picks
 
 
@@ -2033,6 +2104,8 @@ def render(
     sites: SiteSet | None = None,
     variety: VarietySet | None = None,
     variety_density: str = "medium",
+    variety_medium: VarietySet | None = None,
+    variety_mix: str = "small",
 ) -> tuple[Image.Image, RenderReport]:
     """Render the map; tile selection always sees the whole map, even when cropped.
 
@@ -2045,7 +2118,9 @@ def render(
     ``sites`` (opt-in) draws the map's ``[sites]`` hexes from that set in place of
     their plains tile; without it the sites section is ignored.
     ``variety`` (opt-in, candidates) decorates open country by ``variety_picks``
-    at ``variety_density`` (a ``VARIETY_DENSITIES`` key); site hexes need
+    at ``variety_density`` (a ``VARIETY_DENSITIES`` key), drawing small or
+    ``variety_medium`` tiles by ``variety_mix`` (a ``VARIETY_MIXES`` key); site
+    hexes need
     ``sites`` to be excluded, so the map's ``[sites]`` count either way.
     """
     if grid_style not in GRID_STYLES:
@@ -2101,9 +2176,14 @@ def render(
             for (dq, dr), tile in sites.footprint_tiles(anchor, kind, level).items():
                 site_tiles[(aq + dq, ar + dr)] = tile
     picks: dict[tuple[int, int], VarietyPick] = {}
-    if variety is not None:
+    if variety is not None or variety_medium is not None:
         picks = variety_picks(
-            game_map, road_tiles, variety, VARIETY_DENSITIES[variety_density]
+            game_map,
+            road_tiles,
+            variety,
+            VARIETY_DENSITIES[variety_density],
+            medium=variety_medium,
+            medium_share=VARIETY_MIXES[variety_mix],
         )
     variety_used: list[tuple[Hex, VarietyPick]] = []
     for h, (x, y) in zip(shown, centres):
@@ -2243,7 +2323,9 @@ def format_report(report: RenderReport) -> str:
     if report.variety:
         kinds = Counter(p.kind for _, p in report.variety)
         listed = ", ".join(f"{k} x{kinds[k]}" for k in VARIETY_KINDS if kinds[k])
-        lines.append(f"  variety {len(report.variety)} hexes: {listed}")
+        sizes = Counter(p.size for _, p in report.variety)
+        sized = ", ".join(f"{k} x{n}" for k, n in sorted(sizes.items()))
+        lines.append(f"  variety {len(report.variety)} hexes: {listed} ({sized})")
 
     if report.mouths:
         listed = ", ".join(
@@ -2341,7 +2423,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--variety-density", choices=tuple(VARIETY_DENSITIES), default="medium"
     )
+    parser.add_argument(
+        "--variety-medium",
+        type=Path,
+        default=None,
+        help="medium-footprint variety tiles dir, same layout as --variety",
+    )
+    parser.add_argument(
+        "--variety-mix",
+        choices=tuple(VARIETY_MIXES),
+        default="small",
+        help="share of decorated hexes drawn from --variety-medium",
+    )
     args = parser.parse_args(argv)
+    share = VARIETY_MIXES[args.variety_mix]
+    if share < 1000 and args.variety_medium is not None and args.variety is None:
+        parser.error(f"--variety-mix {args.variety_mix} needs --variety (small tiles)")
+    if share > 0 and args.variety_medium is None:
+        parser.error(f"--variety-mix {args.variety_mix} needs --variety-medium")
     if not 0.0 <= args.drift < 1.0:
         parser.error(f"--drift must be in [0, 1), got {args.drift}")
     if args.hex_px < 8:
@@ -2367,6 +2466,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         sites=None if args.sites is None else SiteSet.discover(args.sites),
         variety=None if args.variety is None else VarietySet.discover(args.variety),
         variety_density=args.variety_density,
+        variety_medium=(
+            None
+            if args.variety_medium is None
+            else VarietySet.discover(args.variety_medium)
+        ),
+        variety_mix=args.variety_mix,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     image.save(args.out)

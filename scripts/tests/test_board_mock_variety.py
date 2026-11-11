@@ -204,3 +204,112 @@ def test_variety_dir_needs_nature_and_home(tmp_path: Path) -> None:
     _tile(tmp_path / "v" / "road" / "bad.png", (1, 2, 3))
     with pytest.raises(bm.TileSetError, match="road-<shape>"):
         bm.VarietySet.discover(tmp_path / "v")
+
+
+# --- size mix (small round-1 set + medium round-2 set) -------------------------
+
+
+@pytest.fixture()
+def medium_dir(tmp_path: Path) -> Path:
+    root = tmp_path / "medium"
+    for i in range(2):
+        _tile(root / "nature" / f"nature-m{i:02d}.png", (30, 70 + i, 30))
+        _tile(root / "home" / f"home-m{i:02d}.png", (120, 60, 50 + i))
+    # straights and one fork only: turns must fall back to the small set
+    for shape in ("straight_v", "straight_d", "fork_se_n_sw"):
+        _tile(root / "road" / f"road-{shape}-mA.png", (210, 190, 130))
+    return root
+
+
+def _mixed(game_map, small: Path | None, medium: Path, mix: str, density="medium"):
+    course = bm.road_course_edges(game_map.hexes, game_map.hex_at)
+    refs = bm.road_tile_refs(game_map.hexes, course)
+    return bm.variety_picks(
+        game_map,
+        refs,
+        None if small is None else bm.VarietySet.discover(small),
+        bm.VARIETY_DENSITIES[density],
+        medium=bm.VarietySet.discover(medium),
+        medium_share=bm.VARIETY_MIXES[mix],
+    )
+
+
+def test_small_mix_with_a_medium_set_equals_the_small_only_rule(
+    variety_dir: Path, medium_dir: Path
+) -> None:
+    # a shape only the medium set has (a fork) would add road candidates and
+    # draw from the medium set even at mix "small"; without one the rule is
+    # exactly the small-only rule
+    (medium_dir / "road" / "road-fork_se_n_sw-mA.png").unlink()
+    game_map = _big_map()
+    assert _mixed(game_map, variety_dir, medium_dir, "small") == _picks(
+        game_map, variety_dir, "medium"
+    )
+
+
+def test_mix_changes_sizes_not_which_hexes_are_decorated(
+    variety_dir: Path, medium_dir: Path
+) -> None:
+    game_map = _big_map()
+    by_mix = {m: _mixed(game_map, variety_dir, medium_dir, m) for m in bm.VARIETY_MIXES}
+    hexes = {m: set(p) for m, p in by_mix.items()}
+    assert len({frozenset(h) for h in hexes.values()}) == 1
+    medium_counts = [
+        sum(p.size == "medium" for p in by_mix[m].values()) for m in bm.VARIETY_MIXES
+    ]
+    assert medium_counts == sorted(medium_counts)
+    assert medium_counts[0] == 0
+    assert medium_counts[0] < medium_counts[2] < medium_counts[-1]
+    again = _mixed(_big_map(), variety_dir, medium_dir, "even")
+    assert again == by_mix["even"]
+
+
+def test_medium_mix_falls_back_per_road_shape(
+    variety_dir: Path, medium_dir: Path
+) -> None:
+    game_map = _big_map()
+    picks = _mixed(game_map, variety_dir, medium_dir, "medium", density="high")
+    medium_set = bm.VarietySet.discover(medium_dir)
+    for pick in picks.values():
+        if pick.kind != "road":
+            assert pick.size == "medium"
+            continue
+        shape = pick.path.name.split("-")[1]
+        assert pick.size == ("medium" if shape in medium_set.road else "small")
+    assert any(p.kind == "road" and p.size == "small" for p in picks.values())
+
+
+def test_medium_only_needs_no_small_set(medium_dir: Path) -> None:
+    game_map = _big_map()
+    picks = _mixed(game_map, None, medium_dir, "medium")
+    assert picks and all(p.size == "medium" for p in picks.values())
+    # road hexes whose shape only the (absent) small set would have stay undecorated
+    for (q, r), pick in picks.items():
+        if pick.kind == "road":
+            assert pick.path.parent.parent == medium_dir
+
+
+@pytest.mark.parametrize("mix", ["small", "even", "medium"])
+def test_nearby_decorated_hexes_do_not_repeat_a_tile_while_another_is_free(
+    variety_dir: Path, medium_dir: Path, mix: str
+) -> None:
+    game_map = _big_map()
+    picks = _mixed(game_map, variety_dir, medium_dir, mix, density="high")
+    radius = bm.VARIETY_REPEAT_RADIUS
+    for at, pick in picks.items():
+        higher = [
+            picks[n]
+            for n in bm._within(at[0], at[1], radius)
+            if n in picks and bm._rank(*n) > bm._rank(*at)
+        ]
+        if any(p.path == pick.path for p in higher):
+            group = sorted(pick.path.parent.glob("*.png"))
+            if pick.kind == "road":
+                shape = pick.path.name.split("-")[1]
+                group = [g for g in group if g.name.split("-")[1] == shape]
+            assert set(group) <= {p.path for p in higher}, at
+
+
+def test_within_radius_counts() -> None:
+    assert len(bm._within(0, 0, 1)) == 6
+    assert len(bm._within(4, -2, 3)) == 36
