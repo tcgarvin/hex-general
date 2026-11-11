@@ -65,6 +65,7 @@ from app.engine.models import (
 )
 from app.engine.stats import UnitType
 from app.games.validation import validate_submission
+from app.world.collector import quiet_collector
 from app.world.generate import GeneratedWorld, WorldParams, generate
 
 SCHEMA_VERSION = 1
@@ -199,40 +200,42 @@ def record_season(
     )
 
     for _ in range(turns):
-        started = time.perf_counter()
-        live = [p for p in players if p not in eliminated]
-        orders, recruitments, economy = _plan_all(policy, state, live)
-        before = state
-        state, events = resolve_execution(state, orders, recruitments, economy)
-        # Bounds memory over a long run, as the world tick does.
-        clear_geometry_caches()
-        fallen = [
-            p
-            for p in live
-            if not any(u.owner == p for u in state.units)
-            and not any(s.controlled_by == p for s in state.settlements)
-        ]
-        for player in fallen:
-            eliminated[player] = state.turn
-            record["eliminated"][codes.owner[player] - 1] = state.turn
-        located = _events(codes, before, events)
-        for player in fallen:
-            k = codes.owner[player]
-            located.append([_ELIMINATED, codes.hex(bases[k - 1]), k])
-        record["frames"].append(
-            _frame(
-                codes,
-                state,
-                located,
-                previous,
-                holders,
-                players,
-                eliminated,
-                _paths(codes, events),
+        # No collector pauses inside a turn, as in the server tick.
+        with quiet_collector():
+            started = time.perf_counter()
+            live = [p for p in players if p not in eliminated]
+            orders, recruitments, economy = _plan_all(policy, state, live)
+            before = state
+            state, events = resolve_execution(state, orders, recruitments, economy)
+            # Bounds memory over a long run, as the world tick does.
+            clear_geometry_caches()
+            fallen = [
+                p
+                for p in live
+                if not any(u.owner == p for u in state.units)
+                and not any(s.controlled_by == p for s in state.settlements)
+            ]
+            for player in fallen:
+                eliminated[player] = state.turn
+                record["eliminated"][codes.owner[player] - 1] = state.turn
+            located = _events(codes, before, events)
+            for player in fallen:
+                k = codes.owner[player]
+                located.append([_ELIMINATED, codes.hex(bases[k - 1]), k])
+            record["frames"].append(
+                _frame(
+                    codes,
+                    state,
+                    located,
+                    previous,
+                    holders,
+                    players,
+                    eliminated,
+                    _paths(codes, events),
+                )
             )
-        )
-        if progress is not None:
-            progress(state.turn, time.perf_counter() - started)
+            if progress is not None:
+                progress(state.turn, time.perf_counter() - started)
     return Season(record=record, final_state=state)
 
 

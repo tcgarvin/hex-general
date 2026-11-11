@@ -62,6 +62,7 @@ from app.games.schemas import (
 )
 from app.games.validation import validate_submission
 from app.world.clock import next_tick_after
+from app.world.collector import quiet_collector
 from app.world.generate import WorldParams, generate
 from app.world.seating import WorldFull, seat_player, slot_id
 
@@ -402,12 +403,14 @@ class GameService:
         if game.status != "active":
             raise GameNotActive(f"world {game.id} is {game.status}; cannot tick")
         players = self._repo.list_players(game.id)
-        try:
-            bot_orders = self._world_bot_orders(game, players)
-            return self._resolve_turn(game, players, bot_orders, next_tick_at)
-        finally:
-            # Bounds memory on a 512 MiB instance: the caches grow ~15 MB/tick.
-            clear_geometry_caches()
+        # No collector pauses inside the tick: one young pass when it ends.
+        with quiet_collector():
+            try:
+                bot_orders = self._world_bot_orders(game, players)
+                return self._resolve_turn(game, players, bot_orders, next_tick_at)
+            finally:
+                # Bounds memory on a 512 MiB instance: the caches grow ~15 MB/tick.
+                clear_geometry_caches()
 
     def _world_bot_orders(
         self, game: GameRecord, players: list[PlayerRecord]

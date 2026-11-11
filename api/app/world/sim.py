@@ -54,6 +54,7 @@ from app.engine.models import (
     TravelOrder,
 )
 from app.games.validation import validate_submission
+from app.world.collector import quiet_collector
 from app.world.generate import GeneratedWorld, WorldParams, generate
 
 _NEAR_CONTACT = 6  # a jam within this many hexes of a hostile unit is "near contact"
@@ -175,55 +176,57 @@ def run_sim(
     war = _War()
 
     for _ in range(turns):
-        live = [p for p in ids if p not in report.eliminated]
-        orders: list[Order] = []
-        recruitments: list[Recruitment] = []
-        economy: list[EconomyOrders] = []
-        think: list[float] = []
-        operations: dict[PlayerId, Operation] = {}
-        for player in live:
-            view = redact_state(state, player)
-            start = time.perf_counter()
-            plan = bots[player].plan(view, player)
-            think.append((time.perf_counter() - start) * 1000.0)
-            if plan.operation is not None:
-                operations[player] = plan.operation
-            base_orders = plan.economy_orders(player)
-            validate_submission(
-                view, player, plan.orders, plan.recruitments, base_orders
-            )
-            orders.extend(plan.orders)
-            recruitments.extend(plan.recruitments)
-            if base_orders is not None:
-                economy.append(base_orders)
-        for order in orders:
-            if isinstance(order, TravelOrder):
-                report.travel_issued += 1
-                issued_at[order.unit_id] = state.turn
-
-        before = state
-        start = time.perf_counter()
-        state, events = resolve_execution(state, orders, recruitments, economy)
-        resolve_ms = (time.perf_counter() - start) * 1000.0
-        think_all.extend(think)
-
-        for event in events:
-            if isinstance(event, TravelEnded):
-                report.travel_ended[event.reason.value] = (
-                    report.travel_ended.get(event.reason.value, 0) + 1
+        # No collector pauses inside a turn, as in the server tick (WORLD_SPEC §9).
+        with quiet_collector():
+            live = [p for p in ids if p not in report.eliminated]
+            orders: list[Order] = []
+            recruitments: list[Recruitment] = []
+            economy: list[EconomyOrders] = []
+            think: list[float] = []
+            operations: dict[PlayerId, Operation] = {}
+            for player in live:
+                view = redact_state(state, player)
+                start = time.perf_counter()
+                plan = bots[player].plan(view, player)
+                think.append((time.perf_counter() - start) * 1000.0)
+                if plan.operation is not None:
+                    operations[player] = plan.operation
+                base_orders = plan.economy_orders(player)
+                validate_submission(
+                    view, player, plan.orders, plan.recruitments, base_orders
                 )
-                if event.unit_id in issued_at:
-                    travel_turns.append(state.turn - issued_at.pop(event.unit_id))
-        _tally(report, before, state, events, resolve_ms, max(think, default=0.0))
-        sieges.fold(report, before, state.turn, events)
-        war.fold(report, before, state, events, operations, live)
-        for player in live:
-            if not any(u.owner == player for u in state.units) and not any(
-                s.controlled_by == player for s in state.settlements
-            ):
-                report.eliminated[player] = state.turn
-                if player in war.last_captor:
-                    report.eliminated_by[player] = war.last_captor[player]
+                orders.extend(plan.orders)
+                recruitments.extend(plan.recruitments)
+                if base_orders is not None:
+                    economy.append(base_orders)
+            for order in orders:
+                if isinstance(order, TravelOrder):
+                    report.travel_issued += 1
+                    issued_at[order.unit_id] = state.turn
+
+            before = state
+            start = time.perf_counter()
+            state, events = resolve_execution(state, orders, recruitments, economy)
+            resolve_ms = (time.perf_counter() - start) * 1000.0
+            think_all.extend(think)
+
+            for event in events:
+                if isinstance(event, TravelEnded):
+                    report.travel_ended[event.reason.value] = (
+                        report.travel_ended.get(event.reason.value, 0) + 1
+                    )
+                    if event.unit_id in issued_at:
+                        travel_turns.append(state.turn - issued_at.pop(event.unit_id))
+            _tally(report, before, state, events, resolve_ms, max(think, default=0.0))
+            sieges.fold(report, before, state.turn, events)
+            war.fold(report, before, state, events, operations, live)
+            for player in live:
+                if not any(u.owner == player for u in state.units) and not any(
+                    s.controlled_by == player for s in state.settlements
+                ):
+                    report.eliminated[player] = state.turn
+                    if player in war.last_captor:
+                        report.eliminated_by[player] = war.last_captor[player]
     war.finish(report)
 
     report.travel_open_at_end = len(state.standing_orders)

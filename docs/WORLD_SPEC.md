@@ -461,6 +461,26 @@ for the server and the simulator. After that, the remaining profile is flat
 (column contact checks, unit copies, route search), and the next real gain
 needs a design change: resolving independent contact clusters separately (§10).
 
+**Collector pauses (2026-11-11).** Every world turn now runs inside
+`app.world.collector.quiet_collector`: the server tick, the simulator, the
+season recorder and the bench. It turns Python's cyclic garbage collector off
+for the turn and collects only the young generations when the turn ends. Over
+a 100-bot season the collector never found garbage in the engine's objects
+(they form no reference cycles), so its pauses were pure cost. Measured with
+the collector's own time taken from `gc.callbacks`, on the same loaded machine
+with the runs side by side. In a 60-turn, 100-bot season (turns 21 to 60), the
+collector's time per turn fell from 0.61 s median and 1.2 s worst to 16 ms,
+resolution from 0.81 s median and 1.38 s worst to 0.54 s and 0.80 s, and the
+worst bot-turn from 0.59 s to 0.11 s. Replaying ten saved turns (30 to 57)
+the way the server ticks (state loaded, fresh bots, resolve), with the
+variants interleaved, the collector's time per tick fell from 0.55 s to 0.13 s,
+all of it in the pass at the end. Peak memory (about 300 MB) and the season record are
+unchanged. The alternatives lost: freezing the loaded state (`gc.freeze()`)
+only shortened the full pass and left about 0.2 s of young collections inside
+each tick; turning the collector off and running a full collection at the end
+cost 0.37 s per tick; raising the full-collection threshold also left the young
+collections and changes the whole process.
+
 ## 10. Engine, persistence, clock
 
 - **One engine, generalized.** Posture defaults to `deployed`, so the v0.1 rules

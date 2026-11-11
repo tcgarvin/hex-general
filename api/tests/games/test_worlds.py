@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import gc
 from datetime import datetime
 
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 
+from app.engine.execution import resolve_execution
 from app.engine import hex_coords
 from app.engine.hex_coords import Axial, neighbors
 from app.engine.economy_rules import Building
@@ -319,3 +322,36 @@ def test_a_world_tick_leaves_the_geometry_caches_empty(
     assert hex_coords._neighbors.cache_info().currsize == 0
     assert hex_coords._within.cache_info().currsize == 0
     assert hex_coords._line.cache_info().currsize == 0
+
+
+def test_a_world_tick_runs_with_the_collector_off_and_restores_it(
+    service: GameService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    seen: list[bool] = []
+    real_resolve = resolve_execution
+
+    def resolve(*args: Any) -> Any:
+        seen.append(gc.isenabled())
+        return real_resolve(*args)
+
+    monkeypatch.setattr("app.games.service.resolve_execution", resolve)
+    service.tick_world(game_id)
+
+    assert seen == [False]
+    assert gc.isenabled()
+
+
+def test_a_failed_world_tick_still_restores_the_collector(
+    service: GameService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+
+    def resolve(*_: Any) -> Any:
+        raise RuntimeError("engine failure")
+
+    monkeypatch.setattr("app.games.service.resolve_execution", resolve)
+    with pytest.raises(RuntimeError, match="engine failure"):
+        service.tick_world(game_id)
+
+    assert gc.isenabled()

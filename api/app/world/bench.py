@@ -45,6 +45,7 @@ from app.engine.models import (
 )
 from app.engine.stats import Terrain, UnitType
 from app.engine.visibility import visible_hexes
+from app.world.collector import quiet_collector
 
 
 def build_world(size: int, players: int, per_player: int, seed: int) -> GameState:
@@ -102,10 +103,12 @@ T = TypeVar("T")
 
 def _timed(label: str, fn: Callable[[], T]) -> T:
     """Run ``fn`` once, print its wall time, and return its result."""
-    # Each probe starts cold, as a tick does after `clear_geometry_caches`.
+    # Each probe starts cold, as a tick does after `clear_geometry_caches`,
+    # and with the collector held off, as a tick runs (`quiet_collector`).
     clear_geometry_caches()
-    start = time.perf_counter()
-    result = fn()
+    with quiet_collector():
+        start = time.perf_counter()
+        result = fn()
     print(f"{label:<28} {time.perf_counter() - start:8.3f} s")
     return result
 
