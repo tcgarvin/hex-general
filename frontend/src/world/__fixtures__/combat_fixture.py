@@ -16,7 +16,8 @@ hex of some ground (plains, hills, woods, a town, or a founded site on plains).
   a packed column in the target hex.
 
 ``combatPreview.test.ts`` checks that `combatPreview.ts` reproduces every row.
-Regenerate after a change to unit stats, terrain, or the damage rules.
+Regenerate after a change to unit stats, terrain, or the damage rules;
+``api/tests/test_frontend_fixtures.py`` fails while the committed JSON is stale.
 """
 
 from __future__ import annotations
@@ -228,14 +229,21 @@ def _barrage_rows() -> list[dict[str, Any]]:
     return rows
 
 
-def main() -> None:
+def build() -> str:
+    """The fixture's JSON text, as `main` writes it."""
     fixture = {"melee": _melee_rows(), "barrage": _barrage_rows()}
     # One compact row per line: small, and a rule change shows as changed rows.
     parts = []
     for key, rows in fixture.items():
         body = ",\n".join(json.dumps(r, separators=(",", ":")) for r in rows)
         parts.append(f'"{key}":[\n{body}\n]')
-    OUT.write_text("{" + ",\n".join(parts) + "}\n")
+    return "{" + ",\n".join(parts) + "}\n"
+
+
+def main() -> None:
+    text = build()
+    OUT.write_text(text)
+    fixture = json.loads(text)
     print(
         f"wrote {OUT} ({len(fixture['melee'])} melee, "
         f"{len(fixture['barrage'])} barrage rows)"
