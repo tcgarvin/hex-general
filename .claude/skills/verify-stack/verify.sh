@@ -39,7 +39,7 @@ grep -q '"version"' <<<"$ver" \
 # Expected commit: the last one that touched the API (a fixtures-only push runs
 # the API tests but does not redeploy). Override with HEX_EXPECT_COMMIT.
 echo "[api] world build"
-expect="${HEX_EXPECT_COMMIT:-$(git -C "$(dirname "$0")" rev-list -1 HEAD -- api .github/workflows/api.yml 2>/dev/null)}"
+expect="${HEX_EXPECT_COMMIT:-$(git -C "$(dirname "$0")" rev-list -1 HEAD -- ":(top)api" ":(top).github/workflows/api.yml" 2>/dev/null)}"
 commit=$(jq -r '.commit // empty' <<<"$ver" 2>/dev/null)
 if [ -z "$expect" ]; then
   bad "no expected commit (set HEX_EXPECT_COMMIT); /version commit is '${commit:-<none>}'"
