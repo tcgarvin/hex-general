@@ -61,10 +61,18 @@ the unit sprites, and `scripts/tile-foundry/selftest.py` keeps verifying it.
 variant montage; use the **`verify-board`** skill to render the local board in
 Chrome after an art/render change. See ART_PIPELINE.md + ROADMAP Phase 8.
 
-Lakes (`Terrain.LAKE`, map char `o`, generated worlds only, 2026-11-10) have **no
-ratified art yet**: the game draws a lake hex as a flat water fill until tiles land in
-`frontend/src/board/tiles/lake/` (candidates and provenance: `art/codex/terrain/lake/`,
-`art/codex/terrain/candidates/lake1*`). Road and river junctions are drawn from a pruned
+Lakes (`Terrain.LAKE`, map char `o`, generated worlds only) have **ratified art
+(round 2, 2026-11-10)**: a lake hex draws the tile painted for its **neighbour mask**
+(bit d set when the neighbour in `AXIAL_DIRECTIONS[d]` is lake, off-map is land; 64
+masks, `frontend/src/board/lakeTiles.ts`, a port of board-mock's `lake_mask` /
+`lake_tile_key`), from `frontend/src/board/tiles/lake/m<MM>_<VV>.png`. River **mouths**
+(`frontend/src/board/joins/lake/mouth_*`, drawn where `riverMouths` says a river runs
+into a lake) are the only lake join: no lake edge or vertex joins. The files are byte
+copies of `art/codex/terrain/candidates/lake2/` and `lake2-joins/`
+(`scripts/tests/test_lake_tiles_sync.py`); record and rebuild in
+`art/codex/terrain/lake/README.md` ("Round 2"; round 1 is superseded), per-tile
+provenance in `art/codex/terrain/APPLIED.md`; `scripts/lake-fixture.py` pins the frontend
+port to board-mock. Road and river junctions are drawn from a pruned
 course graph (`frontend/src/board/courseGraph.ts`, ported in `scripts/board-mock.py`).
 
 The ratified site and base tiles (farm, oil field, steel mill, factory levels 1-3, base

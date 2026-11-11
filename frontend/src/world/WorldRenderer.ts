@@ -6,8 +6,9 @@
 // * **close up** (tactical zoom) keeps a pool of tile sprites and shows only the
 //   hexes on screen, re-using sprites as the camera moves (a site or founded base
 //   hex shows its painted tile instead of its terrain, `worldTiles.ts`), with
-//   same-terrain join sprites over the woods/city seams among them (same culling,
-//   own pool) and fog over the hexes the player can't currently see;
+//   same-terrain join sprites over the woods/city seams among them and river
+//   mouth sprites where a river runs into a lake (same culling, own pool), and
+//   fog over the hexes the player can't currently see;
 // * **far out** (operational zoom) shows one prerendered overview texture of the
 //   whole map (terrain and roads, a few pixels per hex) instead of tiles;
 // * always draws site markers (owner colour) and unit tokens on top, and a minimap
@@ -21,16 +22,20 @@ import { Application, Container, Graphics, Rectangle, Sprite, Texture, type Fede
 import { axialToPixel, hexCornerPoints, hexKey, HEX_SIZE, pixelToAxial, type Axial } from "@/board/hex";
 import { hexTileRef } from "@/board/hexTile";
 import {
+  JOIN_CODE_COUNT,
   JOIN_TERRAINS,
+  MOUTH_ART,
   joinDrawRank,
   joinsOwnedBy,
   joinSpriteScale,
   joinVariant,
+  mouthPlacement,
   type JoinPlacement,
   type LoadedJoins,
 } from "@/board/joins";
+import { lakeMasks } from "@/board/lakeTiles";
 import { ROAD_COLOR, TERRAIN_FILL } from "@/board/palette";
-import { riverCourseEdges } from "@/board/riverTiles";
+import { riverCourseEdges, riverMouths, type RiverOutlet } from "@/board/riverTiles";
 import { roadCourseEdges, roadTileRefs, type RoadTileRef } from "@/board/roadTiles";
 import type { LoadedTiles } from "@/board/tiles";
 import type { LoadedUnits, UnitSpritePair } from "@/board/units";
@@ -62,8 +67,8 @@ const MAX_SCALE = 2.5;
 const OVERVIEW_HEX = 2; // overview texture: hex radius in texture pixels
 const MINIMAP_SIZE = 220;
 const MINIMAP_MARGIN = 12;
-/** Join codes per owner hex (edges 0-2, vertices 3-4); sprite key = index * 5 + code. */
-const JOIN_CODES_PER_HEX = 5;
+/** Join codes per owner hex (edges 0-2, vertices 3-4, mouths 5-10); sprite key = index * count + code. */
+const JOIN_CODES_PER_HEX = JOIN_CODE_COUNT;
 const NO_JOINS: readonly JoinPlacement[] = [];
 
 /**
@@ -156,6 +161,10 @@ export class WorldRenderer {
   private readonly plainHexTexture: Texture;
   private readonly roadTiles: Map<string, RoadTileRef>;
   private readonly riverCourse: Map<string, number[]>;
+  /** Lake neighbour masks by hex key (a lake hex draws its mask's tile). */
+  private readonly lakeMasks: Map<string, number>;
+  /** River mouths by river hex key (where a mouth sprite is drawn). */
+  private readonly mouths: Map<string, RiverOutlet>;
   /** Painted tiles of the map's leveled sites (static). */
   private readonly staticSiteTiles: SiteTileMap;
   /** Painted tiles of the founded bases; recomputed per scene (`setScene`). */
@@ -176,9 +185,15 @@ export class WorldRenderer {
     this.options = options;
     // Road and river course graphs (junction chords pruned), built once per map.
     this.roadTiles = roadTileRefs(map.hexes, roadCourseEdges(map.hexes, (q, r) => map.hexAt(q, r)));
-    this.riverCourse = riverCourseEdges(
-      map.hexes.filter((h) => h.terrain === "river" || h.terrain === "bridge").map((h) => h.coord),
-      (q, r) => map.hexAt(q, r)?.terrain,
+    const terrainAt = (q: number, r: number) => map.hexAt(q, r)?.terrain;
+    const riverCoords = map.hexes.filter((h) => h.terrain === "river" || h.terrain === "bridge").map((h) => h.coord);
+    this.riverCourse = riverCourseEdges(riverCoords, terrainAt);
+    this.lakeMasks = lakeMasks(
+      map.hexes.filter((h) => h.terrain === "lake").map((h) => h.coord),
+      terrainAt,
+    );
+    this.mouths = new Map(
+      (MOUTH_ART ? riverMouths(riverCoords, terrainAt) : []).map((m) => [hexKey(m.coord.q, m.coord.r), m]),
     );
     this.staticSiteTiles = staticSiteTiles(map.sites);
 
@@ -439,12 +454,12 @@ export class WorldRenderer {
       // A join never spans a hex painted with a site tile: that tile has a plains
       // rim, so a woods/city seam into it would hang over the painting. Only old
       // stored maps (sites on town/city hexes) have such joins at all.
-      const found = joinsOwnedBy(
-        this.map.hexes[index].coord,
-        (q, r) => this.map.hexAt(q, r)?.terrain,
-        JOIN_TERRAINS,
-        HEX_SIZE,
-      ).filter((join) => !join.members.some((m) => this.staticSiteTiles.has(hexKey(m.q, m.r))));
+      const coord = this.map.hexes[index].coord;
+      const mouth = this.mouths.get(hexKey(coord.q, coord.r));
+      const found = [
+        ...joinsOwnedBy(coord, (q, r) => this.map.hexAt(q, r)?.terrain, JOIN_TERRAINS, HEX_SIZE),
+        ...(mouth === undefined ? [] : [mouthPlacement(mouth, HEX_SIZE)]),
+      ].filter((join) => !join.members.some((m) => this.staticSiteTiles.has(hexKey(m.q, m.r))));
       owned = found.length === 0 ? NO_JOINS : found;
       this.ownedJoins.set(index, owned);
     }
@@ -480,8 +495,8 @@ export class WorldRenderer {
 
   /**
    * Give a tile sprite its hex's texture: a painted site/base tile, else its
-   * terrain tile, else (a terrain with no tile art yet, e.g. lake) a plain hex
-   * tinted with the terrain's flat fill.
+   * terrain tile (a lake by its neighbour mask), else (no tile art for the hex)
+   * a plain hex tinted with the terrain's flat fill.
    */
   private textureTile(sprite: Sprite, hex: WorldMap["hexes"][number]): void {
     const tiles = this.tiles;
@@ -491,7 +506,7 @@ export class WorldRenderer {
     const ref =
       choice.kind === "site"
         ? { tex: siteTileTexture(choice.key), mirror: false }
-        : hexTileRef(hex, tiles, this.riverCourse, this.roadTiles);
+        : hexTileRef(hex, tiles, this.riverCourse, this.roadTiles, this.lakeMasks);
     // Pooled sprites are reused across hexes, so the tint is always set.
     if (ref === null) {
       sprite.texture = this.plainHexTexture;

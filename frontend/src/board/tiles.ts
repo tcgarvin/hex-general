@@ -51,7 +51,8 @@ export interface LoadedTiles {
   /**
    * `terrain → [texture, …]` sorted by filename, indexed by `variantIndex`. Used
    * by the cosmetic-variant terrains (plains/woods/hills/town/city). River/bridge
-   * tiles also appear here but are selected by name instead (see {@link byOriented}).
+   * and lake tiles also appear here but are selected by name instead (see
+   * {@link byOriented}).
    * A terrain with no tile files has no entry (its hexes draw as flat fill; see
    * `hexTileRef`); a group, once present, is never empty.
    */
@@ -60,7 +61,8 @@ export interface LoadedTiles {
    * `"<terrain>/<oriented-name>" → [texture, …]` (e.g. `"river/straight_v"`),
    * variants sorted by filename and indexed by `variantIndex` like the cosmetic
    * terrains. River/bridge hexes look up their oriented tile by name from the
-   * edge mask (see `riverTiles.ts`); each oriented shape may ship one file
+   * edge mask (see `riverTiles.ts`), lake hexes theirs from the lake-neighbour
+   * mask (`"lake/m07"`, see `lakeTiles.ts`); each oriented shape may ship one file
    * (`straight_v.png`) or several (`straight_v_00.png`, …).
    */
   readonly byOriented: Record<string, Texture[]>;
@@ -76,25 +78,35 @@ export interface LoadedTiles {
  * rejects (the board keeps the flat-colour fallback).
  */
 export async function loadTerrainTextures(): Promise<LoadedTiles> {
-  // Sort by glob key so each terrain's variants land in a stable filename order,
-  // keeping the `variantIndex` index↔file mapping identical across machines.
-  const entries = Object.entries(TILE_MODULES).sort(([a], [b]) => a.localeCompare(b));
-  const byName: Record<string, Texture> = {};
-  await Promise.all(
+  const entries = Object.entries(TILE_MODULES);
+  const textures = await Promise.all(
     entries.map(async ([key, url]) => {
-      const { terrain, variant } = parseTileKey(key);
       const texture: Texture = await Assets.load(url);
       texture.source.scaleMode = texture.source.pixelWidth > 64 ? "linear" : "nearest";
-      byName[`${terrain}/${basename(variant)}`] = texture;
+      return [key, texture] as const;
     }),
   );
-  const byTerrain: Partial<Record<Terrain, Texture[]>> = {};
-  const byOriented: Record<string, Texture[]> = {};
-  for (const [key] of entries) {
+  return groupTileFiles(textures);
+}
+
+/**
+ * Group tile glob keys (`./tiles/<terrain>/<variant>.png`) into the
+ * {@link LoadedTiles} maps, by terrain and by oriented name. Sorted by glob key
+ * first so each group's variants land in a stable filename order, keeping the
+ * `variantIndex` index↔file mapping identical across machines (and to
+ * `scripts/board-mock.py`'s `TileSet.discover`).
+ */
+export function groupTileFiles<T>(entries: readonly (readonly [string, T])[]): {
+  byTerrain: Partial<Record<Terrain, T[]>>;
+  byOriented: Record<string, T[]>;
+} {
+  const sorted = [...entries].sort(([a], [b]) => a.localeCompare(b));
+  const byTerrain: Partial<Record<Terrain, T[]>> = {};
+  const byOriented: Record<string, T[]> = {};
+  for (const [key, value] of sorted) {
     const { terrain, variant } = parseTileKey(key);
-    const texture = byName[`${terrain}/${basename(variant)}`];
-    (byTerrain[terrain as Terrain] ??= []).push(texture);
-    (byOriented[`${terrain}/${orientedKey(basename(variant))}`] ??= []).push(texture);
+    (byTerrain[terrain as Terrain] ??= []).push(value);
+    (byOriented[`${terrain}/${orientedKey(basename(variant))}`] ??= []).push(value);
   }
   return { byTerrain, byOriented };
 }

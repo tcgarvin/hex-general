@@ -76,11 +76,13 @@ import { RosterPanel } from "./panels/RosterPanel";
 import { orderLabelOf, replayRosterRows, rosterRowAt, rosterRows } from "./panels/roster";
 import { SelectedUnitPanel, type PortraitTile } from "./panels/SelectedUnitPanel";
 import { paletteButtonAt, type PaletteAction } from "./panels/selectedUnit";
-import { orientedRiverTile, riverCourseEdges } from "./riverTiles";
+import { orientedRiverTile, riverCourseEdges, riverMouths } from "./riverTiles";
 import { roadCourseEdges, roadTileRefs } from "./roadTiles";
 import { hexTileRef } from "./hexTile";
+import { lakeMasks } from "./lakeTiles";
 import {
   JOIN_TERRAINS,
+  MOUTH_ART,
   joinPlacements,
   joinSpriteScale,
   joinVariant,
@@ -519,18 +521,29 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     [hexes, terrainAt],
   );
 
-  // Same-terrain join sprites over every woods/city seam (see `joins.ts`), in
-  // draw order. The map is static, so this is computed once per map.
-  const joins = useMemo(
+  // Lake neighbour masks: a lake hex draws the tile painted for its mask.
+  const lakeMaskByKey = useMemo(
     () =>
-      joinPlacements(
+      lakeMasks(
         hexes.map((h) => h.coord),
         terrainAt,
-        JOIN_TERRAINS,
-        HEX_SIZE,
       ),
     [hexes, terrainAt],
   );
+
+  // Same-terrain join sprites over every woods/city seam, then a mouth sprite
+  // wherever a river runs into a lake (see `joins.ts`), in draw order. The map
+  // is static, so this is computed once per map.
+  const joins = useMemo(() => {
+    const coords = hexes.map((h) => h.coord);
+    return joinPlacements(
+      coords,
+      terrainAt,
+      JOIN_TERRAINS,
+      HEX_SIZE,
+      MOUTH_ART ? riverMouths(coords, terrainAt) : [],
+    );
+  }, [hexes, terrainAt]);
 
   // Course-pruned road edge masks (junction triangle chords dropped), shared by
   // the baked road tiles and the vector road stubs so the two always agree.
@@ -619,8 +632,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     if (selectedUnit === null || terrainTex === null) return null;
     const h = hexByKey.get(hexKey(selectedUnit.coord.q, selectedUnit.coord.r));
     if (h === undefined) return null;
-    return hexTileRef(h, terrainTex, riverCourse, roadTiles);
-  }, [selectedUnit, terrainTex, hexByKey, riverCourse, roadTiles]);
+    return hexTileRef(h, terrainTex, riverCourse, roadTiles, lakeMaskByKey);
+  }, [selectedUnit, terrainTex, hexByKey, riverCourse, roadTiles, lakeMaskByKey]);
 
   // The selected city's hex tile, for the recruit portrait's backdrop (null
   // until tiles load — the portrait keeps its plain backdrop).
@@ -628,8 +641,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
     if (selectedCity === null || terrainTex === null) return null;
     const h = hexByKey.get(hexKey(selectedCity.q, selectedCity.r));
     if (h === undefined) return null;
-    return hexTileRef(h, terrainTex, riverCourse, roadTiles);
-  }, [selectedCity, terrainTex, hexByKey, riverCourse, roadTiles]);
+    return hexTileRef(h, terrainTex, riverCourse, roadTiles, lakeMaskByKey);
+  }, [selectedCity, terrainTex, hexByKey, riverCourse, roadTiles, lakeMaskByKey]);
 
   // Load the terrain tile textures once; the board renders flat colours until they
   // arrive. A load failure leaves `terrainTex` null (flat-colour fallback) and is
@@ -1598,8 +1611,8 @@ export function Board({ state, yourSlot, visible, planning, locked = false, advi
                 const { x, y } = axialToPixel(h.coord.q, h.coord.r, HEX_SIZE);
                 // Tiles span two generations (64px legacy, 128px painterly), so
                 // scale by the texture's own size to land at HEX_SIZE*2 world px.
-                const ref = hexTileRef(h, terrainTex, riverCourse, roadTiles);
-                // No art for this terrain yet: the flat base fill shows through.
+                const ref = hexTileRef(h, terrainTex, riverCourse, roadTiles, lakeMaskByKey);
+                // No art for this hex: the flat base fill shows through.
                 if (ref === null) return null;
                 const { tex, mirror } = ref;
                 const s = (HEX_SIZE * 2) / tex.width;

@@ -9,7 +9,11 @@ replay its sheet: `python3 scripts/tile-foundry/paintin.py run --job <work>/job.
 arguments in `<work>/refs.txt` (if any), then apply the grade listed (via
 `r2_grade.py`; parameters also in `<work>/tiles_graded/*.grade.json`). Plains
 are 1:1 cuts of the recoloured G2 meadow; the recolour and cut parameters are
-in `ground/G2/set.json`.
+in `ground/G2/set.json`. Lake tiles (`lake/m<MM>_<VV>.png`, one per
+lake-neighbour mask MM, ratified 2026-11-10) are `paintin_lake.py` cells: replay
+a sheet with `python3 scripts/tile-foundry/paintin_lake.py run --work-dir <work>
+--w0 art/codex/terrain/lake/r2/w0/w0-v2.png --from-raw <raw>`, then `apply` the
+picks (`art/codex/terrain/lake/README.md`, "Round 2").
 
 | Shipped tile | Work dir | Raw Codex sheet | Cell | Grade |
 | --- | --- | --- | --- | --- |
@@ -128,12 +132,101 @@ in `ground/G2/set.json`.
 | `road/hills_turn_ne_nw_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_turn_ne_nw_00 |  |
 | `road/hills_turn_s_nw_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_turn_s_nw_00 |  |
 | `road/hills_turn_se_sw_00.png` | `art/codex/terrain/road-hills/a` | `art/codex/terrain/road-hills/a/raw/road-hills-a.png` | hills_turn_se_sw_00 |  |
+| `lake/m00_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m00_00 (sheet lake2-a, mask 0) |  |
+| `lake/m01_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m01_00 (sheet lake2-pilot, mask 1) |  |
+| `lake/m02_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m02_00 (sheet lake2-b, mask 2) |  |
+| `lake/m03_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m03_00 (sheet lake2-c, mask 3) |  |
+| `lake/m03_01.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m03_01 (sheet lake2-a, mask 3) |  |
+| `lake/m04_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m04_00 (sheet lake2-pilot, mask 4) |  |
+| `lake/m05_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m05_00 (sheet lake2-d, mask 5) |  |
+| `lake/m06_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m06_00 (sheet lake2-pilot, mask 6) |  |
+| `lake/m06_01.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m06_01 (sheet lake2-c, mask 6) |  |
+| `lake/m07_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m07_00 (sheet lake2-pilot, mask 7) |  |
+| `lake/m07_01.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m07_01 (sheet lake2-d, mask 7) |  |
+| `lake/m08_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m08_00 (sheet lake2-a, mask 8) |  |
+| `lake/m09_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m09_00 (sheet lake2-b, mask 9) |  |
+| `lake/m10_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m10_00 (sheet lake2-c, mask 10) |  |
+| `lake/m11_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m11_00 (sheet lake2-d, mask 11) |  |
+| `lake/m12_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m12_00 (sheet lake2-pilot, mask 12) |  |
+| `lake/m13_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m13_00 (sheet lake2-a, mask 13) |  |
+| `lake/m14_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m14_00 (sheet lake2-b, mask 14) |  |
+| `lake/m14_01.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m14_01 (sheet lake2-a, mask 14) |  |
+| `lake/m15_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m15_00 (sheet lake2-c, mask 15) |  |
+| `lake/m15_01.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m15_01 (sheet lake2-d, mask 15) |  |
+| `lake/m16_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m16_00 (sheet lake2-pilot, mask 16) |  |
+| `lake/m17_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m17_00 (sheet lake2-d, mask 17) |  |
+| `lake/m18_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m18_00 (sheet lake2-a, mask 18) |  |
+| `lake/m19_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m19_00 (sheet lake2-b, mask 19) |  |
+| `lake/m20_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m20_00 (sheet lake2-c, mask 20) |  |
+| `lake/m21_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m21_00 (sheet lake2-d, mask 21) |  |
+| `lake/m22_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m22_00 (sheet lake2-a, mask 22) |  |
+| `lake/m23_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m23_00 (sheet lake2-b, mask 23) |  |
+| `lake/m24_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m24_00 (sheet lake2-c, mask 24) |  |
+| `lake/m24_01.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m24_01 (sheet lake2-d, mask 24) |  |
+| `lake/m25_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m25_00 (sheet lake2-d, mask 25) |  |
+| `lake/m26_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m26_00 (sheet lake2-a, mask 26) |  |
+| `lake/m27_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m27_00 (sheet lake2-b, mask 27) |  |
+| `lake/m28_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m28_00 (sheet lake2-c, mask 28) |  |
+| `lake/m28_01.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m28_01 (sheet lake2-c, mask 28) |  |
+| `lake/m29_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m29_00 (sheet lake2-d, mask 29) |  |
+| `lake/m30_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m30_00 (sheet lake2-a, mask 30) |  |
+| `lake/m30_01.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m30_01 (sheet lake2-a, mask 30) |  |
+| `lake/m31_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m31_00 (sheet lake2-pilot, mask 31) |  |
+| `lake/m32_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m32_00 (sheet lake2-b, mask 32) |  |
+| `lake/m32_01.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m32_01 (sheet lake2-b, mask 32) |  |
+| `lake/m33_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m33_00 (sheet lake2-pilot, mask 33) |  |
+| `lake/m33_01.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m33_01 (sheet lake2-c, mask 33) |  |
+| `lake/m34_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m34_00 (sheet lake2-c, mask 34) |  |
+| `lake/m35_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m35_00 (sheet lake2-d, mask 35) |  |
+| `lake/m35_01.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m35_01 (sheet lake2-a, mask 35) |  |
+| `lake/m36_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m36_00 (sheet lake2-a, mask 36) |  |
+| `lake/m37_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m37_00 (sheet lake2-b, mask 37) |  |
+| `lake/m38_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m38_00 (sheet lake2-c, mask 38) |  |
+| `lake/m39_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m39_00 (sheet lake2-d, mask 39) |  |
+| `lake/m39_01.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m39_01 (sheet lake2-c, mask 39) |  |
+| `lake/m40_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m40_00 (sheet lake2-a, mask 40) |  |
+| `lake/m41_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m41_00 (sheet lake2-b, mask 41) |  |
+| `lake/m42_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m42_00 (sheet lake2-c, mask 42) |  |
+| `lake/m43_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m43_00 (sheet lake2-pilot, mask 43) |  |
+| `lake/m44_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m44_00 (sheet lake2-d, mask 44) |  |
+| `lake/m45_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m45_00 (sheet lake2-a, mask 45) |  |
+| `lake/m46_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m46_00 (sheet lake2-pilot, mask 46) |  |
+| `lake/m47_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m47_00 (sheet lake2-b, mask 47) |  |
+| `lake/m48_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m48_00 (sheet lake2-pilot, mask 48) |  |
+| `lake/m48_01.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m48_01 (sheet lake2-b, mask 48) |  |
+| `lake/m49_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m49_00 (sheet lake2-c, mask 49) |  |
+| `lake/m49_01.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m49_01 (sheet lake2-d, mask 49) |  |
+| `lake/m50_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m50_00 (sheet lake2-d, mask 50) |  |
+| `lake/m51_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m51_00 (sheet lake2-a, mask 51) |  |
+| `lake/m52_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m52_00 (sheet lake2-b, mask 52) |  |
+| `lake/m53_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m53_00 (sheet lake2-c, mask 53) |  |
+| `lake/m54_00.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m54_00 (sheet lake2-d, mask 54) |  |
+| `lake/m55_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m55_00 (sheet lake2-pilot, mask 55) |  |
+| `lake/m56_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m56_00 (sheet lake2-pilot, mask 56) |  |
+| `lake/m56_01.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m56_01 (sheet lake2-b, mask 56) |  |
+| `lake/m57_00.png` | `art/codex/terrain/lake/r2/a` | `art/codex/terrain/lake/r2/a/raw/lake2-a.png` | m57_00 (sheet lake2-a, mask 57) |  |
+| `lake/m57_01.png` | `art/codex/terrain/lake/r2/d` | `art/codex/terrain/lake/r2/d/raw/lake2-d.png` | m57_01 (sheet lake2-d, mask 57) |  |
+| `lake/m58_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m58_00 (sheet lake2-pilot, mask 58) |  |
+| `lake/m59_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m59_00 (sheet lake2-pilot, mask 59) |  |
+| `lake/m60_00.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m60_00 (sheet lake2-b, mask 60) |  |
+| `lake/m60_01.png` | `art/codex/terrain/lake/r2/b` | `art/codex/terrain/lake/r2/b/raw/lake2-b.png` | m60_01 (sheet lake2-b, mask 60) |  |
+| `lake/m61_00.png` | `art/codex/terrain/lake/r2/pilot` | `art/codex/terrain/lake/r2/pilot/raw/lake2-pilot.png` | m61_00 (sheet lake2-pilot, mask 61) |  |
+| `lake/m62_00.png` | `art/codex/terrain/lake/r2/c` | `art/codex/terrain/lake/r2/c/raw/lake2-c.png` | m62_00 (sheet lake2-c, mask 62) |  |
+| `lake/m63_00.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_00 (sheet lake2-water, mask 63) |  |
+| `lake/m63_01.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_03 (sheet lake2-water, mask 63) |  |
+| `lake/m63_02.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_04 (sheet lake2-water, mask 63) |  |
+| `lake/m63_03.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_07 (sheet lake2-water, mask 63) |  |
+| `lake/m63_04.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_08 (sheet lake2-water, mask 63) |  |
+| `lake/m63_05.png` | `art/codex/terrain/lake/r2/water` | `art/codex/terrain/lake/r2/water/raw/lake2-water.png` | m63_12 (sheet lake2-water, mask 63) |  |
 
 ## Join sprites
 
 `frontend/src/board/joins/<file>`, built by `scripts/tile-foundry/joins.py`
 (`--tiles art/codex/terrain/candidates/review1 --out <dir>`) from a patch of
-the shipped tile named here, shifted by the offset (tile px).
+the shipped tile named here, shifted by the offset (tile px). The lake river
+mouths (`joins/lake/mouth_*`) come from a second run (`--tiles
+art/codex/terrain/candidates/lake2 --terrains lake --lake-water
+art/codex/terrain/candidates/lake2/w0.png`), route `mouth`, from W0.
 
 | Join sprite | Source tile | Route, offset |
 | --- | --- | --- |
@@ -167,3 +260,21 @@ the shipped tile named here, shifted by the offset (tile px).
 | `joins/city/vert_ne_00.png` | `art/codex/terrain/candidates/review1/city/00.png` | patch, offset (-9, 0) |
 | `joins/city/vert_ne_01.png` | `art/codex/terrain/candidates/review1/city/01.png` | patch, offset (6, -6) |
 | `joins/city/vert_ne_02.png` | `art/codex/terrain/candidates/review1/city/02.png` | patch, offset (0, 15) |
+| `joins/lake/mouth_se_00.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (0, 0) |
+| `joins/lake/mouth_se_01.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (29, 11) |
+| `joins/lake/mouth_se_02.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (58, 22) |
+| `joins/lake/mouth_ne_00.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (17, -7) |
+| `joins/lake/mouth_ne_01.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (46, 4) |
+| `joins/lake/mouth_ne_02.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (75, 15) |
+| `joins/lake/mouth_n_00.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (34, -14) |
+| `joins/lake/mouth_n_01.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (63, -3) |
+| `joins/lake/mouth_n_02.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (92, 8) |
+| `joins/lake/mouth_nw_00.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (51, -21) |
+| `joins/lake/mouth_nw_01.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (80, -10) |
+| `joins/lake/mouth_nw_02.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (109, 1) |
+| `joins/lake/mouth_sw_00.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (68, -28) |
+| `joins/lake/mouth_sw_01.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (97, -17) |
+| `joins/lake/mouth_sw_02.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (126, -6) |
+| `joins/lake/mouth_s_00.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (85, -35) |
+| `joins/lake/mouth_s_01.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (114, -24) |
+| `joins/lake/mouth_s_02.png` | `art/codex/terrain/candidates/lake2/w0.png` | mouth, offset (143, -13) |

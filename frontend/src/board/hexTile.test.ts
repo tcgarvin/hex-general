@@ -15,26 +15,46 @@ const hex = (q: number, r: number, terrain: Hex["terrain"]): Hex => ({ coord: { 
 
 const NO_COURSE = new Map<string, number[]>();
 const NO_ROADS = new Map();
+const NO_LAKES = new Map<string, number>();
 
 describe("hexTileRef for a terrain without tile art", () => {
   const woods = [tex("woods/00"), tex("woods/01"), tex("woods/02")];
 
   it("returns null (draw the flat fill) when the terrain has no tiles loaded", () => {
     const tiles: LoadedTiles = { byTerrain: { woods }, byOriented: {} };
-    expect(hexTileRef(hex(3, 4, "lake"), tiles, NO_COURSE, NO_ROADS)).toBeNull();
+    expect(hexTileRef(hex(3, 4, "hills"), tiles, NO_COURSE, NO_ROADS, NO_LAKES)).toBeNull();
   });
 
-  it("picks lake tiles up as coord-hashed cosmetic variants once they exist, like woods", () => {
-    const lake = [tex("lake/00"), tex("lake/01"), tex("lake/02")];
-    const tiles: LoadedTiles = { byTerrain: { woods, lake }, byOriented: {} };
+  it("picks a terrain's tiles up as coord-hashed cosmetic variants once they exist, like woods", () => {
+    const hills = [tex("hills/00"), tex("hills/01"), tex("hills/02")];
+    const tiles: LoadedTiles = { byTerrain: { woods, hills }, byOriented: {} };
     for (const [q, r] of [
       [0, 0],
       [3, 4],
       [-7, 11],
     ]) {
       const i = variantIndex(q, r, 3);
-      expect(hexTileRef(hex(q, r, "lake"), tiles, NO_COURSE, NO_ROADS)).toEqual({ tex: lake[i], mirror: false });
-      expect(hexTileRef(hex(q, r, "woods"), tiles, NO_COURSE, NO_ROADS)).toEqual({ tex: woods[i], mirror: false });
+      expect(hexTileRef(hex(q, r, "hills"), tiles, NO_COURSE, NO_ROADS, NO_LAKES)).toEqual({ tex: hills[i], mirror: false });
+      expect(hexTileRef(hex(q, r, "woods"), tiles, NO_COURSE, NO_ROADS, NO_LAKES)).toEqual({ tex: woods[i], mirror: false });
+    }
+  });
+});
+
+describe("hexTileRef for a lake", () => {
+  it("draws its mask's tile group, coord-hashed, never the cosmetic lake variants", () => {
+    const m05 = [tex("lake/m05_00"), tex("lake/m05_01")];
+    const tiles: LoadedTiles = {
+      byTerrain: { lake: [...m05, tex("lake/m63_00")] },
+      byOriented: { "lake/m05": m05, "lake/m63": [tex("lake/m63_00")] },
+    };
+    for (const [q, r] of [
+      [0, 0],
+      [3, 4],
+      [-7, 11],
+    ]) {
+      const masks = new Map([[`${q},${r}`, 5]]);
+      const ref = hexTileRef(hex(q, r, "lake"), tiles, NO_COURSE, NO_ROADS, masks);
+      expect(ref).toEqual({ tex: m05[variantIndex(q, r, 2)], mirror: false });
     }
   });
 });

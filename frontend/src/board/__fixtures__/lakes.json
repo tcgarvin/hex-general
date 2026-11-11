@@ -1,0 +1,1556 @@
+{
+ "generated_by": "scripts/lake-fixture.py (board-mock.py over the shipped tiles and joins)",
+ "maps": [
+  {
+   "name": "world-lake-s1",
+   "hexes": [
+    [
+     0,
+     0,
+     "plains"
+    ],
+    [
+     1,
+     0,
+     "plains"
+    ],
+    [
+     2,
+     -1,
+     "plains"
+    ],
+    [
+     3,
+     -1,
+     "plains"
+    ],
+    [
+     4,
+     -2,
+     "plains"
+    ],
+    [
+     5,
+     -2,
+     "plains"
+    ],
+    [
+     6,
+     -3,
+     "plains"
+    ],
+    [
+     7,
+     -3,
+     "hills"
+    ],
+    [
+     8,
+     -4,
+     "hills"
+    ],
+    [
+     9,
+     -4,
+     "plains"
+    ],
+    [
+     10,
+     -5,
+     "plains"
+    ],
+    [
+     11,
+     -5,
+     "plains"
+    ],
+    [
+     12,
+     -6,
+     "plains"
+    ],
+    [
+     0,
+     1,
+     "river"
+    ],
+    [
+     1,
+     1,
+     "bridge"
+    ],
+    [
+     2,
+     0,
+     "plains"
+    ],
+    [
+     3,
+     0,
+     "plains"
+    ],
+    [
+     4,
+     -1,
+     "plains"
+    ],
+    [
+     5,
+     -1,
+     "plains"
+    ],
+    [
+     6,
+     -2,
+     "hills"
+    ],
+    [
+     7,
+     -2,
+     "hills"
+    ],
+    [
+     8,
+     -3,
+     "plains"
+    ],
+    [
+     9,
+     -3,
+     "plains"
+    ],
+    [
+     10,
+     -4,
+     "town"
+    ],
+    [
+     11,
+     -4,
+     "river"
+    ],
+    [
+     12,
+     -5,
+     "river"
+    ],
+    [
+     0,
+     2,
+     "plains"
+    ],
+    [
+     1,
+     2,
+     "river"
+    ],
+    [
+     2,
+     1,
+     "plains"
+    ],
+    [
+     3,
+     1,
+     "lake"
+    ],
+    [
+     4,
+     0,
+     "plains"
+    ],
+    [
+     5,
+     0,
+     "plains"
+    ],
+    [
+     6,
+     -1,
+     "plains"
+    ],
+    [
+     7,
+     -1,
+     "hills"
+    ],
+    [
+     8,
+     -2,
+     "hills"
+    ],
+    [
+     9,
+     -2,
+     "river"
+    ],
+    [
+     10,
+     -3,
+     "river"
+    ],
+    [
+     11,
+     -3,
+     "plains"
+    ],
+    [
+     12,
+     -4,
+     "plains"
+    ],
+    [
+     0,
+     3,
+     "plains"
+    ],
+    [
+     1,
+     3,
+     "plains"
+    ],
+    [
+     2,
+     2,
+     "lake"
+    ],
+    [
+     3,
+     2,
+     "lake"
+    ],
+    [
+     4,
+     1,
+     "lake"
+    ],
+    [
+     5,
+     1,
+     "plains"
+    ],
+    [
+     6,
+     0,
+     "plains"
+    ],
+    [
+     7,
+     0,
+     "plains"
+    ],
+    [
+     8,
+     -1,
+     "plains"
+    ],
+    [
+     9,
+     -1,
+     "river"
+    ],
+    [
+     10,
+     -2,
+     "plains"
+    ],
+    [
+     11,
+     -2,
+     "plains"
+    ],
+    [
+     12,
+     -3,
+     "plains"
+    ],
+    [
+     0,
+     4,
+     "plains"
+    ],
+    [
+     1,
+     4,
+     "plains"
+    ],
+    [
+     2,
+     3,
+     "plains"
+    ],
+    [
+     3,
+     3,
+     "plains"
+    ],
+    [
+     4,
+     2,
+     "lake"
+    ],
+    [
+     5,
+     2,
+     "lake"
+    ],
+    [
+     6,
+     1,
+     "plains"
+    ],
+    [
+     7,
+     1,
+     "lake"
+    ],
+    [
+     8,
+     0,
+     "river"
+    ],
+    [
+     9,
+     0,
+     "plains"
+    ],
+    [
+     10,
+     -1,
+     "plains"
+    ],
+    [
+     11,
+     -1,
+     "plains"
+    ],
+    [
+     12,
+     -2,
+     "plains"
+    ],
+    [
+     0,
+     5,
+     "hills"
+    ],
+    [
+     1,
+     5,
+     "plains"
+    ],
+    [
+     2,
+     4,
+     "hills"
+    ],
+    [
+     3,
+     4,
+     "hills"
+    ],
+    [
+     4,
+     3,
+     "hills"
+    ],
+    [
+     5,
+     3,
+     "lake"
+    ],
+    [
+     6,
+     2,
+     "hills"
+    ],
+    [
+     7,
+     2,
+     "hills"
+    ],
+    [
+     8,
+     1,
+     "lake"
+    ],
+    [
+     9,
+     1,
+     "lake"
+    ],
+    [
+     10,
+     0,
+     "plains"
+    ],
+    [
+     11,
+     0,
+     "plains"
+    ],
+    [
+     12,
+     -1,
+     "plains"
+    ],
+    [
+     0,
+     6,
+     "hills"
+    ],
+    [
+     1,
+     6,
+     "plains"
+    ],
+    [
+     2,
+     5,
+     "town"
+    ],
+    [
+     3,
+     5,
+     "plains"
+    ],
+    [
+     4,
+     4,
+     "hills"
+    ],
+    [
+     5,
+     4,
+     "lake"
+    ],
+    [
+     6,
+     3,
+     "lake"
+    ],
+    [
+     7,
+     3,
+     "hills"
+    ],
+    [
+     8,
+     2,
+     "hills"
+    ],
+    [
+     9,
+     2,
+     "lake"
+    ],
+    [
+     10,
+     1,
+     "plains"
+    ],
+    [
+     11,
+     1,
+     "plains"
+    ],
+    [
+     12,
+     0,
+     "plains"
+    ],
+    [
+     0,
+     7,
+     "plains"
+    ],
+    [
+     1,
+     7,
+     "plains"
+    ],
+    [
+     2,
+     6,
+     "plains"
+    ],
+    [
+     3,
+     6,
+     "plains"
+    ],
+    [
+     4,
+     5,
+     "plains"
+    ],
+    [
+     5,
+     5,
+     "lake"
+    ],
+    [
+     6,
+     4,
+     "lake"
+    ],
+    [
+     7,
+     4,
+     "hills"
+    ],
+    [
+     8,
+     3,
+     "lake"
+    ],
+    [
+     9,
+     3,
+     "lake"
+    ],
+    [
+     10,
+     2,
+     "plains"
+    ],
+    [
+     11,
+     2,
+     "plains"
+    ],
+    [
+     12,
+     1,
+     "plains"
+    ],
+    [
+     0,
+     8,
+     "plains"
+    ],
+    [
+     1,
+     8,
+     "plains"
+    ],
+    [
+     2,
+     7,
+     "plains"
+    ],
+    [
+     3,
+     7,
+     "plains"
+    ],
+    [
+     4,
+     6,
+     "plains"
+    ],
+    [
+     5,
+     6,
+     "plains"
+    ],
+    [
+     6,
+     5,
+     "lake"
+    ],
+    [
+     7,
+     5,
+     "lake"
+    ],
+    [
+     8,
+     4,
+     "lake"
+    ],
+    [
+     9,
+     4,
+     "lake"
+    ],
+    [
+     10,
+     3,
+     "lake"
+    ],
+    [
+     11,
+     3,
+     "plains"
+    ],
+    [
+     12,
+     2,
+     "plains"
+    ],
+    [
+     0,
+     9,
+     "plains"
+    ],
+    [
+     1,
+     9,
+     "plains"
+    ],
+    [
+     2,
+     8,
+     "plains"
+    ],
+    [
+     3,
+     8,
+     "plains"
+    ],
+    [
+     4,
+     7,
+     "plains"
+    ],
+    [
+     5,
+     7,
+     "plains"
+    ],
+    [
+     6,
+     6,
+     "plains"
+    ],
+    [
+     7,
+     6,
+     "city"
+    ],
+    [
+     8,
+     5,
+     "plains"
+    ],
+    [
+     9,
+     5,
+     "woods"
+    ],
+    [
+     10,
+     4,
+     "woods"
+    ],
+    [
+     11,
+     4,
+     "plains"
+    ],
+    [
+     12,
+     3,
+     "plains"
+    ],
+    [
+     0,
+     10,
+     "plains"
+    ],
+    [
+     1,
+     10,
+     "plains"
+    ],
+    [
+     2,
+     9,
+     "plains"
+    ],
+    [
+     3,
+     9,
+     "plains"
+    ],
+    [
+     4,
+     8,
+     "plains"
+    ],
+    [
+     5,
+     8,
+     "plains"
+    ],
+    [
+     6,
+     7,
+     "plains"
+    ],
+    [
+     7,
+     7,
+     "plains"
+    ],
+    [
+     8,
+     6,
+     "plains"
+    ],
+    [
+     9,
+     6,
+     "woods"
+    ],
+    [
+     10,
+     5,
+     "woods"
+    ],
+    [
+     11,
+     5,
+     "woods"
+    ],
+    [
+     12,
+     4,
+     "plains"
+    ]
+   ],
+   "lakes": [
+    {
+     "q": 3,
+     "r": 1,
+     "mask": 49,
+     "key": "lake/m49",
+     "file": "lake/m49_00.png"
+    },
+    {
+     "q": 2,
+     "r": 2,
+     "mask": 3,
+     "key": "lake/m03",
+     "file": "lake/m03_00.png"
+    },
+    {
+     "q": 3,
+     "r": 2,
+     "mask": 15,
+     "key": "lake/m15",
+     "file": "lake/m15_01.png"
+    },
+    {
+     "q": 4,
+     "r": 1,
+     "mask": 56,
+     "key": "lake/m56",
+     "file": "lake/m56_00.png"
+    },
+    {
+     "q": 4,
+     "r": 2,
+     "mask": 13,
+     "key": "lake/m13",
+     "file": "lake/m13_00.png"
+    },
+    {
+     "q": 5,
+     "r": 2,
+     "mask": 40,
+     "key": "lake/m40",
+     "file": "lake/m40_00.png"
+    },
+    {
+     "q": 7,
+     "r": 1,
+     "mask": 1,
+     "key": "lake/m01",
+     "file": "lake/m01_00.png"
+    },
+    {
+     "q": 5,
+     "r": 3,
+     "mask": 37,
+     "key": "lake/m37",
+     "file": "lake/m37_00.png"
+    },
+    {
+     "q": 8,
+     "r": 1,
+     "mask": 9,
+     "key": "lake/m09",
+     "file": "lake/m09_00.png"
+    },
+    {
+     "q": 9,
+     "r": 1,
+     "mask": 40,
+     "key": "lake/m40",
+     "file": "lake/m40_00.png"
+    },
+    {
+     "q": 5,
+     "r": 4,
+     "mask": 39,
+     "key": "lake/m39",
+     "file": "lake/m39_01.png"
+    },
+    {
+     "q": 6,
+     "r": 3,
+     "mask": 56,
+     "key": "lake/m56",
+     "file": "lake/m56_00.png"
+    },
+    {
+     "q": 9,
+     "r": 2,
+     "mask": 52,
+     "key": "lake/m52",
+     "file": "lake/m52_00.png"
+    },
+    {
+     "q": 5,
+     "r": 5,
+     "mask": 7,
+     "key": "lake/m07",
+     "file": "lake/m07_00.png"
+    },
+    {
+     "q": 6,
+     "r": 4,
+     "mask": 60,
+     "key": "lake/m60",
+     "file": "lake/m60_00.png"
+    },
+    {
+     "q": 8,
+     "r": 3,
+     "mask": 35,
+     "key": "lake/m35",
+     "file": "lake/m35_01.png"
+    },
+    {
+     "q": 9,
+     "r": 3,
+     "mask": 61,
+     "key": "lake/m61",
+     "file": "lake/m61_00.png"
+    },
+    {
+     "q": 6,
+     "r": 5,
+     "mask": 13,
+     "key": "lake/m13",
+     "file": "lake/m13_00.png"
+    },
+    {
+     "q": 7,
+     "r": 5,
+     "mask": 10,
+     "key": "lake/m10",
+     "file": "lake/m10_00.png"
+    },
+    {
+     "q": 8,
+     "r": 4,
+     "mask": 23,
+     "key": "lake/m23",
+     "file": "lake/m23_00.png"
+    },
+    {
+     "q": 9,
+     "r": 4,
+     "mask": 14,
+     "key": "lake/m14",
+     "file": "lake/m14_00.png"
+    },
+    {
+     "q": 10,
+     "r": 3,
+     "mask": 24,
+     "key": "lake/m24",
+     "file": "lake/m24_00.png"
+    }
+   ],
+   "mouths": [
+    {
+     "q": 8,
+     "r": 0,
+     "direction": 4,
+     "code": 9,
+     "file": "lake/mouth_sw_02.png"
+    },
+    {
+     "q": 1,
+     "r": 2,
+     "direction": 0,
+     "code": 5,
+     "file": "lake/mouth_se_00.png"
+    }
+   ]
+  },
+  {
+   "name": "border",
+   "hexes": [
+    [
+     0,
+     0,
+     "lake"
+    ],
+    [
+     1,
+     0,
+     "lake"
+    ],
+    [
+     2,
+     -1,
+     "lake"
+    ],
+    [
+     0,
+     1,
+     "lake"
+    ],
+    [
+     1,
+     1,
+     "lake"
+    ],
+    [
+     2,
+     0,
+     "lake"
+    ],
+    [
+     0,
+     2,
+     "lake"
+    ],
+    [
+     1,
+     2,
+     "lake"
+    ],
+    [
+     2,
+     1,
+     "lake"
+    ],
+    [
+     0,
+     3,
+     "lake"
+    ],
+    [
+     1,
+     3,
+     "lake"
+    ],
+    [
+     2,
+     2,
+     "lake"
+    ]
+   ],
+   "lakes": [
+    {
+     "q": 0,
+     "r": 0,
+     "mask": 33,
+     "key": "lake/m33",
+     "file": "lake/m33_00.png"
+    },
+    {
+     "q": 1,
+     "r": 0,
+     "mask": 59,
+     "key": "lake/m59",
+     "file": "lake/m59_00.png"
+    },
+    {
+     "q": 2,
+     "r": -1,
+     "mask": 48,
+     "key": "lake/m48",
+     "file": "lake/m48_00.png"
+    },
+    {
+     "q": 0,
+     "r": 1,
+     "mask": 39,
+     "key": "lake/m39",
+     "file": "lake/m39_00.png"
+    },
+    {
+     "q": 1,
+     "r": 1,
+     "mask": 63,
+     "key": "lake/m63",
+     "file": "lake/m63_01.png"
+    },
+    {
+     "q": 2,
+     "r": 0,
+     "mask": 60,
+     "key": "lake/m60",
+     "file": "lake/m60_00.png"
+    },
+    {
+     "q": 0,
+     "r": 2,
+     "mask": 39,
+     "key": "lake/m39",
+     "file": "lake/m39_00.png"
+    },
+    {
+     "q": 1,
+     "r": 2,
+     "mask": 63,
+     "key": "lake/m63",
+     "file": "lake/m63_03.png"
+    },
+    {
+     "q": 2,
+     "r": 1,
+     "mask": 60,
+     "key": "lake/m60",
+     "file": "lake/m60_00.png"
+    },
+    {
+     "q": 0,
+     "r": 3,
+     "mask": 7,
+     "key": "lake/m07",
+     "file": "lake/m07_01.png"
+    },
+    {
+     "q": 1,
+     "r": 3,
+     "mask": 14,
+     "key": "lake/m14",
+     "file": "lake/m14_00.png"
+    },
+    {
+     "q": 2,
+     "r": 2,
+     "mask": 28,
+     "key": "lake/m28",
+     "file": "lake/m28_00.png"
+    }
+   ],
+   "mouths": []
+  },
+  {
+   "name": "mouths",
+   "hexes": [
+    [
+     0,
+     0,
+     "plains"
+    ],
+    [
+     1,
+     0,
+     "river"
+    ],
+    [
+     2,
+     -1,
+     "plains"
+    ],
+    [
+     3,
+     -1,
+     "plains"
+    ],
+    [
+     4,
+     -2,
+     "plains"
+    ],
+    [
+     5,
+     -2,
+     "river"
+    ],
+    [
+     6,
+     -3,
+     "plains"
+    ],
+    [
+     0,
+     1,
+     "plains"
+    ],
+    [
+     1,
+     1,
+     "plains"
+    ],
+    [
+     2,
+     0,
+     "lake"
+    ],
+    [
+     3,
+     0,
+     "plains"
+    ],
+    [
+     4,
+     -1,
+     "lake"
+    ],
+    [
+     5,
+     -1,
+     "plains"
+    ],
+    [
+     6,
+     -2,
+     "plains"
+    ],
+    [
+     0,
+     2,
+     "plains"
+    ],
+    [
+     1,
+     2,
+     "lake"
+    ],
+    [
+     2,
+     1,
+     "lake"
+    ],
+    [
+     3,
+     1,
+     "lake"
+    ],
+    [
+     4,
+     0,
+     "lake"
+    ],
+    [
+     5,
+     0,
+     "lake"
+    ],
+    [
+     6,
+     -1,
+     "plains"
+    ],
+    [
+     0,
+     3,
+     "river"
+    ],
+    [
+     1,
+     3,
+     "lake"
+    ],
+    [
+     2,
+     2,
+     "lake"
+    ],
+    [
+     3,
+     2,
+     "lake"
+    ],
+    [
+     4,
+     1,
+     "plains"
+    ],
+    [
+     5,
+     1,
+     "lake"
+    ],
+    [
+     6,
+     0,
+     "river"
+    ],
+    [
+     0,
+     4,
+     "plains"
+    ],
+    [
+     1,
+     4,
+     "plains"
+    ],
+    [
+     2,
+     3,
+     "lake"
+    ],
+    [
+     3,
+     3,
+     "river"
+    ],
+    [
+     4,
+     2,
+     "plains"
+    ],
+    [
+     5,
+     2,
+     "plains"
+    ],
+    [
+     6,
+     1,
+     "plains"
+    ],
+    [
+     0,
+     5,
+     "plains"
+    ],
+    [
+     1,
+     5,
+     "river"
+    ],
+    [
+     2,
+     4,
+     "plains"
+    ],
+    [
+     3,
+     4,
+     "plains"
+    ],
+    [
+     4,
+     3,
+     "plains"
+    ],
+    [
+     5,
+     3,
+     "river"
+    ],
+    [
+     6,
+     2,
+     "plains"
+    ],
+    [
+     0,
+     6,
+     "plains"
+    ],
+    [
+     1,
+     6,
+     "river"
+    ],
+    [
+     2,
+     5,
+     "plains"
+    ],
+    [
+     3,
+     5,
+     "lake"
+    ],
+    [
+     4,
+     4,
+     "plains"
+    ],
+    [
+     5,
+     4,
+     "river"
+    ],
+    [
+     6,
+     3,
+     "plains"
+    ]
+   ],
+   "lakes": [
+    {
+     "q": 2,
+     "r": 0,
+     "mask": 32,
+     "key": "lake/m32",
+     "file": "lake/m32_00.png"
+    },
+    {
+     "q": 4,
+     "r": -1,
+     "mask": 32,
+     "key": "lake/m32",
+     "file": "lake/m32_00.png"
+    },
+    {
+     "q": 1,
+     "r": 2,
+     "mask": 35,
+     "key": "lake/m35",
+     "file": "lake/m35_01.png"
+    },
+    {
+     "q": 2,
+     "r": 1,
+     "mask": 53,
+     "key": "lake/m53",
+     "file": "lake/m53_00.png"
+    },
+    {
+     "q": 3,
+     "r": 1,
+     "mask": 58,
+     "key": "lake/m58",
+     "file": "lake/m58_00.png"
+    },
+    {
+     "q": 4,
+     "r": 0,
+     "mask": 21,
+     "key": "lake/m21",
+     "file": "lake/m21_00.png"
+    },
+    {
+     "q": 5,
+     "r": 0,
+     "mask": 40,
+     "key": "lake/m40",
+     "file": "lake/m40_00.png"
+    },
+    {
+     "q": 1,
+     "r": 3,
+     "mask": 7,
+     "key": "lake/m07",
+     "file": "lake/m07_00.png"
+    },
+    {
+     "q": 2,
+     "r": 2,
+     "mask": 63,
+     "key": "lake/m63",
+     "file": "lake/m63_00.png"
+    },
+    {
+     "q": 3,
+     "r": 2,
+     "mask": 28,
+     "key": "lake/m28",
+     "file": "lake/m28_01.png"
+    },
+    {
+     "q": 5,
+     "r": 1,
+     "mask": 4,
+     "key": "lake/m04",
+     "file": "lake/m04_00.png"
+    },
+    {
+     "q": 2,
+     "r": 3,
+     "mask": 14,
+     "key": "lake/m14",
+     "file": "lake/m14_01.png"
+    },
+    {
+     "q": 3,
+     "r": 5,
+     "mask": 0,
+     "key": "lake/m00",
+     "file": "lake/m00_00.png"
+    }
+   ],
+   "mouths": [
+    {
+     "q": 5,
+     "r": -2,
+     "direction": 4,
+     "code": 9,
+     "file": "lake/mouth_sw_02.png"
+    },
+    {
+     "q": 1,
+     "r": 0,
+     "direction": 0,
+     "code": 5,
+     "file": "lake/mouth_se_01.png"
+    },
+    {
+     "q": 6,
+     "r": 0,
+     "direction": 3,
+     "code": 8,
+     "file": "lake/mouth_nw_00.png"
+    },
+    {
+     "q": 0,
+     "r": 3,
+     "direction": 0,
+     "code": 5,
+     "file": "lake/mouth_se_00.png"
+    },
+    {
+     "q": 3,
+     "r": 3,
+     "direction": 2,
+     "code": 7,
+     "file": "lake/mouth_n_00.png"
+    }
+   ]
+  },
+  {
+   "name": "mouths-s-ne",
+   "hexes": [
+    [
+     0,
+     0,
+     "plains"
+    ],
+    [
+     1,
+     0,
+     "river"
+    ],
+    [
+     2,
+     -1,
+     "plains"
+    ],
+    [
+     3,
+     -1,
+     "plains"
+    ],
+    [
+     4,
+     -2,
+     "plains"
+    ],
+    [
+     5,
+     -2,
+     "plains"
+    ],
+    [
+     0,
+     1,
+     "plains"
+    ],
+    [
+     1,
+     1,
+     "river"
+    ],
+    [
+     2,
+     0,
+     "plains"
+    ],
+    [
+     3,
+     0,
+     "plains"
+    ],
+    [
+     4,
+     -1,
+     "plains"
+    ],
+    [
+     5,
+     -1,
+     "lake"
+    ],
+    [
+     0,
+     2,
+     "plains"
+    ],
+    [
+     1,
+     2,
+     "lake"
+    ],
+    [
+     2,
+     1,
+     "plains"
+    ],
+    [
+     3,
+     1,
+     "plains"
+    ],
+    [
+     4,
+     0,
+     "river"
+    ],
+    [
+     5,
+     0,
+     "plains"
+    ]
+   ],
+   "lakes": [
+    {
+     "q": 5,
+     "r": -1,
+     "mask": 0,
+     "key": "lake/m00",
+     "file": "lake/m00_00.png"
+    },
+    {
+     "q": 1,
+     "r": 2,
+     "mask": 0,
+     "key": "lake/m00",
+     "file": "lake/m00_00.png"
+    }
+   ],
+   "mouths": [
+    {
+     "q": 4,
+     "r": 0,
+     "direction": 1,
+     "code": 6,
+     "file": "lake/mouth_ne_02.png"
+    },
+    {
+     "q": 1,
+     "r": 1,
+     "direction": 5,
+     "code": 10,
+     "file": "lake/mouth_s_00.png"
+    }
+   ]
+  }
+ ]
+}

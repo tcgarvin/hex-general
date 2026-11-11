@@ -68,7 +68,9 @@ export function connectedEdges(
 //   most one river-like neighbour and at least one lake neighbour connects to
 //   exactly one lake neighbour (`riverOutletDirection` picks it), so the river
 //   runs its water to the lake shore instead of ending in a cap. The lake hex's
-//   own tile never changes.
+//   own tile never changes (it is chosen by its lake-neighbour mask alone,
+//   `lakeTiles.ts`); a mouth join sprite on the shared edge carries the river
+//   into the lake's water (`joins.ts`).
 // * **Edge rule** (lower priority: only when the mouth rule gave nothing). Such a
 //   hex on the map edge (a neighbour direction off the map, `terrainAt` ⇒
 //   `undefined`) connects to exactly one off-map direction, chosen the same way,
@@ -161,7 +163,8 @@ export function riverOutlets(
 
 /**
  * The river mouths among `coords` (river hex + the direction of the lake hex it
- * runs into), for drawing mouth join art. Nothing draws them yet.
+ * runs into): where the boards draw a mouth join sprite (`mouthPlacement` in
+ * `joins.ts`; board-mock `lake_mouths`).
  */
 export function riverMouths(
   coords: readonly Axial[],

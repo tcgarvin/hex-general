@@ -147,6 +147,31 @@ in `art/codex/terrain/SITES.md`. Preview with `board-mock.py --sites <dir>`. The
 draws byte copies from `frontend/src/world/siteTiles/` (`siteTiles.ts`; bases at stage
 1 until growth is designed).
 
+## Lake tiles by mask (round 2, ratified 2026-11-10)
+
+Lakes are painted whole per **neighbour mask** (bit d set when the neighbour in
+`AXIAL_DIRECTIONS[d]` is lake; off-map is land; 64 masks) with
+`scripts/tile-foundry/paintin_lake.py` (`w0`, `job`, `run`, `apply`), a paint-in
+variant: per-mask deterministic bases (plains, shared water tile **W0**, a bank
+along a guide shoreline 11 px from the land), per-hexagon prompts generated from
+the mask, the usual sheet/cut, then a lake pin: rim exact to the base (W0 on
+every water edge, plains on land edges, a fixed shore cross-section where the
+shore crosses a water edge 11 px from the corner), water colour and ripple
+contrast normalised to W0's, a variance-preserving cross-fade from W0 into
+Codex's water. W0 is exactly periodic on the hex lattice, so any tile sits next to
+any other. No lake edge/vertex joins; river mouths are `joins.py --lake-water`
+sprites, the only lake join. File naming `lake/m<MM>_<VV>.png`; selection rule
+`lake_mask` / `lake_tile_key` in `scripts/board-mock.py`, ported as `lakeMask` /
+`lakeTileKey` in `frontend/src/board/lakeTiles.ts` (mouths: `mouthPlacement` in
+`joins.ts`, codes 5 + d); `scripts/lake-fixture.py` writes the shared fixture
+`frontend/src/board/__fixtures__/lakes.json` that pins the frontend to board-mock.
+Record, numbers and rebuild: `art/codex/terrain/lake/README.md` ("Round 2"); set:
+`art/codex/terrain/candidates/lake2/` (mouths `candidates/lake2-joins/`).
+**Ratified 2026-11-10 and shipped** as byte copies in `frontend/src/board/tiles/lake/`
+and `frontend/src/board/joins/lake/` (`scripts/tests/test_lake_tiles_sync.py` checks
+them; per-tile provenance in `art/codex/terrain/APPLIED.md`). Round 1
+(`candidates/lake1*`) is superseded.
+
 ## NBP foundry (superseded for terrain; unit sprites)
 
 The review artifact for how terrain hex art gets made, now that the loop is

@@ -2,7 +2,8 @@
 
 Reads the provenance the candidate sets already record (candidates/review1/*/
 picks.json and provenance.json, ground/G2/set.json for plains,
-candidates/review1-joins/joins.json) and checks each entry against the files
+candidates/lake2/picks.json for lakes, candidates/review1-joins/joins.json and
+candidates/lake2-joins/joins.json) and checks each entry against the files
 actually shipped in frontend/src/board/ (sha256), so the table cannot drift
 from the app. Fails loudly on a shipped file with no provenance, a digest
 mismatch, or a source raw that is missing.
@@ -21,6 +22,8 @@ REPO = Path(__file__).resolve().parents[3]
 TERRAIN = REPO / "art" / "codex" / "terrain"
 CANDIDATES = TERRAIN / "candidates" / "review1"
 JOINS = TERRAIN / "candidates" / "review1-joins"
+LAKE_TILES = TERRAIN / "candidates" / "lake2"
+LAKE_JOINS = TERRAIN / "candidates" / "lake2-joins"
 SHIPPED_TILES = REPO / "frontend" / "src" / "board" / "tiles"
 SHIPPED_JOINS = REPO / "frontend" / "src" / "board" / "joins"
 OUT = TERRAIN / "APPLIED.md"
@@ -103,6 +106,20 @@ def hills_road_rows() -> list[tuple[str, str, str, str, str]]:
     return rows
 
 
+def lake_rows() -> list[tuple[str, str, str, str, str]]:
+    """Lakes by neighbour mask (round 2): candidates/lake2/picks.json, one entry
+    per shipped `lake/m<MM>_<VV>.png` with its sheet, cell and raw."""
+    rows = []
+    for e in json.loads((LAKE_TILES / "picks.json").read_text())["picks"]:
+        shipped = SHIPPED_TILES / e["file"]
+        if sha256(shipped) != e["sha256"]:
+            raise ProvenanceError(f"{e['file']}: shipped file != lake2 picks.json sha256")
+        raw = require(rel(e["raw"]), f"{e['file']} raw")
+        work = str(Path(rel(require(rel(e["source_tile"]), f"{e['file']} source tile"))).parents[1])
+        rows.append((e["file"], work, raw, f"{e['cell']} (sheet {e['sheet']}, mask {e['mask']})", ""))
+    return sorted(rows)
+
+
 def plains_rows() -> list[tuple[str, str, str, str, str]]:
     """Plains are 1:1 cuts of the recoloured G2 meadow (ground/G2/set.json)."""
     s = json.loads((TERRAIN / "ground" / "G2" / "set.json").read_text())
@@ -118,13 +135,14 @@ def plains_rows() -> list[tuple[str, str, str, str, str]]:
 
 
 def join_rows() -> list[tuple[str, str, str]]:
-    manifest = json.loads((JOINS / "joins.json").read_text())
     rows = []
-    for e in manifest["sprites"]:
-        if sha256(SHIPPED_JOINS / e["file"]) != sha256(JOINS / e["file"]):
-            raise ProvenanceError(f"joins/{e['file']}: shipped file != candidates copy")
-        x, y = e["offset"]
-        rows.append((f"joins/{e['file']}", rel(e["source"]), f"{e['route']}, offset ({x}, {y})"))
+    for source in (JOINS, LAKE_JOINS):
+        manifest = json.loads((source / "joins.json").read_text())
+        for e in manifest["sprites"]:
+            if sha256(SHIPPED_JOINS / e["file"]) != sha256(source / e["file"]):
+                raise ProvenanceError(f"joins/{e['file']}: shipped file != candidates copy")
+            x, y = e["offset"]
+            rows.append((f"joins/{e['file']}", rel(e["source"]), f"{e['route']}, offset ({x}, {y})"))
     return rows
 
 
@@ -135,6 +153,7 @@ def main() -> int:
     for terrain in ("river", "road", "bridge"):
         rows += oriented_rows(terrain)
     rows += hills_road_rows()
+    rows += lake_rows()
     shipped = {str(p.relative_to(SHIPPED_TILES)) for p in SHIPPED_TILES.glob("*/*.png")}
     traced = {r[0] for r in rows}
     if shipped != traced:
@@ -159,7 +178,11 @@ def main() -> int:
         "arguments in `<work>/refs.txt` (if any), then apply the grade listed (via",
         "`r2_grade.py`; parameters also in `<work>/tiles_graded/*.grade.json`). Plains",
         "are 1:1 cuts of the recoloured G2 meadow; the recolour and cut parameters are",
-        "in `ground/G2/set.json`.",
+        "in `ground/G2/set.json`. Lake tiles (`lake/m<MM>_<VV>.png`, one per",
+        "lake-neighbour mask MM, ratified 2026-11-10) are `paintin_lake.py` cells: replay",
+        "a sheet with `python3 scripts/tile-foundry/paintin_lake.py run --work-dir <work>",
+        "--w0 art/codex/terrain/lake/r2/w0/w0-v2.png --from-raw <raw>`, then `apply` the",
+        "picks (`art/codex/terrain/lake/README.md`, \"Round 2\").",
         "",
         "| Shipped tile | Work dir | Raw Codex sheet | Cell | Grade |",
         "| --- | --- | --- | --- | --- |",
@@ -171,7 +194,10 @@ def main() -> int:
         "",
         "`frontend/src/board/joins/<file>`, built by `scripts/tile-foundry/joins.py`",
         "(`--tiles art/codex/terrain/candidates/review1 --out <dir>`) from a patch of",
-        "the shipped tile named here, shifted by the offset (tile px).",
+        "the shipped tile named here, shifted by the offset (tile px). The lake river",
+        "mouths (`joins/lake/mouth_*`) come from a second run (`--tiles",
+        "art/codex/terrain/candidates/lake2 --terrains lake --lake-water",
+        "art/codex/terrain/candidates/lake2/w0.png`), route `mouth`, from W0.",
         "",
         "| Join sprite | Source tile | Route, offset |",
         "| --- | --- | --- |",
