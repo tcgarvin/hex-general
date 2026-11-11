@@ -156,10 +156,17 @@ describe("orderKindsFor", () => {
 describe("base orders", () => {
   it("prices the next level and blocks it while building", () => {
     const economy = economyOf(state());
-    expect(buildOption(state(), economy, "p", "barracks")).toMatchObject({ level: 1, cost: S(5, 0, 8), blocked: null });
-    const busy = state({ construction: { building: "depot", level: 1, completes_on: 7 } });
-    expect(buildOption(busy, economy, "p", "barracks")?.blocked).toBe("construction in progress");
+    expect(buildOption(state(), economy, "p", "barracks")).toMatchObject({ level: 1, cost: S(5, 0, 8), blocked: [] });
+    const busy = state({ stocks: S(10, 0, 3), construction: { building: "depot", level: 1, completes_on: 7 } });
+    expect(buildOption(busy, economy, "p", "barracks")?.blocked).toEqual(["one building at a time", "needs 5 more steel"]);
     expect(buildOption(state({ buildings: { depot: 1 } }), economy, "p", "depot")).toBeNull();
+  });
+
+  it("counts the plan's recruits but not a build it would replace", () => {
+    const s = state({ stocks: S(6, 0, 10) });
+    const economy = economyOf(s);
+    const plan: WorldPlan = { ...EMPTY_PLAN, build: "depot", recruits: { a: { coord: at(0), type: "infantry" } } };
+    expect(buildOption(s, economy, "p", "barracks", plan)?.blocked).toEqual(["needs 2 more manpower"]);
   });
 
   it("lets a build finishing this turn order the level after it", () => {
@@ -172,14 +179,29 @@ describe("base orders", () => {
     const economy = economyOf(s);
     const types = (col: number, st = s) => recruitOptions(st, map, economy, "p", at(col));
     expect(types(0).map((o) => [o.type, o.blocked])).toEqual([
-      ["infantry", null],
-      ["artillery", "needs a workshop"],
+      ["infantry", []],
+      ["artillery", ["needs a workshop"]],
     ]);
     expect(types(2).map((o) => o.type)).toEqual(["armor"]);
     expect(types(3)).toEqual([]); // farms don't recruit
     expect(types(4)).toEqual([]); // no site
     const occupied = state({ units: [unit(1, 1)] });
-    expect(types(1, occupied)[0].blocked).toBe("a unit stands here");
+    expect(types(1, occupied)[0].blocked).toEqual(["a unit stands on the hex"]);
+  });
+
+  it("lists every reason a recruit is blocked", () => {
+    const s = state({ stocks: S(1, 0, 0), units: [unit(1, 0), unit(2, 4), unit(3, 4), unit(4, 4)] });
+    const options = recruitOptions(s, map, economyOf(s), "p", at(0), EMPTY_PLAN, 4);
+    expect(options.map((o) => o.blocked)).toEqual([
+      ["a unit stands on the hex", "army is full (4)", "needs 2 more manpower"],
+      ["needs a workshop", "a unit stands on the hex", "army is full (4)", "needs 1 more manpower and 3 more steel"],
+    ]);
+  });
+
+  it("lets a recruit staged here be swapped without counting itself", () => {
+    const s = state({ stocks: S(3, 0, 0), units: [unit(1, 4), unit(2, 4), unit(3, 4)] });
+    const plan: WorldPlan = { ...EMPTY_PLAN, recruits: { [`${at(0).q},${at(0).r}`]: { coord: at(0), type: "infantry" } } };
+    expect(recruitOptions(s, map, economyOf(s), "p", at(0), plan, 4)[0].blocked).toEqual([]);
   });
 
   it("totals the plan's spending and flags overspending and army size", () => {

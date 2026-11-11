@@ -182,7 +182,8 @@ export interface Hover {
 }
 
 export interface WorldRendererOptions {
-  onHexClick?: (hex: Axial) => void;
+  /** A click on a map hex; `shift` was held (Shift+click orders a swap). */
+  onHexClick?: (hex: Axial, mods: { shift: boolean }) => void;
 }
 
 export type { Camera };
@@ -326,7 +327,15 @@ export class WorldRenderer {
     this.fitAll(false);
   }
 
+  /**
+   * Set once `destroy` has run. When the whole world screen unmounts, React runs
+   * the board's cleanup (which destroys this) before its siblings' cleanups,
+   * which still call in to unhook themselves; those late calls must be no-ops.
+   */
+  destroyed = false;
+
   destroy(): void {
+    this.destroyed = true;
     this.app.ticker.remove(this.tick);
     this.app.canvas.removeEventListener("wheel", this.onWheel);
     this.app.canvas.removeEventListener("pointerleave", this.onPointerLeave);
@@ -375,6 +384,7 @@ export class WorldRenderer {
 
   /** Show (or with `null` clear) a dashed travel route preview. */
   setPreview(preview: RoutePreview | null): void {
+    if (this.destroyed) return;
     this.preview = preview;
     this.drawHover();
   }
@@ -416,6 +426,15 @@ export class WorldRenderer {
   /** Bring `hex` into view only if it is off-screen or under a panel. */
   reveal(hex: Axial): void {
     if (!this.comfortablyVisible(hex)) this.panTo(hex);
+  }
+
+  /**
+   * Bring a unit at `hex` into view to work with it: from the overview (where
+   * units are dots) zoom in to tactical zoom, otherwise as `reveal`.
+   */
+  focusUnit(hex: Axial): void {
+    if (this.world.scale.x < TILE_MIN_SCALE) this.centerOn(hex, TACTICAL_SCALE);
+    else this.reveal(hex);
   }
 
   /** Whether `hex` is on screen and clear of the panels. */
@@ -582,7 +601,7 @@ export class WorldRenderer {
     }
     const local = this.world.toLocal(e.global);
     const hex = pixelToAxial(local.x, local.y, HEX_SIZE);
-    if (this.map.hexAt(hex.q, hex.r) !== undefined) this.options.onHexClick?.(hex);
+    if (this.map.hexAt(hex.q, hex.r) !== undefined) this.options.onHexClick?.(hex, { shift: e.shiftKey });
   };
 
   private onPointerLeave = (): void => {
@@ -1149,7 +1168,9 @@ export class WorldRenderer {
       g.stroke({ color, width, alpha, cap: "round", join: "round" });
       const end = pts[pts.length - 1];
       if (route.attack !== null) {
-        drawAttackMark(g, end.x, end.y, Math.max(px(11), HEX_SIZE * 0.4), px, strong ? 1 : 0.75);
+        // Up and left of centre: a garrison's shield sits in the lower right.
+        const r = Math.max(px(11), HEX_SIZE * 0.4);
+        drawAttackMark(g, end.x - HEX_SIZE * 0.32, end.y - HEX_SIZE * 0.2, r, px, strong ? 1 : 0.75);
       } else {
         g.circle(end.x, end.y, Math.max(px(strong ? 5 : 4), HEX_SIZE * (strong ? 0.22 : 0.16)))
           .fill({ color, alpha })

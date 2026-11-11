@@ -18,7 +18,7 @@ import type { WorldMap } from "./worldMap";
 
 /** How long the pointer rests on a hex before its tooltip shows. */
 const DWELL_MS = 450;
-/** Route searches wait for the pointer to settle this long (they can take a while on a big map). */
+/** Route searches wait for the pointer to settle this long before starting. */
 const PREVIEW_DEBOUNCE_MS = 90;
 const NOTICE_MS = 3000;
 
@@ -63,8 +63,16 @@ export function HoverInfo({
   useEffect(() => {
     // A click on your own unit selects it, so there is no route to preview there.
     if (!travelling || hover === null || ownHere) return;
-    const id = setTimeout(() => setComputed({ hover, search: previewTravel, preview: previewTravel(hover.hex) }), PREVIEW_DEBOUNCE_MS);
-    return () => clearTimeout(id);
+    // The search itself runs in slices between frames (`previewTravel`), so a far
+    // destination on a big map never stalls the pointer; a newer hover cancels it.
+    let cancel = () => {};
+    const id = setTimeout(() => {
+      cancel = previewTravel(hover.hex, (preview) => setComputed({ hover, search: previewTravel, preview }));
+    }, PREVIEW_DEBOUNCE_MS);
+    return () => {
+      clearTimeout(id);
+      cancel();
+    };
   }, [travelling, hover, ownHere, previewTravel]);
   const preview =
     travelling && !ownHere && computed !== null && computed.hover === hover && computed.search === previewTravel ? computed.preview : null;

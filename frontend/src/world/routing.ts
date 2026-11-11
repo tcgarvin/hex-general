@@ -195,55 +195,155 @@ class Frontier {
   }
 }
 
-/** A* from `start` to `goal`; the hexes entered (`start` excluded), or `null`. */
-function astar(costs: ColumnCosts, start: Axial, goal: Axial): Axial[] | null {
-  if (start.q === goal.q && start.r === goal.r) return [];
-  const goalCell = cellOf(costs, goal.q, goal.r);
-  if (goalCell < 0 || costs.pulses[goalCell] === 0) return null;
-  const startCell = cellOf(costs, start.q, start.r);
-  if (startCell < 0) throw new Error(`route start (${start.q}, ${start.r}) is off the map`);
+/**
+ * A* from `start` to `goal`, resumable: `advance` expands nodes until the search
+ * ends or `outOfTime` says to yield, so a long search can be spread over frames
+ * without changing a single tie-break (the frontier and tables persist between
+ * calls). The hexes entered (`start` excluded) or `null` land in `result`.
+ */
+class AStar {
+  done = false;
+  result: Axial[] | null = null;
+  private readonly best: Int32Array;
+  private readonly cameFrom: Int32Array;
+  private readonly closed: Uint8Array;
+  private readonly frontier: Frontier;
+  private readonly goalCell: number;
+  private readonly startCell: number;
 
-  const { width, pulses } = costs;
-  const size = pulses.length;
-  const heuristic = (q: number, r: number): number => {
-    const dq = q - goal.q;
-    const dr = r - goal.r;
+  constructor(
+    private readonly costs: ColumnCosts,
+    start: Axial,
+    private readonly goal: Axial,
+  ) {
+    this.startCell = cellOf(costs, start.q, start.r);
+    this.goalCell = cellOf(costs, goal.q, goal.r);
+    const size = costs.pulses.length;
+    this.best = new Int32Array(0);
+    this.cameFrom = new Int32Array(0);
+    this.closed = new Uint8Array(0);
+    this.frontier = new Frontier(costs.width);
+    if (start.q === goal.q && start.r === goal.r) {
+      this.finish([]);
+      return;
+    }
+    if (this.goalCell < 0 || costs.pulses[this.goalCell] === 0) {
+      this.finish(null);
+      return;
+    }
+    if (this.startCell < 0) throw new Error(`route start (${start.q}, ${start.r}) is off the map`);
+    this.best = new Int32Array(size).fill(-1); // -1 = never reached
+    this.cameFrom = new Int32Array(size).fill(-1);
+    this.closed = new Uint8Array(size);
+    this.best[this.startCell] = 0;
+    this.frontier.push(this.heuristic(start.q, start.r), 0, this.startCell);
+  }
+
+  private heuristic(q: number, r: number): number {
+    const dq = q - this.goal.q;
+    const dr = r - this.goal.r;
     return CHEAPEST_STEP * ((Math.abs(dq) + Math.abs(dq + dr) + Math.abs(dr)) >> 1);
-  };
+  }
 
-  const best = new Int32Array(size).fill(-1); // -1 = never reached
-  const cameFrom = new Int32Array(size).fill(-1);
-  const closed = new Uint8Array(size);
-  const frontier = new Frontier(width);
-  best[startCell] = 0;
-  frontier.push(heuristic(start.q, start.r), 0, startCell);
+  private finish(result: Axial[] | null): void {
+    this.done = true;
+    this.result = result;
+  }
 
-  while (frontier.size > 0) {
-    frontier.pop();
-    const current = frontier.topCell;
-    if (current === goalCell) return walkBack(costs, cameFrom, startCell, goalCell);
-    if (closed[current]) continue;
-    closed[current] = 1;
-    const g = frontier.topG;
-    const { q, r } = axialOfCell(costs, current);
-    for (const d of AXIAL_DIRECTIONS) {
-      const nq = q + d.q;
-      const nr = r + d.r;
-      const col = nq;
-      const row = nr + (nq - (nq & 1)) / 2;
-      if (col < 0 || col >= width || row < 0 || row >= costs.height) continue;
-      const next = row * width + col;
-      const step = pulses[next];
-      if (step === 0 || closed[next]) continue;
-      const tentative = g + step;
-      if (best[next] === -1 || tentative < best[next]) {
-        best[next] = tentative;
-        cameFrom[next] = current;
-        frontier.push(tentative + heuristic(nq, nr), tentative, next);
+  /** Expand nodes until the search ends (`true`) or `outOfTime` asks to yield (`false`). */
+  advance(outOfTime: () => boolean = () => false): boolean {
+    if (this.done) return true;
+    const { costs, best, cameFrom, closed, frontier } = this;
+    const { width, pulses } = costs;
+    let sinceCheck = 0;
+    while (frontier.size > 0) {
+      // Checking the clock is not free; do it every few hundred expansions.
+      if (++sinceCheck >= 256) {
+        sinceCheck = 0;
+        if (outOfTime()) return false;
+      }
+      frontier.pop();
+      const current = frontier.topCell;
+      if (current === this.goalCell) {
+        this.finish(walkBack(costs, cameFrom, this.startCell, this.goalCell));
+        return true;
+      }
+      if (closed[current]) continue;
+      closed[current] = 1;
+      const g = frontier.topG;
+      const { q, r } = axialOfCell(costs, current);
+      for (const d of AXIAL_DIRECTIONS) {
+        const nq = q + d.q;
+        const nr = r + d.r;
+        const col = nq;
+        const row = nr + (nq - (nq & 1)) / 2;
+        if (col < 0 || col >= width || row < 0 || row >= costs.height) continue;
+        const next = row * width + col;
+        const step = pulses[next];
+        if (step === 0 || closed[next]) continue;
+        const tentative = g + step;
+        if (best[next] === -1 || tentative < best[next]) {
+          best[next] = tentative;
+          cameFrom[next] = current;
+          frontier.push(tentative + this.heuristic(nq, nr), tentative, next);
+        }
       }
     }
+    this.finish(null);
+    return true;
   }
-  return null;
+}
+
+/** A* from `start` to `goal`; the hexes entered (`start` excluded), or `null`. */
+function astar(costs: ColumnCosts, start: Axial, goal: Axial): Axial[] | null {
+  const search = new AStar(costs, start, goal);
+  search.advance();
+  return search.result;
+}
+
+/**
+ * `findRoute`, spread over several calls: each `advance(outOfTime)` searches until
+ * the route is found (returns `true`, `result` set) or `outOfTime()` says to yield
+ * (returns `false`). The result is exactly `findRoute`'s.
+ */
+export class RouteSearch {
+  done = false;
+  result: Axial[] | null = null;
+  private readonly stops: Axial[];
+  private leg = 0;
+  private current: AStar | null = null;
+  private readonly route: Axial[] = [];
+
+  constructor(
+    private readonly costs: ColumnCosts,
+    origin: Axial,
+    destination: Axial,
+    via: readonly Axial[] = [],
+  ) {
+    this.stops = [origin, ...via, destination];
+  }
+
+  advance(outOfTime: () => boolean = () => false): boolean {
+    while (!this.done) {
+      if (this.leg + 1 >= this.stops.length) {
+        this.done = true;
+        this.result = this.route;
+        break;
+      }
+      this.current ??= new AStar(this.costs, this.stops[this.leg], this.stops[this.leg + 1]);
+      if (!this.current.advance(outOfTime)) return false;
+      const leg = this.current.result;
+      this.current = null;
+      if (leg === null) {
+        this.done = true;
+        this.result = null;
+        break;
+      }
+      for (const hex of leg) this.route.push(hex);
+      this.leg += 1;
+    }
+    return true;
+  }
 }
 
 function walkBack(

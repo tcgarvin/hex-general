@@ -10,7 +10,18 @@ import { axialDistance, hexKey, type Axial } from "@/board/hex";
 import { ARTILLERY_RANGE } from "@/planning/rules";
 import type { components } from "@/lib/api/schema";
 
-import { add, covers, levelOf, NO_STOCKS, stocksOf, type Building, type Economy, type Stocks } from "./economy";
+import {
+  add,
+  covers,
+  levelOf,
+  NO_STOCKS,
+  RESOURCES,
+  stocksOf,
+  sub,
+  type Building,
+  type Economy,
+  type Stocks,
+} from "./economy";
 import type { SiteKind, WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -152,12 +163,28 @@ export interface BuildOption {
   level: number;
   cost: Stocks;
   turns: number;
-  /** Why it can't be ordered now, or `null` if it can. */
-  blocked: string | null;
+  /** Every reason it can't be ordered now, in plain words (empty: it can). */
+  blocked: string[];
 }
 
-/** The next level of `building` and whether it can be started this turn. */
-export function buildOption(state: WorldState, economy: Economy, slot: string, building: Building): BuildOption | null {
+/** What a short budget lacks, in plain words: "needs 5 more steel" (`null`: it covers). */
+export function shortfall(have: Stocks, cost: Stocks): string | null {
+  const short = RESOURCES.filter((r) => cost[r] > have[r]).map((r) => `${cost[r] - have[r]} more ${r}`);
+  return short.length === 0 ? null : `needs ${short.join(" and ")}`;
+}
+
+/**
+ * The next level of `building` and whether it can be started this turn. `plan`
+ * is the rest of the turn's plan: its recruits share the stocks, while a build
+ * already queued would be replaced by this one, so its cost doesn't count.
+ */
+export function buildOption(
+  state: WorldState,
+  economy: Economy,
+  slot: string,
+  building: Building,
+  plan: WorldPlan = EMPTY_PLAN,
+): BuildOption | null {
   const player = state.players.find((p) => p.id === slot);
   if (player === undefined) throw new Error(`no player ${slot} in the world view`);
   const work = player.construction ?? null;
@@ -165,21 +192,26 @@ export function buildOption(state: WorldState, economy: Economy, slot: string, b
   if (work !== null && work.building === building && work.completes_on <= state.turn) level = work.level;
   const next = economy.buildings[building][level];
   if (next === undefined) return null;
-  let blocked: string | null = null;
-  if (work !== null && work.completes_on > state.turn) blocked = "construction in progress";
-  else if (!covers(stocksOf(player), next.cost)) blocked = "not enough stocks";
+  const blocked: string[] = [];
+  if (work !== null && work.completes_on > state.turn) blocked.push("one building at a time");
+  const free = sub(stocksOf(player), recruitsCost(plan, economy));
+  const short = shortfall(free, next.cost);
+  if (short !== null) blocked.push(short);
   return { building, level: level + 1, cost: next.cost, turns: next.turns, blocked };
 }
 
 export interface RecruitOption {
   type: UnitType;
   cost: Stocks;
-  blocked: string | null;
+  /** Every reason it can't be recruited now, in plain words (empty: it can). */
+  blocked: string[];
 }
 
 /**
- * The unit types `slot` could recruit at `coord`, each with why not if it can't.
- * Empty when the hex isn't a held recruiting site at all.
+ * The unit types `slot` could recruit at `coord`, each with every reason it
+ * can't. Empty when the hex isn't a held recruiting site at all. `plan` is the
+ * rest of the turn's plan (its build and other recruits share the stocks and the
+ * army size; a recruit already staged here would be replaced).
  */
 export function recruitOptions(
   state: WorldState,
@@ -187,6 +219,8 @@ export function recruitOptions(
   economy: Economy,
   slot: string,
   coord: Axial,
+  plan: WorldPlan = EMPTY_PLAN,
+  armySize: number = Infinity,
 ): RecruitOption[] {
   const site = map.siteAt(coord.q, coord.r);
   if (site === undefined) return [];
@@ -199,23 +233,34 @@ export function recruitOptions(
   const occupied = state.units.some(
     (u) => u.posture === "deployed" && u.coord.q === coord.q && u.coord.r === coord.r,
   );
+  const here = hexKey(coord.q, coord.r);
+  const others = { ...plan, recruits: Object.fromEntries(Object.entries(plan.recruits).filter(([k]) => k !== here)) };
+  const fielded = state.units.filter((u) => u.owner === slot).length + Object.keys(others.recruits).length;
+  const free = sub(stocksOf(player), planCost(others, state, economy, slot));
   return UNIT_TYPES.filter((t) => RECRUIT_SITES[t].includes(site.kind)).map((type) => {
     const needs = RECRUIT_NEEDS[type];
-    let blocked: string | null = null;
-    if (needs !== undefined && levelOf(player, needs) < 1) blocked = `needs a ${needs}`;
-    else if (occupied) blocked = "a unit stands here";
-    return { type, cost: economy.recruitCost[type], blocked };
+    const cost = economy.recruitCost[type];
+    const blocked: string[] = [];
+    if (needs !== undefined && levelOf(player, needs) < 1) blocked.push(`needs a ${needs}`);
+    if (occupied) blocked.push("a unit stands on the hex");
+    if (fielded >= armySize) blocked.push(`army is full (${armySize})`);
+    const short = shortfall(free, cost);
+    if (short !== null) blocked.push(short);
+    return { type, cost, blocked };
   });
+}
+
+function recruitsCost(plan: WorldPlan, economy: Economy): Stocks {
+  return Object.values(plan.recruits).reduce((sum, r) => add(sum, economy.recruitCost[r.type]), NO_STOCKS);
 }
 
 /** What the plan spends this turn: the build order plus every recruit. */
 export function planCost(plan: WorldPlan, state: WorldState, economy: Economy, slot: string): Stocks {
-  let cost = NO_STOCKS;
+  let cost = recruitsCost(plan, economy);
   if (plan.build !== null) {
     const option = buildOption(state, economy, slot, plan.build);
     if (option !== null) cost = add(cost, option.cost);
   }
-  for (const r of Object.values(plan.recruits)) cost = add(cost, economy.recruitCost[r.type]);
   return cost;
 }
 

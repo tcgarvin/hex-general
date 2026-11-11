@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import fixture from "./__fixtures__/routes.json";
-import { columnCosts, findRoute, routePulses, travelEta } from "./routing";
+import { columnCosts, findRoute, RouteSearch, routePulses, travelEta } from "./routing";
 import { decodeWorldMap, type CompactMap } from "./worldMap";
 
 // Fixture: `cd api && uv run python scripts/route_fixture.py` (Python router's answers).
@@ -38,6 +38,17 @@ describe("column router parity with Python", () => {
       expect(travelEta(costs, route, { packed: true })).toBe(c.etaPacked);
       expect(travelEta(costs, route, { packed: false })).toBe(c.etaDeployed);
     });
+  });
+
+  it("gives the same routes when the search is sliced into many small steps", () => {
+    for (const c of cases) {
+      const search = new RouteSearch(costs, axial(c.origin), axial(c.destination), c.via.map(axial));
+      let slices = 0;
+      // Yield at every clock check: the search resumes where it stopped.
+      while (!search.advance(() => true)) slices += 1;
+      expect(slices).toBeLessThan(100_000);
+      expect(search.result === null ? null : search.result.map(({ q, r }) => [q, r])).toEqual(c.route);
+    }
   });
 
   it("plans the longest route quickly", () => {

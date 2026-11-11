@@ -44,7 +44,7 @@ export function MapControls({
     place();
     renderer.app.renderer.on("resize", place);
     return () => {
-      renderer.app.renderer.off("resize", place);
+      if (!renderer.destroyed) renderer.app.renderer.off("resize", place);
     };
   }, [renderer]);
 

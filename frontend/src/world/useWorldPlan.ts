@@ -8,13 +8,18 @@
 // replaces the whole plan (WORLD_SPEC §10.1), so the local copy is always sent in
 // full.
 //
-// Board clicks: one of your own units always selects it (a stack cycles). With a
-// unit selected, Move and Barrage clicks outside the reach keep the selection and
-// leave a `notice` saying why, rather than silently dropping it. Move reach is
-// occupancy-aware (`moveRules.ts`), so a plan doesn't route through your own
-// units or past an enemy.
+// Board clicks: one of your own units always selects it (a stack cycles), except
+// Shift+click on a neighbouring unit of yours, which orders the two to swap
+// places (relief in place, `relief.ts`). With a unit selected, Move and Barrage
+// clicks outside the reach keep the selection and leave a `notice` saying why,
+// rather than silently dropping it. Move reach is occupancy-aware
+// (`moveRules.ts`), so a plan doesn't route through your own units or past an
+// enemy.
+//
+// Unsent edits are mirrored into `sessionStorage` (`planStore.ts`) and restored
+// after a reload of the same turn.
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { axialDistance, axialEqual, axialNeighbors, hexKey, type Axial, type Hex } from "@/board/hex";
 import { api } from "@/lib/api/client";
@@ -34,7 +39,9 @@ import {
   type WorldOrder,
   type WorldPlan,
 } from "./plan";
-import { columnCosts, findRoute, travelEta, type ColumnCosts } from "./routing";
+import { clearUnsentPlan, loadUnsentPlan, saveUnsentPlan } from "./planStore";
+import { hostileZoc, swapBlocked, swapOrders, swapPartner } from "./relief";
+import { columnCosts, findRoute, RouteSearch, travelEta, type ColumnCosts } from "./routing";
 import { cycleUnit } from "./unitCycle";
 import type { WorldView } from "./useWorld";
 import type { WorldMap } from "./worldMap";
@@ -74,6 +81,11 @@ export interface TravelPreview {
   caution: boolean;
 }
 
+/** Modifier keys held during a board click. */
+export interface ClickMods {
+  shift: boolean;
+}
+
 export const NOT_REACHABLE = "Not reachable this turn: use Travel for longer trips";
 export const OUT_OF_RANGE = `Out of range: guns reach ${ARTILLERY_RANGE} hexes`;
 
@@ -85,6 +97,8 @@ export interface WorldPlanning {
   submitted: boolean;
   /** The previous turn resolved while it had edits that were never sent. */
   droppedTurn: number | null;
+  /** The plan shown was restored from this tab's storage after a reload, unsent. */
+  restored: boolean;
   selectedUnit: Unit | null;
   selectedHex: Axial | null;
   mode: PlanMode;
@@ -96,16 +110,23 @@ export interface WorldPlanning {
   /** Hexes the selected artillery could shell (barrage mode). */
   barrageRange: readonly Axial[];
   notice: Notice | null;
-  onHexClick: (hex: Axial) => void;
+  onHexClick: (hex: Axial, mods?: ClickMods) => void;
   selectUnit: (unitId: number | null) => void;
   /** Select the next (1) or previous (-1) own unit, idle ones first; returns it. */
   cycleUnit: (dir: 1 | -1) => Unit | null;
   /** Escape: leave Move or Barrage mode, else drop the selection. */
   cancel: () => void;
-  /** The travel route a click on `hex` would order for the selected unit. */
-  previewTravel: (hex: Axial) => TravelPreview | null;
+  /**
+   * Search, without blocking the page, the travel route a click on `hex` would
+   * order for the selected unit; `done` gets it (or `null`: no route). Returns a
+   * cancel function. The finished route is cached, so the click reuses it.
+   */
+  previewTravel: (hex: Axial, done: (preview: TravelPreview | null) => void) => () => void;
   setMode: (mode: PlanMode) => void;
+  /** Set or clear a unit's order (clearing one half of a swap clears both). */
   setOrder: (unitId: number, order: WorldOrder | null) => void;
+  /** Order the selected unit and its neighbour `friendId` to swap hexes (relief in place). */
+  orderSwap: (friendId: number) => void;
   setOnArrival: (unitId: number, posture: Posture) => void;
   setBuild: (building: Building | null) => void;
   setRecruit: (coord: Axial, type: UnitType | null) => void;
@@ -123,10 +144,23 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   const server = useMemo(() => planFromSubmission(view.submission), [view.submission]);
   // `sent`: the server accepted this exact local plan (so a turn resolving under
   // it loses nothing).
-  const [local, setLocal] = useState<{ turn: number; plan: WorldPlan; sent: boolean } | null>(null);
+  // `restored`: the plan came back from storage after a reload and is still unsent.
+  const [local, setLocal] = useState<{ turn: number; plan: WorldPlan; sent: boolean; restored: boolean } | null>(() => {
+    const saved = loadUnsentPlan(view.game_id, view.turn);
+    return saved === null ? null : { turn: view.turn, plan: saved, sent: false, restored: true };
+  });
   const plan = local !== null && local.turn === view.turn ? local.plan : server;
   const droppedTurn = local !== null && local.turn < view.turn && !local.sent ? local.turn : null;
   const dirty = !samePlan(plan, server, slot);
+  const restored = dirty && local !== null && local.turn === view.turn && local.restored;
+
+  // Mirror unsent edits into this tab's storage; forget them once sent or undone.
+  const gameId = view.game_id;
+  const turn = view.turn;
+  useEffect(() => {
+    if (dirty) saveUnsentPlan(gameId, turn, plan);
+    else clearUnsentPlan(gameId, turn);
+  }, [gameId, turn, plan, dirty]);
 
   const [selection, setSelection] = useState<{ turn: number; unitId: number | null; hex: Axial | null; mode: PlanMode }>(
     { turn: view.turn, unitId: null, hex: null, mode: "travel" },
@@ -149,7 +183,7 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     (change: (p: WorldPlan) => WorldPlan) => {
       setLocal((prev) => {
         const base = prev !== null && prev.turn === view.turn ? prev.plan : server;
-        return { turn: view.turn, plan: change(base), sent: false };
+        return { turn: view.turn, plan: change(base), sent: false, restored: false };
       });
     },
     [server, view.turn],
@@ -159,11 +193,16 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     (unitId: number, order: WorldOrder | null) =>
       edit((p) => {
         const orders = { ...p.orders };
+        // A swap is two orders that only work together: dropping or replacing
+        // one half would leave the other walking into a hex that stays held.
+        const unit = ownUnits.find((u) => u.id === unitId);
+        const partner = unit === undefined ? null : swapPartner(unit, p.orders, ownUnits);
+        if (partner !== null) delete orders[partner.id];
         if (order === null) delete orders[unitId];
         else orders[unitId] = order;
         return { ...p, orders };
       }),
-    [edit],
+    [edit, ownUnits],
   );
 
   const routes = useMemo(
@@ -202,10 +241,38 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     [view.turn],
   );
 
+  const zoc = useMemo(() => hostileZoc(state.units, slot), [state.units, slot]);
+  const orderSwap = useCallback(
+    (friendId: number) => {
+      const friend = ownUnits.find((u) => u.id === friendId);
+      if (selectedUnit === null || friend === undefined) return;
+      const blocked = swapBlocked(selectedUnit, friend, zoc);
+      if (blocked !== null) {
+        warn(`Can't swap: ${blocked}`);
+        return;
+      }
+      edit((p) => {
+        const orders = { ...p.orders };
+        // Each unit may be half of another swap already; that one is undone.
+        for (const u of [selectedUnit, friend]) {
+          const old = swapPartner(u, p.orders, ownUnits);
+          if (old !== null) delete orders[old.id];
+        }
+        return { ...p, orders: { ...orders, ...swapOrders(selectedUnit, friend) } };
+      });
+    },
+    [ownUnits, selectedUnit, zoc, warn, edit],
+  );
+
   const onHexClick = useCallback(
-    (hex: Axial) => {
+    (hex: Axial, mods: ClickMods = { shift: false }) => {
       const key = hexKey(hex.q, hex.r);
       const here = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
+      const friend = here.find((u) => u.posture === "deployed");
+      if (mods.shift && selectedUnit !== null && friend !== undefined && friend.id !== selectedUnit.id) {
+        orderSwap(friend.id);
+        return;
+      }
       if (here.length > 0) {
         // Your own unit always selects, in every mode. Clicking a stack again
         // steps through its units, then the hex itself.
@@ -239,23 +306,29 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       }
       select(null, hex);
     },
-    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, setOrder, select, warn],
+    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, setOrder, select, warn, orderSwap],
   );
 
   const previewTravel = useCallback(
-    (hex: Axial): TravelPreview | null => {
-      if (selectedUnit === null || axialEqual(hex, selectedUnit.coord)) return null;
+    (hex: Axial, done: (preview: TravelPreview | null) => void): (() => void) => {
+      if (selectedUnit === null || axialEqual(hex, selectedUnit.coord)) {
+        done(null);
+        return () => {};
+      }
       const cell = map.hexAt(hex.q, hex.r);
-      if (cell === undefined || !isPassable(cell.terrain)) return null;
-      const path = cachedRoute(costs, selectedUnit.coord, hex, []);
-      if (path === null) return null;
+      if (cell === undefined || !isPassable(cell.terrain)) {
+        done(null);
+        return () => {};
+      }
+      const from = selectedUnit.coord;
       const packed = selectedUnit.posture === "column";
-      return {
-        from: selectedUnit.coord,
-        path,
-        eta: travelEta(costs, path, { packed }),
-        caution: runsIntoContact(selectedUnit.coord, path, zone),
-      };
+      const finish = (path: Axial[] | null) =>
+        done(
+          path === null
+            ? null
+            : { from, path, eta: travelEta(costs, path, { packed }), caution: runsIntoContact(from, path, zone) },
+        );
+      return searchRoute(costs, from, hex, finish);
     },
     [selectedUnit, map, costs, zone],
   );
@@ -293,6 +366,7 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     dirty,
     submitted: view.submission !== null && view.submission !== undefined,
     droppedTurn,
+    restored,
     selectedUnit,
     selectedHex: sel.hex,
     mode: selectedUnit === null ? "travel" : sel.mode,
@@ -318,6 +392,7 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     previewTravel,
     setMode: (mode) => select(sel.unitId, sel.hex, mode),
     setOrder,
+    orderSwap,
     setOnArrival: (unitId, posture) =>
       edit((p) => {
         const order = p.orders[unitId];
@@ -389,17 +464,57 @@ function plannedRoutes(
 // life: re-planning one unit then costs one search, not one per unit.
 const routeCache = new WeakMap<ColumnCosts, Map<string, Axial[] | null>>();
 
-function cachedRoute(costs: ColumnCosts, from: Axial, to: Axial, via: readonly Axial[]): Axial[] | null {
+function cacheFor(costs: ColumnCosts): Map<string, Axial[] | null> {
   let cache = routeCache.get(costs);
   if (cache === undefined) {
     cache = new Map();
     routeCache.set(costs, cache);
   }
-  const key = [from, ...via, to].map((a) => hexKey(a.q, a.r)).join(">");
   // Hover previews search a route per hex the pointer rests on; keep the cache bounded.
   if (cache.size > 4000) cache.clear();
+  return cache;
+}
+
+const routeKey = (from: Axial, to: Axial, via: readonly Axial[]) => [from, ...via, to].map((a) => hexKey(a.q, a.r)).join(">");
+
+function cachedRoute(costs: ColumnCosts, from: Axial, to: Axial, via: readonly Axial[]): Axial[] | null {
+  const cache = cacheFor(costs);
+  const key = routeKey(from, to, via);
   if (!cache.has(key)) cache.set(key, findRoute(costs, from, to, via));
   return cache.get(key) ?? null;
+}
+
+/** Main-thread time per slice of a background route search, leaving room for a frame. */
+const SLICE_MS = 8;
+
+/**
+ * Find the route `from` → `to` in slices between frames, so a far destination on a
+ * big map never stalls the page; `done` gets it (once, unless cancelled first).
+ * Same search and tie-breaks as `findRoute`, and the result goes into the cache.
+ */
+function searchRoute(costs: ColumnCosts, from: Axial, to: Axial, done: (path: Axial[] | null) => void): () => void {
+  const key = routeKey(from, to, []);
+  const cache = cacheFor(costs);
+  if (cache.has(key)) {
+    done(cache.get(key) ?? null);
+    return () => {};
+  }
+  const search = new RouteSearch(costs, from, to);
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const slice = () => {
+    const until = performance.now() + SLICE_MS;
+    if (search.advance(() => performance.now() > until)) {
+      timer = null;
+      cacheFor(costs).set(key, search.result);
+      done(search.result);
+    } else {
+      timer = setTimeout(slice, 0);
+    }
+  };
+  slice();
+  return () => {
+    if (timer !== null) clearTimeout(timer);
+  };
 }
 
 /** The map hexes within `radius` of `center`, as the 2-player reach helpers expect. */

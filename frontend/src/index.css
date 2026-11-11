@@ -71,3 +71,31 @@ body {
     url("./board/panels/chrome/wood.png");
   background-repeat: repeat;
 }
+
+/* World screen moments (WorldShell): the "Turn N resolved" banner drops in and
+   fades; the report panel flashes a brass ring when a new report arrives. */
+@keyframes fhq-drop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  8%,
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes fhq-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(217 176 96 / 0);
+  }
+  30% {
+    box-shadow: 0 0 0 4px rgb(217 176 96 / 0.9);
+  }
+}

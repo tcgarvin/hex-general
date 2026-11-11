@@ -38,7 +38,7 @@ export function WorldBoard({
    * count). `reveal`: only if the hex is off-screen or under a panel.
    */
   panTo: { hex: Axial; seq: number; reveal?: boolean } | null;
-  onHexClick: (hex: Axial) => void;
+  onHexClick: (hex: Axial, mods: { shift: boolean }) => void;
   onRenderer: (renderer: WorldRenderer | null) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -67,7 +67,7 @@ export function WorldBoard({
           return;
         }
         el.appendChild(app.canvas);
-        made = new WorldRenderer(app, map, { onHexClick: (hex) => clickRef.current(hex) });
+        made = new WorldRenderer(app, map, { onHexClick: (hex, mods) => clickRef.current(hex, mods) });
         if (focusRef.current !== null) made.centerOn(focusRef.current, undefined, false);
         setRenderer(made);
         rendererRef.current(made);

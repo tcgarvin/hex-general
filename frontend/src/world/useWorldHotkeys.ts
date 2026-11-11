@@ -31,6 +31,7 @@ export const SHORTCUTS: readonly { keys: string; does: string }[] = [
   { keys: "B", does: "Barrage mode (artillery)" },
   { keys: "R / H", does: "Rest / Hold" },
   { keys: "X or Delete", does: "Clear the unit's order" },
+  { keys: "Shift+click", does: "Swap places with a neighbouring unit of yours" },
   { keys: "Esc", does: "Leave the mode, then deselect" },
   { keys: "Ctrl+Enter", does: "Submit the plan" },
   { keys: "?", does: "This list" },
@@ -178,7 +179,7 @@ function handleKey(e: KeyboardEvent, o: HotkeyOptions, renderer: WorldRenderer):
       if (key === "Tab" && !focusIsFree()) return false;
       const back = key === "," || (key === "Tab" && e.shiftKey);
       const unit = planning.cycleUnit(back ? -1 : 1);
-      if (unit !== null) renderer.reveal(unit.coord);
+      if (unit !== null) renderer.focusUnit(unit.coord);
       return true;
     }
   }
