@@ -62,12 +62,21 @@ def resolve_world_economy(
             site = sites[settlement.coord]
             income[settlement.controlled_by] += economy.income(site.kind, site.level)
 
+    # Each player's units, in state order. A disband removes only the settling
+    # player's own unit, so later players' lists stay exact.
+    owned: dict[PlayerId, list[Unit]] = {p.id: [] for p in new_state.players}
+    for unit in new_state.units:
+        if unit.owner in owned:
+            owned[unit.owner].append(unit)
+
     events: list[Event] = []
     for player in new_state.players:
         orders = by_owner.get(player.id, EconomyOrders(owner=player.id))
         events.extend(_complete_construction(player, new_state.turn))
         events.extend(
-            _settle_stocks(new_state, economy, player, income[player.id], orders)
+            _settle_stocks(
+                new_state, economy, player, owned[player.id], income[player.id], orders
+            )
         )
         events.extend(_start_construction(economy, player, orders, new_state.turn))
     return new_state, events
@@ -104,10 +113,11 @@ def _settle_stocks(
     state: GameState,
     economy: WorldEconomy,
     player: Player,
+    owned: list[Unit],
     income: Stocks,
     orders: EconomyOrders,
 ) -> list[Event]:
-    owned = [u for u in state.units if u.owner == player.id]
+    """Income, upkeep and shortages for ``player``, whose units are ``owned``."""
     upkeep = Stocks()
     for unit in owned:
         upkeep += economy.upkeep[unit.type]
