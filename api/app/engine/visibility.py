@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from app.engine.hex_coords import Axial, line, within
 from app.engine.models import GameState, PlayerId, Unit
-from app.engine.stats import TERRAIN_STATS, UNIT_STATS
+from app.engine.stats import UNIT_STATS
 
 
 def has_line_of_sight(state: GameState, source: Axial, target: Axial) -> bool:
@@ -33,12 +33,16 @@ def has_line_of_sight(state: GameState, source: Axial, target: Axial) -> bool:
     Both endpoints are assumed on-map; a hex line between two on-map coordinates
     stays on-map, so the intermediate lookups are trusted to resolve.
     """
+    return _clear_sightline(state.map.sight_blockers, source, target)
+
+
+def _clear_sightline(blockers: frozenset[Axial], source: Axial, target: Axial) -> bool:
+    """`has_line_of_sight` against the map's `GameMap.sight_blockers`."""
     if source == target:
         return True
     sightline = line(source, target)
     for coord in sightline[1:-1]:
-        between = state.hex_at(coord)
-        if between is not None and TERRAIN_STATS[between.terrain].blocks_line_of_sight:
+        if coord in blockers:
             return False
     return True
 
@@ -51,10 +55,12 @@ def unit_visible_hexes(state: GameState, unit: Unit) -> set[Axial]:
     """
     vision = UNIT_STATS[unit.type].vision
     on_map = state.map.index
+    blockers = state.map.sight_blockers
+    origin = unit.coord
     return {
         coord
-        for coord in within(unit.coord, vision)
-        if coord in on_map and has_line_of_sight(state, unit.coord, coord)
+        for coord in within(origin, vision)
+        if coord in on_map and _clear_sightline(blockers, origin, coord)
     }
 
 

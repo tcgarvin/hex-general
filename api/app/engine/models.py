@@ -175,6 +175,7 @@ class GameMap(BaseModel):
     _site_index: dict[Axial, MapSite] | None = PrivateAttr(default=None)
     _plot_hexes: frozenset[Axial] | None = PrivateAttr(default=None)
     _column_costs: dict[tuple[int, int], int] | None = PrivateAttr(default=None)
+    _sight_blockers: frozenset[Axial] | None = PrivateAttr(default=None)
 
     @property
     def index(self) -> dict[Axial, Hex]:
@@ -197,6 +198,18 @@ class GameMap(BaseModel):
         if self._plot_hexes is None:
             self._plot_hexes = frozenset(c for s in self.sites for c in s.plot)
         return self._plot_hexes
+
+    @property
+    def sight_blockers(self) -> frozenset[Axial]:
+        """Every hex whose terrain blocks line of sight (SPEC §9.2). Built once,
+        then cached, like `index`."""
+        if self._sight_blockers is None:
+            self._sight_blockers = frozenset(
+                h.coord
+                for h in self.hexes
+                if TERRAIN_STATS[h.terrain].blocks_line_of_sight
+            )
+        return self._sight_blockers
 
     @property
     def column_costs(self) -> dict[tuple[int, int], int]:
