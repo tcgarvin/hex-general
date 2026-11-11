@@ -153,7 +153,7 @@ class _PulseState:
     destroyed: set[UnitId]
     events: list[Event]
     hostile: Callable[[PlayerId, PlayerId], bool]
-    # A stationary defender's terrain bonus at a hex (`GameState.terrain_defense`).
+    # A stationary defender's terrain bonus at a hex (`Ground.terrain_defense`).
     terrain_defense: Callable[[Axial], int]
     start_pos: dict[Axial, UnitId] = field(default_factory=dict)
 
@@ -196,6 +196,7 @@ def resolve_movement(
     pulse_count = max((m.max_steps for m in movers.values()), default=0)
     if columns or marchers:
         pulse_count = max(pulse_count, COLUMN_RULES.pulses_per_turn)
+    terrain_defense = state.ground().terrain_defense
     ctx: _PulseState | None = None
     for pulse in range(1, pulse_count + 1):
         ctx = _PulseState(
@@ -210,7 +211,7 @@ def resolve_movement(
             destroyed=destroyed,
             events=events,
             hostile=state.hostile,
-            terrain_defense=state.terrain_defense,
+            terrain_defense=terrain_defense,
             start_pos=dict(positions),
         )
         if pulse == 1:

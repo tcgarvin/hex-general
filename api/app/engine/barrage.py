@@ -84,6 +84,8 @@ def resolve_barrage(
         (o for o in orders if isinstance(o, BarrageOrder)), key=lambda o: o.unit_id
     )
 
+    ground = state.ground()
+
     # Pass 1: validate and compute each barrage's damage vs. its start occupants.
     shots: list[_Shot] = []
     total_damage: dict[UnitId, int] = defaultdict(int)
@@ -105,7 +107,7 @@ def resolve_barrage(
                 f"barrage target {order.target} is out of range for unit {artillery.id}"
             )
 
-        terrain_bonus = state.terrain_defense(order.target)
+        terrain_bonus = ground.terrain_defense(order.target)
         strikes = tuple(
             _strike(occupant, terrain_bonus, occupant.id in hold_ids)
             for occupant in occupants_at.get(order.target, [])

@@ -48,10 +48,11 @@ def resolve_repair(
         if isinstance(o, RestOrder) and o.unit_id not in damaged
     }
 
+    ground = new_state.ground()
     for unit in new_state.units:
         if unit.id not in resting:
             continue
-        in_settlement = new_state.settlement_ground(unit.coord)
+        in_settlement = ground.settlement_ground(unit.coord)
         amount, ceiling = (
             (new_state.config.settlement_repair, _SETTLEMENT_CEILING)
             if in_settlement

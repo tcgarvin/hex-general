@@ -16,7 +16,7 @@ Identity types:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from enum import StrEnum
 from typing import Annotated, Literal
 
@@ -531,19 +531,65 @@ class GameState(BaseModel):
         vacant base slot (no settlement, nothing there yet). Every base is size
         one today, so a base covers only its anchor hex; when bases grow over
         `BASE_FOOTPRINT`, the other hexes a grown base covers belong here.
+
+        Scans the settlements for a site hex; a phase asking about many hexes
+        uses `ground` instead.
         """
-        if self.map.index[coord].terrain in SETTLEMENT_TERRAINS:
-            return True
-        return coord in self.map.site_index and self.settlement_at(coord) is not None
+        return _settlement_ground(
+            self.map, coord, lambda c: self.settlement_at(c) is not None
+        )
 
     def terrain_defense(self, coord: Axial) -> int:
         """The terrain defence bonus a stationary defender on ``coord`` gets
         (SPEC §4.2): its terrain's, or `SETTLEMENT_DEFENSE_BONUS` on settlement
         ground if that is higher."""
-        bonus = TERRAIN_STATS[self.map.index[coord].terrain].defense_bonus
-        if self.settlement_ground(coord):
-            return max(bonus, SETTLEMENT_DEFENSE_BONUS)
-        return bonus
+        return _terrain_defense(self.map, coord, self.settlement_ground(coord))
+
+    def ground(self) -> Ground:
+        """`settlement_ground` and `terrain_defense` for many hexes, from indexes."""
+        return Ground(self.map, frozenset(s.coord for s in self.settlements))
+
+
+class Ground:
+    """Settlement ground and terrain defence for one state (`GameState.ground`).
+
+    Answers what `GameState.settlement_ground` and `GameState.terrain_defense`
+    do without scanning the settlement list per hex. It snapshots which hexes
+    hold a settlement record. No phase of a turn adds or removes one (capture
+    changes only who controls it, and ground does not depend on control), so a
+    snapshot taken at the start of a phase holds for the whole phase.
+    """
+
+    def __init__(self, game_map: GameMap, settled: frozenset[Axial]) -> None:
+        self._map = game_map
+        self._settled = settled
+
+    def settlement_ground(self, coord: Axial) -> bool:
+        """`GameState.settlement_ground` for ``coord``."""
+        return _settlement_ground(self._map, coord, self._settled.__contains__)
+
+    def terrain_defense(self, coord: Axial) -> int:
+        """`GameState.terrain_defense` for ``coord``."""
+        return _terrain_defense(self._map, coord, self.settlement_ground(coord))
+
+
+def _settlement_ground(
+    game_map: GameMap, coord: Axial, has_settlement: Callable[[Axial], bool]
+) -> bool:
+    """The settlement-ground rule (`GameState.settlement_ground`), given a way to
+    ask whether a hex holds a settlement record."""
+    if game_map.index[coord].terrain in SETTLEMENT_TERRAINS:
+        return True
+    return coord in game_map.site_index and has_settlement(coord)
+
+
+def _terrain_defense(game_map: GameMap, coord: Axial, on_ground: bool) -> int:
+    """The terrain-defence rule (`GameState.terrain_defense`), given whether
+    ``coord`` is settlement ground."""
+    bonus = TERRAIN_STATS[game_map.index[coord].terrain].defense_bonus
+    if on_ground:
+        return max(bonus, SETTLEMENT_DEFENSE_BONUS)
+    return bonus
 
 
 class MoveOrder(BaseModel):
