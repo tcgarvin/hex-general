@@ -1,5 +1,13 @@
 # Frontend Spec — hex-general v0.1
 
+> **Retired 2026-11-10:** the personas, journeys, route table and polling flow below
+> describe the 2-player match client (create or join with an invite, `/game/{id}`,
+> replay). That game is deleted and this doc is kept as history. The current client
+> is the world view (`WORLD_SPEC.md` §11, `frontend/src/world/`); see "Current
+> routes" under "Page / route structure". Still current from this doc: the
+> identity/SSO model, the dev profile switcher, the polling-not-Realtime decision and
+> the local dev loop.
+
 Personas, journeys, and page structure for the browser client. Implements the UX
 requirements in [`SPEC.md`](./SPEC.md) §16 across roadmap Phases 7–10
 ([`ROADMAP.md`](./ROADMAP.md)). Read this before designing screens; it sets *who*
@@ -71,6 +79,13 @@ accounts give a clean "log in, land back in your game" loop.
 
 ## Page / route structure
 
+**Current routes (2026-11-10):** `/login`; `/stats` (public); `/` (dispatcher:
+redirects to `/world/{id}` if the caller holds a seat, else shows the "Join a world"
+list from `GET /worlds`); `/account`; `/world/{id}` (the world shell: board, planning,
+last-turn report). The dev profile switcher is still a corner overlay for dev users.
+The routes in the table below are the retired 2-player set.
+
+
 One-game-per-user keeps the route table tiny. The **game shell** is the
 load-bearing component: the polling hook + game-context provider live there, and
 every later phase mounts inside it.
@@ -89,12 +104,13 @@ The "lobby" collapses to **login → dispatcher → create-or-join → game shel
 ## Live updates: polling, not Realtime
 
 Per roadmap decision 8, the client learns turn progress by **polling**
-`GET /games/{id}` on an interval (no Supabase Realtime). When `turn`/`status`/
+`GET /games/{id}` on an interval (no Supabase Realtime; the world client now polls
+`GET /worlds/{id}`). When `turn`/`status`/
 `locked[slot]` advances, fetch the replay. One data path (the REST API).
 
 ## Local dev playtesting
 
-A dev must be able to play a full match on a laptop without touching the deployed
+A dev must be able to play a full game on a laptop without touching the deployed
 stack or configuring Google OAuth.
 
 - **Local stack:** `supabase start` runs Postgres + Auth + Studio in Docker from
@@ -120,7 +136,8 @@ stack or configuring Google OAuth.
   token + secret-in-link. Adds backend work (JWT validation, `players.user_id`) the
   v0.1 framing had deferred — the part of Phase 7 most likely to balloon. **Shipped**
   (backend slice): JWT verified via the project JWKS (ES256), `players.user_id`,
-  invite-gated join, `GET /games/active` dispatcher.
+  invite-gated join, `GET /games/active` dispatcher (all since replaced by the
+  world routes: `GET /worlds/active`, `POST /worlds/{id}/join`).
 - **Dev switcher on deployed, gated by a role:** revises the original "deployed API
   rejects the dev path." A *very lightweight* role system instead — a dev is a user
   whose id is in the API's `DEV_USER_IDS` allowlist (no DB role table); a dev (only a

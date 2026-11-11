@@ -1,7 +1,7 @@
 """Seed local Supabase Auth with dev playtest accounts (roadmap Phase 7, Slice 3).
 
-Run against a **local** `supabase start` stack so a dev can play a full two-sided
-match on a laptop without Google OAuth: this creates the ``@hex.local`` accounts
+Run against a **local** `supabase start` stack so a dev can playtest a world with
+several human accounts on a laptop without Google OAuth: this creates the ``@hex.local`` accounts
 that the dev-profile switcher impersonates. Like `app.accounts`, it is an I/O
 boundary that uses the service-role admin API — server-side only, never the
 browser.
@@ -33,11 +33,11 @@ from app.db import get_supabase_client
 # so a fixed, well-known password is intentional (it is how you log in to play).
 DEV_PASSWORD = "devpass123"
 
-# The roster of playtest identities. Two is enough to drive both sides of a match
-# via the dev switcher; emails share the @hex.local domain so `app.accounts`
+# The roster of playtest identities. dev1 and dev2 are two humans to drive in one
+# world via the dev switcher; emails share the @hex.local domain so `app.accounts`
 # already surfaces them in the switcher. dev3 is a spare for automated checks: an
-# account can hold only one active game or world, so a check that needs a fresh
-# world uses dev3 instead of resigning a playtest held by dev1 or dev2.
+# account can hold only one active world, so a check that needs a fresh world
+# uses dev3 instead of leaving a playtest held by dev1 or dev2.
 DEV_USER_EMAILS: tuple[str, ...] = (
     f"dev1{DEV_EMAIL_DOMAIN}",
     f"dev2{DEV_EMAIL_DOMAIN}",

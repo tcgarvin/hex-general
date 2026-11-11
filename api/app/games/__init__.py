@@ -1,4 +1,4 @@
-"""Phase 5: turn lifecycle API & persistence (async two-player).
+"""World games: the turn lifecycle API and its persistence (WORLD_SPEC §10.1).
 
 Wires the pure execution engine (`app.engine`) to the deployed stack with real
 player identity. This package owns the HTTP boundary (request/response schemas,

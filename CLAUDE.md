@@ -12,13 +12,15 @@ Browser ──> Vercel (Vite SPA, frontend/) ──> Cloud Run (FastAPI, api/) �
 
 The `api/` service is the real workload: it will host the deterministic execution engine (movement pulses, simultaneous combat, capture/economy). The frontend is the planning + replay UI. Supabase holds game state.
 
+**The server runs only world games** (`docs/WORLD_SPEC.md`). The old 2-player match (lobby, invite link, vs-bot, resign, match replay) was retired on 2026-11-10; it is deleted from `api/` and `frontend/`, and `docs/SPEC.md` rules still govern the engine. The world frontend is `frontend/src/world/` (`WorldShell.tsx`, `WorldRenderer.ts`); the hex tile and join modules shared with it stay in `frontend/src/board/`. The retirement is not deployed yet (see `docs/VISION.md` §13).
+
 ## Layout
 
 - `frontend/` — Vite + React + TS SPA (has its own `AGENTS.md`/`CLAUDE.md`).
 - `api/` — FastAPI service, **managed with uv** (not pip).
 - `infra/setup-gcp.sh` — idempotent GCP provisioning (re-run safely).
 - `.github/workflows/` — `frontend.yml`, `api.yml`, `supabase.yml`.
-- `docs/SPEC.md` — v0.1 design (the source of truth for game rules).
+- `docs/SPEC.md` — v0.1 design (the source of truth for game rules; its 2-player match flow is retired); `docs/WORLD_SPEC.md` — the world game.
 
 ## Commands
 
@@ -37,7 +39,7 @@ foreground/`run_in_background` Bash calls (their streaming output floods this
 context). To health-check them, **spawn the `dev-doctor` subagent**
 (`.claude/agents/dev-doctor.md`, Haiku); it reads the logs in its own context and
 returns a compact verdict, restarts a cleanly-dead server, and escalates real
-faults rather than fixing them. See `docs/LOCAL_DEV.md`.
+faults rather than fixing them. See `docs/LOCAL_DEV.md`. To get a world to look at: `./scripts/game-setup.sh create-world`, then `join <game_id>` (and `tick <game_id>` to resolve a turn); the app opens it at `/world/<game_id>`.
 
 **Art generation goes to Codex from now on** (user, 2026-11-08): new art (tiles,
 tokens, UI and strategic-map art) is generated with Codex (the `codex` CLI and its

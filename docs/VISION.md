@@ -245,6 +245,13 @@ big world games. 2-player matches are retired, not kept alongside, so the world 
 replaces lobby, invite and vs-bot rather than adding a second mode. World work stays
 local until that switch.
 
+**Retirement done in code (2026-11-10, not yet deployed):** the 2-player match, its
+`/games` API, lobby, invite link, vs-bot bots and the 2-player board UI are deleted from
+`api/` and `frontend/`, and a migration (`20261110200000_retire_matches.sql`) removes
+non-world games and drops `games.invite_token`. The deployed site still runs the old
+build until the cutover deploy, and the turn-clock infra
+(`infra/setup-world-clock.sh`) is still not applied.
+
 **Before the live playtest (decided, 2026-11-09):**
 - **Fun before contact.** The pre-contact loop of expansion and economy has to be fun
   on its own.

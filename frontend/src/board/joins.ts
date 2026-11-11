@@ -1,4 +1,4 @@
-// Same-terrain join sprites (shared by the 2-player board and the world board).
+// Same-terrain join sprites (used by the world board).
 //
 // Every woods/city tile keeps a ring of plain ground inside its hexagon, so two
 // adjacent hexes of the same terrain show a thin grass moat between them and a

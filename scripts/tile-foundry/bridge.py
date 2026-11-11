@@ -7,7 +7,7 @@ A bridge tile = a ratified river base (`frontend/src/board/tiles/river/*.png`)
 + a deck sprite (segmented from a white-background NBP deck sheet, exactly the
 white-sheet route used by woods/city/hills — see `vignette.py`) + baked road
 ramps drawn deterministically to match the render-time vector road overlay
-(`Board.tsx`: colour 0x6b4f2a, width 6 world px = 12 tile px, running from the
+(the retired 2-player `Board.tsx`, removed 2026-11-10: colour 0x6b4f2a, width 6 world px = 12 tile px, running from the
 hex centre to the connected edge midpoints).
 
 The deck sprites carry a *little* perspective lift (low railings along the long
@@ -89,7 +89,7 @@ TILE_PX = 128
 HEX_WIDTH = 128  # point-to-point width (== 2 * hex.ts HEX_SIZE at 2x tile scale)
 CENTRE = TILE_PX / 2.0
 
-# render-time vector road (Board.tsx): stroke width 6 world px, tile is 2x
+# render-time vector road (retired Board.tsx): stroke width 6 world px, tile is 2x
 # world scale, so 12 tile px; colour 0x6b4f2a.
 ROAD_COLOR = (0x6B, 0x4F, 0x2A)
 ROAD_WIDTH_PX = 12

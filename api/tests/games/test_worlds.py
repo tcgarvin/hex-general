@@ -13,13 +13,15 @@ from app.engine.hex_coords import Axial, neighbors
 from app.engine.economy_rules import Building
 from app.engine.models import EconomyOrders
 from app.engine.models import GameState, MoveOrder, Unit
-from app.games.repo import KEEP, Keep
-from app.games.repo import GameRecord
+from app.games.repo import KEEP, GameRecord, Keep
 from app.games.service import (
     WORLD_BOT_POLICY,
+    GameAlreadyActive,
     GameFull,
+    GameNotActive,
+    GameNotFound,
     GameService,
-    NotAWorld,
+    ReplayNotFound,
 )
 from games.fake_repo import FakeGameRepo
 
@@ -40,8 +42,8 @@ def test_create_world_seats_bots_and_stores_the_map_apart(
     game_id = service.create_world(slots=4, seed=3, bots=2)
     game = repo.get_game(game_id)
 
-    assert game is not None and game.is_world and game.status == "active"
-    assert game.state.map is repo.get_map(game.map_id or "")
+    assert game is not None and game.status == "active"
+    assert game.state.map is repo.get_map(game.map_id)
     assert [p.id for p in game.state.players] == ["s001", "s002"]
     players = repo.list_players(game_id)
     assert {p.slot for p in players} == {"s001", "s002"}
@@ -104,12 +106,72 @@ def test_ticks_advance_bots_without_any_human(
     assert any(moved.get(u.id) != u.coord for u in start.state.units)
 
 
-def test_world_operations_refuse_a_match(service: GameService) -> None:
-    credentials = service.create_game("twin_rivers", "user-1")
-    with pytest.raises(NotAWorld):
-        service.tick_world(credentials.game_id)
-    with pytest.raises(NotAWorld):
-        service.join_world(credentials.game_id, "user-2")
+def test_the_active_world_is_the_one_the_user_joined(service: GameService) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    credentials = service.join_world(game_id, "user-1")
+
+    active = service.get_active_world("user-1").active_world
+
+    assert active is not None
+    assert (active.game_id, active.slot) == (game_id, credentials.slot)
+
+
+def test_a_user_without_a_world_has_no_active_world(service: GameService) -> None:
+    assert service.get_active_world("user-1").active_world is None
+
+
+def _finish(repo: FakeGameRepo, game_id: str) -> None:
+    """End a world outright, as a decided victory would."""
+    game = repo.get_game(game_id)
+    assert game is not None
+    repo.set_game_state(game, game.state, "finished")
+
+
+def test_a_finished_world_is_no_longer_active_and_refuses_orders_and_ticks(
+    repo: FakeGameRepo, service: GameService
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    service.join_world(game_id, "user-1")
+    player = repo.get_player(game_id, "user-1")
+    assert player is not None
+
+    _finish(repo, game_id)
+
+    assert service.get_active_world("user-1").active_world is None
+    with pytest.raises(GameNotActive):
+        service.submit_orders(player, [], [])
+    with pytest.raises(GameNotActive):
+        service.tick_world(game_id)
+
+
+def test_a_user_in_one_world_cannot_join_another(service: GameService) -> None:
+    first = service.create_world(slots=4, seed=3, bots=1)
+    second = service.create_world(slots=4, seed=4, bots=1)
+    service.join_world(first, "user-1")
+    with pytest.raises(GameAlreadyActive):
+        service.join_world(second, "user-1")
+
+
+def test_unknown_worlds_are_not_found(service: GameService) -> None:
+    with pytest.raises(GameNotFound):
+        service.join_world("no-such-game", "user-1")
+    with pytest.raises(GameNotFound):
+        service.tick_world("no-such-game")
+    with pytest.raises(GameNotFound):
+        service.delete_world("no-such-game")
+
+
+def test_a_replay_of_an_unresolved_turn_is_not_found(
+    repo: FakeGameRepo, service: GameService
+) -> None:
+    game_id = service.create_world(slots=4, seed=3, bots=1)
+    service.join_world(game_id, "user-1")
+    player = repo.get_player(game_id, "user-1")
+    assert player is not None
+    with pytest.raises(ReplayNotFound):
+        service.get_world_replay(player, 0)
+    service.tick_world(game_id)
+    assert service.get_world_replay(player, 0).turn == 0
 
 
 def test_human_orders_are_resolved_at_the_tick(

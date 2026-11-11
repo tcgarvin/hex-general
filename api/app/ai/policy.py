@@ -4,8 +4,8 @@ A `Policy` turns a fog-redacted view of the game into a full turn: unit orders
 plus recruitments. The `view` a policy receives is always the redacted state for
 its slot (`app.engine.fog.redact_state`), so a policy can never see hidden enemy
 units — fog fairness is structural, not disciplinary. Every plan a policy returns
-must be statically legal (`app.games.validation.validate_submission`); the arena
-asserts this on every turn.
+must be statically legal (`app.games.validation.validate_submission`); the
+world tick validates every bot plan through it, like a human's.
 
 Policies are stateless across turns in v1: each `plan()` call reasons from the
 current view only. Policies that use randomness take a seed at construction and
@@ -41,7 +41,7 @@ class BotPlan(BaseModel):
 
     orders: list[Order] = Field(default_factory=list)
     recruitments: list[Recruitment] = Field(default_factory=list)
-    # World games only (see `SubmitOrdersRequest`).
+    # Base orders (see `SubmitOrdersRequest`).
     build: Building | None = None
     disband: list[UnitId] = Field(default_factory=list)
 
@@ -54,7 +54,7 @@ def economy_orders_for(
     slot: PlayerId, build: Building | None, disband: list[UnitId]
 ) -> EconomyOrders | None:
     """Base orders from a submission's ``build`` and ``disband`` fields, or
-    ``None`` when both are empty (a v0.1 submission never sets them)."""
+    ``None`` when both are empty (the player gave no base orders)."""
     if build is None and not disband:
         return None
     return EconomyOrders(owner=slot, build=build, disband=list(disband))
@@ -64,7 +64,7 @@ def economy_orders_for(
 class Policy(Protocol):
     """A turn planner for one player slot (AI_SPEC §4.1).
 
-    ``name`` identifies the policy in the arena registry and result logs.
+    ``name`` identifies the policy (the world bot is ``"world"``).
     ``plan`` receives the fog-redacted ``view`` for ``slot`` and returns a
     statically-legal `BotPlan`.
     """

@@ -1,4 +1,4 @@
-// Lake tile selection (shared by the 2-player board and the world board).
+// Lake tile selection (used by the world board).
 //
 // A lake hex is painted whole per *neighbour mask* (round 2 lake art,
 // `tiles/lake/m<MM>_<VV>.png`, ratified 2026-11-10): bit d is set when the

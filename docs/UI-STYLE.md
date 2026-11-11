@@ -1,5 +1,13 @@
 # UI style — "Field HQ" (ratified direction)
 
+> **Note, 2026-11-10:** the look-and-material direction below is still the art
+> direction, and its art assets are kept on disk. The Pixi panel components it
+> describes (`frontend/src/board/panels/*`: dock, roster, inspector, lock plate,
+> replay panels) belonged to the retired 2-player game and are deleted; only
+> `board/panels/chrome/wood.png` is still used by the app (`frontend/src/index.css`).
+> Per-panel constants and build-order notes below are history. See `docs/TODO.md` for
+> the leftover chrome art awaiting a keep-or-delete decision.
+
 The visual identity for the game's UI chrome — panels, buttons, type, icons,
 decoration — for both the Pixi game-screen chrome (UI-SPEC §2) and the React
 DOM surfaces (header, auth/dispatcher). Ratified 2026-07-07 from a three-way

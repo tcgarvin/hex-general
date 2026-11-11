@@ -89,7 +89,7 @@ function fromWire(o: WireOrder): WorldOrder {
   }
 }
 
-/** The `POST /games/{id}/orders` body for this plan. */
+/** The `POST /worlds/{id}/orders` body for this plan. */
 export function toSubmission(plan: WorldPlan, slot: string): Submission {
   const orders: WireOrder[] = Object.entries(plan.orders)
     .map(([id, order]) => toWire(Number(id), order))

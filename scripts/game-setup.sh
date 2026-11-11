@@ -1,28 +1,31 @@
 #!/usr/bin/env bash
 #
-# Local game-state setup for hex-general — mint a dev token and drive the game
-# lifecycle over the API, so an agent (or a human) can clear/start a game in one
-# shot instead of clicking through the UI. Talks to *this worktree's* local stack
-# only: it reads the API/Supabase URLs + anon key the dev loop wrote to
+# Local world setup for hex-general — mint a dev token and drive world games over
+# the API, so an agent (or a human) can clear/create/join/tick a world in one shot
+# instead of clicking through the UI. Talks to *this worktree's* local stack only:
+# it reads the API/Supabase URLs + anon key the dev loop wrote to
 # frontend/.env.local, and authenticates as a seeded @hex.local dev account
 # (password from api/app/dev_seed.py). It never targets the deployed project.
 #
 # Used by the `game-pilot` subagent for state setup before it screenshots the UI;
 # handy ad hoc too. Requires the local stack to be up (`scripts/dev.sh up`).
 #
-#   scripts/game-setup.sh active [email]                caller's active game (JSON)
-#   scripts/game-setup.sh history [email]               caller's game history (JSON)
-#   scripts/game-setup.sh new [--bot P] [--scenario S] [email]   start a vs-bot game
-#   scripts/game-setup.sh clear [email]                 leave the active game: resigns a match, deletes a world
-#   scripts/game-setup.sh delete-world <game_id> [email] delete a world outright (dev-only API route)
-#   scripts/game-setup.sh reset [--bot P] [--scenario S] [email] clear + new (fresh board)
-#   scripts/game-setup.sh token [email]                 print a bearer token (for curl)
+#   scripts/game-setup.sh active [email]                 caller's active world (JSON)
+#   scripts/game-setup.sh create-world [--slots N] [--bots N] [--seed N]
+#                         [--clock manual|twice_daily] [email]
+#                                                        create a world (dev-only API route)
+#   scripts/game-setup.sh join <game_id> [email]         seat the caller in a world
+#   scripts/game-setup.sh tick <game_id> [email]         resolve a world's turn now (dev-only)
+#   scripts/game-setup.sh clear [email]                  delete the caller's active world
+#   scripts/game-setup.sh delete-world <game_id> [email] delete a world outright (dev-only)
+#   scripts/game-setup.sh token [email]                  print a bearer token (for curl)
 #
-# `clear` and `delete-world` exit non-zero if the account still has an active game.
-# --bot is the bot_policy (default: scripted; the other authored one is `search`).
-# --scenario defaults to the API's default (twin_rivers). email defaults to
-# dev1@hex.local; dev2@hex.local is side B. On `new`/`reset` it prints the created
-# game's JSON (includes game_id) to stdout; diagnostics go to stderr.
+# `clear` and `delete-world` exit non-zero if the account still has an active world.
+# `create-world` defaults: --slots 8 --bots 4 --seed 0 --clock manual; it prints the
+# created world's JSON (includes game_id) to stdout and does NOT seat the caller
+# (follow with `join`). `join` and `tick` print the API response JSON. The dev-only
+# routes need a dev account (the seeded @hex.local accounts are devs locally).
+# email defaults to dev1@hex.local; diagnostics go to stderr.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -70,8 +73,7 @@ api_post() {  # $1 = path, $2 = JSON body (defaults to an empty object)
     -H "Content-Type: application/json" -d "$body"
 }
 
-active_game_id() { api_get /games/active | json_get active_game.game_id; }
-active_game_kind() { api_get /games/active | json_get active_game.kind; }
+active_world_id() { api_get /worlds/active | json_get active_world.game_id; }
 
 delete_world() {  # $1 = world game id; dev-only route, deletes game + map
   local code
@@ -81,61 +83,78 @@ delete_world() {  # $1 = world game id; dev-only route, deletes game + map
   echo "deleted world $1" >&2
 }
 
-require_no_active_game() {
-  local left; left="$(active_game_id)"
-  [ -z "$left" ] || die "account still has active game $left after clearing"
+require_no_active_world() {
+  local left; left="$(active_world_id)"
+  [ -z "$left" ] || die "account still has active world $left after clearing"
 }
 
-do_clear() {  # leave the active game if there is one: resign a match, delete a world
-  local gid; gid="$(active_game_id)"
+do_clear() {  # delete the caller's active world if there is one
+  local gid; gid="$(active_world_id)"
   if [ -z "$gid" ]; then
-    echo "no active game to clear" >&2
+    echo "no active world to clear" >&2
     return
   fi
-  if [ "$(active_game_kind)" = "world" ]; then
-    delete_world "$gid"
-  else
-    api_post "/games/$gid/resign" >/dev/null
-    echo "resigned active game $gid" >&2
-  fi
-  require_no_active_game
+  delete_world "$gid"
+  require_no_active_world
 }
 
-do_new() {  # create a vs-bot game; prints the create response JSON
-  local body; body="$(python3 -c 'import json,sys;print(json.dumps({"vs_bot":True,"bot_policy":sys.argv[1],"scenario":sys.argv[2]} if sys.argv[2] else {"vs_bot":True,"bot_policy":sys.argv[1]}))' "$BOT" "$SCENARIO")"
-  local resp; resp="$(api_post /games "$body")"
-  local gid; gid="$(printf '%s' "$resp" | json_get game_id)"
-  [ -n "$gid" ] || die "create failed — $(printf '%s' "$resp" | json_get detail "$resp")"
-  echo "started vs-bot($BOT) game $gid" >&2
+# POST $1 with body $2; print the JSON response, or die with its detail unless it
+# carries the field $3 (the success marker).
+post_or_die() {
+  local resp; resp="$(api_post "$1" "${2:-}")"
+  [ -n "$(printf '%s' "$resp" | json_get "$3")" ] \
+    || die "POST $1 failed — $(printf '%s' "$resp" | json_get detail "$resp")"
   printf '%s\n' "$resp" | python3 -m json.tool
+}
+
+do_create_world() {
+  local body
+  body="$(python3 -c 'import json,sys
+slots,bots,seed,clock=sys.argv[1:]
+print(json.dumps({"slots":int(slots),"bots":int(bots),"seed":int(seed),"clock":clock}))' \
+    "$SLOTS" "$BOTS" "$SEED" "$CLOCK")" || die "--slots/--bots/--seed must be integers"
+  post_or_die /dev/worlds "$body" game_id
+  echo "created world ($SLOTS slots, $BOTS bots, seed $SEED, $CLOCK clock)" >&2
 }
 
 # --- arg parsing ---------------------------------------------------------------
 CMD="${1:-}"; shift || true
-BOT="scripted"; SCENARIO=""; WORLD_ID=""; EMAIL="$DEFAULT_EMAIL"
+SLOTS=8; BOTS=4; SEED=0; CLOCK="manual"; WORLD_ID=""; EMAIL="$DEFAULT_EMAIL"
 while [ $# -gt 0 ]; do
   case "$1" in
-    --bot)      BOT="${2:?--bot needs a value}"; shift 2 ;;
-    --scenario) SCENARIO="${2:?--scenario needs a value}"; shift 2 ;;
-    -*)         die "unknown option: $1" ;;
+    --slots) SLOTS="${2:?--slots needs a value}"; shift 2 ;;
+    --bots)  BOTS="${2:?--bots needs a value}"; shift 2 ;;
+    --seed)  SEED="${2:?--seed needs a value}"; shift 2 ;;
+    --clock)
+      CLOCK="${2:?--clock needs a value}"; shift 2
+      case "$CLOCK" in manual|twice_daily) ;; *) die "--clock must be manual or twice_daily" ;; esac ;;
+    -*)      die "unknown option: $1" ;;
     *)
-      if [ "$CMD" = "delete-world" ] && [ -z "$WORLD_ID" ]; then WORLD_ID="$1"; else EMAIL="$1"; fi
+      case "$CMD" in
+        join|tick|delete-world) if [ -z "$WORLD_ID" ]; then WORLD_ID="$1"; else EMAIL="$1"; fi ;;
+        *) EMAIL="$1" ;;
+      esac
       shift ;;
   esac
 done
 
+need_world_id() { [ -n "$WORLD_ID" ] || die "usage: game-setup.sh $CMD <game_id> [email]"; }
+
 case "$CMD" in
   token)   mint_token "$EMAIL"; echo ;;
-  active)  TOKEN="$(mint_token "$EMAIL")"; api_get /games/active   | python3 -m json.tool ;;
-  history) TOKEN="$(mint_token "$EMAIL")"; api_get /games/history  | python3 -m json.tool ;;
+  active)  TOKEN="$(mint_token "$EMAIL")"; api_get /worlds/active | python3 -m json.tool ;;
+  create-world) TOKEN="$(mint_token "$EMAIL")"; do_create_world ;;
+  join)
+    need_world_id; TOKEN="$(mint_token "$EMAIL")"
+    post_or_die "/worlds/$WORLD_ID/join" '' slot ;;
+  tick)
+    need_world_id; TOKEN="$(mint_token "$EMAIL")"
+    post_or_die "/dev/worlds/$WORLD_ID/tick" '' turn ;;
   clear)   TOKEN="$(mint_token "$EMAIL")"; do_clear ;;
   delete-world)
-    [ -n "$WORLD_ID" ] || die "usage: game-setup.sh delete-world <game_id> [email]"
-    TOKEN="$(mint_token "$EMAIL")"; delete_world "$WORLD_ID"
-    [ "$(active_game_id)" != "$WORLD_ID" ] || die "account still in world $WORLD_ID" ;;
-  new)     TOKEN="$(mint_token "$EMAIL")"; do_new ;;
-  reset)   TOKEN="$(mint_token "$EMAIL")"; do_clear; do_new ;;
+    need_world_id; TOKEN="$(mint_token "$EMAIL")"; delete_world "$WORLD_ID"
+    [ "$(active_world_id)" != "$WORLD_ID" ] || die "account still in world $WORLD_ID" ;;
   ""|-h|--help|help)
-    sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
-  *) die "unknown command: $CMD (try: active history new clear delete-world reset token)" ;;
+    sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
+  *) die "unknown command: $CMD (try: active create-world join tick clear delete-world token)" ;;
 esac

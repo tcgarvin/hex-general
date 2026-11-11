@@ -1,13 +1,13 @@
 ---
 name: verify-board
-description: Render the local hex-general board in Chrome to eyeball a frontend/board change — tiles, sprites, fog, overlays. Use after changing board art or rendering code, or when asked to "see it on the board", "does it render", or to screenshot the game. Covers the dev-server check, the dev login (creds location), the board route, and what to capture.
+description: Render the local hex-general board in Chrome to eyeball a frontend/board change — tiles, sprites, fog, overlays. Use after changing board art or rendering code, or when asked to "see it on the board", "does it render", or to screenshot the game. Covers the dev-server check, the dev login (creds location), how to get a local world and its `/world/<id>` route, and what to capture.
 ---
 
 # verify-board
 
-The board only renders **after** auth + an active game, so "did my tile/render
+The board only renders **after** auth + a seat in a world, so "did my tile/render
 change land?" needs a short, fixed browser flow. This skill is that flow — follow
-it instead of rediscovering the login wall, the dev password, and the game route
+it instead of rediscovering the login wall, the dev password, and the world setup
 each time. It complements `verify-stack` (that one hits the **live** deployed
 stack; this one drives the **local** dev app for a visual check).
 
@@ -36,14 +36,23 @@ land on `/login` ("Local dev sign-in").
 - Email is prefilled `dev1@hex.local`. The **password is a documented local test
   fixture**, not a real credential: `DEV_PASSWORD` in `api/app/dev_seed.py`
   (currently `devpass123`; read it rather than hardcoding). `dev2@hex.local` shares
-  the same password and is side B.
-- Click the password field, type the fixture, click **Sign in as dev**. On success
-  the URL becomes `/game/<uuid>` and the board renders. (Empty password →
-  "Invalid login credentials".)
+  the same password.
+- Click the password field, type the fixture, click **Sign in as dev**. (Empty
+  password → "Invalid login credentials".) On success you land on `/`: the world
+  board if `dev1` already holds a seat, else the "Join a world" list.
 
-If there's no active game for `dev1`, the seed normally creates one; if the app
-lands somewhere other than a game, the local stack likely needs
-`./scripts/dev.sh up` to (re)seed.
+The server runs only world games, so there is no seeded game. Get a world first
+(the 2-player match was retired 2026-11-10):
+
+```bash
+./scripts/game-setup.sh active                              # already seated? {"active_world": {"game_id": ...}}
+./scripts/game-setup.sh create-world --slots 8 --bots 4     # prints the world JSON (game_id)
+./scripts/game-setup.sh join <game_id>                      # seat dev1; `tick <game_id>` resolves a turn
+```
+
+Then open `http://localhost:<vite-port>/world/<game_id>` (or reload `/`, which
+redirects there). `clear` deletes `dev1`'s world to start over. If you are using
+the `game-pilot` subagent, it does this setup for you.
 
 ## 3. Capture the board
 
@@ -56,11 +65,13 @@ lands somewhere other than a game, the local stack likely needs
   PNGs are valid and discovered, not that they look right. (Vite inlines assets
   under its size threshold as base64 and emits the rest as `dist/assets/*.png` — a
   normal mix; don't infer anything from grepping the bundle.)
-- **Judge at board scale, not just zoomed-in.** The board auto-fits the map, so the
-  default view renders hexes small (~50px). A tile that looks great in a montage can
+- **Judge at board scale, not just zoomed-in.** The world view has two zoom
+  regimes: far out it draws a single overview texture (not tiles), and only when
+  zoomed in does it draw tile sprites, so zoom until tiles show before judging
+  art, and also check the smallest zoom that still shows tiles (hexes ~50px). A tile that looks great in a montage can
   collapse into muddy "rocky" speckle when shrunk, and a terrain much darker than its
-  neighbours reads as a *different material*. Eyeball the full-board view (not only a
-  zoom), and sanity-check brightness parity across terrains.
+  neighbours reads as a *different material*. Eyeball a wide view (not only a
+  close zoom), and sanity-check brightness parity across terrains.
 
 ### Tile-change gotchas (learned the hard way)
 
@@ -83,8 +94,9 @@ lands somewhere other than a game, the local stack likely needs
 
 | Thing | Value |
 |---|---|
-| Board URL | `http://localhost:<vite-port>` → redirects to `/login`, then `/game/<uuid>` |
+| Board URL | `http://localhost:<vite-port>/world/<game_id>` (`/` redirects there once seated; `/login` first) |
 | Dev login | `dev1@hex.local` / `DEV_PASSWORD` in `api/app/dev_seed.py` |
+| World setup | `scripts/game-setup.sh create-world`, then `join <game_id>` |
 | Servers | Vite `5173+100N`, API `8080+100N` (per-worktree); `scripts/dev.sh status` shows them |
 | Tiles | `frontend/src/board/tiles/{terrain}/{nn}.png` (128px painterly flat-top hex; legacy terrains 64px) |
 | Montage a tile set | `python3 scripts/tile-montage.py <dir|globs> --out <path>` |

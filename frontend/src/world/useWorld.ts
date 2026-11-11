@@ -1,8 +1,8 @@
 // Loading a world: the static map once, then the player's fogged view on a poll.
 //
 // The map never changes for the life of a world (the API serves it as
-// `immutable`), so it is decoded once per page; the view polls like the 2-player
-// game does (roadmap decision 8: polling, no Realtime).
+// `immutable`), so it is decoded once per page; the view polls (roadmap
+// decision 8: polling, no Realtime).
 
 import { useCallback, useEffect, useState } from "react";
 

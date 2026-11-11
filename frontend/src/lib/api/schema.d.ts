@@ -107,169 +107,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/games": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Game
-         * @description Create a game from a scenario and claim its first slot for the caller.
-         *
-         *     With ``vs_bot`` the remaining slot is filled by an AI opponent and the game
-         *     starts immediately (AI_SPEC §9).
-         */
-        post: operations["create_game_games_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/games/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Active Game
-         * @description Dispatcher: the caller's active game (or none → start screen).
-         */
-        get: operations["get_active_game_games_active_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/games/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get History
-         * @description The caller's game history (newest first) for the account screen.
-         */
-        get: operations["get_history_games_history_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/games/{game_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Game
-         * @description Return the caller's view of the game.
-         */
-        get: operations["get_game_games__game_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/games/{game_id}/join": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Join Game
-         * @description Claim the next open slot in a game, gated by its invite token.
-         */
-        post: operations["join_game_games__game_id__join_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/games/{game_id}/orders": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Submit Orders
-         * @description Validate and lock the caller's orders; resolve the turn if both are in.
-         */
-        post: operations["submit_orders_games__game_id__orders_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/games/{game_id}/resign": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Resign
-         * @description Concede the caller's slot; ends the game if they were the last rival.
-         */
-        post: operations["resign_games__game_id__resign_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/games/{game_id}/turns/{turn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Replay
-         * @description Return the resolved replay (event log + state + victory) for a turn.
-         */
-        get: operations["get_replay_games__game_id__turns__turn__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/health": {
         parameters: {
             query?: never;
@@ -396,6 +233,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/worlds/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Active World
+         * @description The world the caller holds a slot in, or none (the join screen).
+         */
+        get: operations["get_active_world_worlds_active_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/worlds/{game_id}": {
         parameters: {
             query?: never;
@@ -456,6 +313,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/worlds/{game_id}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Orders
+         * @description Validate and store the caller's plan; it resolves at the world's next tick.
+         *
+         *     409 if the turn is closed: the world is not active, its scheduled tick is
+         *     due, or a tick resolved the turn while the plan was being stored.
+         */
+        post: operations["submit_orders_worlds__game_id__orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/worlds/{game_id}/turns/{turn}": {
         parameters: {
             query?: never;
@@ -481,19 +361,24 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * ActiveGame
-         * @description The game a user is currently in (the dispatcher's redirect target).
+         * ActiveWorld
+         * @description The world a user is currently in (where login sends them).
          */
-        ActiveGame: {
+        ActiveWorld: {
             /** Game Id */
             game_id: string;
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "match" | "world";
             /** Slot */
             slot: string;
+        };
+        /**
+         * ActiveWorldView
+         * @description Where login should send a user: their active world, or nothing.
+         *
+         *     ``active_world`` is ``None`` with exactly one meaning — the user holds no slot
+         *     in any un-finished world, so the frontend shows the world list to join one.
+         */
+        ActiveWorldView: {
+            active_world: components["schemas"]["ActiveWorld"] | null;
         };
         /**
          * ArmySize
@@ -857,32 +742,6 @@ export interface components {
          */
         ConstructionVoidedReason: "insufficient_stocks";
         /**
-         * CreateGameRequest
-         * @description Body for ``POST /games``: which authored scenario to instantiate.
-         *
-         *     ``vs_bot`` requests a game against the computer (AI_SPEC §9): the service
-         *     fills the second slot with a bot player and the game starts immediately.
-         *     ``bot_policy`` picks the AI (resolved via `app.ai.arena`'s registry) and is
-         *     only consulted when ``vs_bot`` is true.
-         */
-        CreateGameRequest: {
-            /**
-             * Bot Policy
-             * @default search
-             */
-            bot_policy: string;
-            /**
-             * Scenario
-             * @default twin_rivers
-             */
-            scenario: string;
-            /**
-             * Vs Bot
-             * @default false
-             */
-            vs_bot: boolean;
-        };
-        /**
          * CreateWorldRequest
          * @description Body for ``POST /dev/worlds``: the world to generate and how many bots.
          */
@@ -937,16 +796,6 @@ export interface components {
             is_self: boolean;
             /** User Id */
             user_id: string;
-        };
-        /**
-         * DispatchView
-         * @description Where login should send a user: their active game, or nothing (start screen).
-         *
-         *     ``active_game`` is ``None`` with exactly one meaning — the user holds no slot in
-         *     any un-finished game, so the frontend shows the create / paste-join screen.
-         */
-        DispatchView: {
-            active_game: components["schemas"]["ActiveGame"] | null;
         };
         /**
          * EconomyResolved
@@ -1020,140 +869,10 @@ export interface components {
             unit_cap: number;
             victory: components["schemas"]["VictoryConfig"];
         };
-        /**
-         * GameHistoryEntry
-         * @description One row of a user's game history (account screen).
-         *
-         *     ``outcome`` is from the caller's perspective: ``win``/``loss``/``draw`` once the
-         *     game is decided, else ``in_progress`` (a lobby or active game). ``turn`` is the
-         *     current/final turn number; ``created_at`` is the game's ISO creation timestamp.
-         */
-        GameHistoryEntry: {
-            /** Bot Policy */
-            bot_policy: string | null;
-            /** Created At */
-            created_at: string;
-            /** Game Id */
-            game_id: string;
-            /** Outcome */
-            outcome: string;
-            /** Scenario */
-            scenario: string;
-            /** Status */
-            status: string;
-            /** Turn */
-            turn: number;
-            /** Vs Bot */
-            vs_bot: boolean;
-            /** Your Slot */
-            your_slot: string;
-        };
-        /**
-         * GameMap
-         * @description Static board geometry: dimensions and the terrain of every hex.
-         *
-         *     Holds only content that does not change during play. Dynamic facts
-         *     (settlement control, unit positions) live on `GameState`, not here.
-         *
-         *     Frozen, so engine phases share one map between successive states instead of
-         *     deep-copying it (a world map is ~10^5 hexes; WORLD_SPEC §10). `index` is a
-         *     lazily built coord → hex lookup, safe to cache because the map never changes.
-         */
-        GameMap: {
-            /** Height */
-            height: number;
-            /** Hexes */
-            hexes: components["schemas"]["Hex"][];
-            /** Sites */
-            sites?: components["schemas"]["MapSite"][];
-            /** Width */
-            width: number;
-        };
-        /**
-         * GameState
-         * @description The canonical, serializable state of one game at one turn.
-         *
-         *     This is the blob stored in the ``games`` row and the value threaded through
-         *     the engine: ``resolve_turn(state, orders) -> (new_state, event_log)``.
-         *     Lookups (`hex_at`, `unit_at`, `settlement_at`) are convenience helpers built
-         *     on demand; the stored representation is plain lists so it serializes cleanly
-         *     (axial coords can't be JSON object keys).
-         */
-        GameState: {
-            config: components["schemas"]["GameConfig"];
-            map: components["schemas"]["GameMap"];
-            /** Players */
-            players?: components["schemas"]["Player"][];
-            /** Resigned */
-            resigned?: string[];
-            /** Settlements */
-            settlements?: components["schemas"]["Settlement"][];
-            /** Standing Orders */
-            standing_orders?: components["schemas"]["StandingTravel"][];
-            /** Turn */
-            turn: number;
-            /** Units */
-            units?: components["schemas"]["Unit"][];
-        };
-        /**
-         * GameView
-         * @description A player's fog-filtered view of a game (SPEC §9).
-         *
-         *     ``state`` is redacted to the caller's perspective: enemy units on hexes the
-         *     caller cannot see are removed (the map, settlement control, and banks are
-         *     public in v0.1). ``victory`` is the authoritative global outcome. ``visible``
-         *     is the set of hexes the caller's units currently illuminate (SPEC §9), so the
-         *     frontend can dim everything outside it as fog of war; the map itself is public,
-         *     so fog is a rendering hint, not a redaction.
-         */
-        GameView: {
-            /** Bot Policy */
-            bot_policy: string | null;
-            /** Game Id */
-            game_id: string;
-            /** Invite Token */
-            invite_token: string | null;
-            /** Locked */
-            locked: {
-                [key: string]: boolean;
-            };
-            /** Slots Present */
-            slots_present: string[];
-            state: components["schemas"]["GameState"];
-            /** Status */
-            status: string;
-            /** Turn */
-            turn: number;
-            victory: components["schemas"]["VictoryStatus"];
-            /** Visible */
-            visible: components["schemas"]["Axial"][];
-            /** Vs Bot */
-            vs_bot: boolean;
-            /** Your Slot */
-            your_slot: string;
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
-        };
-        /**
-         * Hex
-         * @description A single map cell: its coordinate, base terrain, and road layer.
-         *
-         *     ``road`` is a layer on top of terrain (SPEC §3.3, §4.1): a unit whose entire
-         *     path follows connected road hexes gets +1 movement. A bridge hex (terrain
-         *     ``BRIDGE``) is what a road becomes where it crosses a river (SPEC §3.4).
-         *     Frozen: the map is static for the life of a game.
-         */
-        Hex: {
-            coord: components["schemas"]["Axial"];
-            /**
-             * Road
-             * @default false
-             */
-            road: boolean;
-            terrain: components["schemas"]["Terrain"];
         };
         /**
          * HoldOrder
@@ -1167,14 +886,6 @@ export interface components {
             kind: "hold";
             /** Unit Id */
             unit_id: number;
-        };
-        /**
-         * JoinGameRequest
-         * @description Body for ``POST /games/{id}/join``: the invite token from the share link.
-         */
-        JoinGameRequest: {
-            /** Invite Token */
-            invite_token: string;
         };
         /**
          * MapSite
@@ -1347,16 +1058,13 @@ export interface components {
         };
         /**
          * PlayerCredentials
-         * @description Returned on create/join: which slot the caller now holds, and the share link.
+         * @description Returned on joining a world: which slot the caller now holds.
          *
-         *     Identity is the Supabase JWT (not returned here); ``invite_token`` lets the
-         *     holder share the open slot.
+         *     Identity is the Supabase JWT (not returned here).
          */
         PlayerCredentials: {
             /** Game Id */
             game_id: string;
-            /** Invite Token */
-            invite_token: string;
             /** Slot */
             slot: string;
             /** Status */
@@ -1550,11 +1258,12 @@ export interface components {
         };
         /**
          * SubmitOrdersRequest
-         * @description Body for ``POST /games/{id}/orders``: a player's full plan for the turn.
+         * @description Body for ``POST /worlds/{id}/orders``: a player's full plan for the turn.
          *
-         *     Both lists default to empty: a player may legitimately submit no orders (every
-         *     unit holds) and no recruits. FastAPI parses ``orders`` into the discriminated
-         *     `Order` union, so unknown order shapes are rejected as 422 at the wire.
+         *     Every field defaults to empty: a player may legitimately submit no orders
+         *     (every unit holds or keeps travelling), no recruits and no base orders.
+         *     FastAPI parses ``orders`` into the discriminated `Order` union, so unknown
+         *     order shapes are rejected as 422 at the wire.
          */
         SubmitOrdersRequest: {
             build?: components["schemas"]["Building"] | null;
@@ -1567,7 +1276,10 @@ export interface components {
         };
         /**
          * SubmitResult
-         * @description Outcome of submitting orders: always locked; executed iff all players in.
+         * @description Outcome of submitting orders or of a tick.
+         *
+         *     A submission is stored and locked but not executed (it resolves at the
+         *     tick); a tick reports ``executed`` and the new turn and status.
          */
         SubmitResult: {
             /** Executed */
@@ -1668,18 +1380,6 @@ export interface components {
             unit_id: number;
             /** Via */
             via?: components["schemas"]["Axial"][];
-        };
-        /**
-         * TurnReplay
-         * @description A resolved turn's replay: the event log, resulting state, victory snapshot.
-         */
-        TurnReplay: {
-            /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolved"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"] | components["schemas"]["StocksResolved"] | components["schemas"]["UnitDisbanded"] | components["schemas"]["ConstructionStarted"] | components["schemas"]["ConstructionCompleted"] | components["schemas"]["ConstructionVoided"] | components["schemas"]["WorldUnitRecruited"])[];
-            state_after: components["schemas"]["GameState"];
-            /** Turn */
-            turn: number;
-            victory: components["schemas"]["VictoryStatus"];
         };
         /**
          * Unit
@@ -1892,33 +1592,6 @@ export interface components {
             town_points: number;
             /** Turn Limit */
             turn_limit: number;
-        };
-        /**
-         * VictoryReason
-         * @description Why the game is (not) decided (SPEC §15).
-         * @enum {string}
-         */
-        VictoryReason: "ongoing" | "resignation" | "city_elimination" | "turn_limit";
-        /**
-         * VictoryStatus
-         * @description The outcome of a victory check (SPEC §15).
-         *
-         *     ``winner`` is set only on a decisive result; it is ``None`` when the game is
-         *     ongoing (``reason == ONGOING``) or drawn (a decided ``reason`` with no single
-         *     winner). ``eliminated`` lists players controlling zero cities while city
-         *     elimination is in effect. ``scores`` is each player's settlement victory-point
-         *     total (§15.2), always computed so a UI can show standings mid-game.
-         */
-        VictoryStatus: {
-            /** Eliminated */
-            eliminated: string[];
-            reason: components["schemas"]["VictoryReason"];
-            /** Scores */
-            scores: {
-                [key: string]: number;
-            };
-            /** Winner */
-            winner: string | null;
         };
         /**
          * WorldCreated
@@ -2247,285 +1920,6 @@ export interface operations {
             };
         };
     };
-    create_game_games_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGameRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlayerCredentials"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_active_game_games_active_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DispatchView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_history_games_history_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GameHistoryEntry"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_game_games__game_id__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path: {
-                game_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GameView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    join_game_games__game_id__join_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path: {
-                game_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["JoinGameRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlayerCredentials"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_orders_games__game_id__orders_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path: {
-                game_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmitOrdersRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmitResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resign_games__game_id__resign_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path: {
-                game_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GameView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_replay_games__game_id__turns__turn__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-dev-profile"?: string | null;
-                authorization?: string | null;
-            };
-            path: {
-                turn: number;
-                game_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TurnReplay"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -2686,6 +2080,38 @@ export interface operations {
             };
         };
     };
+    get_active_world_worlds_active_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveWorldView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_world_worlds__game_id__get: {
         parameters: {
             query?: never;
@@ -2775,6 +2201,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompactMap"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_orders_worlds__game_id__orders_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-dev-profile"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitOrdersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitResult"];
                 };
             };
             /** @description Validation Error */

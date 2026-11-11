@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 
 from app.games import world_routes
-from app.games.routes import get_service
+from app.games.deps import get_service
 from app.games.scheduler_auth import (
     ClockNotConfigured,
     SchedulerAuthError,
@@ -276,7 +276,7 @@ def test_orders_that_lose_the_race_to_a_tick_are_refused(
         service.submit_orders(player, [], [])
 
 
-def test_worlds_are_listed_and_dispatch_knows_a_world(
+def test_running_worlds_are_listed_with_how_full_they_are(
     repo: FakeGameRepo, service: GameService
 ) -> None:
     game_id = service.create_world(slots=4, seed=3, bots=2, clock="twice_daily")
@@ -289,9 +289,3 @@ def test_worlds_are_listed_and_dispatch_knows_a_world(
         1,
     )
     assert summary.clock == "twice_daily" and summary.next_tick_at is not None
-    active = service.get_dispatch("user-1").active_game
-    assert active is not None and active.kind == "world"
-    match = service.create_game("twin_rivers", "user-2")
-    dispatch = service.get_dispatch("user-2").active_game
-    assert dispatch is not None and dispatch.game_id == match.game_id
-    assert dispatch.kind == "match"

@@ -5,7 +5,7 @@ bases to produce the "road" oriented terrain class (ROADMAP Phase 8, Slice T5).
 Unlike the bridge foundry — which segments a perspective deck sprite off a white
 sheet — a road tile is *fully deterministic*: no AI generation, no network. A
 road tile = a ratified painterly terrain base (plains/hills) + a road stroke
-drawn to match the render-time vector road overlay (`Board.tsx`: colour
+drawn to match the render-time vector road overlay (the retired 2-player `Board.tsx`: colour
 0x6b4f2a, width 6 world px = 12 tile px). Same colour/width/noise register as the
 bridge road ramps (`bridge.py`), so a road hex and a bridge ramp read as one
 continuous material across a shared edge.

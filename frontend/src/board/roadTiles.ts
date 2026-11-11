@@ -7,31 +7,23 @@
 // the same oriented-tile names (straights, gentle turns, ends, forks), and the
 // same render-time L↔R mirror convention, via `orientedRiverTile`.
 //
-// Unlike rivers, roads keep a *fallback renderer*: the vector overlay in
-// `Board.tsx` (centre-to-edge brown stubs). A road hex renders its baked tile
-// only when one exists for its `(terrain, shape)` pair — the texture lookup key
+// A road hex renders its baked tile only when one exists for its
+// `(terrain, shape)` pair — the texture lookup key
 // is `"road/{terrain}_{shape}"` in `LoadedTiles.byOriented`, e.g.
 // `"road/plains_straight_v"` from `tiles/road/plains_straight_v_00.png`.
 // Anything unresolved (settlement hexes, and every terrain but plains: the
 // 2026-11-09 Codex set bakes plains roads only, all shapes including forks)
-// simply keeps the vector overlay, so partial art coverage never breaks a road
-// network's continuity.
+// simply keeps its base terrain tile.
 //
 // Roads use the same course-graph pruning as rivers (`courseGraphEdges`, see
 // `courseGraph.ts`) over the road-carrying hexes: where a road joins another
 // mid-run, the hexes around the join are mutually adjacent, and the raw masks
-// would draw a small triangle loop; the course graph keeps one fork. Every
-// consumer of a road hex's connections (baked tile choice here, the 2-player
-// vector stubs in `Board.tsx`) reads the same `roadCourseEdges` map, so baked
-// art and vector stubs agree. Drawing only: engine movement goes by hex flag.
+// would draw a small triangle loop; the course graph keeps one fork. Drawing only: engine movement goes by hex flag.
 
-import type { components } from "@/lib/api/schema";
-
-import { AXIAL_DIRECTIONS, hexKey, type Axial } from "./hex";
+import { AXIAL_DIRECTIONS, hexKey, type Axial, type Hex } from "./hex";
 import { courseGraphEdges } from "./courseGraph";
 import { orientedRiverTile } from "./riverTiles";
 
-type Hex = components["schemas"]["Hex"];
 
 /**
  * Whether a hex carries the road line for connectivity purposes: any

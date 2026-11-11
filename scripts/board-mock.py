@@ -17,7 +17,9 @@ The selection logic is a line-for-line port of the frontend (keep in step):
     frontend/src/board/roadTiles.ts   roadConnectedEdges, roadCourseEdges, roadTileRefs
     frontend/src/board/hexTile.ts     per-hex texture + mirror choice
     frontend/src/board/hex.ts         flat-top axial -> pixel (via tile-foundry/hexgeom.py)
-    frontend/src/board/Board.tsx      draw order: base fill, tile sprite, grid, vector roads
+    frontend/src/world/WorldRenderer.ts  tile sprite sizing and fallback fill (the game's renderer;
+                                      the base fill / grid / vector road passes below mirror the
+                                      retired 2-player Board.tsx, removed 2026-11-10, see git history)
 
 `scripts/tests/test_board_mock.py` ports the frontend's own test cases.
 
@@ -31,7 +33,7 @@ Options:
     --fallback DIR   second root consulted per (terrain, shape) group the first lacks
     --map FILE       scenario .json (API format) or ASCII map (any other extension)
     --hex-px N       on-screen point-to-point hex width: 64 = board scale, 128 = max zoom
-    --grid/--no-grid draw the thin hex grid overlay (default on, as Board.tsx does)
+    --grid/--no-grid draw the thin hex grid overlay (default on, as the retired 2-player Board.tsx did)
     --crop c0,r0,c1,r1  render only authored (offset) cols c0..c1, rows r0..r1
                      inclusive; tile selection still sees the whole map
 
@@ -125,7 +127,8 @@ RIVER_LIKE = ("river", "bridge")
 LAKE = "lake"
 LAKE_MASK_KEY = re.compile(r"^lake/m\d\d$")
 
-# --- render constants (frontend/src/board/{hex,palette}.ts, Board.tsx) --------
+# --- render constants (frontend/src/board/{hex,palette}.ts, frontend/src/world/WorldRenderer.ts;
+# the overlay passes follow the retired Board.tsx) -----
 
 HEX_SIZE = 32  # world centre-to-corner radius; tiles land at 2*HEX_SIZE world px
 BACKGROUND = 0x0A0A0B
@@ -1307,7 +1310,7 @@ def draws_vector_road(
     river_course: dict[str, list[int]],
     road_tiles: dict[str, RoadTileRef],
 ) -> bool:
-    """``Board.tsx drawTerrainOverlay``: does this hex get centre-to-edge road stubs?"""
+    """Does this hex get centre-to-edge road stubs (retired Board.tsx ``drawTerrainOverlay``)?"""
     if not h.road and h.terrain != "bridge":
         return False
     key = _hex_key(h.q, h.r)
@@ -1477,7 +1480,7 @@ class SpriteCache:
         if key not in self._cache:
             with Image.open(path) as raw:
                 im = raw.convert("RGBA")
-            # Board.tsx scales uniformly by the texture *width* to 2*HEX_SIZE.
+            # WorldRenderer.ts scales uniformly by the texture *width* to 2*HEX_SIZE.
             scale = self.hex_px / im.width
             size = (self.hex_px, max(1, round(im.height * scale)))
             if size != im.size:
@@ -1509,7 +1512,7 @@ class SpriteCache:
         return self._cache[key]
 
     def fill(self, terrain: str) -> np.ndarray:
-        """``Board.tsx drawTerrainBase``: the flat hex under each sprite."""
+        """The flat hex under each sprite (retired Board.tsx ``drawTerrainBase``)."""
         if terrain not in self._fills:
             alpha = hex_mask(self.hex_px, self.hex_px).astype(np.float32) / 255
             arr = np.zeros((self.hex_px, self.hex_px, 4), dtype=np.float32)

@@ -1,4 +1,4 @@
-"""Persistence boundary for the turn lifecycle (roadmap Phase 5).
+"""Persistence boundary for world games (WORLD_SPEC §10.1).
 
 This is an **I/O boundary**: it is the only code in the games package that talks
 to Supabase, and it validates every response before handing typed records back to
@@ -12,9 +12,9 @@ that is real domain optionality, not an error signal.
 The service depends on the `GameRepo` *protocol*, not the Supabase class, so the
 lifecycle logic is unit-testable against an in-memory fake.
 
-World games store their static map once (WORLD_SPEC §10.1): a games row with a
-``map_id`` keeps ``games.state`` and ``turns.state_after`` *without* the map, and
-the repo rejoins the stored map on load, so the service still sees whole
+A world stores its static map once (WORLD_SPEC §10.1): every games row has a
+``map_id`` and keeps ``games.state`` and ``turns.state_after`` *without* the map,
+and the repo rejoins the stored map on load, so the service still sees whole
 `GameState`s. Decoded maps are cached per process (`MapCache`), because a map row
 never changes and decoding a world map takes about two seconds.
 """
@@ -73,8 +73,7 @@ class GameRecord(BaseModel):
     """A games row with its canonical state parsed back into a `GameState`.
 
     ``map_id`` is the `game_maps` row holding the game's static map, stored apart
-    from the state; ``None`` means the map is embedded in the state (a v0.1
-    match). Either way ``state`` is whole: the repo has rejoined the map.
+    from the state; ``state`` is whole all the same: the repo has rejoined the map.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -83,27 +82,21 @@ class GameRecord(BaseModel):
     scenario: str
     status: str
     state: GameState
-    invite_token: str
-    map_id: str | None = None
+    map_id: str
     revision: int = 0
     # How turns advance (WORLD_SPEC §2). ``next_tick_at`` is the next scheduled
     # resolution of a "twice_daily" world; ``None`` means none is scheduled.
     clock: Clock = "manual"
     next_tick_at: datetime | None = None
 
-    @property
-    def is_world(self) -> bool:
-        """Whether this is a world game (its map stored apart, WORLD_SPEC §10)."""
-        return self.map_id is not None
-
 
 class PlayerRecord(BaseModel):
     """A players row: a Supabase Auth user bound to one game slot.
 
-    ``bot_policy`` names the AI policy driving this slot for a "vs bot" game
-    (AI_SPEC §9), resolved through `app.ai.arena`'s registry; ``None`` means a
-    human player. A bot row's ``user_id`` is a generated UUID matching no auth
-    user, so the slot can never be claimed or driven from outside.
+    ``bot_policy`` names the AI policy driving this slot (``"world"``: the world
+    bot, AI_SPEC §12); ``None`` means a human player. A bot row's ``user_id`` is
+    a generated UUID matching no auth user, so the slot can never be claimed or
+    driven from outside.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -112,27 +105,6 @@ class PlayerRecord(BaseModel):
     game_id: str
     slot: str
     user_id: str
-    bot_policy: str | None = None
-
-
-class UserGameRecord(BaseModel):
-    """A game a user holds a slot in, for their history (account screen).
-
-    Carries the slot the user holds plus enough of the game to derive an outcome
-    (``state`` for the victory check, ``turn`` from it). ``invite_token`` is
-    deliberately excluded — history must not leak another game's open-slot secret.
-    ``bot_policy`` names the opponent AI (AI_SPEC §9) when the other slot is a bot,
-    else ``None`` (a human opponent or an unfilled slot).
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    game_id: str
-    scenario: str
-    status: str
-    state: GameState
-    created_at: str
-    slot: str
     bot_policy: str | None = None
 
 
@@ -180,12 +152,13 @@ class GameRepo(Protocol):
         self,
         scenario: str,
         state: GameState,
-        invite_token: str,
         *,
-        map_id: str | None = None,
+        map_id: str,
         clock: Clock = "manual",
         next_tick_at: datetime | None = None,
-    ) -> GameRecord: ...
+    ) -> GameRecord:
+        """Insert a games row for ``state``, stored without its ``map_id`` map."""
+        ...
 
     def get_game(self, game_id: str) -> GameRecord | None: ...
 
@@ -197,17 +170,12 @@ class GameRepo(Protocol):
         *,
         next_tick_at: datetime | None | Keep = KEEP,
     ) -> None:
-        """Replace ``game``'s canonical state (map stored apart if it has a map_id).
+        """Replace ``game``'s canonical state (stored without its map).
 
         A compare-and-set on ``game.revision``: raises `StaleGame` if the game
         was written since ``game`` was read. ``next_tick_at`` moves the world's
         next scheduled tick in the same write (`KEEP` leaves it alone).
         """
-        ...
-
-    def is_world_game(self, game_id: str) -> bool:
-        """Whether ``game_id`` is a world (has a stored-apart map), without
-        loading its state."""
         ...
 
     def list_worlds(self) -> list[WorldRow]:
@@ -228,12 +196,6 @@ class GameRepo(Protocol):
     def get_player(self, game_id: str, user_id: str) -> PlayerRecord | None: ...
 
     def get_active_player_for_user(self, user_id: str) -> PlayerRecord | None: ...
-
-    def list_user_games(self, user_id: str) -> list[UserGameRecord]: ...
-
-    def record_orders(
-        self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
-    ) -> None: ...
 
     def replace_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
@@ -277,23 +239,17 @@ def _one_row(response: Any, context: str) -> dict[str, Any]:
     return rows[0]
 
 
-def state_blob(state: GameState, map_id: str | None) -> dict[str, Any]:
-    """The JSON stored for ``state``: without its map when the map has a row."""
-    if map_id is None:
-        return state.model_dump(mode="json")
+def state_blob(state: GameState) -> dict[str, Any]:
+    """The JSON stored for ``state``: everything but its map, which has a row."""
     return state.model_dump(mode="json", exclude={"map"})
 
 
-def join_state(blob: dict[str, Any], game_map: GameMap | None) -> GameState:
-    """Parse a stored state, rejoining ``game_map`` if it was stored apart.
+def join_state(blob: dict[str, Any], game_map: GameMap) -> GameState:
+    """Parse a stored state, rejoining its stored-apart ``game_map``.
 
     The map is passed as the decoded instance, which pydantic keeps as is, so
     every state of a world shares one map object rather than re-validating it.
     """
-    if game_map is None:
-        return GameState.model_validate(blob)
-    if "map" in blob:
-        raise RepoError("state stored with an embedded map for a game with map_id")
     return GameState.model_validate({**blob, "map": game_map})
 
 
@@ -341,18 +297,6 @@ def _player_record(row: dict[str, Any]) -> PlayerRecord:
         user_id=row["user_id"],
         bot_policy=row["bot_policy"],
     )
-
-
-def _opponent_bot_policy(players: list[dict[str, Any]], own_slot: str) -> str | None:
-    """The bot policy driving a slot other than ``own_slot``, or ``None`` if none.
-
-    A game has at most one bot (the creator is always human and only the remaining
-    slot is filled by AI), so the first non-own bot row is the opponent.
-    """
-    for player in players:
-        if player["slot"] != own_slot and player["bot_policy"] is not None:
-            return cast(str, player["bot_policy"])
-    return None
 
 
 class SupabaseGameRepo:
@@ -406,17 +350,13 @@ class SupabaseGameRepo:
         row = _one_row(response, f"get_map_slots({map_id})")
         return [Axial.model_validate(c) for c in row["slots"]]
 
-    def _map_for(self, map_id: str | None) -> GameMap | None:
-        return None if map_id is None else self.get_map(map_id)
-
     def _game_record(self, row: dict[str, Any]) -> GameRecord:
         """Build a `GameRecord` from a games row, rejoining a stored-apart map."""
         return GameRecord(
             id=row["id"],
             scenario=row["scenario"],
             status=row["status"],
-            state=join_state(row["state"], self._map_for(row["map_id"])),
-            invite_token=row["invite_token"],
+            state=join_state(row["state"], self.get_map(row["map_id"])),
             map_id=row["map_id"],
             revision=row["revision"],
             clock=row["clock"],
@@ -427,9 +367,8 @@ class SupabaseGameRepo:
         self,
         scenario: str,
         state: GameState,
-        invite_token: str,
         *,
-        map_id: str | None = None,
+        map_id: str,
         clock: Clock = "manual",
         next_tick_at: datetime | None = None,
     ) -> GameRecord:
@@ -440,8 +379,7 @@ class SupabaseGameRepo:
                     "name": scenario,
                     "scenario": scenario,
                     "status": "lobby",
-                    "state": state_blob(state, map_id),
-                    "invite_token": invite_token,
+                    "state": state_blob(state),
                     "map_id": map_id,
                     "clock": clock,
                     "next_tick_at": (
@@ -458,8 +396,7 @@ class SupabaseGameRepo:
         response = (
             self._client.table("games")
             .select(
-                "id, scenario, status, state, invite_token, map_id, revision, "
-                "clock, next_tick_at"
+                "id, scenario, status, state, map_id, revision, clock, next_tick_at"
             )
             .eq("id", game_id)
             .execute()
@@ -479,7 +416,7 @@ class SupabaseGameRepo:
         next_tick_at: datetime | None | Keep = KEEP,
     ) -> None:
         update: dict[str, Any] = {
-            "state": state_blob(state, game.map_id),
+            "state": state_blob(state),
             "status": status,
             "revision": game.revision + 1,
             "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -499,17 +436,10 @@ class SupabaseGameRepo:
             raise StaleGame(f"game {game.id} changed since revision {game.revision}")
         _one_row(response, "set_game_state")
 
-    def is_world_game(self, game_id: str) -> bool:
-        response = (
-            self._client.table("games").select("map_id").eq("id", game_id).execute()
-        )
-        return _one_row(response, f"is_world_game({game_id})")["map_id"] is not None
-
     def list_worlds(self) -> list[WorldRow]:
         response = (
             self._client.table("games")
             .select("id, map_id, turn:state->turn, clock, next_tick_at")
-            .not_.is_("map_id", "null")
             .eq("status", "active")
             .order("created_at", desc=True)
             .execute()
@@ -568,10 +498,10 @@ class SupabaseGameRepo:
         return _player_record(_one_row(response, "get_player"))
 
     def get_active_player_for_user(self, user_id: str) -> PlayerRecord | None:
-        """Return the user's single un-finished player row (the dispatcher target).
+        """Return the user's single un-finished player row (their active world).
 
         Joins ``games`` so a player row from a finished game does not count: a user
-        is "active" only while they hold a slot in a lobby/active game.
+        is "active" only while they hold a slot in a world that is not finished.
         """
         response = (
             self._client.table("players")
@@ -585,56 +515,6 @@ class SupabaseGameRepo:
             return None
         row = _one_row(response, "get_active_player_for_user")
         return _player_record(row)
-
-    def list_user_games(self, user_id: str) -> list[UserGameRecord]:
-        """Return every game the user holds a slot in, for their history screen.
-
-        The nested ``players(slot, bot_policy)`` embed pulls *every* player of each
-        game (not just the caller's row) so the opponent's ``bot_policy`` is
-        available to label bot games — one query, no per-game round trip.
-        """
-        response = (
-            self._client.table("players")
-            .select(
-                "slot, games!inner(id, scenario, status, state, map_id, created_at, "
-                "players(slot, bot_policy))"
-            )
-            .eq("user_id", user_id)
-            .execute()
-        )
-        records: list[UserGameRecord] = []
-        for row in _rows(response):
-            game = cast(dict[str, Any], row["games"])
-            records.append(
-                UserGameRecord(
-                    game_id=game["id"],
-                    scenario=game["scenario"],
-                    status=game["status"],
-                    state=join_state(game["state"], self._map_for(game["map_id"])),
-                    created_at=game["created_at"],
-                    slot=row["slot"],
-                    bot_policy=_opponent_bot_policy(game["players"], row["slot"]),
-                )
-            )
-        return records
-
-    def record_orders(
-        self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
-    ) -> None:
-        response = (
-            self._client.table("turn_orders")
-            .insert(
-                {
-                    "game_id": game_id,
-                    "player_id": player_id,
-                    "turn": turn,
-                    "orders": orders,
-                    "locked": True,
-                }
-            )
-            .execute()
-        )
-        _one_row(response, "record_orders")
 
     def replace_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
@@ -684,7 +564,7 @@ class SupabaseGameRepo:
                     "game_id": game.id,
                     "turn": turn,
                     "events": events,
-                    "state_after": state_blob(state_after, game.map_id),
+                    "state_after": state_blob(state_after),
                     "victory": victory.model_dump(mode="json"),
                 }
             )
@@ -708,7 +588,7 @@ class SupabaseGameRepo:
             turn=row["turn"],
             events=row["events"],
             state_after=join_state(
-                row["state_after"], self._map_for(row["games"]["map_id"])
+                row["state_after"], self.get_map(row["games"]["map_id"])
             ),
             victory=VictoryStatus.model_validate(row["victory"]),
         )

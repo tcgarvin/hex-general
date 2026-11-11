@@ -1,7 +1,7 @@
 """Dump the FastAPI OpenAPI schema to ``api/openapi.json``.
 
 The frontend generates its TypeScript API types from this file (single source of
-truth for ``GameView``/``Order``/``DispatchView``/… — see ``frontend`` ``gen:api``),
+truth for ``WorldView``/``Order``/``ActiveWorldView``/… — see ``frontend`` ``gen:api``),
 so it is committed and regenerated whenever the API's request/response models change.
 
 Importing ``app.main`` constructs ``Settings``, which requires the Supabase env vars;

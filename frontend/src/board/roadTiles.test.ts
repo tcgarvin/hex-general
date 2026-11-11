@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/lib/api/schema";
 
-import { AXIAL_DIRECTIONS, hexKey, type Axial } from "./hex";
+import { AXIAL_DIRECTIONS, hexKey, type Axial, type Hex } from "./hex";
 import { roadConnectedEdges, roadCourseEdges, roadTileRefs } from "./roadTiles";
 
-type Hex = components["schemas"]["Hex"];
 type Terrain = components["schemas"]["Terrain"];
 
 function hex(q: number, r: number, terrain: Terrain, road = false): Hex {

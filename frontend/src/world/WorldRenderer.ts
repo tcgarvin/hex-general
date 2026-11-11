@@ -1,7 +1,7 @@
 // Imperative Pixi renderer for a whole world map (WORLD_SPEC §11, W6).
 //
-// The 2-player board renders every hex through @pixi/react, which is fine for a
-// 40×40 map but not for ~122k hexes. This renderer instead:
+// Renders every hex imperatively rather than through @pixi/react, which would be
+// fine for a 40×40 map but not for ~122k hexes. This renderer instead:
 //
 // * **close up** (tactical zoom) keeps a pool of tile sprites and shows only the
 //   hexes on screen, re-using sprites as the camera moves (a site or founded base

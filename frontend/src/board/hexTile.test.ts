@@ -1,12 +1,9 @@
 import type { Texture } from "pixi.js";
 import { describe, expect, it } from "vitest";
 
-import type { components } from "@/lib/api/schema";
-
+import type { Hex } from "./hex";
 import { hexTileRef } from "./hexTile";
 import { variantIndex, type LoadedTiles } from "./tiles";
-
-type Hex = components["schemas"]["Hex"];
 
 /** Stand-in textures: hexTileRef only picks one, it never reads it. */
 const tex = (name: string) => ({ name }) as unknown as Texture;

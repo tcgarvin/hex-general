@@ -361,8 +361,10 @@ revision 2; decisions in VISION §6) replaces v0.1 muster in world games.
   carried in `GameConfig.economy`, so each world can be tuned), the phase
   `app/engine/world_economy.py`, world recruitment in `recruitment.py`, validation in
   `app/games/validation.py`. Submissions carry `build` and `disband`
-  (`EconomyOrders`). Other players' stocks and base are hidden by fog. v0.1 muster
-  stays on its own path until the 2-player flow is removed.
+  (`EconomyOrders`). Other players' stocks and base are hidden by fog. The v0.1 muster
+  path remains in the engine, selected when `GameConfig.economy` is unset (engine
+  tests use it); the 2-player flow that used it was retired on 2026-11-10, so
+  removing it is now an open cleanup.
 
 ## 8. Bots
 
@@ -449,7 +451,11 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   Postgres: the map row is 40 KB and a 100-player state row 20 KB after TOAST
   compression (versus 8.4 MB of JSON for a full state). Decoding the map costs ~1.2 s on
   a cold process, then a load is ~0.15 s.
-- **`games`** gains `kind` (`match` | `world`), `clock` (`manual` | `twice_daily`) and `next_tick_at`. For a world, `games.state` and
+- **`games`** gains `clock` (`manual` | `twice_daily`) and `next_tick_at`. The
+  `kind` column drafted here (`match` | `world`) was never built: the 2-player match
+  was retired on 2026-11-10 (migration `20261110200000_retire_matches.sql` deletes
+  non-world games, makes `games.map_id` NOT NULL and drops `games.invite_token`), so
+  every game is a world and there is nothing to distinguish. `games.state` and
   `turns.state_after` hold the state *without* its map. The repo rejoins the cached map
   on load, so the engine still sees one `GameState`.
 - **Slots ✅ (built 2026-11-09):** `game_maps.slots` holds the capitals in fill order
@@ -488,23 +494,30 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   `python -m app.world.tick_loop --game ID --every 300` is a fast clock for a local
   playtest. The `WorldView` carries `clock` and `next_tick_at` for a countdown.
 - **Routes ✅ (built 2026-11-09, `app/games/world_routes.py`):**
+  - `GET /worlds` lists worlds and `GET /worlds/active` returns the caller's seat
+    (`{"active_world": {"game_id", "slot"} | null}`).
   - `POST /worlds/{id}/join` takes a slot.
+  - `POST /worlds/{id}/orders` stores the caller's plan until the tick.
   - `GET /worlds/{id}` returns the fogged `WorldView`, whose `WorldState` is
     `GameState` minus the map.
   - `GET /worlds/{id}/map` returns the `CompactMap` with `Cache-Control: immutable`.
   - `GET /worlds/{id}/turns/{n}` returns the fogged replay.
   - Dev-only: `POST /dev/worlds` creates a world and `POST /dev/worlds/{id}/tick`
-    is the manual clock.
+    is the manual clock; `DELETE /dev/worlds/{id}` removes a world.
 
-  Orders still go to `POST /games/{id}/orders` and are stored until the tick. The
-  2-player `/games` flow stays until the W6 frontend switches to worlds, then goes.
+  *Retired 2026-11-10 (in code, not yet deployed):* the server runs only world games.
+  The 2-player `/games` routes, the match service paths, `app/games/routes.py`
+  (shared dependencies now live in `app/games/deps.py`), the 2-player bots and their
+  arena, and the invite token are all deleted, and orders now go to
+  `POST /worlds/{id}/orders`. There is no `NotAWorld` guard because there is nothing
+  else to be: every `games` row is a world.
 - **Memory budget (measured 2026-11-10):** one 200-slot world fits the 512 MiB Cloud
   Run instance. In the production image under a hard 512 MB limit, creating the world
   left 286 MiB in use, and 25 ticks held between 387 and 410 MiB. That depends on
   `clear_geometry_caches()` running after every world tick: left alone, the hex
   geometry caches grow ~15 MB per tick. A decoded map is ~125 MB, so a second big world
   on the same instance needs more memory (or a `MapCache` of one).
-- **Infra** (written, not applied; confirm at cutover): `infra/setup-world-clock.sh`
+- **Infra** (written, not applied; confirm at cutover: the retirement of the 2-player game is in code but not deployed): `infra/setup-world-clock.sh`
   creates the `hex-clock` service account and one Cloud Scheduler job for all worlds
   (`0 1,13 * * *`, America/New_York, OIDC, 5 retries). The API deploy already sets
   `CLOCK_AUDIENCE` and `CLOCK_INVOKER_EMAIL`.
@@ -537,7 +550,7 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
 | **W2** Travel ✅ | `TravelOrder`, routing, standing orders in state, validation, `TravelEnded` | pytest; multi-turn arrival/halt cases |
 | **W3** World generator ✅ (review pending) | §6, fairness gates, PNG preview | user reviews sample worlds |
 | **W4** Bots + sim (first cut) | §8–9: `app/ai/world.py`, `app/world/sim.py`, AI_SPEC §12 | §9 acceptance gates (not yet met: see AI_SPEC §12.4) |
-| **W5** Persistence + clock ✅ (economy and clock built 2026-11-10; scheduler infra at cutover) | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
+| **W5** Persistence + clock ✅ (economy and clock built 2026-11-10; 2-player flow retired in code 2026-11-10; scheduler infra and deploy still pending, at cutover) | schema (✅ `game_maps` + `games.map_id`, map stored once), scheduled resolve, dev manual clock | live world ticks on schedule |
 | **W6** Frontend world view (built 2026-11-10: `/world/:id`, pooled tile renderer + overview/minimap, economy header, world list on the start screen; planning: travel with client-side route preview (TS port of `routing.py`, parity-tested against a Python fixture), move/barrage/rest/hold/deploy, build, recruit, disband pick, revisable submission returned in `WorldView.submission`; painted site icons; last-turn report (your fights, base, movement; witnessed events folded) with trails, fights and captures drawn on the board. Next: column art, pulse-by-pulse playback if wanted) | §11 | art ratified; user can plan a world turn |
 | **W7** Live playtest | the user plays a week | the user's verdict |
 

@@ -1,8 +1,8 @@
 # hex-general
 
-A prototype **turn-based operational hex wargame** with a twist: players issue orders during a planning phase, then all orders execute **simultaneously**. Inspired by *Panzer General* / *Civil War General*. See [`docs/SPEC.md`](docs/SPEC.md) for the full v0.1 design.
+A prototype **turn-based operational hex wargame** with a twist: players issue orders during a planning phase, then all orders execute **simultaneously**. Inspired by *Panzer General* / *Civil War General*. The server runs only large persistent **world** games ([`docs/WORLD_SPEC.md`](docs/WORLD_SPEC.md), [`docs/VISION.md`](docs/VISION.md)); the original 2-player match was retired on 2026-11-10. [`docs/SPEC.md`](docs/SPEC.md) is the v0.1 design, and its movement, combat, fog and capture rules still govern the engine.
 
-> Status: early scaffold. The platform (frontend, API, database, and CI/CD) is deployed and proven end-to-end; the game itself is not built yet.
+> Status: the platform (frontend, API, database, and CI/CD) is deployed and proven end-to-end. The world game (generator, engine, bots, clock, planning UI) is built and plays locally. The world-only server has not been deployed yet: the live site still runs the previous 2-player build until the cutover.
 
 ## Architecture
 
@@ -21,7 +21,8 @@ Everything deploys via **GitHub Actions** on push to `main` (path-filtered, see 
 ## Repository layout
 
 ```
-docs/SPEC.md            Game design spec (v0.1)
+docs/SPEC.md            Game design spec (v0.1); engine rules still current, 2-player match flow retired
+docs/WORLD_SPEC.md      World game spec (the game the server runs)
 frontend/               Vite SPA (deployed to Vercel)
 api/                    FastAPI service (deployed to Cloud Run; uv-managed)
 infra/setup-gcp.sh      One-time GCP provisioning (WIF, deployer/runtime SAs, Artifact Registry, Secret Manager)
@@ -34,7 +35,7 @@ infra/setup-gcp.sh      One-time GCP provisioning (WIF, deployer/runtime SAs, Ar
 ## Local development
 
 Run the full stack on a laptop — Postgres + Auth + API + frontend — and play a
-match offline. **One command owns the whole lifecycle:**
+world offline. **One command owns the whole lifecycle:**
 
 ```bash
 ./scripts/dev.sh up      # isolated Supabase stack + API + frontend, waits for health
@@ -102,7 +103,7 @@ Pushes to `main` trigger the relevant workflow based on which paths changed:
 | -------- | ----------- | ------- |
 | `frontend.yml` | `frontend/**` | Vercel production (`vercel deploy --prod`) |
 | `api.yml` | `api/**` | uv tests → Docker build → Cloud Run (keyless WIF) |
-| `supabase.yml` | `supabase/**` | `supabase db push` (no migrations yet) |
+| `supabase.yml` | `supabase/**` | `supabase db push` (migrations in `supabase/migrations/`) |
 
 Deploy jobs run under the `production` GitHub Environment. Configuration lives in:
 - **GitHub variables**: `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`
@@ -111,6 +112,4 @@ Deploy jobs run under the `production` GitHub Environment. Configuration lives i
 
 ## Next steps
 
-1. Supabase schema for the v0.1 data model (games, hexes, units, orders, turns) + RLS — this also activates `supabase.yml`.
-2. The API execution engine (planning, order lock, simultaneous pulse resolution, combat, capture/economy).
-3. The frontend planning UI + execution replay.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/TODO.md`](docs/TODO.md). The main open step is the cutover: deploy the world-only build, apply `infra/setup-world-clock.sh` for the turn clock, and run the first live world ([`docs/WORLD_SPEC.md`](docs/WORLD_SPEC.md) §10.1 and §12).

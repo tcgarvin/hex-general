@@ -31,7 +31,7 @@ export function Login() {
     <Centered>
       <h1 className="text-2xl font-semibold">Hex General</h1>
       <p className="max-w-xs text-center text-sm text-zinc-400">
-        A turn-based hex wargame. Sign in to start or rejoin a match.
+        A turn-based hex wargame. Sign in to join a world.
       </p>
       {isLocalSupabase ? (
         <DevPasswordSignIn

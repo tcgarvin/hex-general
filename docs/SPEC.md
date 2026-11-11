@@ -1,5 +1,15 @@
 # Hex Wargame v0.1 Design Spec
 
+> **Status, 2026-11-10:** the 2-player match this spec was written for is retired; the
+> server runs only world games (`WORLD_SPEC.md`). The **game rules** here (orders,
+> movement and ZOC, stacking, fog, terrain, combat, capture, repair, economy and
+> recruitment, execution sequence) still govern the engine, except where
+> `WORLD_SPEC.md` changes them for worlds (columns and travel, the site economy, no
+> victory condition). Only the match-flow parts are retired and kept as history:
+> two players, the lobby and invite flow, scenario victory conditions (§15), the
+> player-facing UX requirements for the 2-player screens (§16) and the prototype
+> success criteria (§18).
+
 ## 1. High-Level Concept
 
 This is a prototype for a turn-based operational hex wargame inspired by *Panzer General* / *Civil War General*, with one major twist:
@@ -704,6 +714,10 @@ A settlement only resists capture if an actual unit occupies or contests it.
 
 ## 15. Victory Conditions
 
+> *Retired 2026-11-10 (match flow).* World games have no victory condition in slice 1
+> (`WORLD_SPEC.md` §7); elimination is a player with no settlements and no units. The
+> engine still implements these checks for its tests.
+
 Victory conditions are scenario-defined.
 
 Recommended v0.1 defaults:
@@ -728,6 +742,10 @@ There is no HQ or capital city in v0.1.
 ---
 
 ## 16. User Experience Requirements
+
+> *Retired 2026-11-10 (2-player UI).* These requirements shaped the 2-player screens,
+> which are deleted. The world view (`WORLD_SPEC.md` §11) is the current UI; treat
+> this section as history and as a source of ideas.
 
 ### 16.1 Planning
 
@@ -832,6 +850,9 @@ Continuing movement after successful combat is included in v0.1. It is not a spe
 ---
 
 ## 18. Prototype Success Criteria
+
+> *Retired 2026-11-10.* These were the success criteria for the 2-player prototype.
+> The world playtest (`WORLD_SPEC.md` §12, W7) replaces them.
 
 The v0.1 prototype is successful if it produces situations like:
 

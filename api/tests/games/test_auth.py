@@ -12,7 +12,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.config import Settings
-from app.games import routes
+from app.games import deps
 from app.games.auth import AuthError, AuthIdentity
 
 
@@ -22,21 +22,21 @@ def _identity(user_id: str) -> AuthIdentity:
 
 def test_missing_authorization_is_401() -> None:
     with pytest.raises(HTTPException) as exc:
-        routes.real_identity(authorization=None)
+        deps.real_identity(authorization=None)
     assert exc.value.status_code == 401
 
 
 def test_non_bearer_scheme_is_401() -> None:
     with pytest.raises(HTTPException) as exc:
-        routes.real_identity(authorization="Basic abc")
+        deps.real_identity(authorization="Basic abc")
     assert exc.value.status_code == 401
 
 
 def test_valid_bearer_returns_verified_identity(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(routes, "verify_jwt", lambda token: _identity("user-1"))
-    identity = routes.real_identity(authorization="Bearer good")
+    monkeypatch.setattr(deps, "verify_jwt", lambda token: _identity("user-1"))
+    identity = deps.real_identity(authorization="Bearer good")
     assert identity.user_id == "user-1"
 
 
@@ -44,29 +44,29 @@ def test_invalid_token_is_401(monkeypatch: pytest.MonkeyPatch) -> None:
     def _raise(token: str) -> AuthIdentity:
         raise AuthError("nope")
 
-    monkeypatch.setattr(routes, "verify_jwt", _raise)
+    monkeypatch.setattr(deps, "verify_jwt", _raise)
     with pytest.raises(HTTPException) as exc:
-        routes.real_identity(authorization="Bearer bad")
+        deps.real_identity(authorization="Bearer bad")
     assert exc.value.status_code == 401
 
 
 def test_no_impersonation_returns_real_identity() -> None:
-    identity = routes.current_identity(identity=_identity("user-1"), x_dev_profile=None)
+    identity = deps.current_identity(identity=_identity("user-1"), x_dev_profile=None)
     assert identity.user_id == "user-1"
 
 
 def test_dev_may_impersonate(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(routes, "is_dev", lambda user_id: user_id == "dev-1")
-    identity = routes.current_identity(
+    monkeypatch.setattr(deps, "is_dev", lambda user_id: user_id == "dev-1")
+    identity = deps.current_identity(
         identity=_identity("dev-1"), x_dev_profile="victim"
     )
     assert identity.user_id == "victim"  # effective identity is the impersonated user
 
 
 def test_non_dev_impersonation_is_403(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(routes, "is_dev", lambda user_id: False)
+    monkeypatch.setattr(deps, "is_dev", lambda user_id: False)
     with pytest.raises(HTTPException) as exc:
-        routes.current_identity(identity=_identity("rando"), x_dev_profile="victim")
+        deps.current_identity(identity=_identity("rando"), x_dev_profile="victim")
     assert exc.value.status_code == 403
 
 

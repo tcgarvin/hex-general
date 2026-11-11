@@ -1,5 +1,14 @@
 # Hex Wargame UI Spec (game screen)
 
+> **Retired 2026-11-10:** this spec describes the 2-player game screen (`Board.tsx`,
+> `GameShell.tsx`, the dock/roster/inspector/lock/recruit/replay panels in
+> `frontend/src/board/panels/`, routes `/game/:id` and `/game/:id/replay/:turn`).
+> That UI is deleted and the spec is kept as history, including the file and route
+> names it cites. The current game screen is the world view: `frontend/src/world/`
+> (`WorldShell.tsx`, `WorldRenderer.ts`), designed in `WORLD_SPEC.md` §11, at
+> `/world/:id`. Ideas here (the "needs orders" principle, planning overlays, the lock
+> control, replay beats) inform that work but are not implemented as written.
+
 The design for the **game screen** — the full-page board where a player plans a
 turn, locks it, and reviews the replay. This is the UI layer over the engine and
 API described in [`SPEC.md`](./SPEC.md) (rules), [`ROADMAP.md`](./ROADMAP.md)

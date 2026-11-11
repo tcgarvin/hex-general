@@ -12,6 +12,10 @@ create-next-app scaffold was replaced; there is no server, no app router, no
 - **Supabase Auth** holds the session (`@/lib/supabase`); the app sends the JWT to
   the API. **openapi-fetch** is the typed API client (`@/lib/api/client`).
 
+## Screens
+
+Routes: `/login`, `/stats`, `/` (dispatcher: redirects into the caller's active world, else lists worlds to join), `/account`, `/world/:id` (`src/world/`, the game). Board helpers the world view reuses live in `src/board/`, `src/planning/` and `src/replay/`.
+
 ## Env vars
 
 Browser config is `VITE_`-prefixed and read via `import.meta.env`
@@ -21,7 +25,7 @@ unset `VITE_` var as `""`, so default with `||`, never `??`.
 ## Typed API client — regenerate after API schema changes
 
 `src/lib/api/schema.d.ts` is generated from the API's OpenAPI schema (the single
-source of truth for `GameView`/`Order`/…). After changing API request/response
+source of truth for `WorldView`/`Order`/…). After changing API request/response
 models, regenerate:
 
 ```bash

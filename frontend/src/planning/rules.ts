@@ -30,22 +30,12 @@ export interface UnitStats {
 /**
  * The v0.1 unit stat table — the single frontend mirror of `api/app/engine/stats.py`.
  * The server is authoritative; these only drive advisory planning affordances
- * (range/path prediction, the selected-unit panel, the muster forecast).
+ * (range/path prediction, the muster forecast).
  */
 export const UNIT_STATS: Record<UnitType, UnitStats> = {
   infantry: { move: 2, attack: 4, defense: 5, range: 1, vision: 2, maxHp: 10, upkeep: 1, recruitCost: 3 },
   armor: { move: 4, attack: 7, defense: 4, range: 1, vision: 2, maxHp: 10, upkeep: 2, recruitCost: 6 },
   artillery: { move: 1, attack: 5, defense: 2, range: 3, vision: 2, maxHp: 10, upkeep: 2, recruitCost: 5 },
-};
-
-/** The three recruitable unit types, in palette display order (SPEC §5.1). */
-export const UNIT_TYPES: readonly UnitType[] = ["infantry", "armor", "artillery"];
-
-/** Muster cost to recruit each unit type (convenience view over {@link UNIT_STATS}). */
-export const RECRUIT_COST: Record<UnitType, number> = {
-  infantry: UNIT_STATS.infantry.recruitCost,
-  armor: UNIT_STATS.armor.recruitCost,
-  artillery: UNIT_STATS.artillery.recruitCost,
 };
 
 /** Base movement points per unit type (convenience view over {@link UNIT_STATS}). */
@@ -60,29 +50,6 @@ export const UNIT_MOVE: Record<UnitType, number> = {
  * may barrage (SPEC §7.2); a target hex must be within this distance.
  */
 export const ARTILLERY_RANGE = UNIT_STATS.artillery.range;
-
-/** Muster income a controlled settlement yields per turn (SPEC §6.1): town +2, city +3. */
-export const SETTLEMENT_INCOME: Partial<Record<Terrain, number>> = {
-  town: 2,
-  city: 3,
-};
-
-/** Stationary-defender terrain defense bonus (SPEC §4.2). */
-export const TERRAIN_DEFENSE: Record<Terrain, number> = {
-  plains: 0,
-  woods: 2,
-  hills: 1,
-  river: 0,
-  bridge: 0,
-  lake: 0,
-  town: 2,
-  city: 2,
-};
-
-/** Terrain that blocks line of sight in v0.1 — only woods (SPEC §9.2). */
-export function blocksLineOfSight(terrain: Terrain): boolean {
-  return terrain === "woods";
-}
 
 /** Terrain a unit can never enter (`TERRAIN_STATS[...].passable is False`). */
 const IMPASSABLE_TERRAIN: ReadonlySet<Terrain> = new Set<Terrain>(["river", "lake"]);

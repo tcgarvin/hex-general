@@ -8,10 +8,9 @@
 
 import type { components } from "@/lib/api/schema";
 
-import { axialToPixel, type Axial } from "@/board/hex";
+import { axialToPixel, type Axial, type Hex } from "@/board/hex";
 
 type Terrain = components["schemas"]["Terrain"];
-export type Hex = components["schemas"]["Hex"];
 export type MapSite = components["schemas"]["MapSite"];
 export type CompactMap = components["schemas"]["CompactMap"];
 export type SiteKind = MapSite["kind"];

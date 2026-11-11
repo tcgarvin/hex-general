@@ -1,8 +1,8 @@
 """Tactical layer: per-unit candidate order generation + pathfinding (AI_SPEC §4.5).
 
 For each own unit this produces a small, ordered set (cap ~8) of plausible orders.
-The list is *ordered by preference*, so `ScriptedPolicy` takes ``candidates[0]`` as
-its move and `SearchPolicy` explores the rest as coordinate-ascent alternatives.
+The list is *ordered by preference*: the world bot (`app.ai.world`) takes
+``candidates[0]`` as the unit's move.
 
 Pathfinding is a BFS from the unit over passable, unoccupied hexes, bounded by the
 unit's move allowance (+1 when the whole path is road, SPEC §3.3) and truncated at
@@ -244,8 +244,8 @@ def unit_candidates(
 ) -> list[Order]:
     """Ordered candidate orders for ``unit`` (AI_SPEC §4.5); best first, Hold last.
 
-    The head of the list is the scripted choice; the whole list is the search's
-    alternative set. Always includes an advance (when it can move closer) and Hold.
+    The head of the list is the preferred order. Always includes an advance (when
+    it can move closer) and Hold.
     ``reserved`` hexes (cities held for recruitment) are excluded as move targets.
     """
     reach = _reach(board, unit, reserved)

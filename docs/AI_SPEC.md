@@ -7,6 +7,15 @@ cites sections where a rule shapes the AI.
 
 Status: **approved design, ready to implement.** Implementation phases are in §10.
 
+> **Retired 2026-11-10:** §§1-11 describe the 2-player bots (the scripted "Blitz" and
+> search "Sage" policies, the evaluation function, the plan-refinement planner, the
+> arena harness and its acceptance gates, and the vs-bot service integration). They
+> were deleted with the 2-player game (`app/ai/scripted.py`, `planner.py`,
+> `evaluation.py`, `baselines.py`, `arena.py` and their tests; `objectives.py` is cut
+> down to the `Objective` types). Kept as history. Still in the tree and used by the
+> world bots: `app/ai/policy.py`, `board.py`, `candidates.py`, `recruit.py`,
+> `objectives.py` and `base_plan.py`. **§12 (world bots) is current.**
+
 ---
 
 ## 1. Problem statement
@@ -479,7 +488,8 @@ noise); frontend vs-bot UX; bot-vs-bot balance dashboards.
 ## 12. World addendum (WORLD_SPEC §8, 2026-11-09)
 
 World bots live in `app/ai/world.py`; the world simulator in `app/world/sim.py`.
-The v0.1 policies above are unchanged and still play 2-player games.
+The v0.1 policies above were retired with the 2-player game on 2026-11-10; the
+world bots reuse only the shared pieces listed at the top of this doc.
 
 ### 12.1 Two layers, one seam
 

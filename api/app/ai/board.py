@@ -9,7 +9,7 @@ the 1600-hex map.
 
 This is an internal helper (not one of AI_SPEC §3's named modules); it exists
 purely to satisfy the §8 indexing rule in one place instead of duplicating the
-scans across `baselines`/`objectives`/`candidates`. It follows the repo's engine
+scans across `candidates`/`recruit`/`world`. It follows the repo's engine
 standard: it trusts its already-validated `GameState` and indexes directly.
 """
 
@@ -35,7 +35,6 @@ class BoardIndex:
             u.coord: u
             for u in sorted(view.units, key=lambda u: u.posture is Posture.DEPLOYED)
         }
-        self.unit_by_id: dict[int, Unit] = {u.id: u for u in view.units}
         self.settlement_by_coord: dict[Axial, Settlement] = {
             s.coord: s for s in view.settlements
         }
@@ -109,8 +108,3 @@ class BoardIndex:
 def is_combat_unit(unit: Unit) -> bool:
     """Whether a unit can capture settlements (infantry/armor, SPEC §14.1)."""
     return UNIT_STATS[unit.type].can_capture
-
-
-def unit_material(unit: Unit) -> float:
-    """Cost-weighted material value of a unit at its current HP (AI_SPEC §4.3)."""
-    return UNIT_STATS[unit.type].recruit_cost * unit.hp / 10.0

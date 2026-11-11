@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
 /* Field-HQ palette + type tokens (docs/UI-STYLE.md §2–3) for the React DOM
-   surfaces. Keep the color values in lockstep with src/theme/theme.ts — that
-   file is the same palette as 0xRRGGBB ints for the Pixi chrome. */
+   surfaces. */
 @theme {
   --color-wood-900: #321f14;
   --color-wood-700: #3d2d1b;

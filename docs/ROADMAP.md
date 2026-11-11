@@ -9,6 +9,19 @@ from their own client; the server executes once both have locked in. This makes
 player identity, order ownership, and **server-enforced fog of war** first-class
 concerns rather than afterthoughts.
 
+> **2026-11-10: the 2-player game was retired.** The server now runs only world games
+> (`WORLD_SPEC.md`, `VISION.md` §13); the work continues in `WORLD_SPEC.md` §12 (W0-W7).
+> Retired in code (not yet deployed): the `/games` API and match service paths, lobby,
+> invite link, vs-bot and its bots (`AI_SPEC.md` §§1-11), the 2-player board, panels
+> and replay UI (`UI-SPEC.md`, `FRONTEND.md`), and, by migration
+> `20261110200000_retire_matches.sql`, all non-world games. The phases below are the
+> history of that game and are kept as written: file names, routes and commands they
+> cite (`routes.py`, `Board.tsx`, `/games/...`, `game-setup.sh new`) may no longer
+> exist. What still stands from them: the engine (Phases 0-6, governed by `SPEC.md`
+> rules), the painterly tileset and site/base art (Phase 8), and the Codex art
+> pipeline. Phase 11 ("tuning, scenario polish") as written no longer applies; the
+> equivalent is W7, the live world playtest.
+
 ---
 
 ## Foundational architecture decisions

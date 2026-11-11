@@ -1,9 +1,10 @@
 """In-memory `GameRepo` for testing the lifecycle service without Supabase.
 
 Mirrors the Supabase repo's contract: typed records in, typed records out, the
-two optional lookups return ``None`` for genuine absence, and the unique
-constraints the real tables enforce (one slot per game, one submission per player
-per turn) are reproduced so the service is exercised against the same invariants.
+optional lookups return ``None`` for genuine absence, states round-trip through
+the same map-apart storage encoding, and the unique constraints the real tables
+enforce (one slot per game, one user per game, one turns row per turn) are
+reproduced so the service is exercised against the same invariants.
 """
 
 from __future__ import annotations
@@ -26,7 +27,6 @@ from app.games.repo import (
     RepoError,
     StaleGame,
     TurnRecord,
-    UserGameRecord,
     WorldRow,
     join_state,
     state_blob,
@@ -63,18 +63,16 @@ class FakeGameRepo:
     def get_map_slots(self, map_id: str) -> list[Axial]:
         return list(self._map_slots[map_id])
 
-    def _stored(self, state: GameState, map_id: str | None) -> GameState:
-        """``state`` as it reads back from storage (map rejoined if stored apart)."""
-        game_map = None if map_id is None else self._maps[map_id]
-        return join_state(state_blob(state, map_id), game_map)
+    def _stored(self, state: GameState, map_id: str) -> GameState:
+        """``state`` as it reads back from storage (its stored map rejoined)."""
+        return join_state(state_blob(state), self._maps[map_id])
 
     def create_game(
         self,
         scenario: str,
         state: GameState,
-        invite_token: str,
         *,
-        map_id: str | None = None,
+        map_id: str,
         clock: Clock = "manual",
         next_tick_at: datetime | None = None,
     ) -> GameRecord:
@@ -85,11 +83,10 @@ class FakeGameRepo:
             scenario=scenario,
             status="lobby",
             state=self._stored(state, map_id),
-            invite_token=invite_token,
             map_id=map_id,
         )
         self._games[game.id] = game
-        # Monotonic per-creation timestamp so history ordering is deterministic.
+        # Monotonic per-creation timestamp so newest-first listing is deterministic.
         self._created_at[game.id] = f"2026-01-01T00:00:{len(self._created_at):02d}Z"
         return game
 
@@ -116,17 +113,12 @@ class FakeGameRepo:
             update["next_tick_at"] = next_tick_at
         self._games[game.id] = stored.model_copy(update=update)
 
-    def is_world_game(self, game_id: str) -> bool:
-        return self._games[game_id].map_id is not None
-
     def list_worlds(self) -> list[WorldRow]:
-        worlds = [
-            g for g in self._games.values() if g.is_world and g.status == "active"
-        ]
+        worlds = [g for g in self._games.values() if g.status == "active"]
         return [
             WorldRow(
                 id=g.id,
-                map_id=g.map_id or "",
+                map_id=g.map_id,
                 turn=g.state.turn,
                 clock=g.clock,
                 next_tick_at=g.next_tick_at,
@@ -181,43 +173,6 @@ class FakeGameRepo:
             if self._games[player.game_id].status != "finished":
                 return player
         return None
-
-    def list_user_games(self, user_id: str) -> list[UserGameRecord]:
-        records: list[UserGameRecord] = []
-        for player in self._players.values():
-            if player.user_id != user_id:
-                continue
-            game = self._games[player.game_id]
-            opponent_bot_policy = next(
-                (
-                    p.bot_policy
-                    for p in self._players.values()
-                    if p.game_id == game.id
-                    and p.slot != player.slot
-                    and p.bot_policy is not None
-                ),
-                None,
-            )
-            records.append(
-                UserGameRecord(
-                    game_id=game.id,
-                    scenario=game.scenario,
-                    status=game.status,
-                    state=game.state,
-                    created_at=self._created_at[game.id],
-                    slot=player.slot,
-                    bot_policy=opponent_bot_policy,
-                )
-            )
-        return records
-
-    def record_orders(
-        self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]
-    ) -> None:
-        key = (game_id, turn, player_id)
-        if key in self._orders:
-            raise RepoError(f"orders already recorded for {key}")
-        self._orders[key] = OrdersRecord(player_id=player_id, turn=turn, orders=orders)
 
     def replace_orders(
         self, game_id: str, player_id: str, turn: int, orders: dict[str, Any]

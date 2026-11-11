@@ -7,8 +7,7 @@ from app.accounts import list_dev_profiles
 from app.config import get_settings
 from app.db import get_supabase_client
 from app.games.auth import AuthIdentity, is_dev
-from app.games.routes import real_identity
-from app.games.routes import router as games_router
+from app.games.deps import real_identity
 from app.games.schemas import DevProfile, MeView
 from app.games.world_routes import clock_router
 from app.games.world_routes import dev_router as dev_worlds_router
@@ -24,7 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(games_router)
 app.include_router(worlds_router)
 app.include_router(dev_worlds_router)
 app.include_router(clock_router)

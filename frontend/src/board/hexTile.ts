@@ -1,16 +1,18 @@
-// Which tile texture a hex is drawn with (shared by the 2-player board and the
-// world board), so a hex looks the same on both.
+// Which tile texture the world board draws a hex with.
 
-import type { components } from "@/lib/api/schema";
+import type { Texture } from "pixi.js";
 
-import { hexKey } from "./hex";
+import { hexKey, type Hex } from "./hex";
 import { lakeTileKey } from "./lakeTiles";
-import type { PortraitTile } from "./panels/SelectedUnitPanel";
 import { orientedRiverTile } from "./riverTiles";
 import type { RoadTileRef } from "./roadTiles";
 import { variantIndex, type LoadedTiles } from "./tiles";
 
-type Hex = components["schemas"]["Hex"];
+/** A hex's terrain tile: the texture plus the oriented-art mirror flag. */
+export interface HexTileRef {
+  readonly tex: Texture;
+  readonly mirror: boolean;
+}
 
 /**
  * The texture + mirror the board draws for a hex, in branch priority order:
@@ -19,8 +21,7 @@ type Hex = components["schemas"]["Hex"];
  * edges, possibly L↔R mirrored, unhandled shapes falling back to the generic
  * "00" tile), baked road-on-terrain art (T5 — a missing texture falls through to
  * the base tile + vector road overlay), then the coord-hashed cosmetic variant
- * of the base terrain. Shared by the map render loop and the dock portrait so
- * the portrait backdrop always matches the board.
+ * of the base terrain.
  *
  * `null` when the hex has no tile art loaded: a terrain with no `tiles/<terrain>/`
  * files, or a lake whose mask has no `lake/m<MM>_*` tile (the shipped set covers
@@ -34,7 +35,7 @@ export function hexTileRef(
   riverCourse: Map<string, number[]>,
   roadTiles: Map<string, RoadTileRef>,
   lakeMasks: ReadonlyMap<string, number>,
-): PortraitTile | null {
+): HexTileRef | null {
   if (h.terrain === "lake") {
     const key = hexKey(h.coord.q, h.coord.r);
     const mask = lakeMasks.get(key);

@@ -1,7 +1,7 @@
 # Local development & laptop playtesting
 
 Run the whole stack — Postgres + Auth + API + frontend — on a laptop, and play a
-full two-sided match offline, without touching the deployed project or
+world game offline, without touching the deployed project or
 configuring Google OAuth.
 
 One command owns the whole lifecycle:
@@ -14,7 +14,12 @@ One command owns the whole lifecycle:
 its own ports, so you can run several branches side by side (see
 [Multiple worktrees](#multiple-worktrees-at-once) below). You sign in as a seeded
 **`@hex.local`** dev account against the *local* Supabase Auth, then use the
-**dev-profile switcher** to impersonate the other identity and drive both sides.
+**dev-profile switcher** to impersonate another account (for example to seat a
+second human in the same world).
+
+The server runs only world games; the 2-player match (and its vs-bot mode) was
+retired on 2026-11-10, so there is no "new game" button and no `/games` API. You
+play by creating a world and joining it (below).
 
 ## How auth works locally (why it "just works")
 
@@ -147,24 +152,41 @@ freshly rendered montage is immediately reachable at
 1. Open the App URL printed by `dev.sh up` and **sign in with email + password**:
    - `dev1@hex.local` / password in `api/app/dev_seed.py` (`DEV_PASSWORD`).
 2. Confirm you're a dev: `GET /me` reports `is_dev: true` (the switcher appears).
-3. Create a game as `dev1`, then use the **dev-profile switcher** to act as
-   `dev2@hex.local`, claim the open slot, and submit orders for both sides.
+3. Get a world to play. The start screen (`/`) lists open worlds with a "Join" button;
+   a fresh local database has none, so create one first (dev-only API, below).
+   Once you hold a seat, `/` redirects to `/world/<game_id>`.
+
+Create, join and tick a world from the shell with `scripts/game-setup.sh` (it reads
+this worktree's URLs from `frontend/.env.local` and talks only to the local stack;
+`email` defaults to `dev1@hex.local`):
+
+```bash
+./scripts/game-setup.sh create-world --slots 8 --bots 4   # prints the world JSON (game_id); does not seat you
+./scripts/game-setup.sh join <game_id>                     # seat dev1 in the first open slot
+./scripts/game-setup.sh tick <game_id>                     # resolve a turn now (dev-only)
+./scripts/game-setup.sh active                             # {"active_world": {"game_id", "slot"} | null}
+./scripts/game-setup.sh clear                              # delete the caller's active world
+./scripts/game-setup.sh delete-world <game_id>             # delete any world (dev-only)
+```
+
+`create-world` defaults to `--slots 8 --bots 4 --seed 0 --clock manual`
+(`--clock twice_daily` schedules the real 01:00 / 13:00 clock; the API caps `--slots` at 400).
 
 Seeded accounts (same password for all):
 
 | Email            | Role                                                        |
 | ---------------- | ----------------------------------------------------------- |
-| `dev1@hex.local` | side A (create the game)                                    |
-| `dev2@hex.local` | side B (join, via switch)                                   |
-| `dev3@hex.local` | spare for automated checks that need a fresh game or world  |
+| `dev1@hex.local` | default pilot                                               |
+| `dev2@hex.local` | a second human (join via the switcher or `game-setup.sh join <id> dev2@hex.local`) |
+| `dev3@hex.local` | spare for automated checks that need a fresh world          |
 
-An account can hold only one active game or world, so checks that need a new world
-use `dev3` rather than resigning a playtest on `dev1` or `dev2`.
+An account can hold only one active world, so checks that need a new world use
+`dev3` rather than clearing a playtest on `dev1` or `dev2`.
 
 Local worlds are disposable: do not add dev accounts to get a fresh world. Run
-`scripts/game-setup.sh clear <email>` (resigns a match, deletes a world) or
-`scripts/game-setup.sh delete-world <id> [email]` (calls the dev-only
-`DELETE /dev/worlds/{id}`, which removes the world's game, players, turns and map).
+`scripts/game-setup.sh clear <email>` or `scripts/game-setup.sh delete-world <id> [email]`
+(both call the dev-only `DELETE /dev/worlds/{id}`, which removes the world's game,
+players, turns and map).
 
 To add or rename accounts, edit `DEV_USER_EMAILS` in `api/app/dev_seed.py` and
 re-run `./scripts/dev.sh up` (re-seeding is idempotent).
@@ -172,10 +194,10 @@ re-run `./scripts/dev.sh up` (re-seeding is idempotent).
 ### A world playtest on a fast clock
 
 World games (WORLD_SPEC) resolve on a clock rather than when everyone submits.
-Locally, create a world with the dev endpoint (`POST /dev/worlds`, e.g.
-`{"slots": 200, "bots": 100}`), join it (`POST /worlds/{id}/join`, or the
-"Join" button on the start screen), then drive its clock with the tick loop,
-detached and logging under `.dev/`:
+Locally, create a world (`game-setup.sh create-world`, or `POST /dev/worlds` with
+e.g. `{"slots": 200, "bots": 100}`), join it (`game-setup.sh join <id>`,
+`POST /worlds/{id}/join`, or the "Join" button on the start screen), then drive its
+clock with the tick loop, detached and logging under `.dev/`:
 
 ```bash
 cd api && setsid nohup uv run python -m app.world.tick_loop \
@@ -186,8 +208,8 @@ It waits one interval before the first tick, and publishes each next tick time
 so the world header counts down. Stop it with `pkill -f '^uv run python -m app.world.tick_loop'`
 (the anchor keeps the pattern from matching the shell that runs `pkill`); it
 clears the countdown on exit. `POST /dev/worlds/{id}/tick` resolves a turn
-immediately. A user can hold one active game at a time, so resign any 2-player
-match first.
+immediately. A user can hold one active world at a time; `game-setup.sh clear`
+deletes the caller's.
 
 ## Tear down
 

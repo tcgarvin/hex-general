@@ -6,7 +6,7 @@
 # (app/games/scheduler_auth.py), because the API is public and Cloud Run's IAM
 # check can't guard one route.
 #
-# NOT YET APPLIED. Run it at the cutover from the 2-player game to world games,
+# NOT YET APPLIED. Run it when world games go live (the 2-player match was retired in code on 2026-11-10),
 # after confirming with the user (it creates a service account and a scheduled
 # job that resolves live worlds). The API side is configured by CLOCK_AUDIENCE and
 # CLOCK_INVOKER_EMAIL in .github/workflows/api.yml; until both are set the

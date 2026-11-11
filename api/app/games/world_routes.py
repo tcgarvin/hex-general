@@ -1,13 +1,19 @@
 """HTTP routes for world games (WORLD_SPEC §10.1, W5).
 
-Thin adapter over `GameService`'s world operations, like `app.games.routes`:
+Thin adapter over `GameService`: it parses requests, resolves the caller's
+identity (`app.games.deps`), calls the service, and maps the service's typed
+`GameError`s onto HTTP status codes. All game logic lives in the service.
 
 - ``GET /worlds``: the running worlds, to pick one to join.
+- ``GET /worlds/active``: the world the caller holds a slot in, if any (where
+  login sends them).
 - ``POST /worlds/{id}/join``: take the first open slot in a running world.
 - ``GET /worlds/{id}``: the caller's fogged view, without the map.
 - ``GET /worlds/{id}/map``: the static map in the compact grid encoding. It never
   changes, so the response is marked cacheable for a year.
 - ``GET /worlds/{id}/turns/{turn}``: the caller's replay of a resolved turn.
+- ``POST /worlds/{id}/orders``: the caller's plan for the current turn, stored
+  (and revisable) until the tick resolves it.
 - ``POST /dev/worlds``, ``POST /dev/worlds/{id}/tick`` and
   ``DELETE /dev/worlds/{id}``: dev-only world creation, a manual clock and
   teardown.
@@ -15,29 +21,29 @@ Thin adapter over `GameService`'s world operations, like `app.games.routes`:
   13:00 New York time with a Google OIDC token (`app.games.scheduler_auth`); it
   resolves every scheduled world that is due. ``POST /dev/clock`` runs the same
   sweep for a dev.
-
-Orders go through ``POST /games/{id}/orders``, as for a match; for a world they
-are stored and resolve at the next tick.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
 
-from app.engine.map_codec import CompactMap
+from app.ai.policy import economy_orders_for
 from app.config import get_settings
+from app.engine.map_codec import CompactMap
 from app.games.auth import AuthIdentity, is_dev
+from app.games.deps import current_identity, get_service, require_player
 from app.games.repo import PlayerRecord
-from app.games.routes import current_identity, get_service, require_player
 from app.games.scheduler_auth import (
     ClockNotConfigured,
     SchedulerAuthError,
     verify_scheduler_token,
 )
 from app.games.schemas import (
+    ActiveWorldView,
     ClockRunView,
     CreateWorldRequest,
     PlayerCredentials,
+    SubmitOrdersRequest,
     SubmitResult,
     WorldCreated,
     WorldReplay,
@@ -50,10 +56,10 @@ from app.games.service import (
     GameNotActive,
     GameNotFound,
     GameService,
-    NotAWorld,
     ReplayNotFound,
     WorldTicksFailed,
 )
+from app.games.validation import OrderValidationError
 from app.world.generate import WorldGenError
 
 router = APIRouter(prefix="/worlds", tags=["worlds"])
@@ -79,6 +85,16 @@ def list_worlds(
     return service.list_worlds()
 
 
+# Declared before ``/{game_id}`` so "active" is not taken for a game id.
+@router.get("/active")
+def get_active_world(
+    identity: AuthIdentity = Depends(current_identity),
+    service: GameService = Depends(get_service),
+) -> ActiveWorldView:
+    """The world the caller holds a slot in, or none (the join screen)."""
+    return service.get_active_world(identity.user_id)
+
+
 @router.post("/{game_id}/join", status_code=201)
 def join_world(
     game_id: str,
@@ -88,7 +104,7 @@ def join_world(
     """Seat the caller in the world's first open slot."""
     try:
         return service.join_world(game_id, identity.user_id)
-    except (GameNotFound, NotAWorld) as exc:
+    except GameNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except (GameAlreadyActive, GameFull) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -100,10 +116,7 @@ def get_world(
     service: GameService = Depends(get_service),
 ) -> WorldView:
     """The caller's fogged view of their world, without the map."""
-    try:
-        return service.get_world_view(player)
-    except NotAWorld as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return service.get_world_view(player)
 
 
 @router.get("/{game_id}/map")
@@ -113,10 +126,7 @@ def get_world_map(
     service: GameService = Depends(get_service),
 ) -> CompactMap:
     """The world's static map (compact grid encoding); safe to cache forever."""
-    try:
-        compact = service.get_world_map(player)
-    except NotAWorld as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    compact = service.get_world_map(player)
     response.headers["Cache-Control"] = _MAP_CACHE_CONTROL
     return compact
 
@@ -130,8 +140,32 @@ def get_world_replay(
     """The caller's replay of a resolved world turn, without the map."""
     try:
         return service.get_world_replay(player, turn)
-    except (NotAWorld, ReplayNotFound) as exc:
+    except ReplayNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{game_id}/orders")
+def submit_orders(
+    body: SubmitOrdersRequest,
+    player: PlayerRecord = Depends(require_player),
+    service: GameService = Depends(get_service),
+) -> SubmitResult:
+    """Validate and store the caller's plan; it resolves at the world's next tick.
+
+    409 if the turn is closed: the world is not active, its scheduled tick is
+    due, or a tick resolved the turn while the plan was being stored.
+    """
+    try:
+        return service.submit_orders(
+            player,
+            body.orders,
+            body.recruitments,
+            economy_orders_for(player.slot, body.build, body.disband),
+        )
+    except OrderValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except GameNotActive as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @dev_router.post("", status_code=201)
@@ -160,7 +194,7 @@ def tick_world(
     """Resolve the world's current turn now: the dev manual clock."""
     try:
         return service.tick_world(game_id)
-    except (GameNotFound, NotAWorld) as exc:
+    except GameNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except GameNotActive as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -177,11 +211,6 @@ def delete_world(
         service.delete_world(game_id)
     except GameNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except NotAWorld as exc:
-        raise HTTPException(
-            status_code=409,
-            detail=f"{exc}; resign a match instead of deleting it",
-        ) from exc
     return Response(status_code=204)
 
 

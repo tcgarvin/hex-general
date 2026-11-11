@@ -10,7 +10,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { axialEqual, axialNeighbors, hexKey, type Axial } from "@/board/hex";
+import { axialEqual, axialNeighbors, hexKey, type Axial, type Hex } from "@/board/hex";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
 import { reachableContinuations, type HexIndex } from "@/planning/reach";
@@ -191,7 +191,7 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const { error } = await api.POST("/games/{game_id}/orders", {
+      const { error } = await api.POST("/worlds/{game_id}/orders", {
         params: { path: { game_id: view.game_id } },
         body: toSubmission(plan, slot),
       });
@@ -298,7 +298,7 @@ function cachedRoute(costs: ColumnCosts, from: Axial, to: Axial, via: readonly A
 
 /** The map hexes within `radius` of `center`, as the 2-player reach helpers expect. */
 function localIndex(map: WorldMap, center: Axial, radius: number): HexIndex {
-  const index = new Map<string, components["schemas"]["Hex"]>();
+  const index = new Map<string, Hex>();
   let frontier: Axial[] = [center];
   const seen = new Set([hexKey(center.q, center.r)]);
   for (let ring = 0; ring <= radius; ring++) {
