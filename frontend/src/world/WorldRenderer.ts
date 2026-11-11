@@ -1779,7 +1779,7 @@ function drawWaypoint(
   color: number,
   alpha: number,
 ): void {
-  const r = Math.max(px(6), HEX_SIZE * 0.2);
+  const r = Math.max(px(7), HEX_SIZE * 0.26);
   g.poly([at.x, at.y - r, at.x + r, at.y, at.x, at.y + r, at.x - r, at.y])
     .fill({ color, alpha })
     .stroke({ color: DARK, width: px(1.5), alpha });

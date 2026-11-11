@@ -287,6 +287,7 @@ function WorldScreen({
               hex={panelHex}
               armySize={outlook.armySize}
               planning={planning}
+              designate={designate}
               onClose={() => planning.selectUnit(null)}
             />
           )}
@@ -730,7 +731,7 @@ function ArmyPanel({
                     selected ? "bg-wood-700 text-parchment-200" : "hover:bg-parchment-400/40"
                   }`}
                 >
-                  <span className="w-[6.25rem] shrink-0 truncate" title={`${name} (#${u.id})`}>
+                  <span className="w-[5.5rem] shrink-0 truncate" title={`${name} (#${u.id})`}>
                     {name}
                     {u.posture === "column" ? " ▭" : ""}
                   </span>
@@ -1264,6 +1265,7 @@ function HexPanel({
   hex,
   armySize,
   planning,
+  designate,
   onClose,
 }: {
   map: WorldMap;
@@ -1273,6 +1275,7 @@ function HexPanel({
   hex: Axial;
   armySize: number;
   planning: WorldPlanning;
+  designate: Designate;
   onClose: () => void;
 }) {
   const cell = map.hexAt(hex.q, hex.r);
@@ -1357,7 +1360,7 @@ function HexPanel({
               <li key={u.id} className="flex items-center justify-between gap-2">
                 {u.owner === slot ? (
                   <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => planning.selectUnit(u.id)}>
-                    Your {u.type}
+                    {designate(u.id) ?? `Your ${u.type}`}
                     {u.posture === "column" ? " (column)" : ""}
                   </button>
                 ) : (
