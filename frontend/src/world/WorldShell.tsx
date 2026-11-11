@@ -32,6 +32,7 @@ import {
 import { FieldManual, type ManualSection } from "./FieldManual";
 import { HoverInfo } from "./HoverInfo";
 import { attackPreview, barragePreview } from "./combatView";
+import { MAX_WAYPOINTS } from "./waypoints";
 import { MapControls } from "./MapControls";
 import { withdrawalWarning } from "./moveRules";
 import { consoleHeight, useMinimapSize } from "./minimapConsole";
@@ -1052,6 +1053,43 @@ function UnitPanel({
           <Chip active={order.onArrival === "column"} onClick={() => planning.setOnArrival(unit.id, "column")}>
             Stay packed
           </Chip>
+        </div>
+      )}
+      {order?.kind === "travel" && (
+        <div className="mt-2 text-xs" aria-label="Waypoints">
+          {order.via.length === 0 ? (
+            <p className="text-wood-500">Shift+click hexes on the map to route it through them (up to {MAX_WAYPOINTS}).</p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <span>Through</span>
+                <button
+                  type="button"
+                  onClick={() => planning.clearWaypoints(unit.id)}
+                  className="font-label uppercase text-wood-500 hover:text-ink-900"
+                >
+                  Clear waypoints
+                </button>
+              </div>
+              <ol className="mt-0.5 flex flex-wrap gap-1">
+                {order.via.map((w, k) => (
+                  <li key={`${w.q},${w.r}`} className="flex items-center gap-1 rounded-sm bg-parchment-400/50 pl-1.5 font-data">
+                    <span aria-hidden>◆</span>
+                    {k + 1}: {at(w)}
+                    <button
+                      type="button"
+                      onClick={() => planning.removeWaypoint(unit.id, k)}
+                      title={`Remove waypoint ${k + 1}`}
+                      aria-label={`Remove waypoint ${k + 1} at ${at(w)}`}
+                      className="px-1 text-wood-500 hover:text-invalid"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
         </div>
       )}
       {order?.kind === "barrage" && !inBarrageRange(unit, order.target) && (

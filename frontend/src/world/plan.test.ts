@@ -16,6 +16,7 @@ import {
   type Submission,
   type WorldPlan,
 } from "./plan";
+import { parsePlan } from "./planStore";
 import { decodeWorldMap, offsetToAxial } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -127,6 +128,17 @@ describe("submission round trip", () => {
     expect(wire.orders?.[2]).toEqual({ kind: "travel", unit_id: 3, destination: at(4), via: [], on_arrival: "column" });
     expect(wire.recruitments).toEqual([{ owner: "p", type: "infantry", coord: at(1) }]);
     expect(samePlan(planFromSubmission(wire), plan, "p")).toBe(true);
+  });
+
+  it("keeps a travel order's waypoints in order through the wire and storage", () => {
+    const plan: WorldPlan = {
+      ...EMPTY_PLAN,
+      orders: { 4: { kind: "travel", destination: at(4), via: [at(2), at(1)], onArrival: "deployed" } },
+    };
+    const wire = toSubmission(plan, "p");
+    expect(wire.orders?.[0]).toMatchObject({ via: [at(2), at(1)] });
+    expect(planFromSubmission(wire).orders[4]).toEqual(plan.orders[4]);
+    expect(parsePlan(JSON.stringify(plan))).toEqual(plan);
   });
 
   it("treats no submission as the empty plan", () => {

@@ -178,6 +178,8 @@ export interface OverlayRoute {
   highlighted: boolean;
   /** The hostile-held hex a move ends on (drawn as an attack), else `null`. */
   attack: Axial | null;
+  /** A travel order's waypoints, drawn as small diamonds on the route. */
+  waypoints: readonly Axial[];
 }
 
 /** A travel route previewed under the pointer before a click commits it. */
@@ -186,6 +188,8 @@ export interface RoutePreview {
   path: readonly Axial[];
   /** The route runs within auto-deploy distance of a hostile (drawn amber). */
   caution: boolean;
+  /** Waypoints on the previewed route (diamonds). */
+  waypoints: readonly Axial[];
 }
 
 /** The hex under the pointer, with the pointer's position on the canvas. */
@@ -826,6 +830,7 @@ export class WorldRenderer {
     g.stroke({ color, width: px(3), alpha: 0.95, cap: "round" });
     const end = pts[pts.length - 1];
     g.circle(end.x, end.y, Math.max(px(6), HEX_SIZE * 0.24)).stroke({ color, width: px(2.5) });
+    for (const w of preview.waypoints) drawWaypoint(g, centre(w), px, color, 0.95);
   }
 
   // --- drawing ----------------------------------------------------------------------
@@ -1467,6 +1472,7 @@ export class WorldRenderer {
       g.stroke({ color: DARK, width: width + px(2), alpha: alpha * 0.6, cap: "round", join: "round" });
       line();
       g.stroke({ color, width, alpha, cap: "round", join: "round" });
+      for (const w of route.waypoints) drawWaypoint(g, centre(w), px, color, strong ? 1 : alpha);
       const end = pts[pts.length - 1];
       if (route.attack !== null) {
         // Up and left of centre: a garrison's shield sits in the lower right.
@@ -1768,4 +1774,18 @@ export function drawOverview(map: WorldMap): HTMLCanvasElement {
   }
   ctx.putImageData(image, 0, 0);
   return canvas;
+}
+
+/** A waypoint on a travel route: a small diamond, outlined so it reads on any ground. */
+function drawWaypoint(
+  g: Graphics,
+  at: { x: number; y: number },
+  px: (n: number) => number,
+  color: number,
+  alpha: number,
+): void {
+  const r = Math.max(px(6), HEX_SIZE * 0.2);
+  g.poly([at.x, at.y - r, at.x + r, at.y, at.x, at.y + r, at.x - r, at.y])
+    .fill({ color, alpha })
+    .stroke({ color: DARK, width: px(1.5), alpha });
 }

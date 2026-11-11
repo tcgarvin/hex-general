@@ -414,6 +414,10 @@ function OrdersPage() {
             "Click any hex. The unit packs into a column and marches there over as many turns as it takes, along the route shown. Hover a hex first to see the arrival time. Choose Deploy or Stay packed for arrival. It keeps marching each turn until it arrives, runs into the enemy, or you give it a new order.",
           ],
           [
+            "Waypoints",
+            "To steer a Travel route (round a garrison, along a road you prefer), Shift+click hexes after setting the destination: the route passes through them in the order clicked, up to 4, shown as diamonds. Holding Shift while hovering shows the route and arrival time with that hex added. Remove one, or clear them all, on the unit panel. Clicking a new destination starts again without waypoints. Shift+click on a deployed unit of yours next door still means a swap.",
+          ],
+          [
             "Move",
             `Deployed units only. Click a highlighted hex: an exact path this turn, one hex a pulse, up to the unit's move (+${R.roadBonus} if the whole path is road). If the path is blocked the unit stops where it is.`,
           ],

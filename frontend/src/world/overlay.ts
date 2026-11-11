@@ -34,6 +34,7 @@ export function overlayOf(
       selected: r.unitId === selectedId,
       highlighted: r.unitId === highlightUnit,
       attack: r.attack,
+      waypoints: r.waypoints,
     })),
     barrages,
     reach: [...planning.moveReach.values()].map((path) => {

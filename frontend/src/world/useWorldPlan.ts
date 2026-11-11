@@ -9,8 +9,10 @@
 // full.
 //
 // Board clicks: one of your own units always selects it (a stack cycles), except
-// Shift+click on a neighbouring unit of yours, which orders the two to swap
-// places (relief in place, `relief.ts`). With a unit selected, Move and Barrage
+// Shift+click on a neighbouring deployed unit of yours, which orders the two to
+// swap places (relief in place, `relief.ts`). Otherwise, in Travel mode, Shift+click
+// adds a waypoint to the selected unit's travel (`waypoints.ts`); a plain click on
+// a new destination starts a fresh route without waypoints. With a unit selected, Move and Barrage
 // clicks outside the reach keep the selection and leave a `notice` saying why,
 // rather than silently dropping it. Move reach is occupancy-aware
 // (`moveRules.ts`), so a plan doesn't route through your own units or past an
@@ -47,6 +49,7 @@ import { clearUnsentPlan, draftOnLoad, loadUnsentPlan, saveUnsentPlan, supersede
 import { hostileZoc, swapBlocked, swapOrders, swapPartner } from "./relief";
 import { columnCosts, findRoute, RouteSearch, travelEta, type ColumnCosts } from "./routing";
 import { cycleUnit } from "./unitCycle";
+import { addWaypoint, MAX_WAYPOINTS, removeWaypoint } from "./waypoints";
 import type { WorldView } from "./useWorld";
 import type { WorldMap } from "./worldMap";
 
@@ -66,6 +69,8 @@ export interface PlannedRoute {
   kind: "travel" | "standing" | "move" | "march";
   /** Turns to arrive (travel and standing only). */
   eta: number | null;
+  /** The travel order's waypoints, in order (empty for anything else). */
+  waypoints: readonly Axial[];
   /** The hostile-held hex a move ends on: the move is an attack. */
   attack: Axial | null;
 }
@@ -83,6 +88,10 @@ export interface TravelPreview {
   eta: number;
   /** The route comes within auto-deploy distance of a hostile or a garrisoned site. */
   caution: boolean;
+  /** The waypoints the route passes through (the hovered hex last, when previewing one). */
+  waypoints: readonly Axial[];
+  /** Previewing the hovered hex as the next waypoint (Shift held), not as a new destination. */
+  asWaypoint: boolean;
 }
 
 /** Modifier keys held during a board click. */
@@ -131,10 +140,16 @@ export interface WorldPlanning {
   cancel: () => void;
   /**
    * Search, without blocking the page, the travel route a click on `hex` would
-   * order for the selected unit; `done` gets it (or `null`: no route). Returns a
-   * cancel function. The finished route is cached, so the click reuses it.
+   * order for the selected unit; `done` gets it (or `null`: no route). With
+   * `asWaypoint` (Shift held), the route with `hex` added as the next waypoint of
+   * the unit's travel. Returns a cancel function. The finished route is cached,
+   * so the click reuses it.
    */
-  previewTravel: (hex: Axial, done: (preview: TravelPreview | null) => void) => () => void;
+  previewTravel: (hex: Axial, done: (preview: TravelPreview | null) => void, asWaypoint?: boolean) => () => void;
+  /** Drop the waypoint at `index` from the unit's travel order. */
+  removeWaypoint: (unitId: number, index: number) => void;
+  /** Drop all of the unit's travel waypoints. */
+  clearWaypoints: (unitId: number) => void;
   setMode: (mode: PlanMode) => void;
   /** Set or clear a unit's order (clearing one half of a swap clears both). */
   setOrder: (unitId: number, order: WorldOrder | null) => void;
@@ -313,9 +328,39 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       const key = hexKey(hex.q, hex.r);
       const here = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
       const friend = here.find((u) => u.posture === "deployed");
-      if (mods.shift && selectedUnit !== null && friend !== undefined && friend.id !== selectedUnit.id) {
-        orderSwap(friend.id);
-        return;
+      if (mods.shift && selectedUnit !== null) {
+        // Precedence: a deployed neighbour of yours means a swap; otherwise, in
+        // Travel mode, the hex becomes the next waypoint.
+        const neighbour =
+          friend !== undefined &&
+          friend.id !== selectedUnit.id &&
+          selectedUnit.posture === "deployed" &&
+          axialDistance(friend.coord, selectedUnit.coord) === 1;
+        if (neighbour) {
+          orderSwap(friend.id);
+          return;
+        }
+        if (sel.mode === "travel") {
+          const base = travelBase(selectedUnit, plan.orders, standing);
+          if (base === null) {
+            warn("Set a destination first: click a hex, then Shift+click hexes to pass through");
+            return;
+          }
+          const added = addWaypoint(
+            (from, to, via) => cachedRoute(costs, from, to, via),
+            map,
+            selectedUnit.coord,
+            base,
+            hex,
+          );
+          if ("error" in added) warn(added.error);
+          else setOrder(selectedUnit.id, { kind: "travel", destination: base.destination, via: added.via, onArrival: base.onArrival });
+          return;
+        }
+        if (friend !== undefined && friend.id !== selectedUnit.id) {
+          orderSwap(friend.id); // not a neighbour: says why it can't
+          return;
+        }
       }
       if (here.length > 0) {
         // Your own unit always selects, in every mode. Clicking a stack again
@@ -350,11 +395,11 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       }
       select(null, hex);
     },
-    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, setOrder, select, warn, orderSwap],
+    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, standing, setOrder, select, warn, orderSwap],
   );
 
   const previewTravel = useCallback(
-    (hex: Axial, done: (preview: TravelPreview | null) => void): (() => void) => {
+    (hex: Axial, done: (preview: TravelPreview | null) => void, asWaypoint = false): (() => void) => {
       if (selectedUnit === null || axialEqual(hex, selectedUnit.coord)) {
         done(null);
         return () => {};
@@ -366,15 +411,40 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       }
       const from = selectedUnit.coord;
       const packed = selectedUnit.posture === "column";
+      // With Shift, the route as it would be with `hex` as the next waypoint.
+      const base = asWaypoint ? travelBase(selectedUnit, plan.orders, standing) : null;
+      if (asWaypoint && (base === null || base.via.length >= MAX_WAYPOINTS || axialEqual(hex, base.destination))) {
+        done(null);
+        return () => {};
+      }
+      const to = base !== null ? base.destination : hex;
+      const via = base !== null ? [...base.via, hex] : [];
       const finish = (path: Axial[] | null) =>
         done(
           path === null
             ? null
-            : { from, path, eta: travelEta(costs, path, { packed }), caution: runsIntoContact(from, path, zone) },
+            : {
+                from,
+                path,
+                eta: travelEta(costs, path, { packed }),
+                caution: runsIntoContact(from, path, zone),
+                waypoints: via,
+                asWaypoint: base !== null,
+              },
         );
-      return searchRoute(costs, from, hex, finish);
+      return searchRoute(costs, from, to, via, finish);
     },
-    [selectedUnit, map, costs, zone],
+    [selectedUnit, map, costs, zone, plan.orders, standing],
+  );
+
+  const editVia = useCallback(
+    (unitId: number, change: (via: readonly Axial[]) => Axial[]) =>
+      edit((p) => {
+        const order = p.orders[unitId];
+        if (order?.kind !== "travel") return p;
+        return { ...p, orders: { ...p.orders, [unitId]: { ...order, via: change(order.via) } } };
+      }),
+    [edit],
   );
 
   const busy = useCallback(
@@ -445,6 +515,8 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       else select(null, null);
     },
     previewTravel,
+    removeWaypoint: (unitId, index) => editVia(unitId, (via) => removeWaypoint(via, index)),
+    clearWaypoints: (unitId) => editVia(unitId, () => []),
     setMode: (mode) => select(sel.unitId, sel.hex, mode),
     setOrder,
     orderSwap,
@@ -473,6 +545,22 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     submitting,
     submitError,
   };
+}
+
+/**
+ * The travel a waypoint would join: the unit's staged Travel order, else the
+ * standing order it is carrying on with (a waypoint then reissues it), else `null`.
+ */
+function travelBase(
+  unit: Unit,
+  orders: Readonly<Record<number, WorldOrder>>,
+  standing: readonly components["schemas"]["StandingTravel"][],
+): { destination: Axial; via: readonly Axial[]; onArrival: Posture } | null {
+  const order = orders[unit.id];
+  if (order?.kind === "travel") return order;
+  if (order !== undefined) return null;
+  const s = standing.find((t) => t.unit_id === unit.id);
+  return s === undefined ? null : { destination: s.destination, via: [], onArrival: s.on_arrival ?? "deployed" };
 }
 
 /** This tab's edits to a turn's plan (see `useWorldPlan`). */
@@ -507,18 +595,27 @@ function plannedRoutes(
           kind: "standing",
           eta: travelEta(costs, s.route, { packed }),
           attack: null,
+          waypoints: [],
         });
       }
     } else if (order.kind === "travel") {
       const path = cachedRoute(costs, unit.coord, order.destination, order.via);
       // The server re-checks reachability; a staged order always had a route when set.
       if (path === null) throw new Error(`staged travel for unit ${unit.id} has no route`);
-      routes.push({ unitId: unit.id, from: unit.coord, path, kind: "travel", eta: travelEta(costs, path, { packed }), attack: null });
+      routes.push({
+        unitId: unit.id,
+        from: unit.coord,
+        path,
+        kind: "travel",
+        eta: travelEta(costs, path, { packed }),
+        attack: null,
+        waypoints: order.via,
+      });
     } else if (order.kind === "move" || order.kind === "march") {
       // Only a deployed Move can attack; a column halts on contact instead.
       const end = order.path[order.path.length - 1];
       const attack = order.kind === "move" && end !== undefined && hostile.has(hexKey(end.q, end.r)) ? end : null;
-      routes.push({ unitId: unit.id, from: unit.coord, path: order.path, kind: order.kind, eta: null, attack });
+      routes.push({ unitId: unit.id, from: unit.coord, path: order.path, kind: order.kind, eta: null, attack, waypoints: [] });
     }
   }
   return routes;
@@ -556,14 +653,20 @@ const SLICE_MS = 8;
  * big map never stalls the page; `done` gets it (once, unless cancelled first).
  * Same search and tie-breaks as `findRoute`, and the result goes into the cache.
  */
-function searchRoute(costs: ColumnCosts, from: Axial, to: Axial, done: (path: Axial[] | null) => void): () => void {
-  const key = routeKey(from, to, []);
+function searchRoute(
+  costs: ColumnCosts,
+  from: Axial,
+  to: Axial,
+  via: readonly Axial[],
+  done: (path: Axial[] | null) => void,
+): () => void {
+  const key = routeKey(from, to, via);
   const cache = cacheFor(costs);
   if (cache.has(key)) {
     done(cache.get(key) ?? null);
     return () => {};
   }
-  const search = new RouteSearch(costs, from, to);
+  const search = new RouteSearch(costs, from, to, via);
   let timer: ReturnType<typeof setTimeout> | null = null;
   const slice = () => {
     const until = performance.now() + SLICE_MS;

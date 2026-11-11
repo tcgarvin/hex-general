@@ -55,15 +55,21 @@ export function HoverInfo({
     return () => clearTimeout(id);
   }, [hover]);
 
+  // Shift held: the travel preview shows the hovered hex as the next waypoint.
+  const shift = useShiftHeld();
+
   // The travel preview, searched once the pointer settles on a hex.
   const unit = planning.selectedUnit;
   const travelling = unit !== null && planning.mode === "travel";
   const { previewTravel } = planning;
   const ownHere =
     hover !== null && view.state.units.some((u) => u.owner === view.your_slot && u.coord.q === hover.hex.q && u.coord.r === hover.hex.r);
-  const [computed, setComputed] = useState<{ hover: Hover; search: typeof previewTravel; preview: TravelPreview | null } | null>(
-    null,
-  );
+  const [computed, setComputed] = useState<{
+    hover: Hover;
+    search: typeof previewTravel;
+    shift: boolean;
+    preview: TravelPreview | null;
+  } | null>(null);
   useEffect(() => {
     // A click on your own unit selects it, so there is no route to preview there.
     if (!travelling || hover === null || ownHere) return;
@@ -71,17 +77,27 @@ export function HoverInfo({
     // destination on a big map never stalls the pointer; a newer hover cancels it.
     let cancel = () => {};
     const id = setTimeout(() => {
-      cancel = previewTravel(hover.hex, (preview) => setComputed({ hover, search: previewTravel, preview }));
+      cancel = previewTravel(hover.hex, (preview) => setComputed({ hover, search: previewTravel, shift, preview }), shift);
     }, PREVIEW_DEBOUNCE_MS);
     return () => {
       clearTimeout(id);
       cancel();
     };
-  }, [travelling, hover, ownHere, previewTravel]);
+  }, [travelling, hover, ownHere, previewTravel, shift]);
   const preview =
-    travelling && !ownHere && computed !== null && computed.hover === hover && computed.search === previewTravel ? computed.preview : null;
+    travelling &&
+    !ownHere &&
+    computed !== null &&
+    computed.hover === hover &&
+    computed.search === previewTravel &&
+    computed.shift === shift
+      ? computed.preview
+      : null;
+  const hasTravel = unit !== null && planning.plan.orders[unit.id]?.kind === "travel";
   useEffect(() => {
-    renderer.setPreview(preview === null ? null : { from: preview.from, path: preview.path, caution: preview.caution });
+    renderer.setPreview(
+      preview === null ? null : { from: preview.from, path: preview.path, caution: preview.caution, waypoints: preview.waypoints },
+    );
   }, [renderer, preview]);
   useEffect(() => () => renderer.setPreview(null), [renderer]);
 
@@ -135,8 +151,13 @@ export function HoverInfo({
           {preview !== null && (
             <div className={info !== null ? "mb-1 border-b border-wood-500/40 pb-1" : ""}>
               <p className="font-label font-semibold uppercase tracking-wide">
-                Travel: {preview.eta <= 1 ? "arrives this turn" : `${preview.eta} turns`}
+                {preview.asWaypoint ? "Through here" : "Travel"}: {preview.eta <= 1 ? "arrives this turn" : `${preview.eta} turns`}
               </p>
+              {preview.asWaypoint ? (
+                <p className="text-wood-500">Shift+click to add waypoint {preview.waypoints.length}</p>
+              ) : (
+                hasTravel && <p className="text-wood-500">Click: new destination · Shift: pass through here</p>
+              )}
               {preview.caution && (
                 <p className="text-invalid">Columns deploy on contact about {DEPLOY_DISTANCE} hexes out</p>
               )}
@@ -165,4 +186,22 @@ export function HoverInfo({
       )}
     </>
   );
+}
+
+/** Whether Shift is held (for previews that change with it); false again when the window loses focus. */
+function useShiftHeld(): boolean {
+  const [held, setHeld] = useState(false);
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => setHeld(e.shiftKey);
+    const off = () => setHeld(false);
+    window.addEventListener("keydown", on);
+    window.addEventListener("keyup", on);
+    window.addEventListener("blur", off);
+    return () => {
+      window.removeEventListener("keydown", on);
+      window.removeEventListener("keyup", on);
+      window.removeEventListener("blur", off);
+    };
+  }, []);
+  return held;
 }
