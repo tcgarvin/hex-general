@@ -172,6 +172,27 @@ and `frontend/src/board/joins/lake/` (`scripts/tests/test_lake_tiles_sync.py` ch
 them; per-tile provenance in `art/codex/terrain/APPLIED.md`). Round 1
 (`candidates/lake1*`) is superseded.
 
+## Variety tiles (ratified 2026-11-11)
+
+Occasional decoration of open country, painted in two rounds with the paint-in
+recipe on 3x3 sheets: **small** (round 1: one tree, scrub, a boulder, a lone cottage)
+and **medium** (round 2: a copse, hedgerow, pond, marsh, heath, a farmstead, hamlet,
+inn, chapel or mill covering a quarter to a third of the hex, same world scale).
+Plains features and homesteads are painted on the G2 plains bases; roadside tiles are
+painted over the shipped road tile, then `art/codex/terrain/variety1.py hold` puts
+the road and 3 px around it back pixel for pixel (road and rim exact), so road
+continuity is untouched. A house-scale yardstick image (`sites4_oilfac_l2ref.py` on
+round 1 tiles) keeps a later round at the approved building size. Files
+`plains_nature/<s|m>NN.png`, `plains_home/<s|m>NN.png`,
+`road_variety/<shape>_<s|m>N.png`; the selection rule is `variety_picks` in
+`scripts/board-mock.py`, ported as `frontend/src/board/varietyTiles.ts` and pinned by
+`scripts/variety-fixture.py` (`__fixtures__/variety.json`); density and mix in
+`frontend/src/board/varietySettings.json`. Record: `art/codex/terrain/README.md`
+("Variety round 1", "round 2", "Variety (ratified 2026-11-11)"); set
+`art/codex/terrain/candidates/variety-ratified/` (built by
+`variety_ratified_build.py`), shipped as byte copies in `frontend/src/board/tiles/`
+(`scripts/tests/test_variety_tiles_sync.py`; provenance in `APPLIED.md`).
+
 ## NBP foundry (superseded for terrain; unit sprites)
 
 The review artifact for how terrain hex art gets made, now that the loop is

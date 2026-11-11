@@ -345,6 +345,12 @@ Roads on hills are baked (Codex paint-in, 2026-11-10); roads on settlements have
 baked art yet; the 2-player board draws the vector road there (the world view draws the base tile). The NBP tiles
 described below are superseded; their provenance stays in `art/foundry/`.
 
+**2026-11-11 update:** variety tiles shipped (ratified): small and medium plains
+features, homesteads beside roads and towns, and roadside buildings on plains road
+straights, turns and the common forks, chosen per hex by a static rule
+(`frontend/src/board/varietyTiles.ts`; density and mix in `varietySettings.json`).
+Not yet: roadside variety on road ends and on hills roads.
+
 **Orientation decision (applies to rivers/bridges/road-tiles):** no 60° rotation
 — rotating 64px pixel art by 60° resamples and looks mushy. Generate the distinct
 oriented tiles instead, but use a cheap **horizontal (left↔right) mirror** at

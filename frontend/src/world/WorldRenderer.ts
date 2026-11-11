@@ -57,7 +57,8 @@ import { lakeMasks } from "@/board/lakeTiles";
 import { ROAD_COLOR, TERRAIN_FILL } from "@/board/palette";
 import { riverCourseEdges, riverMouths, type RiverOutlet } from "@/board/riverTiles";
 import { roadCourseEdges, roadTileRefs, type RoadTileRef } from "@/board/roadTiles";
-import type { LoadedTiles } from "@/board/tiles";
+import { varietyCatalog, varietyExclusions, varietyPicks, type VarietyPick } from "@/board/varietyTiles";
+import { TILE_KEYS, type LoadedTiles } from "@/board/tiles";
 import type { LoadedUnits, UnitSpritePair } from "@/board/units";
 import type { components } from "@/lib/api/schema";
 
@@ -81,7 +82,7 @@ import { dashSegments } from "./dashes";
 import type { LoadedColumns } from "./columnArt";
 import type { DrawnUnit, Effect } from "./playback/interpolate";
 import type { LoadedSites } from "./siteArt";
-import { siteTileTexture } from "./siteTiles";
+import { BASE_FOOTPRINT, siteTileTexture } from "./siteTiles";
 import { axialToOffset, visibleCells, worldPixelBounds, type CellRange, type WorldMap } from "./worldMap";
 import {
   baseSiteTiles,
@@ -274,6 +275,8 @@ export class WorldRenderer {
   private readonly mouths: Map<string, RiverOutlet>;
   /** Painted tiles of the map's leveled sites (static). */
   private readonly staticSiteTiles: SiteTileMap;
+  /** Variety tiles by hex key: decorated plains and plains-road hexes (static). */
+  private readonly variety: Map<string, VarietyPick>;
   /** Painted tiles of the founded bases; recomputed per scene (`setScene`). */
   private baseSiteTiles: SiteTileMap = new Map();
   private readonly overviewScale: number;
@@ -327,6 +330,14 @@ export class WorldRenderer {
       (MOUTH_ART ? riverMouths(riverCoords, terrainAt) : []).map((m) => [hexKey(m.coord.q, m.coord.r), m]),
     );
     this.staticSiteTiles = staticSiteTiles(map.sites);
+    // Variety decoration (varietyTiles.ts): static map data only, so once per map.
+    this.variety = varietyPicks(
+      map.hexes,
+      (q, r) => map.hexAt(q, r),
+      this.roadTiles,
+      varietyExclusions(map.sites, BASE_FOOTPRINT),
+      varietyCatalog(TILE_KEYS),
+    );
 
     const overviewCanvas = drawOverview(map);
     const overviewTexture = Texture.from(overviewCanvas);
@@ -974,7 +985,7 @@ export class WorldRenderer {
     const ref =
       choice.kind === "site"
         ? { tex: siteTileTexture(choice.key), mirror: false }
-        : hexTileRef(hex, tiles, this.riverCourse, this.roadTiles, this.lakeMasks);
+        : hexTileRef(hex, tiles, this.riverCourse, this.roadTiles, this.lakeMasks, this.variety);
     // Pooled sprites are reused across hexes, so the tint is always set.
     if (ref === null) {
       sprite.texture = this.plainHexTexture;

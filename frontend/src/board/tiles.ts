@@ -26,6 +26,9 @@ const TILE_MODULES = import.meta.glob<string>("./tiles/**/*.png", {
   import: "default",
 });
 
+/** Every tile glob key (`./tiles/<terrain>/<file>.png`), for `varietyCatalog`. */
+export const TILE_KEYS: readonly string[] = Object.keys(TILE_MODULES);
+
 /** Parse a glob key into its `(terrain, variant-filename)` pair. */
 function parseTileKey(key: string): { terrain: string; variant: string } {
   // "./tiles/<terrain>/<variant>.png"

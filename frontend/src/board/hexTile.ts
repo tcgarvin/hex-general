@@ -7,6 +7,7 @@ import { lakeTileKey } from "./lakeTiles";
 import { orientedRiverTile } from "./riverTiles";
 import type { RoadTileRef } from "./roadTiles";
 import { variantIndex, type LoadedTiles } from "./tiles";
+import type { VarietyPick } from "./varietyTiles";
 
 /** A hex's terrain tile: the texture plus the oriented-art mirror flag. */
 export interface HexTileRef {
@@ -21,7 +22,9 @@ export interface HexTileRef {
  * edges, possibly L↔R mirrored, unhandled shapes falling back to the generic
  * "00" tile), baked road-on-terrain art (T5 — a missing texture falls through to
  * the base tile + vector road overlay), then the coord-hashed cosmetic variant
- * of the base terrain.
+ * of the base terrain. A plains or plains-road hex in `variety` (`varietyPicks`)
+ * draws its variety tile instead of the cosmetic or baked-road variant; a
+ * roadside variety tile keeps the road shape's mirror flag.
  *
  * `null` when the hex has no tile art loaded: a terrain with no `tiles/<terrain>/`
  * files, or a lake whose mask has no `lake/m<MM>_*` tile (the shipped set covers
@@ -35,6 +38,7 @@ export function hexTileRef(
   riverCourse: Map<string, number[]>,
   roadTiles: Map<string, RoadTileRef>,
   lakeMasks: ReadonlyMap<string, number>,
+  variety: ReadonlyMap<string, VarietyPick> = new Map(),
 ): HexTileRef | null {
   if (h.terrain === "lake") {
     const key = hexKey(h.coord.q, h.coord.r);
@@ -57,9 +61,15 @@ export function hexTileRef(
   const roadRef = h.road ? roadTiles.get(hexKey(h.coord.q, h.coord.r)) : undefined;
   const roadVariants =
     roadRef === undefined ? undefined : terrainTex.byOriented[roadRef.lookup];
+  const pick = variety.get(hexKey(h.coord.q, h.coord.r));
   if (roadRef !== undefined && roadVariants !== undefined) {
+    if (pick !== undefined) return { tex: varietyTexture(terrainTex, pick), mirror: roadRef.mirror };
     const tex = roadVariants[variantIndex(h.coord.q, h.coord.r, roadVariants.length)];
     return { tex, mirror: roadRef.mirror };
+  }
+  if (pick !== undefined) {
+    if (pick.kind === "road") throw new Error(`roadside variety ${pick.key} on a hex with no baked road tile`);
+    return { tex: varietyTexture(terrainTex, pick), mirror: false };
   }
   const variants = terrainTex.byTerrain[h.terrain];
   if (variants === undefined) return null;
@@ -67,4 +77,11 @@ export function hexTileRef(
     tex: variants[variantIndex(h.coord.q, h.coord.r, variants.length)],
     mirror: false,
   };
+}
+
+/** The loaded texture of a variety pick; a pick naming an unloaded file is a bug. */
+function varietyTexture(terrainTex: LoadedTiles, pick: VarietyPick): Texture {
+  const tex = terrainTex.byOriented[pick.key]?.[0];
+  if (tex === undefined) throw new Error(`variety tile ${pick.key} is not loaded`);
+  return tex;
 }

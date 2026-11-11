@@ -87,6 +87,23 @@ base slots keep terrain. The files in `frontend/src/world/siteTiles/` are byte c
 Bases are drawn at stage 1 only until base growth is designed (`baseStageOf`).
 Changing these tiles is hex art under the sign-off rule below.
 
+Variety tiles (**ratified 2026-11-11**) decorate open country: now and then a plains
+hex draws a small or medium natural feature (`tiles/plains_nature/<s|m>NN.png`) or,
+beside a road or town, a homestead (`tiles/plains_home/`), and a plains road hex its
+road shape with buildings or trees beside it (`tiles/road_variety/<shape>_<s|m>N.png`,
+drawn with the road shape's mirror flag). Purely visual, from static map data only
+(terrain, roads, sites; never on a site hex or a base footprint, no two decorated hexes
+touch). The files are byte copies of `art/codex/terrain/candidates/variety-ratified/`
+(README and `picks.json` there; `scripts/tests/test_variety_tiles_sync.py` checks the
+copies). The rule is `frontend/src/board/varietyTiles.ts` (picks computed once per map
+in `WorldRenderer`, drawn by `hexTileRef`), ported from `variety_picks` in
+`scripts/board-mock.py` and pinned by `scripts/variety-fixture.py` ->
+`frontend/src/board/__fixtures__/variety.json`; **density and small/medium mix live in
+`frontend/src/board/varietySettings.json`** (medium, mostly-medium), read by both.
+board-mock draws the shipped variety by default (`--no-variety` for the old look,
+`--variety DIR` to preview candidates). Changing these tiles is hex art under the
+sign-off rule below.
+
 - **Hex art is the user's call — never auto-ratify.** Before you apply, overwrite,
   or commit *any* change to tiles under `frontend/src/board/tiles/` (new variants,
   regens, recolours, or programmatic edits like the river bank-rough pass),
