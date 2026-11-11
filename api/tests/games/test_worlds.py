@@ -15,7 +15,7 @@ from app.engine import hex_coords
 from app.engine.hex_coords import Axial, neighbors
 from app.engine.economy_rules import Building
 from app.engine.models import EconomyOrders
-from app.engine.models import GameState, MoveOrder, Unit
+from app.engine.models import NEUTRAL, GameState, MoveOrder, Unit
 from app.games.repo import KEEP, GameRecord, Keep
 from app.games.service import (
     WORLD_BOT_POLICY,
@@ -355,3 +355,126 @@ def test_a_failed_world_tick_still_restores_the_collector(
         service.tick_world(game_id)
 
     assert gc.isenabled()
+
+
+class _FailingInsertRepo(FakeGameRepo):
+    """A fake whose next players insert runs ``before`` and then ``outcome``.
+
+    ``before`` is a concurrent request landing between the seat and the insert;
+    ``outcome`` decides how the insert ends: ``"raise"`` fails it without
+    writing the row (a transient DB error), ``"lost"`` writes the row and then
+    raises (the response was lost after the insert committed), and
+    ``"insert"`` runs it normally (it may still fail on a unique constraint).
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.before: Callable[[], object] | None = None
+        self.outcome: str | None = None
+
+    def create_player(
+        self, game_id: str, slot: str, user_id: str, bot_policy: str | None = None
+    ) -> Any:
+        before, self.before = self.before, None
+        outcome, self.outcome = self.outcome, None
+        if before is not None:
+            before()
+        if outcome == "raise":
+            raise ConnectionError("database unavailable")
+        player = super().create_player(game_id, slot, user_id, bot_policy)
+        if outcome == "lost":
+            raise ConnectionError("response lost after the insert")
+        return player
+
+
+def _seated(repo: FakeGameRepo, game_id: str) -> set[str]:
+    game = repo.get_game(game_id)
+    assert game is not None
+    return {p.id for p in game.state.players}
+
+
+def _assert_no_ghost_slot(repo: FakeGameRepo, game_id: str) -> None:
+    """Every player seated in the state has a players row, and vice versa."""
+    game = repo.get_game(game_id)
+    assert game is not None
+    rows = {p.slot for p in repo.list_players(game_id)}
+    assert _seated(repo, game_id) == rows
+    owners = {u.owner for u in game.state.units if u.owner != NEUTRAL}
+    assert owners <= rows
+
+
+def test_a_join_whose_player_insert_fails_takes_its_seat_back() -> None:
+    repo = _FailingInsertRepo()
+    service = GameService(repo)
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    before = repo.get_game(game_id)
+    assert before is not None
+    repo.outcome = "raise"
+
+    with pytest.raises(ConnectionError, match="database unavailable"):
+        service.join_world(game_id, "user-1")
+
+    _assert_no_ghost_slot(repo, game_id)
+    after = repo.get_game(game_id)
+    assert after is not None
+    assert after.state.settlements == before.state.settlements
+    assert after.state.units == before.state.units
+    assert service.join_world(game_id, "user-1").slot == "s003"
+
+
+def test_a_join_whose_insert_landed_before_the_error_stands() -> None:
+    repo = _FailingInsertRepo()
+    service = GameService(repo)
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    repo.outcome = "lost"
+
+    credentials = service.join_world(game_id, "user-1")
+
+    assert credentials.slot == "s003"
+    _assert_no_ghost_slot(repo, game_id)
+
+
+def test_the_same_user_joining_twice_at_once_holds_one_slot() -> None:
+    repo = _FailingInsertRepo()
+    service = GameService(repo)
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    # The second click's request lands in full between the first one's seat
+    # and its insert; both passed the one-active-game check before either row.
+    repo.before = lambda: service.join_world(game_id, "user-1")
+
+    with pytest.raises(GameAlreadyActive):
+        service.join_world(game_id, "user-1")
+
+    _assert_no_ghost_slot(repo, game_id)
+    rows = [p for p in repo.list_players(game_id) if p.user_id == "user-1"]
+    assert [p.slot for p in rows] == ["s004"]
+    assert service.join_world(game_id, "user-2").slot == "s003"
+
+
+def test_two_users_racing_for_one_slot_each_get_their_own() -> None:
+    repo = _FailingInsertRepo()
+    service = GameService(repo)
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    repo.before = lambda: service.join_world(game_id, "user-2")
+
+    first = service.join_world(game_id, "user-1")
+
+    assert first.slot == "s003"
+    second = repo.get_player(game_id, "user-2")
+    assert second is not None and second.slot == "s004"
+    _assert_no_ghost_slot(repo, game_id)
+
+
+def test_a_failed_join_is_undone_even_after_a_tick_landed_in_between() -> None:
+    repo = _FailingInsertRepo()
+    service = GameService(repo)
+    game_id = service.create_world(slots=4, seed=3, bots=2)
+    repo.before = lambda: service.tick_world(game_id)
+    repo.outcome = "raise"
+
+    with pytest.raises(ConnectionError):
+        service.join_world(game_id, "user-1")
+
+    game = repo.get_game(game_id)
+    assert game is not None and game.state.turn == 1
+    _assert_no_ghost_slot(repo, game_id)

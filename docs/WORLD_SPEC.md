@@ -533,8 +533,16 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   generates the world, stores the map, seats the bots (`bot_policy = "world"`) and
   starts the game active. `join_world` seats a human in the first open slot
   (`app.world.seating`): never held, base site still vacant, and no unit within 3 hexes
-  of it. The `players` row is written first, so its `(game_id, slot)` uniqueness
-  settles two people joining at once.
+  of it. The seated state is written first, as a compare-and-set on `games.revision`,
+  so two people joining at once get different slots and a join during a tick loses no
+  write. The `players` row is inserted second; `(game_id, slot)` and
+  `(game_id, user_id)` are unique. If that insert fails, the join takes the seat back
+  out of the state (`seating.unseat_player`: the player, their units and their base
+  go) and fails, so no slot is left seated with nobody behind it; a double-click join
+  whose twin took another slot first answers 409, and an insert that committed before
+  its error stands. One active world per user is checked in the app, not the schema,
+  so the same user joining two *different* worlds at the same instant could still
+  hold both (closing that needs a database-side check).
 - **Tick (service ✅ 2026-11-09, routes and scheduler to come):** `tick_world` plans
   every bot from its fogged view (personalities seeded from the game id), adds the
   humans' stored submissions, and resolves. A world submission is stored but never

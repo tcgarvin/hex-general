@@ -15,6 +15,7 @@ from app.world.seating import (
     open_slot,
     seat_player,
     slot_id,
+    unseat_player,
 )
 
 
@@ -101,3 +102,17 @@ def test_a_full_world_refuses_newcomers(world: GeneratedWorld) -> None:
     state = world.to_state([slot_id(k) for k in range(4)])
     with pytest.raises(WorldFull):
         seat_player(state, world.slots)
+
+
+def test_unseating_a_newcomer_restores_the_world_and_reopens_the_slot(
+    world: GeneratedWorld,
+) -> None:
+    state = world.to_state([slot_id(0), slot_id(1)])
+    seated, player = seat_player(state, world.slots)
+    before = seated.model_dump(mode="json")
+
+    unseated = unseat_player(seated, world.slots, player)
+
+    assert seated.model_dump(mode="json") == before
+    assert unseated.model_dump(mode="json") == state.model_dump(mode="json")
+    assert open_slot(unseated, world.slots) == 2

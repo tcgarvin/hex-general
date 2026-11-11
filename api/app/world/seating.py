@@ -89,3 +89,32 @@ def seat_player(state: GameState, slots: list[Axial]) -> tuple[GameState, Player
         raise ValueError("seating needs a world economy")
     seated.players.append(Player(id=player, stocks=economy.starting_stocks))
     return seated, player
+
+
+def unseat_player(state: GameState, slots: list[Axial], player: PlayerId) -> GameState:
+    """Take ``player`` back out of the world, reopening their slot.
+
+    The undo of `seat_player`, for a join whose players row could not be
+    written: the player, their units and any standing orders of those units go,
+    and the base they founded on their slot's capital is removed, so the base
+    site is vacant again. A tick may have run in between, so anything else they
+    came to control reverts to neutral. ``state`` is left untouched.
+    """
+    capital = slots[[slot_id(k) for k in range(len(slots))].index(player)]
+    unseated = state.fork()
+    gone = {u.id for u in unseated.units if u.owner == player}
+    unseated.units = [u for u in unseated.units if u.owner != player]
+    unseated.standing_orders = [
+        o for o in unseated.standing_orders if o.unit_id not in gone
+    ]
+    unseated.settlements = [
+        s
+        for s in unseated.settlements
+        if not (s.coord == capital and s.controlled_by == player)
+    ]
+    for settlement in unseated.settlements:
+        if settlement.controlled_by == player:
+            settlement.controlled_by = None
+    unseated.players = [p for p in unseated.players if p.id != player]
+    unseated.resigned = [r for r in unseated.resigned if r != player]
+    return unseated

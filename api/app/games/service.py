@@ -64,7 +64,7 @@ from app.games.validation import validate_submission
 from app.world.clock import next_tick_after
 from app.world.collector import quiet_collector
 from app.world.generate import WorldParams, generate
-from app.world.seating import WorldFull, seat_player, slot_id
+from app.world.seating import WorldFull, seat_player, slot_id, unseat_player
 
 _ORDERS = TypeAdapter(list[Order])
 _RECRUITMENTS = TypeAdapter(list[Recruitment])
@@ -260,13 +260,47 @@ class GameService:
 
         The seated state is written first, as a compare-and-set: two people
         joining at once, or a join during a tick, can't take the same slot or
-        lose a write. The loser re-reads and seats in the next open slot.
+        lose a write. The loser re-reads and seats in the next open slot. The
+        players row comes second; if writing it fails, the seat is taken back
+        out of the state (`_recover_failed_join`), so a failed join never leaves
+        a slot seated in the state with no player behind it.
         """
         self._require_game(game_id)
         self._require_no_active_game(user_id)
         game, slot = _retry_stale(lambda: self._seat(game_id))
-        player = self._repo.create_player(game.id, slot, user_id)
-        return PlayerCredentials(game_id=game.id, slot=player.slot, status=game.status)
+        try:
+            self._repo.create_player(game.id, slot, user_id)
+        except Exception as exc:  # undo the seat, then re-raise (never swallowed)
+            self._recover_failed_join(game.id, slot, user_id, exc)
+        return PlayerCredentials(game_id=game.id, slot=slot, status=game.status)
+
+    def _recover_failed_join(
+        self, game_id: str, slot: str, user_id: str, error: Exception
+    ) -> None:
+        """Settle a join whose players row insert raised after ``slot`` was seated.
+
+        Returns only if the row was written after all (the call failed after
+        the insert landed): the join stands. Otherwise the seat is undone and
+        the join fails: with `GameAlreadyActive` if the same user's concurrent
+        join (a double click) took another slot in this world first, else with
+        the insert's own ``error``. If undoing the seat fails too, that error
+        propagates with ``error`` as its context.
+        """
+        existing = self._repo.get_player(game_id, user_id)
+        if existing is not None and existing.slot == slot:
+            return
+        _retry_stale(lambda: self._unseat(game_id, slot))
+        if existing is not None:
+            raise GameAlreadyActive(
+                f"user already holds slot {existing.slot!r} in game {game_id}"
+            ) from error
+        raise error
+
+    def _unseat(self, game_id: str, slot: str) -> None:
+        """One attempt at taking ``slot`` back out of a fresh read of the world."""
+        game = self._require_game(game_id)
+        state = unseat_player(game.state, self._repo.get_map_slots(game.map_id), slot)
+        self._repo.set_game_state(game, state, game.status)
 
     def _seat(self, game_id: str) -> tuple[GameRecord, str]:
         """One attempt at seating a newcomer in a fresh read of the world."""
