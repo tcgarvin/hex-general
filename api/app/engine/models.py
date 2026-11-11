@@ -466,9 +466,18 @@ class GameState(BaseModel):
         Units, settlements, players and the resignation list are deep-copied so a
         phase can mutate them freely; the frozen static map is shared, not copied.
         """
+        return self.fork_with_units([u.model_copy() for u in self.units])
+
+    def fork_with_units(self, units: list[Unit]) -> GameState:
+        """`fork`, but with ``units`` as the new state's units instead of copies.
+
+        For a phase that already copied every unit to work on: forking would copy
+        them all again only to throw the copies away. ``units`` must not be
+        shared with any other state.
+        """
         return self.model_copy(
             update={
-                "units": [u.model_copy() for u in self.units],
+                "units": units,
                 "settlements": [s.model_copy() for s in self.settlements],
                 "players": [
                     p.model_copy(update={"buildings": dict(p.buildings)})

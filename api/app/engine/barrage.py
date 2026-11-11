@@ -136,8 +136,9 @@ def resolve_barrage(
             )
         )
 
-    new_state = state.fork()
-    new_state.units = [units[u.id] for u in state.units if u.id not in destroyed]
+    new_state = state.fork_with_units(
+        [units[u.id] for u in state.units if u.id not in destroyed]
+    )
     return new_state, events
 
 
