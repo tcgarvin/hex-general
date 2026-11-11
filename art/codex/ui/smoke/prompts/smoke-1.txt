@@ -1,0 +1,3 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image: a single small flat black stencil-style silhouette of a steel army helmet, centred on a flat pure white background, no text, no shadows.

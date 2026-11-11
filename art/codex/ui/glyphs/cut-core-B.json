@@ -1,0 +1,137 @@
+{
+ "sheet": "raw/core-B.png",
+ "glyphs": [
+  {
+   "file": "manpower-B.png",
+   "cell_xyxy": [
+    46,
+    110,
+    314,
+    430
+   ],
+   "box_coverage": 0.453,
+   "shrink": 0.82
+  },
+  {
+   "file": "fuel-B.png",
+   "cell_xyxy": [
+    314,
+    110,
+    614,
+    430
+   ],
+   "box_coverage": 0.443,
+   "shrink": 0.823
+  },
+  {
+   "file": "steel-B.png",
+   "cell_xyxy": [
+    614,
+    110,
+    928,
+    430
+   ],
+   "box_coverage": 0.266,
+   "shrink": 1.0
+  },
+  {
+   "file": "barracks-B.png",
+   "cell_xyxy": [
+    928,
+    110,
+    1232,
+    430
+   ],
+   "box_coverage": 0.273,
+   "shrink": 1.0
+  },
+  {
+   "file": "depot-B.png",
+   "cell_xyxy": [
+    30,
+    430,
+    316,
+    826
+   ],
+   "box_coverage": 0.372,
+   "shrink": 0.898
+  },
+  {
+   "file": "workshop-B.png",
+   "cell_xyxy": [
+    316,
+    430,
+    614,
+    826
+   ],
+   "box_coverage": 0.349,
+   "shrink": 0.927
+  },
+  {
+   "file": "infantry-B.png",
+   "cell_xyxy": [
+    614,
+    430,
+    932,
+    826
+   ],
+   "box_coverage": 0.227,
+   "shrink": 1.0
+  },
+  {
+   "file": "armor-B.png",
+   "cell_xyxy": [
+    932,
+    430,
+    1229,
+    826
+   ],
+   "box_coverage": 0.306,
+   "shrink": 0.99
+  },
+  {
+   "file": "artillery-B.png",
+   "cell_xyxy": [
+    17,
+    826,
+    313,
+    1172
+   ],
+   "box_coverage": 0.235,
+   "shrink": 1.0
+  },
+  {
+   "file": "army-B.png",
+   "cell_xyxy": [
+    313,
+    826,
+    642,
+    1172
+   ],
+   "box_coverage": 0.309,
+   "shrink": 0.985
+  },
+  {
+   "file": "turn-B.png",
+   "cell_xyxy": [
+    642,
+    826,
+    920,
+    1172
+   ],
+   "box_coverage": 0.28,
+   "shrink": 1.0
+  },
+  {
+   "file": "column-B.png",
+   "cell_xyxy": [
+    920,
+    826,
+    1212,
+    1172
+   ],
+   "box_coverage": 0.44,
+   "shrink": 0.826
+  }
+ ]
+}

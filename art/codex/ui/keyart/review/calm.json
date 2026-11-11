@@ -1,0 +1,26 @@
+{
+ "centre-1": {
+  "detail_ratio": 0.265,
+  "panel_luma": 38.3
+ },
+ "centre-2": {
+  "detail_ratio": 0.355,
+  "panel_luma": 55.8
+ },
+ "centre-3": {
+  "detail_ratio": 0.301,
+  "panel_luma": 56.0
+ },
+ "right-1": {
+  "detail_ratio": 0.246,
+  "panel_luma": 25.5
+ },
+ "right-2": {
+  "detail_ratio": 0.262,
+  "panel_luma": 22.4
+ },
+ "right-3": {
+  "detail_ratio": 0.211,
+  "panel_luma": 25.5
+ }
+}

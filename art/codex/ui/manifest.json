@@ -1,0 +1,434 @@
+{
+ "generated": "2026-11-10",
+ "generator": "codex-cli 0.165.0, codex exec, built-in image_generation tool (ChatGPT login)",
+ "status": "candidates only, not ratified, not applied",
+ "codex_calls": 14,
+ "labels": {
+  "emblem": {
+   "emblem-1": "s1-winghex",
+   "emblem-2": "s2-wingshield",
+   "emblem-3": "s2-compactwing",
+   "emblem-4": "s1-tankhex",
+   "emblem-5": "s2-medallion",
+   "emblem-6": "s2-laurel",
+   "emblem-7": "s2-gunsight",
+   "emblem-8": "s1-hexshield"
+  },
+  "keyart": {
+   "keyart-1-centre": "centre-1",
+   "keyart-2-centre": "centre-2",
+   "keyart-3-centre": "centre-3",
+   "keyart-4-right": "right-1",
+   "keyart-5-right": "right-2",
+   "keyart-6-right": "right-3"
+  }
+ },
+ "first_pass_picks": {
+  "glyphs": {
+   "manpower": "manpower-A",
+   "fuel": "fuel-A (alt fuel-B)",
+   "steel": "steel-A",
+   "barracks": "barracks-A",
+   "depot": "depot-A",
+   "workshop": "workshop-A",
+   "infantry": "infantry-D (alt infantry-A)",
+   "armor": "armor-A",
+   "artillery": "artillery-C",
+   "army": "army-C (alt army-A)",
+   "turn": "turn-A",
+   "column": "column-A",
+   "garrison": "garrison-D",
+   "base": "base-A (alt base-B)",
+   "city": "city-A",
+   "farm": "farm-A (alt farm-B)",
+   "oilfield": "oilfield-A",
+   "steelmill": "steelmill-C",
+   "factory": "factory-A",
+   "travel": "travel-A",
+   "deploy": "deploy-A",
+   "disband": "disband-A"
+  },
+  "glyph_failures_at_16_20px": [
+   "garrison-A",
+   "garrison-B",
+   "factory-B",
+   "steelmill-A",
+   "steelmill-D",
+   "oilfield-C",
+   "garrison-C"
+  ],
+  "emblem": {
+   "header_and_signin": "emblem-1 (s1-winghex)",
+   "favicon": "emblem-3 (s2-compactwing)",
+   "runner_up": "emblem-2 (s2-wingshield)"
+  },
+  "emblem_dropped": [
+   "s1-baton",
+   "s1-pin",
+   "s1-dividers",
+   "s2-chevron"
+  ],
+  "keyart": {
+   "right_panel": "keyart-6-right (right-3)",
+   "centred_panel": "keyart-3-centre (centre-3)",
+   "runner_up": "keyart-4-right (right-1)"
+  }
+ },
+ "sheets": [
+  {
+   "set": "smoke",
+   "sheet": "smoke-1",
+   "prompt": "smoke/prompts/smoke-1.txt",
+   "raw": "smoke/raw/smoke-1.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8d0-9950-7611-bb69-9f823fb9da9d",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8d0-9950-7611-bb69-9f823fb9da9d/exec-6627a33f-66b5-4d30-87ea-5b5f308bf31f.png",
+   "wall_seconds": 27,
+   "images_in_thread": 1,
+   "references": [],
+   "cells_row_major": [],
+   "cut": "none (smoke test of the Codex call)"
+  },
+  {
+   "set": "glyphs",
+   "sheet": "core-A",
+   "prompt": "glyphs/prompts/core-A.txt",
+   "raw": "glyphs/raw/core-A.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8d1-fb9f-7b10-b807-cd758c3b41de",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8d1-fb9f-7b10-b807-cd758c3b41de/exec-8f679d36-4c2a-4b33-b03a-0dc7a74ae5b9.png",
+   "wall_seconds": 52,
+   "images_in_thread": 1,
+   "references": [
+    "art/foundry/ui/kit-icons.png"
+   ],
+   "cells_row_major": [
+    "manpower-A",
+    "fuel-A",
+    "steel-A",
+    "barracks-A",
+    "depot-A",
+    "workshop-A",
+    "infantry-A",
+    "armor-A",
+    "artillery-A",
+    "army-A",
+    "turn-A",
+    "column-A"
+   ],
+   "cut": "python3 cut_glyphs.py raw/core-A.png --grid 4x3 --names manpower,fuel,steel,barracks,depot,workshop,infantry,armor,artillery,army,turn,column --take A --out-dir cut"
+  },
+  {
+   "set": "glyphs",
+   "sheet": "core-B",
+   "prompt": "glyphs/prompts/core-B.txt",
+   "raw": "glyphs/raw/core-B.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8d2-c525-75d2-8ed9-3e0ca8240af2",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8d2-c525-75d2-8ed9-3e0ca8240af2/exec-44f16a17-26bc-4ee1-b336-471ea5fd19bd.png",
+   "wall_seconds": 55,
+   "images_in_thread": 1,
+   "references": [
+    "art/foundry/ui/kit-icons.png"
+   ],
+   "cells_row_major": [
+    "manpower-B",
+    "fuel-B",
+    "steel-B",
+    "barracks-B",
+    "depot-B",
+    "workshop-B",
+    "infantry-B",
+    "armor-B",
+    "artillery-B",
+    "army-B",
+    "turn-B",
+    "column-B"
+   ],
+   "cut": "python3 cut_glyphs.py raw/core-B.png --grid 4x3 --names manpower,fuel,steel,barracks,depot,workshop,infantry,armor,artillery,army,turn,column --take B --out-dir cut"
+  },
+  {
+   "set": "glyphs",
+   "sheet": "world-A",
+   "prompt": "glyphs/prompts/world-A.txt",
+   "raw": "glyphs/raw/world-A.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8d3-b2a5-7cf1-80a5-fde847cd7a04",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8d3-b2a5-7cf1-80a5-fde847cd7a04/exec-efca2061-085b-477d-970f-528b9834f252.png",
+   "wall_seconds": 70,
+   "images_in_thread": 1,
+   "references": [
+    "art/foundry/ui/kit-icons.png"
+   ],
+   "cells_row_major": [
+    "garrison-A",
+    "base-A",
+    "city-A",
+    "farm-A",
+    "oilfield-A",
+    "steelmill-A",
+    "factory-A",
+    "travel-A",
+    "deploy-A",
+    "disband-A"
+   ],
+   "cut": "python3 cut_glyphs.py raw/world-A.png --grid 5x2 --names garrison,base,city,farm,oilfield,steelmill,factory,travel,deploy,disband --take A --out-dir cut"
+  },
+  {
+   "set": "glyphs",
+   "sheet": "world-B",
+   "prompt": "glyphs/prompts/world-B.txt",
+   "raw": "glyphs/raw/world-B.png",
+   "raw_size": [
+    1983,
+    793
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8d4-c7c7-75a2-8c70-f17f4a52bb1f",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8d4-c7c7-75a2-8c70-f17f4a52bb1f/exec-0c8881b7-8c85-461e-92b0-63627fb80c64.png",
+   "wall_seconds": 52,
+   "images_in_thread": 1,
+   "references": [
+    "art/foundry/ui/kit-icons.png"
+   ],
+   "cells_row_major": [
+    "garrison-B",
+    "base-B",
+    "city-B",
+    "farm-B",
+    "oilfield-B",
+    "steelmill-B",
+    "factory-B",
+    "travel-B",
+    "deploy-B",
+    "disband-B"
+   ],
+   "cut": "python3 cut_glyphs.py raw/world-B.png --grid 5x2 --names garrison,base,city,farm,oilfield,steelmill,factory,travel,deploy,disband --take B --out-dir cut"
+  },
+  {
+   "set": "glyphs",
+   "sheet": "fix-1",
+   "prompt": "glyphs/prompts/fix-1.txt",
+   "raw": "glyphs/raw/fix-1.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8d8-190e-7dc0-b710-9254c93cfb01",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8d8-190e-7dc0-b710-9254c93cfb01/exec-d50de602-9b51-4412-a8c2-1c44cb46d34f.png",
+   "wall_seconds": 74,
+   "images_in_thread": 1,
+   "references": [
+    "art/foundry/ui/kit-icons.png"
+   ],
+   "cells_row_major": [
+    "garrison-C",
+    "garrison-D",
+    "steelmill-C",
+    "steelmill-D",
+    "factory-C",
+    "city-C",
+    "infantry-C",
+    "infantry-D",
+    "artillery-C",
+    "army-C",
+    "army-D",
+    "oilfield-C"
+   ],
+   "cut": "python3 cut_glyphs.py raw/fix-1.png --grid 4x3 --names <cells> --out-dir cut"
+  },
+  {
+   "set": "emblem",
+   "sheet": "sheet-1",
+   "prompt": "emblem/prompts/sheet-1.txt",
+   "raw": "emblem/raw/sheet-1.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8da-a148-73b2-949c-a84e6ea45c9b",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8da-a148-73b2-949c-a84e6ea45c9b/exec-98d09516-0c33-41f2-acc4-4348065bf019.png",
+   "wall_seconds": 71,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png",
+    "art/codex/ui/refs/concept-crest.png"
+   ],
+   "cells_row_major": [
+    "s1-winghex",
+    "s1-baton",
+    "s1-tankhex",
+    "s1-pin",
+    "s1-hexshield",
+    "s1-dividers"
+   ],
+   "cut": "python3 cut_emblems.py raw/sheet-1.png --grid 3x2 --names <cells> --out-dir cut"
+  },
+  {
+   "set": "emblem",
+   "sheet": "sheet-2",
+   "prompt": "emblem/prompts/sheet-2.txt",
+   "raw": "emblem/raw/sheet-2.png",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8db-d0d8-79f1-8d70-f71599409f06",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8db-d0d8-79f1-8d70-f71599409f06/exec-b3debccf-cffa-4c96-a6cb-9b376ae3976d.png",
+   "wall_seconds": 55,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png",
+    "art/codex/ui/refs/concept-crest.png"
+   ],
+   "cells_row_major": [
+    "s2-wingshield",
+    "s2-medallion",
+    "s2-laurel",
+    "s2-compactwing",
+    "s2-gunsight",
+    "s2-chevron"
+   ],
+   "cut": "python3 cut_emblems.py raw/sheet-2.png --grid 3x2 --names <cells> --out-dir cut"
+  },
+  {
+   "set": "keyart",
+   "sheet": "centre-1",
+   "prompt": "keyart/prompts/centre-1.txt",
+   "raw": "keyart/raw/centre-1.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8de-3413-7033-996a-2b571d72cc46",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8de-3413-7033-996a-2b571d72cc46/exec-b6bc1ef2-0c60-4982-bfa2-0f2815c9ae19.png",
+   "wall_seconds": 58,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png"
+   ],
+   "cells_row_major": [],
+   "cut": "none (single painting; review/mock-<name>.png by mock_signin.py)"
+  },
+  {
+   "set": "keyart",
+   "sheet": "centre-2",
+   "prompt": "keyart/prompts/centre-2.txt",
+   "raw": "keyart/raw/centre-2.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8df-2f93-74d1-8482-ddf11b48c2dc",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8df-2f93-74d1-8482-ddf11b48c2dc/exec-7badd0c5-6373-4d6a-b489-851f34026bbf.png",
+   "wall_seconds": 56,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png"
+   ],
+   "cells_row_major": [],
+   "cut": "none (single painting; review/mock-<name>.png by mock_signin.py)"
+  },
+  {
+   "set": "keyart",
+   "sheet": "centre-3",
+   "prompt": "keyart/prompts/centre-3.txt",
+   "raw": "keyart/raw/centre-3.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8e0-0d2a-7a00-a465-bea622153334",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8e0-0d2a-7a00-a465-bea622153334/exec-fe5f7d0a-aeb3-421d-bddb-2c904bd95eb0.png",
+   "wall_seconds": 66,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png"
+   ],
+   "cells_row_major": [],
+   "cut": "none (single painting; review/mock-<name>.png by mock_signin.py)"
+  },
+  {
+   "set": "keyart",
+   "sheet": "right-1",
+   "prompt": "keyart/prompts/right-1.txt",
+   "raw": "keyart/raw/right-1.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8e1-10d9-7562-86e2-7b62912bb351",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8e1-10d9-7562-86e2-7b62912bb351/exec-1869784a-0790-4e00-aacd-720b27fdfd46.png",
+   "wall_seconds": 77,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png"
+   ],
+   "cells_row_major": [],
+   "cut": "none (single painting; review/mock-<name>.png by mock_signin.py)"
+  },
+  {
+   "set": "keyart",
+   "sheet": "right-2",
+   "prompt": "keyart/prompts/right-2.txt",
+   "raw": "keyart/raw/right-2.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8e2-4151-7880-a70b-31ed07847505",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8e2-4151-7880-a70b-31ed07847505/exec-e7619a69-05b6-41f9-bd03-487b777c04d5.png",
+   "wall_seconds": 63,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png"
+   ],
+   "cells_row_major": [],
+   "cut": "none (single painting; review/mock-<name>.png by mock_signin.py)"
+  },
+  {
+   "set": "keyart",
+   "sheet": "right-3",
+   "prompt": "keyart/prompts/right-3.txt",
+   "raw": "keyart/raw/right-3.png",
+   "raw_size": [
+    1536,
+    1024
+   ],
+   "raw_mode": "RGB",
+   "codex_thread": "01a1c8e3-397b-7330-9520-e86d5636fcd9",
+   "codex_source": "/home/timg/.codex/generated_images/01a1c8e3-397b-7330-9520-e86d5636fcd9/exec-5a824b38-4a45-431a-991a-fa9e01087ea1.png",
+   "wall_seconds": 72,
+   "images_in_thread": 1,
+   "references": [
+    "docs/concept-art/ui-concept-a.png"
+   ],
+   "cells_row_major": [],
+   "cut": "none (single painting; review/mock-<name>.png by mock_signin.py)"
+  }
+ ]
+}

@@ -1,0 +1,65 @@
+{
+ "sheet": "raw/sheet-2.png",
+ "cells": [
+  {
+   "file": "s2-wingshield.png",
+   "crop_xyxy": [
+    12,
+    246,
+    445,
+    543
+   ],
+   "size": 449
+  },
+  {
+   "file": "s2-medallion.png",
+   "crop_xyxy": [
+    469,
+    193,
+    785,
+    568
+   ],
+   "size": 391
+  },
+  {
+   "file": "s2-laurel.png",
+   "crop_xyxy": [
+    845,
+    214,
+    1222,
+    551
+   ],
+   "size": 393
+  },
+  {
+   "file": "s2-compactwing.png",
+   "crop_xyxy": [
+    19,
+    748,
+    436,
+    998
+   ],
+   "size": 433
+  },
+  {
+   "file": "s2-gunsight.png",
+   "crop_xyxy": [
+    445,
+    676,
+    808,
+    1049
+   ],
+   "size": 389
+  },
+  {
+   "file": "s2-chevron.png",
+   "crop_xyxy": [
+    851,
+    722,
+    1221,
+    1016
+   ],
+   "size": 386
+  }
+ ]
+}

@@ -1,0 +1,137 @@
+{
+ "sheet": "raw/fix-1.png",
+ "glyphs": [
+  {
+   "file": "garrison-C.png",
+   "cell_xyxy": [
+    41,
+    96,
+    332,
+    442
+   ],
+   "box_coverage": 0.464,
+   "shrink": 0.82
+  },
+  {
+   "file": "garrison-D.png",
+   "cell_xyxy": [
+    332,
+    96,
+    628,
+    442
+   ],
+   "box_coverage": 0.375,
+   "shrink": 0.895
+  },
+  {
+   "file": "steelmill-C.png",
+   "cell_xyxy": [
+    628,
+    96,
+    935,
+    442
+   ],
+   "box_coverage": 0.375,
+   "shrink": 0.895
+  },
+  {
+   "file": "steelmill-D.png",
+   "cell_xyxy": [
+    935,
+    96,
+    1211,
+    442
+   ],
+   "box_coverage": 0.231,
+   "shrink": 1.0
+  },
+  {
+   "file": "factory-C.png",
+   "cell_xyxy": [
+    39,
+    442,
+    323,
+    843
+   ],
+   "box_coverage": 0.452,
+   "shrink": 0.82
+  },
+  {
+   "file": "city-C.png",
+   "cell_xyxy": [
+    323,
+    442,
+    627,
+    843
+   ],
+   "box_coverage": 0.449,
+   "shrink": 0.82
+  },
+  {
+   "file": "infantry-C.png",
+   "cell_xyxy": [
+    627,
+    442,
+    935,
+    843
+   ],
+   "box_coverage": 0.231,
+   "shrink": 1.0
+  },
+  {
+   "file": "infantry-D.png",
+   "cell_xyxy": [
+    935,
+    442,
+    1210,
+    843
+   ],
+   "box_coverage": 0.262,
+   "shrink": 1.0
+  },
+  {
+   "file": "artillery-C.png",
+   "cell_xyxy": [
+    36,
+    843,
+    341,
+    1193
+   ],
+   "box_coverage": 0.258,
+   "shrink": 1.0
+  },
+  {
+   "file": "army-C.png",
+   "cell_xyxy": [
+    341,
+    843,
+    609,
+    1193
+   ],
+   "box_coverage": 0.282,
+   "shrink": 1.0
+  },
+  {
+   "file": "army-D.png",
+   "cell_xyxy": [
+    609,
+    843,
+    944,
+    1193
+   ],
+   "box_coverage": 0.298,
+   "shrink": 1.0
+  },
+  {
+   "file": "oilfield-C.png",
+   "cell_xyxy": [
+    944,
+    843,
+    1196,
+    1193
+   ],
+   "box_coverage": 0.305,
+   "shrink": 0.992
+  }
+ ]
+}

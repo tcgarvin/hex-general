@@ -1,0 +1,115 @@
+{
+ "sheet": "raw/world-A.png",
+ "glyphs": [
+  {
+   "file": "garrison-A.png",
+   "cell_xyxy": [
+    17,
+    236,
+    264,
+    621
+   ],
+   "box_coverage": 0.415,
+   "shrink": 0.85
+  },
+  {
+   "file": "base-A.png",
+   "cell_xyxy": [
+    264,
+    236,
+    498,
+    621
+   ],
+   "box_coverage": 0.23,
+   "shrink": 1.0
+  },
+  {
+   "file": "city-A.png",
+   "cell_xyxy": [
+    498,
+    236,
+    751,
+    621
+   ],
+   "box_coverage": 0.316,
+   "shrink": 0.974
+  },
+  {
+   "file": "farm-A.png",
+   "cell_xyxy": [
+    751,
+    236,
+    999,
+    621
+   ],
+   "box_coverage": 0.396,
+   "shrink": 0.87
+  },
+  {
+   "file": "oilfield-A.png",
+   "cell_xyxy": [
+    999,
+    236,
+    1230,
+    621
+   ],
+   "box_coverage": 0.2,
+   "shrink": 1.0
+  },
+  {
+   "file": "steelmill-A.png",
+   "cell_xyxy": [
+    15,
+    621,
+    258,
+    1025
+   ],
+   "box_coverage": 0.261,
+   "shrink": 1.0
+  },
+  {
+   "file": "factory-A.png",
+   "cell_xyxy": [
+    258,
+    621,
+    506,
+    1025
+   ],
+   "box_coverage": 0.359,
+   "shrink": 0.914
+  },
+  {
+   "file": "travel-A.png",
+   "cell_xyxy": [
+    506,
+    621,
+    749,
+    1025
+   ],
+   "box_coverage": 0.266,
+   "shrink": 1.0
+  },
+  {
+   "file": "deploy-A.png",
+   "cell_xyxy": [
+    749,
+    621,
+    992,
+    1025
+   ],
+   "box_coverage": 0.307,
+   "shrink": 0.988
+  },
+  {
+   "file": "disband-A.png",
+   "cell_xyxy": [
+    992,
+    621,
+    1246,
+    1025
+   ],
+   "box_coverage": 0.327,
+   "shrink": 0.957
+  }
+ ]
+}

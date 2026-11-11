@@ -1,0 +1,15 @@
+{
+ "glyphs": {
+  "manpower": "manpower-A", "fuel": "fuel-A (alt fuel-B)", "steel": "steel-A",
+  "barracks": "barracks-A", "depot": "depot-A", "workshop": "workshop-A",
+  "infantry": "infantry-D (alt infantry-A)", "armor": "armor-A", "artillery": "artillery-C",
+  "army": "army-C (alt army-A)", "turn": "turn-A", "column": "column-A",
+  "garrison": "garrison-D", "base": "base-A (alt base-B)", "city": "city-A", "farm": "farm-A (alt farm-B)",
+  "oilfield": "oilfield-A", "steelmill": "steelmill-C", "factory": "factory-A",
+  "travel": "travel-A", "deploy": "deploy-A", "disband": "disband-A"
+ },
+ "glyph_failures_at_16_20px": ["garrison-A", "garrison-B", "factory-B", "steelmill-A", "steelmill-D", "oilfield-C", "garrison-C"],
+ "emblem": {"header_and_signin": "emblem-1 (s1-winghex)", "favicon": "emblem-3 (s2-compactwing)", "runner_up": "emblem-2 (s2-wingshield)"},
+ "emblem_dropped": ["s1-baton", "s1-pin", "s1-dividers", "s2-chevron"],
+ "keyart": {"right_panel": "keyart-6-right (right-3)", "centred_panel": "keyart-3-centre (centre-3)", "runner_up": "keyart-4-right (right-1)"}
+}

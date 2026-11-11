@@ -1,0 +1,65 @@
+{
+ "sheet": "raw/sheet-1.png",
+ "cells": [
+  {
+   "file": "s1-winghex.png",
+   "crop_xyxy": [
+    20,
+    220,
+    444,
+    499
+   ],
+   "size": 440
+  },
+  {
+   "file": "s1-baton.png",
+   "crop_xyxy": [
+    486,
+    186,
+    771,
+    513
+   ],
+   "size": 343
+  },
+  {
+   "file": "s1-tankhex.png",
+   "crop_xyxy": [
+    840,
+    192,
+    1229,
+    530
+   ],
+   "size": 405
+  },
+  {
+   "file": "s1-pin.png",
+   "crop_xyxy": [
+    46,
+    753,
+    416,
+    1068
+   ],
+   "size": 386
+  },
+  {
+   "file": "s1-hexshield.png",
+   "crop_xyxy": [
+    475,
+    727,
+    778,
+    1099
+   ],
+   "size": 388
+  },
+  {
+   "file": "s1-dividers.png",
+   "crop_xyxy": [
+    882,
+    712,
+    1161,
+    1102
+   ],
+   "size": 406
+  }
+ ]
+}
