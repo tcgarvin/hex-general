@@ -16,9 +16,12 @@ jobs:
       SUPABASE_PROJECT_REF: amhkpsrvjlthmmemwssc
     steps:
       - uses: actions/checkout@v4
+      # Pinned to the CLI the local stack runs (`supabase --version`), so the
+      # remote push uses the same migration tooling we tested with. Bump both
+      # together.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.107.0
       # config.toml sets [auth].signing_keys_path for the local stack, and the
       # CLI parses the whole config (failing if the file is missing) even though
       # `db push` only pushes migrations and never uses auth signing keys. The
