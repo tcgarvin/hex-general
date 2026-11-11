@@ -102,7 +102,11 @@ doesn't cover: `GET /worlds`, `GET /worlds/active`, `GET /worlds/{id}`,
 3. The post-login **Dispatcher** (`/`) redirects into the caller's world
    (`/world/<uuid>`) if they hold a seat, else shows the "Join a world" list. Routes
    you may be asked to reach:
-   - `/` — dispatcher / "Join a world" list (a "Join" button per world)
+   - `/` — dispatcher / "Join a world" list (a "JOIN" button per world; the button
+     text is lowercase in the DOM but rendered uppercase via CSS, so match
+     case-insensitively; "OPEN" for a world you already hold a seat in)
+   - `/worlds` — the same world list without the redirect (your own world is marked
+     "You are here")
    - `/world/:id` — the world board (only renders once the caller holds a seat in
      it: set one up in §2 first)
    - `/account` — account page

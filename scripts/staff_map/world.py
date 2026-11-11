@@ -15,6 +15,7 @@ import heapq
 import importlib.util
 import json
 import math
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -476,24 +477,46 @@ def _hsl(h: float, s: float, light: float) -> int:
     return (to(f(0)) << 16) | (to(f(8)) << 8) | to(f(4))
 
 
+_R2_A = 0.7548776662466927
+_R2_B = 0.5698402909980532
+_BLUE_BAND_START = 185
+_BLUE_BAND_WIDTH = 70
+
+
+def _colour_point(owner: str) -> tuple[float, float]:
+    """``colors.ts colourPoint``: slot ids (``s042``) ride the R2 sequence."""
+    slot = re.fullmatch(r"s(\d+)", owner)
+    if slot is not None:
+        n = int(slot.group(1))
+        return ((0.5 + _R2_A * n) % 1.0, (0.5 + _R2_B * n) % 1.0)
+    return ((_fnv(owner) % 1000) / 1000, (_fnv(f"{owner}:l") % 1000) / 1000)
+
+
 def owner_color(owner: str | None, viewer: str) -> int:
-    """``colors.ts ownerColor``: the viewer blue, neutral slate, else a hashed hue."""
+    """Exact port of ``colors.ts ownerColor`` (same inputs, same RGB)."""
     if owner is None:
         return VACANT_COLOR
     if owner == viewer:
         return VIEWER_COLOR
     if owner == "neutral":
         return NEUTRAL_COLOR
-    hue = _fnv(owner) % 300
-    if hue >= 190:
-        hue += 60
-    lightness = 0.45 + ((_fnv(f"{owner}:l") % 3) - 1) * 0.07
-    return _hsl(float(hue), 0.62, lightness)
+    u, v = _colour_point(owner)
+    hue = u * (360 - _BLUE_BAND_WIDTH)
+    if hue >= _BLUE_BAND_START:
+        hue += _BLUE_BAND_WIDTH
+    return _hsl(hue, 0.72, 0.34 + v * 0.3)
+
+
+def season_slot_id(player: str) -> str:
+    """Season bots ``b000``, ``b001``, ... take slot ``s001``, ``s002``, ... so
+    their colours spread like a real world's; any other id is left alone."""
+    bot = re.fullmatch(r"b(\d+)", player)
+    return f"s{int(bot.group(1)) + 1:03d}" if bot is not None else player
 
 
 def owner_palette(snap: Snapshot, viewer: str) -> dict[int, int]:
     """Colour per owner code (0 = neutral garrison)."""
     out = {NOBODY: NEUTRAL_COLOR}
     for k, player in enumerate(snap.players):
-        out[k + 1] = owner_color(player, viewer)
+        out[k + 1] = owner_color(season_slot_id(player), season_slot_id(viewer))
     return out

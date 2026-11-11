@@ -220,3 +220,28 @@ def test_render_command_writes_a_png(tool, tmp_path: Path) -> None:
     from PIL import Image
 
     assert Image.open(out).size == (160, 100)
+
+
+@pytest.mark.parametrize(
+    ("owner", "expected"),
+    [
+        ("s001", 0x809E1A),
+        ("s002", 0xDE3A32),
+        ("s007", 0xCE23D5),
+        ("s042", 0xCECC22),
+        ("s200", 0x22D357),
+        ("alice", 0x1EBB50),  # non-slot id: hash fallback
+    ],
+)
+def test_owner_color_matches_the_typescript_values(owner: str, expected: int) -> None:
+    from staff_map.world import owner_color
+
+    assert owner_color(owner, "s999") == expected
+
+
+def test_season_bots_take_consecutive_slot_colours() -> None:
+    from staff_map.world import owner_color, season_slot_id
+
+    assert season_slot_id("b000") == "s001"
+    assert season_slot_id("alice") == "alice"
+    assert owner_color(season_slot_id("b000"), "x") == 0x809E1A

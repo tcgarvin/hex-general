@@ -48,6 +48,16 @@
     }
     return [f(0), f(8), f(4)];
   }
+  // frontend/src/world/colors.ts ownerColor: bot index k is treated as slot
+  // number k + 1 (b000 = s001), stepped through the R2 sequence over hue and
+  // lightness. Hues keep clear of the game's viewer blue (185-255 degrees) for
+  // parity with the game, though this observer view has no viewer player.
+  function ownerRgb(n) {
+    var u = (0.5 + 0.7548776662466927 * n) % 1, v = (0.5 + 0.5698402909980532 * n) % 1;
+    var hue = u * 290;
+    if (hue >= 185) hue += 70;
+    return hslHex(hue, 0.72, 0.34 + v * 0.3);
+  }
   function rgbHex(c) { return "#" + ((1 << 24) | (c[0] << 16) | (c[1] << 8) | c[2]).toString(16).slice(1); }
 
   // --- Data ----------------------------------------------------------------------
@@ -113,7 +123,7 @@
     });
     var palette = [], paletteRgb = [];
     for (var k = 0; k < P; k++) {
-      var c = hslHex((k * 137.508 + 18) % 360, [0.74, 0.62, 0.82][Math.floor(k / 3) % 3], [0.55, 0.66, 0.45][k % 3]);
+      var c = ownerRgb(k + 1);
       paletteRgb.push(c); palette.push(rgbHex(c));
     }
     return {
