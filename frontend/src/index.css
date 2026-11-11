@@ -46,17 +46,20 @@ body {
   background-repeat: repeat;
 }
 
-/* Ground for the login and start screens: a dark warm gradient over optional key
-   art. Drop the key art in by setting --fhq-key-art: url(...), e.g. one line in
-   :root such as `--fhq-key-art: url("/key-art.jpg");` (a file in public/). The
-   gradient stays on top so cards and text read over any image. */
+/* Ground for the login and start screens: the ratified sign-in key art
+   (keyart-3-centre, a map table with a calm centre for the card; provenance in
+   art/codex/ui/APPLIED.md) under a soft dark vignette, covering the screen and
+   centred. Only these screens use the class, so the world screen never loads the
+   image. Swap the art by setting --fhq-key-art; the dark ground shows while it
+   loads. */
 .fhq-backdrop {
+  --fhq-key-art: url("./ui-art/keyart/centre-3.webp");
   background-color: #1a1d22;
   background-image:
     radial-gradient(
-      ellipse at 50% 35%,
-      rgb(50 31 20 / 0.35),
-      rgb(26 29 34 / 0.92) 75%
+      ellipse at 50% 50%,
+      rgb(26 20 14 / 0.1) 25%,
+      rgb(20 15 10 / 0.6) 100%
     ),
     var(--fhq-key-art, none);
   background-size: cover;
