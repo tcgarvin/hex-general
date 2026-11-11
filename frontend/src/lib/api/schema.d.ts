@@ -202,7 +202,11 @@ export interface paths {
         };
         /**
          * Version
-         * @description Return the running API version.
+         * @description Return the running API version and the commit its image was built from.
+         *
+         *     ``commit`` is the ``GIT_COMMIT`` the deploy bakes into the image (the pushed
+         *     commit's SHA), so a smoke test can tell which build is live; ``"local"``
+         *     means a process not started from a CI-built image.
          */
         get: operations["version_version_get"];
         put?: never;
@@ -1264,7 +1268,8 @@ export interface components {
          *     Every field defaults to empty: a player may legitimately submit no orders
          *     (every unit holds or keeps travelling), no recruits and no base orders.
          *     FastAPI parses ``orders`` into the discriminated `Order` union, so unknown
-         *     order shapes are rejected as 422 at the wire.
+         *     order shapes are rejected as 422 at the wire, as is a plan longer than
+         *     `MAX_PLAN_ENTRIES` entries per list or a path longer than `MAX_PATH_STEPS`.
          */
         SubmitOrdersRequest: {
             build?: components["schemas"]["Building"] | null;
