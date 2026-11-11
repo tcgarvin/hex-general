@@ -16,7 +16,9 @@
    reuses road cheaply (so roads merge), wiggles with a noise field, shuns
    running beside another road and never makes a sharp turn on new ground. A
    road crosses a river only where the river runs plainly (a bridge); it never
-   touches a lake.
+   touches a lake. With ``road_style="natural"`` (`app.world.roads`) roads are
+   instead routed at any heading along the land, smoothed, and bridged only
+   where bridge art fits.
 5. **Fix-ups (fairness):** in each start region (*territory*, the land nearest
    its seat) every settlement reaches the seat by road inside the territory,
    every real border is crossed by a road, and each has at least half the median
@@ -47,6 +49,7 @@ import statistics
 from collections import Counter, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Literal
 
 from app.engine.economy_rules import GARRISON_FORCES, SiteKind, WorldEconomy
 from app.engine.hex_coords import Axial, distance, within
@@ -77,6 +80,7 @@ from app.world.grid import (
     rank_normalise,
 )
 from app.world.land import Land, build_land
+from app.world.roads import bridge_ramps, natural_path, smooth_path
 
 HEXES_PER_SLOT = 610
 """Map area per slot at the default sizing (VISION §1, §12: 200 slots ≈ 350²)."""
@@ -128,6 +132,36 @@ ROAD_PARALLEL = 0.8
 ROAD_WIGGLE = 0.6
 """Spread of the noise factor on off-road step costs, so roads are not ruler lines."""
 
+# Natural road style (`app.world.roads`): terrain prices, a slow noise field that
+# bends roads, highland and valley preferences. Provisional tuning, 2026-11-11.
+NATURAL_ROAD_COST: dict[Terrain, float] = {
+    Terrain.PLAINS: 1.0,
+    Terrain.WOODS: 3.4,
+    Terrain.HILLS: 3.6,
+    Terrain.RIVER: 8.0,
+}
+"""Natural style: cost of a road step onto new ground by terrain (river = bridge)."""
+NATURAL_PARALLEL = 1.6
+"""Natural style: extra cost of a new road hex beside an existing road."""
+NATURAL_UNTILED_BRIDGE = 30.0
+"""Natural style: cost of a bridge on a river shape with no bridge art (its
+generic tile draws the road badly); a last resort for ground no other bridge
+reaches."""
+NATURAL_BEND = 0.8
+"""Natural style: spread of the slow noise factor on new-ground step costs."""
+NATURAL_BEND_FEATURE = 24.0
+"""Natural style: wavelength of that noise, in hex radii (~16 hexes)."""
+NATURAL_HIGHLAND = 0.5
+"""Natural style: extra cost share at full ruggedness, so roads keep to low ground."""
+NATURAL_VALLEY = 0.85
+"""Natural style: cost factor on open ground beside a river, so roads follow
+valleys for a stretch."""
+
+RoadStyle = Literal["direct", "natural"]
+"""How roads are laid: ``direct`` is the original least-cost hex search;
+``natural`` routes them along the land (`app.world.roads`, 2026-11-11)."""
+ROAD_STYLES: tuple[RoadStyle, ...] = ("direct", "natural")
+
 _ROAD_NEIGHBORS = 6  # nearest settlements considered for the road graph
 _ROAD_EXTRA_SHARE = 0.3  # redundant links, as a share of spanning-tree links
 _BORDER_MIN_CONTACTS = 4  # territory pairs touching less than this need no road
@@ -144,7 +178,10 @@ class WorldParams:
     """Inputs to `generate`. ``for_slots`` sizes the map from a slot count.
 
     The shares are targets for the map area under woods, hills and river courses;
-    ``hexes_per_settlement`` and ``hexes_per_lake`` set those densities. Raises `WorldGenError` on construction for unusable values (this is the
+    ``hexes_per_settlement`` and ``hexes_per_lake`` set those densities.
+    ``road_style`` picks how roads are routed (`RoadStyle`); the default keeps
+    every existing seed's world unchanged. Raises `WorldGenError` on
+    construction for unusable values (this is the
     generator's boundary: parameters come from a CLI or an admin request).
     """
 
@@ -158,6 +195,7 @@ class WorldParams:
     hills_share: float = 0.07
     river_share: float = 0.024
     hexes_per_lake: int = 1000
+    road_style: RoadStyle = "direct"
 
     def __post_init__(self) -> None:
         if self.width < 12 or self.height < 12:
@@ -181,12 +219,20 @@ class WorldParams:
             raise WorldGenError(
                 f"hexes_per_lake must be at least 1, got {self.hexes_per_lake}"
             )
+        if self.road_style not in ROAD_STYLES:
+            raise WorldGenError(
+                f"road_style must be one of {ROAD_STYLES}, got {self.road_style!r}"
+            )
 
     @classmethod
-    def for_slots(cls, slots: int, seed: int) -> WorldParams:
+    def for_slots(
+        cls, slots: int, seed: int, road_style: RoadStyle = "direct"
+    ) -> WorldParams:
         """A square world with `HEXES_PER_SLOT` hexes per slot."""
         side = round(math.sqrt(HEXES_PER_SLOT * slots))
-        return cls(width=side, height=side, slots=slots, seed=seed)
+        return cls(
+            width=side, height=side, slots=slots, seed=seed, road_style=road_style
+        )
 
 
 @dataclass(frozen=True)
@@ -361,7 +407,9 @@ class _Draft:
     ``land`` is fixed: its ``river`` marks river course hexes, ``lake`` lake hexes
     and ``water`` either. ``terrain`` starts as the land's and loses woods or
     hills under plots and sites. ``road_wiggle`` (in [0, 1]) scales
-    off-road step costs. ``seats`` and ``bases`` are hex indices per slot: the
+    off-road step costs in the direct road style; ``road_bend`` is the natural
+    style's per-hex cost factor and ``ramps`` its bridgeable river hexes with
+    their ramp directions (both empty in the direct style). ``seats`` and ``bases`` are hex indices per slot: the
     seat town and the base anchor beside it. ``plots`` holds every hex kept clear
     so far (base footprints and site hexes). The counters feed `_stats`.
     """
@@ -372,6 +420,10 @@ class _Draft:
     terrain: list[Terrain]
     road_wiggle: list[float]
     road: list[bool] = field(default_factory=list)
+    road_style: RoadStyle = "direct"
+    road_bend: list[float] = field(default_factory=list)
+    ramps: dict[int, tuple[int, int]] = field(default_factory=dict)
+    natural_fallbacks: int = 0
     settlements: list[int] = field(default_factory=list)
     cities: list[bool] = field(default_factory=list)
     seats: list[int] = field(default_factory=list)
@@ -400,13 +452,103 @@ class _Draft:
     def lay_road(
         self, start: int, goal: int, allowed: Callable[[int], bool] | None = None
     ) -> None:
-        """Lay a least-cost road from ``start`` to ``goal`` (`_road_step_cost`),
-        then drop the corner of any sharp turn it makes over new ground."""
-        path = astar(self.grid, start, goal, self._road_step_cost, ROAD_REUSE, allowed)
+        """Lay a least-cost road from ``start`` to ``goal`` in the draft's road
+        style, then drop the corner of any sharp turn it makes over new ground."""
+        if self.road_style == "natural":
+            path = self._natural_road(start, goal, allowed)
+        else:
+            path = self._direct_road(start, goal, allowed)
         if path is None:
             raise WorldGenError(f"no road possible from hex {start} to hex {goal}")
         for i in self._without_sharp_turns(path):
             self.road[i] = True
+
+    def _direct_road(
+        self, start: int, goal: int, allowed: Callable[[int], bool] | None
+    ) -> list[int] | None:
+        """A direct-style road: least-cost hex search over `_road_step_cost`."""
+        return astar(self.grid, start, goal, self._road_step_cost, ROAD_REUSE, allowed)
+
+    def _natural_road(
+        self, start: int, goal: int, allowed: Callable[[int], bool] | None
+    ) -> list[int] | None:
+        """A natural-style road (`app.world.roads`): corner-cut least-cost search
+        over `_natural_step_cost`, then smoothed.
+
+        Where the bridge rules leave no way through (a pocket of land reached
+        only past a bridge's flank), the search is repeated without them (any
+        plainly running river crossed straight); where even that fails (a corner
+        wedged between borders), the road is laid as in the direct style.
+        ``natural_fallbacks`` counts both.
+        """
+        for lenient in (False, True):
+
+            def price(v: int, lenient: bool = lenient) -> float:
+                if allowed is not None and not allowed(v):
+                    return math.inf
+                return self._natural_step_cost(
+                    v, endpoint=lenient or v in (start, goal)
+                )
+
+            path = natural_path(
+                self.grid,
+                start,
+                goal,
+                price,
+                self.road,
+                self.land.river,
+                {} if lenient else self.ramps,
+                ROAD_REUSE,
+            )
+            if path is not None:
+                self.natural_fallbacks += lenient
+                return smooth_path(self.grid, path, self.road, price, self.land.water)
+        self.natural_fallbacks += 1
+        return self._direct_road(start, goal, allowed)
+
+    def _natural_step_cost(self, v: int, endpoint: bool = False) -> float:
+        """The natural style's price of a road on hex ``v``.
+
+        Existing road is cheap and a lake closed, as in `_road_step_cost`. A
+        river hex is bridged by preference where bridge art fits (``ramps``)
+        and no road is already beside it off its ramps; otherwise, where the
+        river runs plainly (as in the direct style), at `NATURAL_UNTILED_BRIDGE`. A land
+        hex beside a bridge with art is closed unless it is at one of that
+        bridge's ramps (an ``endpoint``, the road's own town, is exempt), so a
+        bridge's road runs only along its baked ramps. Other ground costs
+        `NATURAL_ROAD_COST` scaled by ``road_bend``, plus `NATURAL_PARALLEL`
+        beside an existing road.
+        """
+        if self.road[v]:
+            return ROAD_REUSE
+        land = self.land
+        if land.lake[v]:
+            return math.inf
+        around = self.grid.neighbor_in[v]
+        if land.river[v]:
+            ramps = self.ramps.get(v)
+            if ramps is None:
+                if any(n >= 0 and land.lake[n] for n in around):
+                    return math.inf
+                if sum(n >= 0 and land.river[n] for n in around) != 2:
+                    return math.inf
+                return NATURAL_UNTILED_BRIDGE
+            for d, n in enumerate(around):
+                if d not in ramps and self.road[n] and not land.river[n]:
+                    return NATURAL_UNTILED_BRIDGE
+            return NATURAL_ROAD_COST[Terrain.RIVER]
+        beside_road = False
+        for d, n in enumerate(around):
+            if n < 0 or not self.road[n]:
+                continue
+            ramps = self.ramps.get(n)
+            if not endpoint and ramps is not None and (d + 3) % 6 not in ramps:
+                return math.inf
+            beside_road = True
+        cost = NATURAL_ROAD_COST[self.terrain[v]] * self.road_bend[v]
+        if beside_road:
+            cost += NATURAL_PARALLEL
+        return cost
 
     def _road_step_cost(self, v: int) -> float:
         """The price of a road entering hex ``v``.
@@ -471,7 +613,11 @@ def generate(params: WorldParams) -> GeneratedWorld:
         terrain=list(land.terrain),
         road_wiggle=rank_normalise(fbm(grid, rng, feature=10.0, octaves=2)),
         road=[False] * grid.size,
+        road_style=params.road_style,
     )
+    if params.road_style == "natural":
+        draft.road_bend = _road_bend(grid, land, params)
+        draft.ramps = bridge_ramps(grid, land.river, land.lake)
 
     # One settlement per slot becomes a seat, on top of the density target, so
     # bases don't take neutral sites away (economy draft §03). A seat is a town,
@@ -491,6 +637,28 @@ def generate(params: WorldParams) -> GeneratedWorld:
     _place_bases(draft)
     _place_sites(draft)
     return _finish(draft, params)
+
+
+def _road_bend(grid: HexGrid, land: Land, params: WorldParams) -> list[float]:
+    """The natural road style's per-hex cost factor: a slow noise (`NATURAL_BEND`
+    spread, `NATURAL_BEND_FEATURE` wavelength) times a highland surcharge
+    (`NATURAL_HIGHLAND`) times `NATURAL_VALLEY` on dry ground beside a river.
+
+    The noise has its own seeded generator, so the land, towns and seats of a
+    natural-style world are the same as the direct style's for the same seed.
+    """
+    rng = random.Random(
+        f"hex-general-roads:{params.seed}:{params.width}x{params.height}:{params.slots}"
+    )
+    noise = rank_normalise(fbm(grid, rng, feature=NATURAL_BEND_FEATURE, octaves=3))
+    bend: list[float] = []
+    for i in range(grid.size):
+        factor = 1.0 - NATURAL_BEND / 2 + NATURAL_BEND * noise[i]
+        factor *= 1.0 + NATURAL_HIGHLAND * land.ruggedness[i]
+        if not land.water[i] and any(land.river[n] for n in grid.neighbors[i]):
+            factor *= NATURAL_VALLEY
+        bend.append(factor)
+    return bend
 
 
 def _town_appeal(grid: HexGrid, land: Land, i: int) -> float:
@@ -1256,7 +1424,7 @@ def _stats(draft: _Draft, terrain: list[Terrain]) -> dict[str, float]:
         groups = patches(grid, [t is kind for t in terrain])
         return max((len(g) for g in groups), default=0)
 
-    return {
+    stats: dict[str, float] = {
         "hexes": grid.size,
         "share_woods": round(shares[Terrain.WOODS] / grid.size, 4),
         "share_hills": round(shares[Terrain.HILLS] / grid.size, 4),
@@ -1291,3 +1459,6 @@ def _stats(draft: _Draft, terrain: list[Terrain]) -> dict[str, float]:
             1 for i in range(grid.size) if draft.passable(i) and draft.territory[i] < 0
         ),
     }
+    if draft.road_style == "natural":
+        stats["natural_road_fallbacks"] = draft.natural_fallbacks
+    return stats

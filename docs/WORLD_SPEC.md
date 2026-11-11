@@ -264,6 +264,32 @@ from the fix-ups. Terrain is now built from sized objects, in this order:
   hex with exactly two river neighbours and no lake beside it (not at a junction, a
   river end or a lake mouth). Sharp turns over new ground are removed from each laid
   road; the only sharp road corners left are at towns beside a through-road.
+- *Natural road style (option, 2026-11-11, proposal awaiting the user's pick):*
+  `WorldParams.road_style` is `"direct"` (the default: the roads above, every existing
+  seed byte-identical, pinned by a digest test) or `"natural"` (`app/world/roads.py`).
+  Why direct roads read as a lattice: a hex step costs the same at any heading, but a
+  heading 30° off the axes is a zig-zag that gains only cos 30° per step, so least-cost
+  search prices off-axis travel ~15% dearer and picks straight axis legs joined by 60°
+  corners (21% of road hexes on straight runs over 8, longest 24–30). Natural style:
+  the search carries its heading and charges a 60°-turn hex cos 30° of its price (the
+  drawn road cuts the corner), so any heading costs the same per distance; never a 120°
+  turn on new ground; each free stretch is then smoothed and re-laid on hexes when that
+  stays valid and no more than 6% dearer. Costs: plains 1, woods 3.4 (woods have no
+  road art, so a road there vanishes), hills 3.6, a slow noise (±40%, ~16-hex
+  wavelength), +50% at full ruggedness, ×0.85 beside a river, +1.6 beside another
+  road. Bridges only on river shapes with bridge art (straight N-S, and the two V
+  bends), entered and left by the tile's baked ramps; elsewhere only as a last resort
+  (cost 30, crossed straight), and a road that still finds no way is laid as in the
+  direct style (counted in `stats["natural_road_fallbacks"]`, 2–4 per 200-slot world).
+  Land, towns and seats are unchanged (the noise has its own seeded generator).
+  Measured on seeds 1–3, 200 slots (direct → natural): straight runs over 8 hold
+  19–21% → 4.5–5.4% of road hexes, longest run 24–30 → 15–16, 60° turns 28–30% →
+  61% of two-way road hexes; bridges 190–204 → 165–174, drawn along their ramps 12% →
+  95%+; road hexes in woods 508–537 → 317–340; road distance between neighbouring
+  towns over straight-line distance, median 1.11–1.13 → 1.20 (p90 2.4–2.5 → 2.8–2.9);
+  column pulses base to neighbouring base, median 37–38 → 38–39 (worst 65–66 → 62–71),
+  base to own sites median 15 → 16. Generation 27 s → 41 s. Review tool:
+  `scripts/road-study.py` (metrics, frontend-rule board check, board-mock exports).
 - Seed 1: 12 slots: woods 14.5%, hills 7.0%, river 2.3%, lake 0.7% (7 lakes, 14
   rivers), 10 bridges, road 14.0%; largest woods patch 30, hills 19. 200 slots: woods
   14.4%, hills 7.0%, river 2.2% plus 194 bridges, lake 0.9% (122 lakes, none dropped,

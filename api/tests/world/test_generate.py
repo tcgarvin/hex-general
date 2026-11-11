@@ -7,6 +7,8 @@ or validity property the spec asks of every generated world.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 import statistics
 from collections import Counter, deque
@@ -20,9 +22,11 @@ from app.engine.models import BASE_FOOTPRINT, NEUTRAL, base_footprint
 from app.engine.routing import find_route
 from app.engine.stats import TERRAIN_STATS, Terrain
 from app.world.generate import (
+    ROAD_STYLES,
     SITE_LEVEL_WEIGHTS,
     STARTING_UNITS,
     GeneratedWorld,
+    RoadStyle,
     WorldGenError,
     WorldParams,
     _garrison_tier,
@@ -31,6 +35,8 @@ from app.world.generate import (
 from app.world.grid import HexGrid, patches
 from app.world.land import LAKE_SIZES, SPRING_EDGE_MARGIN
 from app.world.preview import STYLES, Style, render
+from app.world.road_metrics import measure
+from app.world.roads import BRIDGE_RAMPS
 
 SEEDS = (1, 2, 3)
 SWEEP_SEEDS = range(1, 21)
@@ -39,9 +45,14 @@ WATER = (Terrain.RIVER, Terrain.BRIDGE, Terrain.LAKE)
 SETTLEMENT_GROUND = (Terrain.TOWN, Terrain.CITY)
 
 
-@pytest.fixture(scope="module", params=SEEDS)
+@pytest.fixture(
+    scope="module",
+    params=[(seed, style) for style in ROAD_STYLES for seed in SEEDS],
+    ids=lambda p: f"{p[1]}-{p[0]}",
+)
 def world(request: pytest.FixtureRequest) -> GeneratedWorld:
-    return generate(WorldParams.for_slots(12, request.param))
+    seed, style = request.param
+    return generate(WorldParams.for_slots(12, seed, road_style=style))
 
 
 @pytest.fixture(scope="module")
@@ -49,12 +60,16 @@ def big_world() -> GeneratedWorld:
     return generate(WorldParams.for_slots(24, 7))
 
 
-@pytest.fixture(scope="module")
-def sweep() -> list[GeneratedWorld]:
-    """Twenty 12-slot worlds plus one 40-slot world, for gates that must hold on
-    every seed rather than on average."""
-    worlds = [generate(WorldParams.for_slots(12, seed)) for seed in SWEEP_SEEDS]
-    return worlds + [generate(WorldParams.for_slots(40, 2))]
+@pytest.fixture(scope="module", params=ROAD_STYLES)
+def sweep(request: pytest.FixtureRequest) -> list[GeneratedWorld]:
+    """Twenty 12-slot worlds plus one 40-slot world in each road style, for
+    gates that must hold on every seed rather than on average."""
+    style = request.param
+    worlds = [
+        generate(WorldParams.for_slots(12, seed, road_style=style))
+        for seed in SWEEP_SEEDS
+    ]
+    return worlds + [generate(WorldParams.for_slots(40, 2, road_style=style))]
 
 
 def _layout(world: GeneratedWorld) -> tuple[HexGrid, list[Terrain], list[bool]]:
@@ -98,8 +113,47 @@ def _road_component(world: GeneratedWorld, start: Axial) -> set[Axial]:
     return seen
 
 
-def test_same_params_same_world() -> None:
-    params = WorldParams.for_slots(12, 5)
+def _fingerprint(world: GeneratedWorld) -> str:
+    """A digest of everything a world holds: hexes, sites, places, layout, stats."""
+    digest = hashlib.sha256()
+    for h in world.game_map.hexes:
+        digest.update(
+            f"{h.coord.q},{h.coord.r},{h.terrain.value},{int(h.road)};".encode()
+        )
+    for s in world.game_map.sites:
+        digest.update(
+            f"{s.coord.q},{s.coord.r},{s.kind.value},{s.garrison},{s.level};".encode()
+        )
+    for coords in (world.settlements, world.capitals, world.seats):
+        digest.update(",".join(f"{c.q}:{c.r}" for c in coords).encode())
+        digest.update(b"|")
+    layout = [world.fill_order, world.territory, world.province, world.stats]
+    digest.update(json.dumps(layout, sort_keys=True).encode())
+    return digest.hexdigest()[:16]
+
+
+@pytest.mark.parametrize(
+    ("slots", "seed", "expected"),
+    [
+        (12, 1, "fc32d4d67b75fd1d"),
+        (12, 2, "cd6a530e90fff0e3"),
+        (12, 3, "b74c706ececcbbea"),
+        (24, 7, "c4e64302c377bc0b"),
+    ],
+)
+def test_the_default_road_style_leaves_existing_worlds_unchanged(
+    slots: int, seed: int, expected: str
+) -> None:
+    # Digests recorded before the natural road style existed (2026-11-11): the
+    # default must keep generating byte-identical worlds for existing seeds.
+    params = WorldParams.for_slots(slots, seed)
+    assert params.road_style == "direct"
+    assert _fingerprint(generate(params)) == expected
+
+
+@pytest.mark.parametrize("style", ROAD_STYLES)
+def test_same_params_same_world(style: RoadStyle) -> None:
+    params = WorldParams.for_slots(12, 5, road_style=style)
     a, b = generate(params), generate(params)
     assert a.game_map.hexes == b.game_map.hexes
     assert a.game_map.sites == b.game_map.sites
@@ -516,7 +570,67 @@ def test_to_state_rejects_too_many_players(world: GeneratedWorld) -> None:
         world.to_state([f"p{k}" for k in range(world.params.slots + 1)])
 
 
+def test_natural_roads_keep_the_land_towns_and_seats() -> None:
+    direct = generate(WorldParams.for_slots(12, 4))
+    natural = generate(WorldParams.for_slots(12, 4, road_style="natural"))
+
+    def land(world: GeneratedWorld) -> list[Terrain]:
+        # Bridges are river; sites and base plots may turn woods or hills to plains.
+        return [
+            Terrain.RIVER if h.terrain is Terrain.BRIDGE else h.terrain
+            for h in world.game_map.hexes
+        ]
+
+    changed = sum(a != b for a, b in zip(land(direct), land(natural), strict=True))
+    assert changed <= len(direct.game_map.sites) + 4 * direct.params.slots
+    assert natural.seats == direct.seats
+    first = direct.game_map.width * direct.game_map.height // 70 + 12
+    assert natural.settlements[:first] == direct.settlements[:first]
+    assert natural.game_map.hexes != direct.game_map.hexes
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_natural_roads_are_far_less_ruled_than_direct_ones(seed: int) -> None:
+    direct = measure(generate(WorldParams.for_slots(12, seed)))
+    natural = measure(generate(WorldParams.for_slots(12, seed, road_style="natural")))
+    assert natural.long_run_share < 0.5 * direct.long_run_share
+    assert natural.run_max < direct.run_max
+    # A modest price in length: road between neighbouring towns is at most ~15%
+    # longer (7% at 200 slots), and travel from a base to its sites about as quick.
+    assert natural.detour_median <= 1.15 * direct.detour_median
+    assert natural.base_to_site_median <= direct.base_to_site_median + 2
+
+
+def test_natural_bridges_run_along_their_ramps(sweep: list[GeneratedWorld]) -> None:
+    # The bridge tiles bake their road ramps for three river shapes; a natural
+    # road crosses only those, along the ramps, unless no such bridge reaches
+    # (counted in `natural_road_fallbacks`).
+    if sweep[0].params.road_style != "natural":
+        pytest.skip("the direct style does not place bridges by their art")
+    fitting = total = 0
+    for world in sweep:
+        grid, terrain, road = _layout(world)
+        for i in range(grid.size):
+            if terrain[i] is not Terrain.BRIDGE:
+                continue
+            around = grid.neighbor_in[i]
+            course = tuple(
+                d for d, n in enumerate(around) if n >= 0 and terrain[n] in RIVER_LIKE
+            )
+            roads = tuple(
+                d
+                for d, n in enumerate(around)
+                if n >= 0 and road[n] and terrain[n] not in RIVER_LIKE
+            )
+            total += 1
+            fitting += BRIDGE_RAMPS.get((course[0], course[1])) == roads
+    assert total > 100
+    assert fitting / total >= 0.9
+
+
 def test_params_reject_unusable_worlds() -> None:
+    with pytest.raises(WorldGenError, match="road_style"):
+        WorldParams(width=40, height=40, slots=1, seed=1, road_style="winding")  # type: ignore[arg-type]
     with pytest.raises(WorldGenError, match="too few"):
         WorldParams(width=20, height=20, slots=10, seed=1)
     with pytest.raises(WorldGenError, match="at least"):
