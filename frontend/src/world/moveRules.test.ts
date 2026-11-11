@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+
+import { hexKey, type Axial, type Hex } from "@/board/hex";
+import { reachableContinuations } from "@/planning/reach";
+import type { components } from "@/lib/api/schema";
+
+import { hostileHexes, moveStepRules, type MoveContext } from "./moveRules";
+import type { WorldOrder } from "./plan";
+import { decodeWorldMap } from "./worldMap";
+
+type Unit = components["schemas"]["Unit"];
+
+// A 9×9 open plain, no roads: infantry reach 2, armor 4.
+const map = decodeWorldMap({ width: 9, height: 9, terrain: ".".repeat(81), roads: ".".repeat(81), sites: [] });
+const index = new Map<string, Hex>(map.hexes.map((h) => [hexKey(h.coord.q, h.coord.r), h]));
+
+let nextId = 1;
+function unit(owner: string, type: Unit["type"], q: number, r: number, extra: Partial<Unit> = {}): Unit {
+  return { id: nextId++, owner, type, coord: { q, r }, hp: 10, posture: "deployed", facing: "right", disordered: false, ...extra };
+}
+
+function reach(mover: Unit, others: Unit[], orders: Record<number, WorldOrder> = {}, standing: MoveContext["standing"] = []) {
+  const ctx: MoveContext = { units: [mover, ...others], viewer: "me", orders, standing };
+  return reachableContinuations(mover, [], index, moveStepRules(mover, ctx));
+}
+
+const k = (a: Axial) => hexKey(a.q, a.r);
+
+describe("move reach with own units", () => {
+  it("never ends on or passes through a stationary own unit", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3); // directly south
+    const r = reach(me, [friend]);
+    expect(r.has(k(friend.coord))).toBe(false);
+    // (4,4) is two steps south, through the friend: infantry can't get round in 2.
+    expect(r.has("4,4")).toBe(false);
+    // Armor can, and goes round.
+    const around = reach(unit("me", "armor", 4, 2), [friend]).get("4,4");
+    expect(around).toHaveLength(3);
+    expect(around!.some((s) => s.q === 4 && s.r === 3)).toBe(false);
+  });
+
+  it("lets a step land where a moving own unit has left", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    const r = reach(me, [friend], { [friend.id]: { kind: "move", path: [{ q: 4, r: 4 }] } });
+    expect(r.get(k(friend.coord))).toEqual([{ q: 4, r: 3 }]);
+    // But not the hex that friend's move ends on.
+    expect(r.has("4,4")).toBe(false);
+  });
+
+  it("treats a friend packing for travel as in place until pulse 5", () => {
+    const armor = unit("me", "armor", 2, 3);
+    const friend = unit("me", "infantry", 3, 3); // adjacent: step 1
+    const travel: WorldOrder = { kind: "travel", destination: { q: 8, r: 0 }, via: [], onArrival: "deployed" };
+    const r = reach(armor, [friend], { [friend.id]: travel });
+    expect(r.has(k(friend.coord))).toBe(false);
+    // A standing travel order packs the same way.
+    expect(reach(armor, [friend], {}, [{ unit_id: friend.id, route: [{ q: 4, r: 3 }], on_arrival: "deployed" } as never]).has(k(friend.coord))).toBe(false);
+  });
+
+  it("ignores own columns: deployed units and columns stack apart", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const column = unit("me", "infantry", 4, 3, { posture: "column" });
+    expect(reach(me, [column]).get("4,3")).toEqual([{ q: 4, r: 3 }]);
+  });
+});
+
+describe("move reach with hostile units", () => {
+  it("offers a hostile hex as the end of a move (an attack) but never a hex past it", () => {
+    const me = unit("me", "armor", 1, 4);
+    const enemy = unit("rival", "infantry", 3, 3);
+    const r = reach(me, [enemy]);
+    const attack = r.get(k(enemy.coord));
+    expect(attack).toBeDefined();
+    for (const path of r.values()) {
+      expect(path.slice(0, -1).some((s) => s.q === 3 && s.r === 3)).toBe(false);
+    }
+    expect(hostileHexes([me, enemy], "me")).toEqual(new Set([k(enemy.coord)]));
+  });
+
+  it("does not let artillery or a disordered unit attack", () => {
+    const enemy = unit("neutral", "infantry", 4, 3);
+    expect(reach(unit("me", "artillery", 4, 2), [enemy]).has("4,3")).toBe(false);
+    expect(reach(unit("me", "infantry", 4, 2, { disordered: true }), [enemy]).has("4,3")).toBe(false);
+    expect(reach(unit("me", "infantry", 4, 2), [enemy]).has("4,3")).toBe(true);
+  });
+
+  it("stops an engaged unit stepping from one enemy-adjacent hex to another", () => {
+    // Enemy at (4,4); we start at (4,3), adjacent, so engaged.
+    const me = unit("me", "infantry", 4, 3);
+    const enemy = unit("rival", "infantry", 4, 4);
+    const r = reach(me, [enemy]);
+    // (5,3) is adjacent to both: the direct ZOC→ZOC step is refused, so it is
+    // only reached by stepping out of the ZOC first.
+    expect(r.get("5,3")).toEqual([{ q: 5, r: 2 }, { q: 5, r: 3 }]);
+    // Withdrawing to a free hex is fine, and so is attacking.
+    expect(r.has("4,2")).toBe(true);
+    expect(r.has("4,4")).toBe(true);
+  });
+
+  it("lets a unit enter enemy ZOC but not slide along it", () => {
+    const me = unit("me", "armor", 4, 0);
+    const enemy = unit("rival", "infantry", 4, 4);
+    const r = reach(me, [enemy]);
+    // (4,3) touches the enemy: reachable straight down (4,1)→(4,2)→(4,3).
+    expect(r.get("4,3")).toEqual([{ q: 4, r: 1 }, { q: 4, r: 2 }, { q: 4, r: 3 }]);
+    // From (4,3) the sideways step to (5,3), also enemy-adjacent, is refused, so
+    // (5,3) must be reached from outside the ZOC, never via (4,3).
+    const side = r.get("5,3");
+    expect(side?.some((s) => s.q === 4 && s.r === 3)).toBe(false);
+  });
+
+  it("enemy columns exert no ZOC", () => {
+    const me = unit("me", "infantry", 4, 3);
+    const column = unit("rival", "infantry", 4, 4, { posture: "column" });
+    expect(reach(me, [column]).has("5,3")).toBe(true);
+  });
+});
