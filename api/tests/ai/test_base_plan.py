@@ -83,6 +83,14 @@ def test_needs_follow_the_flow_and_the_stock() -> None:
     assert poor[SiteKind.STEEL_MILL] > rich[SiteKind.STEEL_MILL]
 
 
+def test_barracks_two_comes_before_the_workshop() -> None:
+    rich = Stocks(manpower=20, fuel=20, steel=20)
+    after_one = small_world(stocks=rich, buildings={Building.BARRACKS: 1})
+    assert plan_base(after_one, "p").build is Building.BARRACKS
+    after_two = small_world(stocks=rich, buildings={Building.BARRACKS: 2})
+    assert plan_base(after_two, "p").build is Building.WORKSHOP
+
+
 def test_economy_orders_helper_is_none_without_base_orders() -> None:
     assert economy_orders_for("p", None, []) is None
     assert economy_orders_for("p", Building.DEPOT, []) == EconomyOrders(

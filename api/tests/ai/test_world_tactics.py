@@ -14,6 +14,7 @@ from app.ai.world import (
     Stance,
     StrategistArgs,
     _assign,
+    _pick_garrisons,
     plan_world_turn,
     siege_group,
 )
@@ -152,6 +153,22 @@ def test_a_unit_on_the_base_steps_off_for_a_recruit() -> None:
     assert [r.coord for r in plan.recruitments] == [BASE]
     order = next(o for o in plan.orders if o.unit_id == 1)
     assert isinstance(order, MoveOrder) and order.path[-1] != BASE
+
+
+def test_a_small_army_keeps_nobody_home_until_a_player_comes_near() -> None:
+    army = [make_unit(k, INF, at(2 + k, 3)) for k in range(1, 4)]
+    args = StrategistArgs(stance=Stance.EXPAND, reserve_share=0.3)
+
+    def kept(state: GameState) -> int:
+        view = redact_state(state, "p")
+        intel = Intel(view, "p", Box.around([BASE], 40))
+        board = BoardIndex(view, "p")
+        return len(_pick_garrisons(view, "p", board.own_units, args, intel))
+
+    assert kept(_farm_world(army)) == 0  # 0.3 of three units rounds down
+    assert kept(_farm_world([*army, make_unit(4, INF, at(6, 3))])) == 1
+    raider = make_unit(9, INF, at(2, 5), owner="q")
+    assert kept(_farm_world([*army, raider])) == 1
 
 
 def test_neutral_garrisons_never_make_a_cautious_bot_defend() -> None:

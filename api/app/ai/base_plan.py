@@ -10,7 +10,7 @@ after). Each turn:
   its upkeep would leave fuel or manpower running at a loss that the stock can't
   carry for `_DEFICIT_TURNS` more turns (never into a fuel deficit), so the bot
   rarely forces a disband.
-* **Build** with what is left: Barracks 1, then the Workshop, then barracks levels,
+* **Build** with what is left: Barracks 1 and 2, then the Workshop, then barracks levels,
   each preceded by the depot level needed to store its cost.
 
 Everything here is checked against the bot's *current* stocks, as
@@ -33,6 +33,7 @@ _TARGET_SHARE: dict[UnitType, float] = {
     UnitType.ARMOR: 0.2,
 }
 _DEFICIT_TURNS = 20
+_WORKSHOP_AFTER = 2  # barracks level before the workshop
 
 
 @dataclass(frozen=True)
@@ -171,13 +172,13 @@ def _wanted_build(
 ) -> Building | None:
     """The building level the bot works toward next, affordable or not.
 
-    Barracks 1, then the Workshop, then barracks levels, each preceded by the
+    Barracks 1 and 2, then the Workshop, then barracks levels, each preceded by the
     depot level needed to store its cost.
     """
     levels = _levels(view, player)
     barracks = levels.get(Building.BARRACKS, 0)
     depot = levels.get(Building.DEPOT, 0)
-    if barracks >= 1 and levels.get(Building.WORKSHOP, 0) == 0:
+    if barracks >= _WORKSHOP_AFTER and levels.get(Building.WORKSHOP, 0) == 0:
         return Building.WORKSHOP
     if barracks >= economy.max_level(Building.BARRACKS):
         return None

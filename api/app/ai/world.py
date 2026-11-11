@@ -679,7 +679,8 @@ def _pick_garrisons(
         key=lambda c: (not _is_key_settlement(view, c), c.q, c.r),
     )
     hostiles = [u.coord for u in intel.threats]
-    count = round(args.reserve_share * len(combat))
+    # Rounded down: a small army keeps nobody home until a player comes near.
+    count = int(args.reserve_share * len(combat))
     if args.stance is Stance.DEFEND or any(
         _nearest(c, hostiles) <= _THREAT_RADIUS
         for c in homes
