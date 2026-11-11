@@ -11,6 +11,7 @@ import { Link, useParams, useSearchParams } from "react-router";
 
 import { axialEqual, hexKey, type Axial } from "@/board/hex";
 import { AccountMenu } from "@/components/AccountMenu";
+import { HeaderBrand } from "@/components/Brand";
 import { Glyph } from "@/components/Glyph";
 import { ButtonLink, Card, Centered, ErrorBanner, Loading } from "@/components/ui";
 import type { components } from "@/lib/api/schema";
@@ -96,9 +97,7 @@ function WorldGone({ reason }: { reason: GoneReason }) {
   return (
     <div className="fixed inset-0 flex flex-col bg-[#1a1d22] text-ivory-100">
       <header className="fhq-wood flex h-12 shrink-0 items-center gap-5 border-b-2 border-brass-600/70 px-4 text-sm">
-        <Link to="/worlds" className="whitespace-nowrap font-display text-base uppercase tracking-wide text-ivory-100">
-          hex-general
-        </Link>
+        <HeaderBrand to="/worlds" />
         <div className="ml-auto">
           <AccountMenu />
         </div>
@@ -427,9 +426,7 @@ function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: For
     // Only the stats clip, so the account menu's dropdown can hang below the bar.
     <header className="fhq-wood relative z-40 flex h-12 shrink-0 items-center gap-3 whitespace-nowrap border-b-2 border-brass-600/70 px-4 text-sm">
       <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden min-[1100px]:gap-5">
-        <Link to="/worlds" title="All worlds" className="font-display text-base uppercase tracking-wide text-ivory-100">
-          hex-general
-        </Link>
+        <HeaderBrand to="/worlds" title="All worlds" />
         <Stat label="Turn">
           <span className="font-data">{view.turn}</span>
         </Stat>

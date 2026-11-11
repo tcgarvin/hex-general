@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation } from "react-router";
 
 import { useAuth } from "@/auth/useAuth";
+import { Emblem } from "@/components/Brand";
 import { Button, Card, ErrorBanner } from "@/components/ui";
 import { isLocalSupabase } from "@/lib/supabase";
 
@@ -32,6 +33,7 @@ export function Login() {
     <div className="fhq-backdrop flex min-h-dvh flex-col items-center justify-center px-4 py-10 text-ivory-100">
       <Card className="flex max-w-sm flex-col gap-5">
         <header className="text-center">
+          <Emblem className="mx-auto mb-2 h-16" />
           <h1 className="font-display text-3xl uppercase tracking-wide">Hex General</h1>
           <p className="mt-2 text-sm text-wood-700">
             A turn-based hex wargame. Plan your orders, then every move resolves at once.

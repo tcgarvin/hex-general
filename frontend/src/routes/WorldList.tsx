@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
+import { Emblem } from "@/components/Brand";
 import { Button, ButtonLink, Card, ErrorBanner } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
@@ -21,14 +22,17 @@ export function WorldsScreen({ seat }: { seat: ActiveWorld | null }) {
   return (
     <div className="fhq-backdrop flex flex-1 flex-col items-center px-4 py-10">
       <Card className="max-w-xl">
-        <h1 className="font-display text-2xl uppercase tracking-wide">
-          {seat === null ? "Join a world" : "Worlds"}
-        </h1>
-        <p className="mt-1 text-sm text-wood-700">
-          {seat === null
-            ? "Pick a running world to take its first open slot."
-            : "The running worlds. You play in one world at a time."}
-        </p>
+        <header className="text-center">
+          <Emblem className="mx-auto mb-2 h-12" />
+          <h1 className="font-display text-2xl uppercase tracking-wide">
+            {seat === null ? "Join a world" : "Worlds"}
+          </h1>
+          <p className="mt-1 text-sm text-wood-700">
+            {seat === null
+              ? "Pick a running world to take its first open slot."
+              : "The running worlds. You play in one world at a time."}
+          </p>
+        </header>
         <WorldList seat={seat} />
         <div className="mt-5 border-t border-wood-500/40 pt-3 text-sm">
           <Link to="/account" className="font-label uppercase tracking-wider text-wood-700 hover:text-ink-900">

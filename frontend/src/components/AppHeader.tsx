@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useAuth } from "@/auth/useAuth";
 
 import { AccountMenu } from "./AccountMenu";
+import { HeaderBrand } from "./Brand";
 
 /**
  * Thin site header for the standard (non-game) pages: brand on the left, account
@@ -20,9 +21,7 @@ export function AppHeader({ homeTo = "/worlds" }: { homeTo?: string }) {
   const { session } = useAuth();
   return (
     <header className="fhq-wood flex h-12 shrink-0 items-center gap-5 border-b-2 border-brass-600/70 px-4 text-sm">
-      <Link to={homeTo} className="font-display text-base uppercase tracking-wide text-ivory-100">
-        hex-general
-      </Link>
+      <HeaderBrand to={homeTo} />
       <div className="ml-auto">
         {session === null ? (
           <Link
