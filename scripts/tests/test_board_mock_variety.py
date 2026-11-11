@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import json
 from pathlib import Path
 from types import ModuleType
 
@@ -100,7 +101,8 @@ def test_picks_are_deterministic(variety_dir: Path, density: str) -> None:
 def test_never_decorates_site_or_base_hexes(variety_dir: Path, density: str) -> None:
     game_map = _big_map()
     covered, bases = bm.site_hexes(game_map)
-    assert len(bases) == 3  # stage-1 base + stage-2 base (two hexes)
+    # every base counts with its full stage-4 footprint, whatever its stage
+    assert len(bases) == 8
     picks = _picks(game_map, variety_dir, density)
     assert not covered & set(picks)
     for at, pick in picks.items():
@@ -313,3 +315,98 @@ def test_nearby_decorated_hexes_do_not_repeat_a_tile_while_another_is_free(
 def test_within_radius_counts() -> None:
     assert len(bm._within(0, 0, 1)) == 6
     assert len(bm._within(4, -2, 3)) == 36
+
+
+# --- shipped set: the mock's default equals the game ---------------------------
+
+SETTINGS = json.loads(
+    (REPO / "frontend" / "src" / "board" / "varietySettings.json").read_text()
+)
+
+
+def test_mock_settings_are_the_frontends() -> None:
+    assert bm.VARIETY_DEFAULT_DENSITY == SETTINGS["density"] == "medium"
+    assert bm.VARIETY_DEFAULT_MIX == SETTINGS["mix"] == "mostly-medium"
+    assert bm.VARIETY_MIXES == SETTINGS["mixes"]
+    assert bm.VARIETY_REPEAT_RADIUS == SETTINGS["repeatRadius"]
+    for name, d in SETTINGS["densities"].items():
+        assert bm.VARIETY_DENSITIES[name] == bm.VarietyDensity(
+            nature=d["nature"],
+            home_road=d["homeRoad"],
+            home_town=d["homeTown"],
+            road_open=d["roadOpen"],
+            road_town=d["roadTown"],
+        )
+
+
+def test_shipped_tiles_have_both_sizes() -> None:
+    small = bm.VarietySet.from_tiles(SHIPPED, "small")
+    medium = bm.VarietySet.from_tiles(SHIPPED, "medium")
+    assert small is not None and medium is not None
+    assert (len(small.nature), len(small.home)) == (11, 8)
+    assert (len(medium.nature), len(medium.home)) == (8, 8)
+    assert sum(map(len, small.road.values())) == 13
+    assert sum(map(len, medium.road.values())) == 18
+    assert all(p.name.startswith("s") for p in small.nature + small.home)
+    assert (
+        bm.variety_key(medium.road["fork_se_n_sw"][1]) == "road_variety/fork_se_n_sw_m2"
+    )
+
+
+def test_tiles_without_variety_folders_have_none(tmp_path: Path) -> None:
+    _tile(tmp_path / "plains" / "00.png", (1, 2, 3))
+    assert bm.VarietySet.from_tiles(tmp_path, "small") is None
+
+
+def _cli(tmp_path: Path, *extra: str) -> tuple[bytes, str]:
+    import contextlib
+    import io
+
+    out = tmp_path / f"out{len(extra)}.png"
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        bm.main(["--map", str(TOWN_MAP), "--out", str(out), "--hex-px", "32", *extra])
+    return out.read_bytes(), buf.getvalue()
+
+
+def test_cli_default_draws_the_shipped_variety_and_no_variety_turns_it_off(
+    tmp_path: Path,
+) -> None:
+    default, report = _cli(tmp_path)
+    assert "variety " in report and "medium x" in report
+    off, off_report = _cli(tmp_path, "--no-variety")
+    assert "variety " not in off_report
+    assert default != off
+    # --no-variety is the plain render (no variety sets)
+    library = bm.TileLibrary(bm.TileSet.discover(SHIPPED, "tiles"), None)
+    image, _ = bm.render(bm.load_map(TOWN_MAP), library, 32, True, None)
+    assert Image.open(tmp_path / "out1.png").tobytes() == image.tobytes()
+
+
+def test_cli_default_equals_the_shipped_rule(tmp_path: Path) -> None:
+    game_map = bm.load_map(TOWN_MAP)
+    course = bm.road_course_edges(game_map.hexes, game_map.hex_at)
+    refs = bm.road_tile_refs(game_map.hexes, course)
+    picks = bm.variety_picks(
+        game_map,
+        refs,
+        bm.VarietySet.from_tiles(SHIPPED, "small"),
+        bm.VARIETY_DENSITIES[SETTINGS["density"]],
+        medium=bm.VarietySet.from_tiles(SHIPPED, "medium"),
+        medium_share=SETTINGS["mixes"][SETTINGS["mix"]],
+    )
+    library = bm.TileLibrary(bm.TileSet.discover(SHIPPED, "tiles"), None)
+    _, report = bm.render(
+        game_map,
+        library,
+        32,
+        True,
+        None,
+        variety=bm.VarietySet.from_tiles(SHIPPED, "small"),
+        variety_density=SETTINGS["density"],
+        variety_medium=bm.VarietySet.from_tiles(SHIPPED, "medium"),
+        variety_mix=SETTINGS["mix"],
+    )
+    assert {(h.q, h.r): p for h, p in report.variety} == picks
+    cli, _ = _cli(tmp_path)
+    assert cli == _cli(tmp_path)[0]

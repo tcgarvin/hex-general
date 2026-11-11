@@ -62,11 +62,13 @@ The **edge rule** (``edge_direction``, below the mouth rule) does the same for a
 river or bridge hex on the map border: its course runs off the map instead of
 ending in a cap.
 
-``--variety DIR --variety-density low|medium|high`` (+ ``--variety-medium DIR
---variety-mix small|mostly-small|even|mostly-medium|medium``) (opt-in, candidates only, not
-in the frontend): decorates open country with plains feature, homestead and
-roadside variants by a deterministic per-hex rule (``variety_picks``, written to
-port to ``hexTile.ts``); off by default, so other renders are unchanged.
+Variety (ratified 2026-11-11): by default the tiles root's variety folders
+(``plains_nature/``, ``plains_home/``, ``road_variety/``) decorate open country with
+small and medium plains features, homesteads and roadside variants by the game's
+rule (``variety_picks``, ported to ``frontend/src/board/varietyTiles.ts``) at the
+game's density and mix (``frontend/src/board/varietySettings.json``).
+``--no-variety`` draws the old look; ``--variety DIR`` / ``--variety-medium DIR``
+(+ ``--variety-density``, ``--variety-mix``) preview candidate sets instead.
 """
 
 from __future__ import annotations
@@ -1196,10 +1198,11 @@ class SiteSet:
 #
 # Purely visual decoration of open country, chosen per hex from static map data
 # only (terrain, roads, sites): never units or ownership, and nothing the engine
-# sees. Written to port line for line to frontend/src/board/hexTile.ts:
+# sees. Ported line for line to frontend/src/board/varietyTiles.ts (parity
+# fixture: scripts/variety-fixture.py -> frontend/src/board/__fixtures__/variety.json):
 #
-#   1. Excluded hexes: any hex covered by a site (``SiteSet`` footprints, bases
-#      included) is never decorated.
+#   1. Excluded hexes: any hex covered by a site is never decorated; a base
+#      counts with its full stage-4 footprint.
 #   2. Homestead candidates: undecorated plains hexes (no road, no site) next to
 #      a road-carrying hex or a town/city hex, not next to a base hex, with
 #      ``roll(HOME) < home_town`` (next to a town/city) or ``< home_road``.
@@ -1229,14 +1232,24 @@ VARIETY_SALT_ROAD = 13
 VARIETY_SALT_RANK = 14
 VARIETY_SALT_PICK = 15
 VARIETY_SALT_SIZE = 16
-VARIETY_REPEAT_RADIUS = 4  # no two decorated hexes this close share a tile file
+# One source of truth with the game: densities, mixes, the shipped density and
+# mix and the no-repeat radius live in frontend/src/board/varietySettings.json.
+VARIETY_SETTINGS_PATH = (
+    REPO_ROOT / "frontend" / "src" / "board" / "varietySettings.json"
+)
+VARIETY_SETTINGS = json.loads(VARIETY_SETTINGS_PATH.read_text())
+# no two decorated hexes this close share a tile file (step 6)
+VARIETY_REPEAT_RADIUS: int = VARIETY_SETTINGS["repeatRadius"]
 # medium-footprint share per mille of decorated hexes (step 7)
-VARIETY_MIXES: dict[str, int] = {
-    "small": 0,
-    "mostly-small": 250,
-    "even": 500,
-    "mostly-medium": 750,
-    "medium": 1000,
+VARIETY_MIXES: dict[str, int] = dict(VARIETY_SETTINGS["mixes"])
+VARIETY_DEFAULT_DENSITY: str = VARIETY_SETTINGS["density"]
+VARIETY_DEFAULT_MIX: str = VARIETY_SETTINGS["mix"]
+# The shipped variety folders under the tiles root (varietyTiles.ts): plains
+# features and homesteads as <s|m><NN>.png, roadside as <shape>_<s|m><N>.png.
+VARIETY_TILE_FOLDERS = {
+    "nature": "plains_nature",
+    "home": "plains_home",
+    "road": "road_variety",
 }
 VARIETY_KINDS = ("nature", "home", "road")
 SETTLEMENTS = ("town", "city")
@@ -1254,15 +1267,14 @@ class VarietyDensity:
 
 
 VARIETY_DENSITIES: dict[str, VarietyDensity] = {
-    "low": VarietyDensity(
-        nature=70, home_road=90, home_town=200, road_open=60, road_town=160
-    ),
-    "medium": VarietyDensity(
-        nature=140, home_road=160, home_town=350, road_open=120, road_town=300
-    ),
-    "high": VarietyDensity(
-        nature=240, home_road=260, home_town=550, road_open=220, road_town=480
-    ),
+    name: VarietyDensity(
+        nature=d["nature"],
+        home_road=d["homeRoad"],
+        home_town=d["homeTown"],
+        road_open=d["roadOpen"],
+        road_town=d["roadTown"],
+    )
+    for name, d in VARIETY_SETTINGS["densities"].items()
 }
 
 
@@ -1318,6 +1330,43 @@ class VarietySet:
             )
         return cls(root, nature, home, road)
 
+    @classmethod
+    def from_tiles(cls, root: Path, size: str) -> VarietySet | None:
+        """The shipped layout (``varietyTiles.ts``): ``plains_nature/<t>NN.png``,
+        ``plains_home/<t>NN.png``, ``road_variety/<shape>_<t>N.png`` with ``t`` =
+        ``s`` (small) or ``m`` (medium). ``None`` when the tiles root has none."""
+        tag = {"small": "s", "medium": "m"}[size]
+        folders = {k: root / v for k, v in VARIETY_TILE_FOLDERS.items()}
+        if not any(f.is_dir() for f in folders.values()):
+            return None
+
+        def files(kind: str) -> list[Path]:
+            names = locale_sorted(p.name for p in folders[kind].glob("*.png"))
+            return [
+                folders[kind] / n for n in names if re.fullmatch(rf"{tag}\d+\.png", n)
+            ]
+
+        road: dict[str, list[Path]] = {}
+        for name in locale_sorted(p.name for p in folders["road"].glob("*.png")):
+            m = re.fullmatch(r"([a-z_]+)_([sm])\d+\.png", name)
+            if m is None:
+                raise TileSetError(
+                    f"{folders['road']}/{name}: expected <shape>_<s|m>N.png"
+                )
+            if m.group(2) == tag:
+                road.setdefault(m.group(1), []).append(folders["road"] / name)
+        nature, home = files("nature"), files("home")
+        if not nature or not home:
+            raise TileSetError(
+                f"{root}: no {size} variety tiles in {VARIETY_TILE_FOLDERS}"
+            )
+        return cls(root, nature, home, road)
+
+
+def variety_key(path: Path) -> str:
+    """A variety file's key as the frontend names it: ``<folder>/<stem>``."""
+    return f"{path.parent.name}/{path.stem}"
+
 
 @dataclass(frozen=True)
 class VarietyPick:
@@ -1327,11 +1376,15 @@ class VarietyPick:
 
 
 def site_hexes(game_map: GameMap) -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
-    """(every hex covered by a ``[sites]`` site, the hexes covered by bases)."""
+    """(every hex covered by a ``[sites]`` site, the hexes covered by bases).
+
+    A base counts with its full stage-4 footprint whatever stage it is drawn at:
+    the decoration is static, and a base may grow (``varietyTiles.ts`` does the
+    same with ``BASE_FOOTPRINT``)."""
     covered: set[tuple[int, int]] = set()
     bases: set[tuple[int, int]] = set()
-    for (aq, ar), (kind, level) in game_map.sites.items():
-        footprint = BASE_STAGES[level] if kind == "base" else ((0, 0),)
+    for (aq, ar), (kind, _level) in game_map.sites.items():
+        footprint = BASE_STAGES[max(BASE_STAGES)] if kind == "base" else ((0, 0),)
         for dq, dr in footprint:
             covered.add((aq + dq, ar + dr))
             if kind == "base":
@@ -2414,33 +2467,58 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="skip the vector road fallback (the world renderer draws none)",
     )
     parser.add_argument(
+        "--no-variety",
+        action="store_true",
+        help="draw no variety tiles (the look before 2026-11-11); by default the "
+        "tiles root's own variety folders are drawn at the game's density and mix",
+    )
+    parser.add_argument(
         "--variety",
         type=Path,
         default=None,
-        help="variety tiles dir (nature/, home/, road/road-<shape>-*.png): opt-in "
-        "decoration of open country (candidates; see variety_picks)",
-    )
-    parser.add_argument(
-        "--variety-density", choices=tuple(VARIETY_DENSITIES), default="medium"
+        help="candidate variety tiles dir (nature/, home/, road/road-<shape>-*.png) "
+        "used as the small set instead of the tiles root's (see variety_picks)",
     )
     parser.add_argument(
         "--variety-medium",
         type=Path,
         default=None,
-        help="medium-footprint variety tiles dir, same layout as --variety",
+        help="candidate medium-footprint variety tiles dir, same layout as --variety",
+    )
+    parser.add_argument(
+        "--variety-density",
+        choices=tuple(VARIETY_DENSITIES),
+        default=VARIETY_DEFAULT_DENSITY,
     )
     parser.add_argument(
         "--variety-mix",
         choices=tuple(VARIETY_MIXES),
-        default="small",
-        help="share of decorated hexes drawn from --variety-medium",
+        default=None,
+        help=f"share of decorated hexes drawn from the medium set (default "
+        f"{VARIETY_DEFAULT_MIX} with a medium set, else small)",
     )
     args = parser.parse_args(argv)
-    share = VARIETY_MIXES[args.variety_mix]
-    if share < 1000 and args.variety_medium is not None and args.variety is None:
-        parser.error(f"--variety-mix {args.variety_mix} needs --variety (small tiles)")
-    if share > 0 and args.variety_medium is None:
-        parser.error(f"--variety-mix {args.variety_mix} needs --variety-medium")
+    candidates = args.variety is not None or args.variety_medium is not None
+    if args.no_variety and candidates:
+        parser.error("--no-variety cannot be combined with --variety/--variety-medium")
+    if args.no_variety:
+        small = medium = None
+    elif candidates:
+        small = None if args.variety is None else VarietySet.discover(args.variety)
+        medium = (
+            None
+            if args.variety_medium is None
+            else VarietySet.discover(args.variety_medium)
+        )
+    else:
+        small = VarietySet.from_tiles(args.tiles, "small")
+        medium = VarietySet.from_tiles(args.tiles, "medium")
+    mix = args.variety_mix or (VARIETY_DEFAULT_MIX if medium is not None else "small")
+    share = VARIETY_MIXES[mix]
+    if candidates and share < 1000 and small is None:
+        parser.error(f"--variety-mix {mix} needs --variety (small tiles)")
+    if candidates and share > 0 and medium is None:
+        parser.error(f"--variety-mix {mix} needs --variety-medium")
     if not 0.0 <= args.drift < 1.0:
         parser.error(f"--drift must be in [0, 1), got {args.drift}")
     if args.hex_px < 8:
@@ -2464,14 +2542,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         grid_style=args.grid_style,
         draw_vector_roads=not args.no_vector_roads,
         sites=None if args.sites is None else SiteSet.discover(args.sites),
-        variety=None if args.variety is None else VarietySet.discover(args.variety),
+        variety=small,
         variety_density=args.variety_density,
-        variety_medium=(
-            None
-            if args.variety_medium is None
-            else VarietySet.discover(args.variety_medium)
-        ),
-        variety_mix=args.variety_mix,
+        variety_medium=medium,
+        variety_mix=mix,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     image.save(args.out)

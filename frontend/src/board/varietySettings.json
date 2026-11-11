@@ -1,0 +1,18 @@
+{
+ "about": "Variety tiles (varietyTiles.ts): how much open country is decorated and how much of it with the medium (round 2) tiles. density picks a row of densities, mix a medium share (per mille of decorated hexes) from mixes. Read by scripts/board-mock.py too, so the mock draws what the game draws.",
+ "density": "medium",
+ "mix": "mostly-medium",
+ "densities": {
+  "low": { "nature": 70, "homeRoad": 90, "homeTown": 200, "roadOpen": 60, "roadTown": 160 },
+  "medium": { "nature": 140, "homeRoad": 160, "homeTown": 350, "roadOpen": 120, "roadTown": 300 },
+  "high": { "nature": 240, "homeRoad": 260, "homeTown": 550, "roadOpen": 220, "roadTown": 480 }
+ },
+ "mixes": {
+  "small": 0,
+  "mostly-small": 250,
+  "even": 500,
+  "mostly-medium": 750,
+  "medium": 1000
+ },
+ "repeatRadius": 4
+}
