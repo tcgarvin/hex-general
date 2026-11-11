@@ -218,6 +218,15 @@ JOIN_HASH_CASES = [
     (120, -60, 2, 3, 2),
     (39, -19, 3, 4, 3),
     (1000, 3000, 1, 3, 2),
+    # river mouths, codes 5 + d (also pinned in frontend/src/board/joins.test.ts)
+    (0, 0, 5, 3, 1),
+    (0, 0, 10, 3, 1),
+    (8, 0, 9, 3, 2),
+    (1, 2, 5, 3, 0),
+    (-4, 9, 7, 5, 1),
+    (120, -60, 8, 3, 0),
+    (39, -19, 6, 4, 0),
+    (1000, 3000, 10, 7, 1),
 ]
 
 
@@ -404,12 +413,12 @@ def test_mouth_sprite_continues_the_river_crossing(name: str) -> None:
     p = xs * normal[0] + ys * normal[1]
     t = xs * tangent[0] + ys * tangent[1]
     alpha = sprite[..., 3] / 255
-    assert alpha[p < -joins.MOUTH_BACK_PX].max() == 0  # nothing inside the river hex
+    assert alpha[p < -joins.MOUTH_R1.back_px].max() == 0  # nothing inside the river hex
     on_edge = (np.abs(p) < 0.8) & (np.abs(t) < 6)
     rgb, _ = profile.sample(t[on_edge])
     assert np.abs(sprite[..., :3][on_edge] - rgb).max() < 4
     assert alpha[on_edge].min() > 0.4
-    assert alpha[p > joins.MOUTH_WATER_FADE[1]].max() == 0
+    assert alpha[p > joins.MOUTH_R1.water_fade[1]].max() == 0
 
 
 def test_lake_joins_build_every_kind(tmp_path: Path) -> None:
@@ -444,3 +453,39 @@ def test_lake_joins_build_every_kind(tmp_path: Path) -> None:
     loaded = bm.JoinSet.load(out)
     assert ("lake", bm.MOUTH_CODE_BASE + 5) in loaded.groups
     assert "Mouth kinds" in (out / "README.md").read_text()
+
+
+@pytest.mark.parametrize("name", list(joins.MOUTHS))
+def test_r2_mouth_covers_the_lake_bleed_ring_and_continues_the_river(name: str) -> None:
+    """Round 2: opaque over the lake tile's 1 px bleed ring (no grass line across
+    the river), the river profile on the edge, water fading out past the
+    shoreline's shading."""
+    direction = joins.MOUTHS[name]
+    profile = joins.CrossProfile.load(PROFILE)
+    sprite = joins.mouth_sprite(
+        direction, profile, flat_water(), seed=1, params=joins.MOUTH_R2
+    )
+    normal, tangent = joins.mouth_frame(direction)
+    xs, ys = joins._pixel_grid(joins.CANVAS)
+    p = xs * normal[0] + ys * normal[1]
+    t = xs * tangent[0] + ys * tangent[1]
+    alpha = sprite[..., 3] / 255
+    ring = (p > -1.0) & (p < 0.0) & (np.abs(t) < 6)
+    assert alpha[ring].min() > 0.95
+    assert alpha[p < -joins.MOUTH_R2.back_px].max() == 0
+    on_edge = (np.abs(p) < 0.8) & (np.abs(t) < 6)
+    rgb, _ = profile.sample(t[on_edge])
+    assert np.abs(sprite[..., :3][on_edge] - rgb).max() < 4
+    assert alpha[p > joins.MOUTH_R2.water_fade[1]].max() == 0
+
+
+def test_w0_mouth_joins_build_every_direction(tmp_path: Path) -> None:
+    w0 = tmp_path / "w0.png"
+    Image.fromarray(np.full((128, 128, 3), (64, 78, 75), dtype=np.uint8)).save(w0)
+    records = joins.build_w0_mouth_joins(
+        w0, PROFILE, tmp_path / "out", 2, joins.MOUTH_R2
+    )
+    names = sorted(r.file for r in records)
+    assert len(names) == 12
+    assert names[0] == "lake/mouth_n_00.png"
+    assert all((tmp_path / "out" / n).is_file() for n in names)

@@ -1,0 +1,1954 @@
+{
+ "sheet": "art/codex/terrain/lake/r2/a/lake2-a.sheet.png",
+ "w0": "art/codex/terrain/lake/r2/w0/w0-v2.png",
+ "w0_sha256": "728a4f58b6903bfa021835549c055526cbe945e9db83640e90c01c8154fd8435",
+ "registration": {
+  "scale": 1.0003790138000783,
+  "tx": -0.3063822641602397,
+  "ty": -0.7273960488126893,
+  "max_residual_tile_px": 0.18028160014604264,
+  "min_iou": 0.9902036246588762
+ },
+ "pin": {
+  "land_exact_px": 1.5,
+  "land_ramp_px": 6.0,
+  "water_exact_px": 1.5,
+  "water_ramp_px": 11.0,
+  "tone_sigma": 5.0,
+  "tone_reach_px": 26.0,
+  "mean_sigma": 3.0,
+  "feature_strength": 1.0,
+  "feature_rgb": [
+   65.0,
+   80.0,
+   77.0
+  ],
+  "water_hp_std": 6.0,
+  "water_hp_sigma": 3.0,
+  "max_correlation": 0.6
+ },
+ "tiles": {
+  "m00_00": {
+   "mask": 0,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.008,
+    "iou": 0.9972
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.41,
+    "lum_std": 7.22,
+    "grad_x": 2.15,
+    "grad_y": 4.84
+   },
+   "ring": [],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    }
+   ]
+  },
+  "m08_00": {
+   "mask": 8,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.025,
+    "iou": 0.9968
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.5,
+    "lum_std": 7.04,
+    "grad_x": 2.15,
+    "grad_y": 4.72
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 64,
+     "lum": 74.1,
+     "hp_std": 5.55
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 64,
+     "lum": 73.68,
+     "hp_std": 4.6
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 103,
+     "lum": 77.15,
+     "hp_std": 5.76
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 147,
+     "lum": 76.4,
+     "hp_std": 6.91
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 216,
+     "lum": 73.9,
+     "hp_std": 4.0
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 1389,
+     "lum": 75.7,
+     "hp_std": 5.75
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 2.35,
+     "limit": 3.0,
+     "passed": false,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 2.3, texture std ratio 0.82-1.42"
+    }
+   ]
+  },
+  "m13_00": {
+   "mask": 13,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.03,
+    "iou": 0.9953
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.38,
+    "lum_std": 7.24,
+    "grad_x": 2.11,
+    "grad_y": 4.47
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 253,
+     "lum": 75.08,
+     "hp_std": 6.07
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 249,
+     "lum": 73.71,
+     "hp_std": 5.54
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 379,
+     "lum": 75.23,
+     "hp_std": 5.22
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 511,
+     "lum": 74.12,
+     "hp_std": 4.65
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 670,
+     "lum": 75.63,
+     "hp_std": 5.6
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 3535,
+     "lum": 75.57,
+     "hp_std": 6.76
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.89,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.9, texture std ratio 0.75-1.09"
+    }
+   ]
+  },
+  "m18_00": {
+   "mask": 18,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.032,
+    "iou": 0.998
+   },
+   "blend_correlation": 0.011,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.53,
+    "lum_std": 7.02,
+    "grad_x": 2.18,
+    "grad_y": 4.54
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 128,
+     "lum": 73.1,
+     "hp_std": 5.71
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 128,
+     "lum": 74.04,
+     "hp_std": 6.03
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 206,
+     "lum": 75.28,
+     "hp_std": 5.78
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 294,
+     "lum": 74.73,
+     "hp_std": 4.55
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 422,
+     "lum": 74.91,
+     "hp_std": 4.95
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 2773,
+     "lum": 75.77,
+     "hp_std": 6.67
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 2.24,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 2.2, texture std ratio 0.78-1.15"
+    }
+   ]
+  },
+  "m22_00": {
+   "mask": 22,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.099,
+    "iou": 0.9916
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.46,
+    "lum_std": 6.99,
+    "grad_x": 2.08,
+    "grad_y": 4.59
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 253,
+     "lum": 74.77,
+     "hp_std": 5.98
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 249,
+     "lum": 74.38,
+     "hp_std": 5.8
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 379,
+     "lum": 75.67,
+     "hp_std": 6.25
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 511,
+     "lum": 75.16,
+     "hp_std": 5.9
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 671,
+     "lum": 74.51,
+     "hp_std": 4.71
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 3537,
+     "lum": 75.27,
+     "hp_std": 5.91
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 0.78,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 0.8, texture std ratio 0.89-1.18"
+    }
+   ]
+  },
+  "m26_00": {
+   "mask": 26,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.091,
+    "iou": 0.9914
+   },
+   "blend_correlation": 0.08,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.55,
+    "lum_std": 7.08,
+    "grad_x": 2.15,
+    "grad_y": 4.35
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 256,
+     "lum": 73.93,
+     "hp_std": 5.71
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 248,
+     "lum": 73.89,
+     "hp_std": 5.66
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 379,
+     "lum": 75.19,
+     "hp_std": 5.64
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 507,
+     "lum": 75.76,
+     "hp_std": 6.51
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 670,
+     "lum": 75.38,
+     "hp_std": 5.41
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 3513,
+     "lum": 75.5,
+     "hp_std": 5.93
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.55,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.5, texture std ratio 0.95-1.15"
+    }
+   ]
+  },
+  "m30_00": {
+   "mask": 30,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.115,
+    "iou": 0.9902
+   },
+   "blend_correlation": 0.046,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.29,
+    "lum_std": 7.06,
+    "grad_x": 2.13,
+    "grad_y": 4.49
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 442,
+     "lum": 74.97,
+     "hp_std": 6.13
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 426,
+     "lum": 73.84,
+     "hp_std": 5.65
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 621,
+     "lum": 75.23,
+     "hp_std": 6.26
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 789,
+     "lum": 74.53,
+     "hp_std": 5.4
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 938,
+     "lum": 75.59,
+     "hp_std": 6.23
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 3674,
+     "lum": 75.5,
+     "hp_std": 6.31
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.705,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.7, texture std ratio 0.86-1.01"
+    }
+   ]
+  },
+  "m36_00": {
+   "mask": 36,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.065,
+    "iou": 0.9929
+   },
+   "blend_correlation": 0.072,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.4,
+    "lum_std": 7.17,
+    "grad_x": 2.18,
+    "grad_y": 4.34
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 128,
+     "lum": 76.14,
+     "hp_std": 5.27
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 128,
+     "lum": 75.52,
+     "hp_std": 5.06
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 208,
+     "lum": 75.98,
+     "hp_std": 6.14
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 304,
+     "lum": 75.12,
+     "hp_std": 7.07
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 430,
+     "lum": 76.27,
+     "hp_std": 5.87
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 2810,
+     "lum": 75.1,
+     "hp_std": 6.35
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 0.585,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 0.6, texture std ratio 0.83-1.16"
+    }
+   ]
+  },
+  "m40_00": {
+   "mask": 40,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.128,
+    "iou": 0.9929
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.52,
+    "lum_std": 7.41,
+    "grad_x": 2.12,
+    "grad_y": 4.82
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 128,
+     "lum": 75.34,
+     "hp_std": 4.86
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 128,
+     "lum": 75.3,
+     "hp_std": 4.15
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 207,
+     "lum": 76.25,
+     "hp_std": 5.44
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 299,
+     "lum": 75.88,
+     "hp_std": 6.47
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 432,
+     "lum": 73.58,
+     "hp_std": 4.23
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 2759,
+     "lum": 75.09,
+     "hp_std": 5.9
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.915,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.9, texture std ratio 0.82-1.28"
+    }
+   ]
+  },
+  "m45_00": {
+   "mask": 45,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.111,
+    "iou": 0.994
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.3,
+    "lum_std": 7.18,
+    "grad_x": 2.1,
+    "grad_y": 4.17
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 378,
+     "lum": 75.6,
+     "hp_std": 5.73
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 370,
+     "lum": 74.14,
+     "hp_std": 5.1
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 552,
+     "lum": 74.3,
+     "hp_std": 5.7
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 728,
+     "lum": 74.22,
+     "hp_std": 5.1
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 910,
+     "lum": 74.87,
+     "hp_std": 6.52
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4255,
+     "lum": 75.43,
+     "hp_std": 6.26
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9977,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.01,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.0, texture std ratio 0.80-1.02"
+    }
+   ]
+  },
+  "m51_00": {
+   "mask": 51,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.154,
+    "iou": 0.9924
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.44,
+    "lum_std": 6.95,
+    "grad_x": 2.13,
+    "grad_y": 4.45
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 442,
+     "lum": 74.85,
+     "hp_std": 5.21
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 426,
+     "lum": 74.99,
+     "hp_std": 5.44
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 621,
+     "lum": 74.39,
+     "hp_std": 5.08
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 789,
+     "lum": 75.12,
+     "hp_std": 6.82
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 936,
+     "lum": 74.96,
+     "hp_std": 5.75
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 3670,
+     "lum": 75.82,
+     "hp_std": 6.01
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9977,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9948,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.0,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.0, texture std ratio 0.86-1.16"
+    }
+   ]
+  },
+  "m57_00": {
+   "mask": 57,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.18,
+    "iou": 0.9938
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.45,
+    "lum_std": 7.14,
+    "grad_x": 2.23,
+    "grad_y": 4.33
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 442,
+     "lum": 75.07,
+     "hp_std": 5.24
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 426,
+     "lum": 74.88,
+     "hp_std": 4.97
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 621,
+     "lum": 74.77,
+     "hp_std": 5.46
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 789,
+     "lum": 74.16,
+     "hp_std": 5.01
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 937,
+     "lum": 75.1,
+     "hp_std": 6.09
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 3740,
+     "lum": 75.97,
+     "hp_std": 6.36
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9954,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.375,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.4, texture std ratio 0.80-1.02"
+    }
+   ]
+  },
+  "m14_01": {
+   "mask": 14,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.064,
+    "iou": 0.9964
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.34,
+    "lum_std": 7.07,
+    "grad_x": 2.21,
+    "grad_y": 4.27
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 314,
+     "lum": 75.37,
+     "hp_std": 6.29
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 306,
+     "lum": 73.54,
+     "hp_std": 5.51
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 448,
+     "lum": 75.35,
+     "hp_std": 6.05
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 576,
+     "lum": 75.09,
+     "hp_std": 6.0
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 697,
+     "lum": 74.07,
+     "hp_std": 4.98
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 2948,
+     "lum": 75.76,
+     "hp_std": 6.13
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.375,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.4, texture std ratio 0.90-1.13"
+    }
+   ]
+  },
+  "m35_01": {
+   "mask": 35,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.011,
+    "iou": 0.9961
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.22,
+    "lum_std": 6.84,
+    "grad_x": 2.06,
+    "grad_y": 4.36
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 317,
+     "lum": 75.1,
+     "hp_std": 5.25
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 305,
+     "lum": 74.52,
+     "hp_std": 5.07
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 449,
+     "lum": 74.38,
+     "hp_std": 4.99
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 577,
+     "lum": 75.42,
+     "hp_std": 6.51
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 698,
+     "lum": 74.35,
+     "hp_std": 5.28
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 2919,
+     "lum": 75.53,
+     "hp_std": 6.09
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9947,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 0.59,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 0.6, texture std ratio 0.88-1.15"
+    }
+   ]
+  },
+  "m03_01": {
+   "mask": 3,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.12,
+    "iou": 0.9956
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     78.0,
+     76.0
+    ],
+    "lum_mean": 75.5,
+    "lum_std": 7.43,
+    "grad_x": 2.15,
+    "grad_y": 4.6
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 192,
+     "lum": 74.11,
+     "hp_std": 5.53
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 184,
+     "lum": 74.45,
+     "hp_std": 5.94
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 276,
+     "lum": 74.41,
+     "hp_std": 4.74
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 360,
+     "lum": 75.57,
+     "hp_std": 5.37
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 458,
+     "lum": 75.2,
+     "hp_std": 4.85
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 2209,
+     "lum": 76.23,
+     "hp_std": 6.2
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9977,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.605,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.6, texture std ratio 0.86-1.12"
+    }
+   ]
+  },
+  "m30_01": {
+   "mask": 30,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.08,
+    "iou": 0.9974
+   },
+   "blend_correlation": 0.057,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.43,
+    "lum_std": 7.13,
+    "grad_x": 2.07,
+    "grad_y": 4.18
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 442,
+     "lum": 74.97,
+     "hp_std": 6.14
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 426,
+     "lum": 73.84,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 621,
+     "lum": 75.07,
+     "hp_std": 5.82
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 789,
+     "lum": 74.19,
+     "hp_std": 4.47
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 938,
+     "lum": 76.1,
+     "hp_std": 6.05
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 3702,
+     "lum": 75.25,
+     "hp_std": 5.53
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "land_leak",
+     "value": 0.0,
+     "limit": 0.03,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water on base grass 0.000"
+    },
+    {
+     "name": "ring",
+     "value": 1.835,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.8, texture std ratio 0.77-1.06"
+    }
+   ]
+  }
+ },
+ "passed": true
+}

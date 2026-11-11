@@ -1,0 +1,145 @@
+{
+ "tool": "scripts/tile-foundry/paintin_lake.py",
+ "sheet_w0": "art/codex/terrain/lake/r2/w0/w0-v0.png",
+ "sheet_w0_sha256": "b28bc9b8a092c30bc143dabe32beadf7a751455e18e1853250f6d4dd534210bd",
+ "geometry": {
+  "inset": 11.0,
+  "soft": 8.0,
+  "soft_fixed": 1.5,
+  "wobble": 2.4,
+  "fixed_near_w": [
+   11.0,
+   26.0
+  ]
+ },
+ "cells": [
+  {
+   "name": "m63_00",
+   "mask": 63,
+   "variant": 0,
+   "seed": 6380,
+   "plains": "art/codex/terrain/r1-bases/03.png",
+   "plains_sha256": "ed90a220a15f680c2f50df56fb731cf32d5154065aba79df17049b8cbd883275"
+  },
+  {
+   "name": "m63_01",
+   "mask": 63,
+   "variant": 1,
+   "seed": 14299,
+   "plains": "art/codex/terrain/r1-bases/04.png",
+   "plains_sha256": "b7dbc9af51f52234aeff16236e5ca73e4e765fb9738110b73fcc03f143de643a"
+  },
+  {
+   "name": "m63_02",
+   "mask": 63,
+   "variant": 2,
+   "seed": 22218,
+   "plains": "art/codex/terrain/r1-bases/05.png",
+   "plains_sha256": "5eb0fe72d399139bef5db3feb9b71a49c9efee7740f38f3ac259c33cacba0d1d"
+  },
+  {
+   "name": "m63_03",
+   "mask": 63,
+   "variant": 3,
+   "seed": 30137,
+   "plains": "art/codex/terrain/r1-bases/00.png",
+   "plains_sha256": "df0393a5a31ae788206c176ef898c0944f1953c2dbd68131c21bca2673bebb2c"
+  },
+  {
+   "name": "m63_04",
+   "mask": 63,
+   "variant": 4,
+   "seed": 38056,
+   "plains": "art/codex/terrain/r1-bases/01.png",
+   "plains_sha256": "346d285b27f9a1d99958ea714d07a141738ac4928d8eac565bebc18212bac630"
+  },
+  {
+   "name": "m63_05",
+   "mask": 63,
+   "variant": 5,
+   "seed": 45975,
+   "plains": "art/codex/terrain/r1-bases/02.png",
+   "plains_sha256": "95eb7e41ad1154edcbfbc5b3071aecd791040c5cc64c723d740d92ab6f1fbea6"
+  },
+  {
+   "name": "m63_06",
+   "mask": 63,
+   "variant": 6,
+   "seed": 53894,
+   "plains": "art/codex/terrain/r1-bases/03.png",
+   "plains_sha256": "ed90a220a15f680c2f50df56fb731cf32d5154065aba79df17049b8cbd883275"
+  },
+  {
+   "name": "m63_07",
+   "mask": 63,
+   "variant": 7,
+   "seed": 61813,
+   "plains": "art/codex/terrain/r1-bases/04.png",
+   "plains_sha256": "b7dbc9af51f52234aeff16236e5ca73e4e765fb9738110b73fcc03f143de643a"
+  },
+  {
+   "name": "m63_08",
+   "mask": 63,
+   "variant": 8,
+   "seed": 69732,
+   "plains": "art/codex/terrain/r1-bases/05.png",
+   "plains_sha256": "5eb0fe72d399139bef5db3feb9b71a49c9efee7740f38f3ac259c33cacba0d1d"
+  },
+  {
+   "name": "m63_09",
+   "mask": 63,
+   "variant": 9,
+   "seed": 77651,
+   "plains": "art/codex/terrain/r1-bases/00.png",
+   "plains_sha256": "df0393a5a31ae788206c176ef898c0944f1953c2dbd68131c21bca2673bebb2c"
+  },
+  {
+   "name": "m63_10",
+   "mask": 63,
+   "variant": 10,
+   "seed": 85570,
+   "plains": "art/codex/terrain/r1-bases/01.png",
+   "plains_sha256": "346d285b27f9a1d99958ea714d07a141738ac4928d8eac565bebc18212bac630"
+  },
+  {
+   "name": "m63_11",
+   "mask": 63,
+   "variant": 11,
+   "seed": 93489,
+   "plains": "art/codex/terrain/r1-bases/02.png",
+   "plains_sha256": "95eb7e41ad1154edcbfbc5b3071aecd791040c5cc64c723d740d92ab6f1fbea6"
+  },
+  {
+   "name": "m63_12",
+   "mask": 63,
+   "variant": 12,
+   "seed": 101408,
+   "plains": "art/codex/terrain/r1-bases/03.png",
+   "plains_sha256": "ed90a220a15f680c2f50df56fb731cf32d5154065aba79df17049b8cbd883275"
+  },
+  {
+   "name": "m63_13",
+   "mask": 63,
+   "variant": 13,
+   "seed": 109327,
+   "plains": "art/codex/terrain/r1-bases/04.png",
+   "plains_sha256": "b7dbc9af51f52234aeff16236e5ca73e4e765fb9738110b73fcc03f143de643a"
+  },
+  {
+   "name": "m63_14",
+   "mask": 63,
+   "variant": 14,
+   "seed": 117246,
+   "plains": "art/codex/terrain/r1-bases/05.png",
+   "plains_sha256": "5eb0fe72d399139bef5db3feb9b71a49c9efee7740f38f3ac259c33cacba0d1d"
+  },
+  {
+   "name": "m63_15",
+   "mask": 63,
+   "variant": 15,
+   "seed": 125165,
+   "plains": "art/codex/terrain/r1-bases/00.png",
+   "plains_sha256": "df0393a5a31ae788206c176ef898c0944f1953c2dbd68131c21bca2673bebb2c"
+  }
+ ]
+}

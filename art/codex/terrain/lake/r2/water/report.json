@@ -1,0 +1,2305 @@
+{
+ "sheet": "art/codex/terrain/lake/r2/water/lake2-water.sheet.png",
+ "w0": "art/codex/terrain/lake/r2/w0/w0-v2.png",
+ "w0_sha256": "728a4f58b6903bfa021835549c055526cbe945e9db83640e90c01c8154fd8435",
+ "registration": {
+  "scale": 1.0003905920786664,
+  "tx": -0.13018861896913714,
+  "ty": -0.6046662128373209,
+  "max_residual_tile_px": 0.23938213838768857,
+  "min_iou": 0.9922053675612602
+ },
+ "pin": {
+  "land_exact_px": 1.5,
+  "land_ramp_px": 6.0,
+  "water_exact_px": 1.5,
+  "water_ramp_px": 11.0,
+  "tone_sigma": 5.0,
+  "tone_reach_px": 26.0,
+  "mean_sigma": 3.0,
+  "feature_strength": 1.0,
+  "feature_rgb": [
+   65.0,
+   80.0,
+   77.0
+  ],
+  "water_hp_std": 6.0,
+  "water_hp_sigma": 3.0,
+  "max_correlation": 0.6
+ },
+ "tiles": {
+  "m63_00": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.098,
+    "iou": 0.9962
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 74.96,
+    "lum_std": 7.42,
+    "grad_x": 2.12,
+    "grad_y": 4.29
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.47,
+     "hp_std": 5.6
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.33,
+     "hp_std": 5.39
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.93,
+     "hp_std": 4.81
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 75.12,
+     "hp_std": 5.49
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.4,
+     "hp_std": 6.27
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.993,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.33,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.3, texture std ratio 0.82-1.07"
+    }
+   ]
+  },
+  "m63_01": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.155,
+    "iou": 0.996
+   },
+   "blend_correlation": 0.014,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.18,
+    "lum_std": 7.69,
+    "grad_x": 2.09,
+    "grad_y": 4.3
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.51,
+     "hp_std": 5.54
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.64,
+     "hp_std": 5.42
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.55,
+     "hp_std": 4.6
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 76.18,
+     "hp_std": 5.96
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.73,
+     "hp_std": 6.57
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9929,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9947,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9947,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.993,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 2.405,
+     "limit": 3.0,
+     "passed": false,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 2.4, texture std ratio 0.73-1.05"
+    }
+   ]
+  },
+  "m63_02": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.179,
+    "iou": 0.9942
+   },
+   "blend_correlation": 0.083,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.09,
+    "lum_std": 6.17,
+    "grad_x": 1.82,
+    "grad_y": 3.63
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.7
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.42,
+     "hp_std": 5.57
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.39,
+     "hp_std": 5.45
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 74.73,
+     "hp_std": 4.3
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 75.41,
+     "hp_std": 5.03
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.28,
+     "hp_std": 4.86
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9823,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.98 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 0.9895,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9841,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.98 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9738,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.97 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 0.955,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.0, texture std ratio 0.87-1.15"
+    }
+   ]
+  },
+  "m63_03": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.078,
+    "iou": 0.9969
+   },
+   "blend_correlation": 0.068,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.01,
+    "lum_std": 7.5,
+    "grad_x": 1.98,
+    "grad_y": 4.16
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.37,
+     "hp_std": 5.46
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.71,
+     "hp_std": 5.45
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.93,
+     "hp_std": 4.25
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 74.98,
+     "hp_std": 5.47
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.79,
+     "hp_std": 6.69
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9894,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9929,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9912,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9947,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.986,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.455,
+     "limit": 3.0,
+     "passed": false,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.5, texture std ratio 0.70-1.10"
+    }
+   ]
+  },
+  "m63_04": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.038,
+    "iou": 0.998
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.23,
+    "lum_std": 7.48,
+    "grad_x": 2.03,
+    "grad_y": 4.26
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.67
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.48,
+     "hp_std": 5.45
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.43,
+     "hp_std": 5.27
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 74.07,
+     "hp_std": 4.94
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 74.72,
+     "hp_std": 5.3
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.71,
+     "hp_std": 6.37
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9894,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.993,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.145,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.1, texture std ratio 0.85-1.09"
+    }
+   ]
+  },
+  "m63_05": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.145,
+    "iou": 0.9973
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.04,
+    "lum_std": 7.36,
+    "grad_x": 2.13,
+    "grad_y": 4.29
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.45,
+     "hp_std": 5.54
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.72,
+     "hp_std": 5.41
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 74.33,
+     "hp_std": 5.5
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 74.87,
+     "hp_std": 5.64
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.34,
+     "hp_std": 6.16
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9913,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 0.775,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 0.8, texture std ratio 0.92-1.04"
+    }
+   ]
+  },
+  "m63_06": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.197,
+    "iou": 0.9955
+   },
+   "blend_correlation": 0.024,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.02,
+    "lum_std": 6.13,
+    "grad_x": 1.84,
+    "grad_y": 3.57
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.41,
+     "hp_std": 5.47
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.42,
+     "hp_std": 5.26
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 74.47,
+     "hp_std": 4.38
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 75.47,
+     "hp_std": 5.33
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.28,
+     "hp_std": 5.09
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9823,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.98 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 0.9895,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9773,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.98 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 0.965,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.0, texture std ratio 0.84-1.09"
+    }
+   ]
+  },
+  "m63_07": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.028,
+    "iou": 0.9977
+   },
+   "blend_correlation": 0.051,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.19,
+    "lum_std": 7.46,
+    "grad_x": 1.93,
+    "grad_y": 4.05
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.68
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.53,
+     "hp_std": 5.54
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.78,
+     "hp_std": 5.56
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.95,
+     "hp_std": 4.98
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 74.02,
+     "hp_std": 4.65
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 76.14,
+     "hp_std": 6.72
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9894,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.13,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.1, texture std ratio 0.82-1.18"
+    }
+   ]
+  },
+  "m63_08": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.095,
+    "iou": 0.9944
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.2,
+    "lum_std": 7.68,
+    "grad_x": 2.05,
+    "grad_y": 4.27
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.47,
+     "hp_std": 5.64
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.5,
+     "hp_std": 5.34
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.74,
+     "hp_std": 4.64
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 74.43,
+     "hp_std": 5.16
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.61,
+     "hp_std": 6.21
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9929,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9895,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.28,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.3, texture std ratio 0.82-1.09"
+    }
+   ]
+  },
+  "m63_09": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.17,
+    "iou": 0.994
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     64.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.37,
+    "lum_std": 7.58,
+    "grad_x": 2.15,
+    "grad_y": 4.4
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.45,
+     "hp_std": 5.56
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.19,
+     "hp_std": 5.23
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.48,
+     "hp_std": 4.74
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 75.39,
+     "hp_std": 6.13
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 76.39,
+     "hp_std": 6.49
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9912,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.993,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 2.41,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 2.4, texture std ratio 0.75-1.03"
+    }
+   ]
+  },
+  "m63_10": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.216,
+    "iou": 0.9922
+   },
+   "blend_correlation": 0.053,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.04,
+    "lum_std": 6.24,
+    "grad_x": 1.89,
+    "grad_y": 3.73
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.42,
+     "hp_std": 5.53
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.23,
+     "hp_std": 5.25
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 74.11,
+     "hp_std": 4.17
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 75.34,
+     "hp_std": 5.76
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.11,
+     "hp_std": 4.59
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9717,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.97 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9894,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 0.9843,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.98 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9858,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9858,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9703,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.97 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.115,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.1, texture std ratio 0.81-1.11"
+    }
+   ]
+  },
+  "m63_11": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.075,
+    "iou": 0.9946
+   },
+   "blend_correlation": 0.0,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.24,
+    "lum_std": 7.49,
+    "grad_x": 2.01,
+    "grad_y": 4.14
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.68
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.51,
+     "hp_std": 5.5
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.77,
+     "hp_std": 5.54
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.93,
+     "hp_std": 4.71
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 73.67,
+     "hp_std": 4.32
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 76.4,
+     "hp_std": 6.86
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9929,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9947,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9912,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9895,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.365,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.4, texture std ratio 0.77-1.23"
+    }
+   ]
+  },
+  "m63_12": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.124,
+    "iou": 0.9962
+   },
+   "blend_correlation": 0.104,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.12,
+    "lum_std": 7.35,
+    "grad_x": 2.05,
+    "grad_y": 4.28
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.68
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.52,
+     "hp_std": 5.47
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.59,
+     "hp_std": 5.44
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.72,
+     "hp_std": 5.02
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 75.08,
+     "hp_std": 5.88
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.71,
+     "hp_std": 6.3
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9929,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.675,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.7, texture std ratio 0.82-1.03"
+    }
+   ]
+  },
+  "m63_13": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.202,
+    "iou": 0.9954
+   },
+   "blend_correlation": 0.04,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 74.97,
+    "lum_std": 7.47,
+    "grad_x": 2.03,
+    "grad_y": 4.19
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.68
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.49,
+     "hp_std": 5.55
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.75,
+     "hp_std": 5.61
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 73.47,
+     "hp_std": 4.47
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 75.03,
+     "hp_std": 5.94
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.3,
+     "hp_std": 6.14
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9912,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 0.9948,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9841,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.98 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 1.695,
+     "limit": 3.0,
+     "passed": false,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 1.7, texture std ratio 0.74-1.02"
+    }
+   ]
+  },
+  "m63_14": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.239,
+    "iou": 0.9936
+   },
+   "blend_correlation": 0.012,
+   "water": {
+    "median_rgb": [
+     64.0,
+     79.0,
+     76.0
+    ],
+    "lum_mean": 75.04,
+    "lum_std": 6.29,
+    "grad_x": 1.83,
+    "grad_y": 3.53
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.71
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.39,
+     "hp_std": 5.51
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.27,
+     "hp_std": 5.61
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 74.91,
+     "hp_std": 4.6
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 74.6,
+     "hp_std": 4.01
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.38,
+     "hp_std": 5.51
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 0.9913,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9805,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.98 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 0.9965,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9703,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.97 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 0.72,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 0.7, texture std ratio 0.84-1.20"
+    }
+   ]
+  },
+  "m63_15": {
+   "mask": 63,
+   "passed": true,
+   "registration": {
+    "residual_tile_px": 0.123,
+    "iou": 0.9957
+   },
+   "blend_correlation": 0.054,
+   "water": {
+    "median_rgb": [
+     63.0,
+     78.0,
+     75.0
+    ],
+    "lum_mean": 75.21,
+    "lum_std": 7.51,
+    "grad_x": 2.03,
+    "grad_y": 4.24
+   },
+   "ring": [
+    {
+     "depth": [
+      0,
+      2
+     ],
+     "px": 756,
+     "lum": 75.22,
+     "hp_std": 5.69
+    },
+    {
+     "depth": [
+      2,
+      4
+     ],
+     "px": 724,
+     "lum": 74.44,
+     "hp_std": 5.51
+    },
+    {
+     "depth": [
+      4,
+      7
+     ],
+     "px": 1036,
+     "lum": 74.17,
+     "hp_std": 5.5
+    },
+    {
+     "depth": [
+      7,
+      11
+     ],
+     "px": 1284,
+     "lum": 74.72,
+     "hp_std": 5.67
+    },
+    {
+     "depth": [
+      11,
+      16
+     ],
+     "px": 1448,
+     "lum": 74.47,
+     "hp_std": 5.21
+    },
+    {
+     "depth": [
+      16,
+      40
+     ],
+     "px": 4536,
+     "lum": 75.72,
+     "hp_std": 6.22
+    }
+   ],
+   "checks": [
+    {
+     "name": "rim_exact",
+     "value": 0.0,
+     "limit": 1.0,
+     "passed": true,
+     "hard": true,
+     "detail": "max |final - base| on the rim 0.0"
+    },
+    {
+     "name": "water_to_edge_se",
+     "value": 0.9876,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the se edge band"
+    },
+    {
+     "name": "water_to_edge_ne",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the ne edge band"
+    },
+    {
+     "name": "water_to_edge_n",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the n edge band"
+    },
+    {
+     "name": "water_to_edge_nw",
+     "value": 0.9982,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the nw edge band"
+    },
+    {
+     "name": "water_to_edge_sw",
+     "value": 1.0,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 1.00 in the sw edge band"
+    },
+    {
+     "name": "water_to_edge_s",
+     "value": 0.9895,
+     "limit": 0.85,
+     "passed": true,
+     "hard": true,
+     "detail": "cut water share 0.99 in the s edge band"
+    },
+    {
+     "name": "ring",
+     "value": 0.925,
+     "limit": 3.0,
+     "passed": true,
+     "hard": false,
+     "detail": "near-W-edge water vs deep: max |dL| 0.9, texture std ratio 0.91-1.09"
+    }
+   ]
+  }
+ },
+ "passed": true
+}

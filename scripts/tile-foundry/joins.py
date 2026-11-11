@@ -413,14 +413,44 @@ def over(top: np.ndarray, below: np.ndarray) -> np.ndarray:
 
 # Mouth channel, native px along the depth p into the lake hex (p = 0 on the
 # shared edge): the river's crossing profile, stretched laterally from its own
-# width at the edge to MOUTH_FLARE times that, so the river opens into the lake.
-MOUTH_FLARE = 1.6
-MOUTH_FLARE_DEPTH = 18.0  # depth by which the channel has reached full flare
-MOUTH_BANK_FADE = (6.0, 11.0)  # banks fade out over this depth (the lake shore)
-MOUTH_WATER_FADE = (15.0, 23.0)  # the channel's water fades into the lake's
-MOUTH_TEXTURE_BLEND = (1.0, 9.0)  # profile colour -> lake water texture
-MOUTH_BACK_PX = 1.5  # the sprite starts this far back inside the river hex
-MOUTH_RAGGED_PX = 1.2  # bank wobble amplitude, so the banks are not ruled lines
+# width at the edge to `flare` times that, so the river opens into the lake.
+
+
+@dataclass(frozen=True)
+class MouthParams:
+    """Mouth channel shape (native px of depth into the lake hex)."""
+
+    flare: float = 1.6
+    flare_depth: float = 18.0  # depth by which the channel has reached full flare
+    bank_fade: tuple[float, float] = (6.0, 11.0)  # banks fade out (the lake shore)
+    water_fade: tuple[float, float] = (15.0, 23.0)  # channel water -> the lake's
+    texture_blend: tuple[float, float] = (1.0, 9.0)  # profile colour -> lake water
+    back_px: float = 1.5  # the sprite starts this far back inside the river hex...
+    back_full_px: float = 0.0  # ...and is opaque from this far back (0 = the edge)
+    ragged_px: float = 1.2  # bank wobble amplitude, so banks are not ruled lines
+
+
+# Round 1: lake tiles with their own shore 10-12.5 px in, water from the tiles.
+MOUTH_R1 = MouthParams()
+# Round 2 (mask-painted lake tiles, `paintin_lake.py`): on the river's side the
+# lake tile has an L edge, grass to ~7 px, bank 7-11 px, water from 11 px
+# (SHORE_INSET_PX). The river's banks run on until they meet that bank, the
+# channel is open water by the shoreline, and it fades into the tile's own
+# water just past it. Water texture from W0.
+MOUTH_R2 = MouthParams(
+    flare=1.5,
+    flare_depth=15.0,
+    bank_fade=(7.0, 12.0),
+    # past the lake tile's shore shading (water is darker for ~6 px beyond
+    # the shoreline), so no dark band crosses the channel mouth
+    water_fade=(17.0, 25.0),
+    texture_blend=(1.0, 10.0),
+    # opaque over the lake tile's 1 px bleed ring (grass on its L edge), so no
+    # olive line crosses the river where it meets the sprite
+    back_px=3.5,
+    back_full_px=1.5,
+)
+MOUTH_PRESETS: dict[str, MouthParams] = {"r1": MOUTH_R1, "r2": MOUTH_R2}
 
 
 def mouth_frame(direction: int) -> tuple[np.ndarray, np.ndarray]:
@@ -431,13 +461,13 @@ def mouth_frame(direction: int) -> tuple[np.ndarray, np.ndarray]:
     return normal, np.asarray(edge_tangent(direction))
 
 
-def _bank_wobble(t: np.ndarray, seed: int) -> np.ndarray:
+def _bank_wobble(t: np.ndarray, seed: int, ragged_px: float) -> np.ndarray:
     """Smooth deterministic wobble (px) along the depth coordinate."""
     rng = np.random.default_rng(seed)
     out = np.zeros_like(t)
     for wavelength in (9.0, 5.0):
         out += 0.5 * np.sin(2 * math.pi * t / wavelength + rng.uniform(0, 2 * math.pi))
-    return MOUTH_RAGGED_PX * out
+    return ragged_px * out
 
 
 def mouth_sprite(
@@ -446,6 +476,7 @@ def mouth_sprite(
     water: np.ndarray,
     seed: int,
     canvas: int = CANVAS,
+    params: MouthParams = MOUTH_R1,
 ) -> np.ndarray:
     """One mouth sprite (float RGBA 0..255, ``canvas`` square, anchored on the
     edge midpoint): the river's crossing profile extruded into the lake hex.
@@ -460,22 +491,25 @@ def mouth_sprite(
     p = xs * normal[0] + ys * normal[1]  # depth into the lake hex
     t = xs * tangent[0] + ys * tangent[1]  # canonical tangent (as the profile)
     depth = np.clip(p, 0, None)
-    spread = 1 + (MOUTH_FLARE - 1) * smoothstep(0.0, MOUTH_FLARE_DEPTH, depth)
+    spread = 1 + (params.flare - 1) * smoothstep(0.0, params.flare_depth, depth)
     side = np.sign(t)
     wobble = np.where(
-        side >= 0, _bank_wobble(depth, seed), _bank_wobble(depth, seed + 1)
+        side >= 0,
+        _bank_wobble(depth, seed, params.ragged_px),
+        _bank_wobble(depth, seed + 1, params.ragged_px),
     )
     wobble *= smoothstep(1.0, 6.0, depth)  # straight where it meets the river tile
     t_profile = t / spread - side * wobble / spread
     rgb, alpha = profile.sample(t_profile)
     half_water = profile.feature_width / 2
     in_water = 1 - smoothstep(half_water - 1.0, half_water + 1.0, np.abs(t_profile))
-    texture_w = smoothstep(*MOUTH_TEXTURE_BLEND, depth) * in_water
+    texture_w = smoothstep(*params.texture_blend, depth) * in_water
     rgb = rgb * (1 - texture_w[..., None]) + water[..., :3] * texture_w[..., None]
-    bank_keep = 1 - smoothstep(*MOUTH_BANK_FADE, depth)
+    bank_keep = 1 - smoothstep(*params.bank_fade, depth)
     alpha = alpha * (in_water + (1 - in_water) * bank_keep)
-    alpha = alpha * (1 - smoothstep(*MOUTH_WATER_FADE, depth))
-    alpha = alpha * smoothstep(-MOUTH_BACK_PX, 0.0, p) * (water[..., 3] / 255)
+    alpha = alpha * (1 - smoothstep(*params.water_fade, depth))
+    alpha = alpha * smoothstep(-params.back_px, -params.back_full_px, p)
+    alpha = alpha * (water[..., 3] / 255)
     alpha = alpha * pair_union_mask_dir(direction, canvas)
     out = np.empty((canvas, canvas, 4))
     out[..., :3] = rgb
@@ -490,6 +524,57 @@ def pair_union_mask_dir(direction: int, canvas: int = CANVAS) -> np.ndarray:
         (sign * normal[0] * APOTHEM, sign * normal[1] * APOTHEM) for sign in (-1, 1)
     ]
     return _union_mask(centres, canvas)
+
+
+def w0_patch(
+    w0: np.ndarray, offset: tuple[float, float], canvas: int = CANVAS
+) -> np.ndarray:
+    """An opaque ``canvas``-square RGBA patch of the lattice-periodic W0 water
+    tile, centred ``offset`` px from its hex centre."""
+    from paintin_lake import lattice_sample  # noqa: PLC0415 (lake-only dependency)
+
+    xs, ys = _pixel_grid(canvas)
+    rgb = lattice_sample(w0, 64.0 + offset[0] + xs, 64.0 + offset[1] + ys)
+    return np.concatenate([rgb, np.full((canvas, canvas, 1), 255.0)], axis=-1)
+
+
+def build_w0_mouth_joins(
+    w0_path: Path,
+    profile_path: Path,
+    out_dir: Path,
+    variants: int,
+    params: MouthParams,
+) -> list[JoinRecord]:
+    """Mouth sprites for mask-painted lake tiles: water from W0 (`--lake-water`)."""
+    if not profile_path.is_file():
+        raise JoinError(f"river crossing profile not found: {profile_path}")
+    if not w0_path.is_file():
+        raise JoinError(f"lake water tile not found: {w0_path}")
+    profile = CrossProfile.load(profile_path)
+    with Image.open(w0_path) as im:
+        w0 = np.asarray(im.convert("RGB"), dtype=np.float64)
+    records: list[JoinRecord] = []
+    (out_dir / LAKE).mkdir(parents=True, exist_ok=True)
+    for kind_index, (name, direction) in enumerate(MOUTHS.items()):
+        for k in range(variants):
+            offset = (float(17 * kind_index + 29 * k), float(11 * k - 7 * kind_index))
+            water = w0_patch(w0, offset)
+            sprite = mouth_sprite(
+                direction, profile, water, seed=97 * kind_index + k, params=params
+            )
+            fname = f"mouth_{name}_{k:02d}.png"
+            Image.fromarray(
+                np.clip(np.round(sprite), 0, 255).astype(np.uint8), "RGBA"
+            ).save(out_dir / LAKE / fname)
+            records.append(
+                JoinRecord(
+                    f"{LAKE}/{fname}",
+                    "mouth",
+                    str(w0_path),
+                    (int(offset[0]), int(offset[1])),
+                )
+            )
+    return records
 
 
 def build_mouth_joins(
@@ -628,6 +713,14 @@ def main(argv: list[str] | None = None) -> int:
         / "profile.json",
         help="river crossing profile for the lake mouth sprites",
     )
+    parser.add_argument(
+        "--lake-water",
+        type=Path,
+        default=None,
+        help="mask-painted lake set: build only the lake mouth sprites, with water "
+        "from this W0 tile (paintin_lake.py) and the r2 mouth shape; --tiles is "
+        "then only recorded",
+    )
     args = parser.parse_args(argv)
     if args.variants < 1:
         parser.error("--variants must be >= 1")
@@ -635,12 +728,19 @@ def main(argv: list[str] | None = None) -> int:
         raise JoinError(f"tiles directory not found: {args.tiles}")
 
     records: list[JoinRecord] = []
-    for terrain in args.terrains:
-        records += build_patch_joins(args.tiles, terrain, args.out, args.variants)
-        if terrain == LAKE:
-            records += build_mouth_joins(
-                args.tiles, args.river_profile, args.out, args.variants
-            )
+    if args.lake_water is not None:
+        if args.terrains != [LAKE]:
+            parser.error("--lake-water builds lake mouths only: pass --terrains lake")
+        records += build_w0_mouth_joins(
+            args.lake_water, args.river_profile, args.out, args.variants, MOUTH_R2
+        )
+    else:
+        for terrain in args.terrains:
+            records += build_patch_joins(args.tiles, terrain, args.out, args.variants)
+            if terrain == LAKE:
+                records += build_mouth_joins(
+                    args.tiles, args.river_profile, args.out, args.variants
+                )
     write_manifest(args.out, args.tiles, records)
     print(f"{len(records)} join sprites -> {args.out}")
     return 0

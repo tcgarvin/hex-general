@@ -1,0 +1,11 @@
+{
+ "codex_thread": "01a1c81b-eb44-7e00-80bc-db45b6b64476",
+ "codex_source": "/home/timg/.codex/generated_images/01a1c81b-eb44-7e00-80bc-db45b6b64476/exec-0a0bf023-877f-45c7-9d17-dc180b824980.png",
+ "wall_seconds": 41,
+ "refs": [
+  "/home/timg/code/hex-general/art/codex/terrain/lake/r2/water/lake2-water.sheet.png",
+  "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+  "/home/timg/code/hex-general/art/codex/terrain/direction/refs/ref_river_lake_3x.png",
+  "/home/timg/code/hex-general/art/codex/terrain/lake/refs/river-tiles-256.png"
+ ]
+}

@@ -46,9 +46,13 @@ Prints the tile file used for each (terrain, shape) group and lists every hex
 that fell back to ``--fallback``, to a generic ``00`` tile, or to a vector road,
 so missing art is obvious. Raises on malformed maps or tile sets.
 
-Lakes (``o``) are cosmetic-variant terrain (``lake/NN.png``, hashed like woods)
-and, until lake art ships, draw as their flat base fill when no tile set has
-any. They are not river-like, except for the **mouth rule** (``mouth_direction``):
+Lakes (``o``) draw by **neighbour mask** when any tile set has mask-painted lake
+tiles (``lake/m<MM>_<VV>.png``, round 2: ``lake_mask`` / ``lake_tile_key``, variants
+hashed like terrain; a mask with no tile falls back, listed under ``LAKE MASKS
+WITHOUT TILES``); otherwise they are cosmetic-variant terrain (``lake/NN.png``,
+hashed like woods), or their flat base fill when no tile set has any. The
+default ``--tiles`` (the frontend's) ship the round 2 mask set since 2026-11-10,
+selected the same way by ``frontend/src/board/lakeTiles.ts``. With a mask set, lake edge/vertex joins are not drawn. They are not river-like, except for the **mouth rule** (``mouth_direction``):
 a river or bridge hex that ends at a lake gains one edge toward it, so its
 oriented tile runs water to that shore, and ``--joins`` draws a ``lake/mouth_*``
 sprite on that edge (plus lake-lake ``edge_*``/``vert_*`` joins like woods).
@@ -62,6 +66,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from collections import Counter
 from collections.abc import Callable, Iterable, Sequence
@@ -118,6 +123,7 @@ BASE_STAGES: dict[int, tuple[tuple[int, int], ...]] = {
 }
 RIVER_LIKE = ("river", "bridge")
 LAKE = "lake"
+LAKE_MASK_KEY = re.compile(r"^lake/m\d\d$")
 
 # --- render constants (frontend/src/board/{hex,palette}.ts, Board.tsx) --------
 
@@ -327,12 +333,16 @@ def parse_sites(lines: Sequence[str], game_map: GameMap) -> GameMap:
             raise MapError(f"{where}: col, row and level must be integers") from exc
         kind = parts[1]
         if kind not in SITE_KINDS:
-            raise MapError(f"{where}: unknown site kind {kind!r}; use one of {SITE_KINDS}")
+            raise MapError(
+                f"{where}: unknown site kind {kind!r}; use one of {SITE_KINDS}"
+            )
         levels = tuple(BASE_STAGES) if kind == "base" else SITE_LEVELS
         if level not in levels:
             raise MapError(f"{where}: {kind} level must be one of {levels}")
         if not (0 <= col < game_map.width and 0 <= row < game_map.height):
-            raise MapError(f"{where}: cell is off the {game_map.width}x{game_map.height} map")
+            raise MapError(
+                f"{where}: cell is off the {game_map.width}x{game_map.height} map"
+            )
         anchor = offset_to_axial(col, row)
         footprint = BASE_STAGES[level] if kind == "base" else ((0, 0),)
         for dq, dr in footprint:
@@ -345,7 +355,9 @@ def parse_sites(lines: Sequence[str], game_map: GameMap) -> GameMap:
                     f"{h.terrain}{' + road' if h.road else ''} at col={h.col}, row={h.row}"
                 )
             if (h.q, h.r) in occupied:
-                raise MapError(f"{where}: overlaps another site at col={h.col}, row={h.row}")
+                raise MapError(
+                    f"{where}: overlaps another site at col={h.col}, row={h.row}"
+                )
             occupied.add((h.q, h.r))
         sites[anchor] = (kind, level)
     return replace(game_map, sites=sites)
@@ -464,7 +476,7 @@ def join_variant_index(q: int, r: int, code: int, count: int) -> int:
     3 + i for the vertex shared by ``(q, r)``, its d_i and d_(i+1) neighbours, or
     5 + d for a river mouth from river hex ``(q, r)`` toward its lake in
     direction d (0..5). The frontend port is ``joinVariantIndex`` in
-    frontend/src/board/joins.ts (codes 0..4 today; mouths are not ported yet).
+    frontend/src/board/joins.ts (all codes 0..10).
     """
     if code not in range(len(JOIN_KINDS)):
         raise ValueError(f"join code must be 0..{len(JOIN_KINDS) - 1}, got {code}")
@@ -763,7 +775,9 @@ def mouth_direction(river_dirs: Sequence[int], lake_dirs: Sequence[int]) -> int 
     return calm_outlet(river_dirs, lake_dirs)
 
 
-def edge_direction(river_dirs: Sequence[int], off_map_dirs: Sequence[int]) -> int | None:
+def edge_direction(
+    river_dirs: Sequence[int], off_map_dirs: Sequence[int]
+) -> int | None:
     """The edge rule: which off-map direction a river hex on the map border runs
     out through, so the river leaves the map instead of ending in a cap.
 
@@ -793,6 +807,35 @@ def lake_mouths(
         if d is not None:
             mouths[_hex_key(q, r)] = d
     return mouths
+
+
+def lake_mask(q: int, r: int, terrain_at: TerrainProbe) -> int:
+    """The lake tile rule: bit d set when the neighbour in ``AXIAL_DIRECTIONS[d]``
+    is lake (off the map counts as land). A lake hex draws ``lake_tile_key(mask)``
+    when the tile set has mask-painted lake tiles."""
+    mask = 0
+    for d, (dq, dr) in enumerate(AXIAL_DIRECTIONS):
+        if terrain_at(q + dq, r + dr) == LAKE:
+            mask |= 1 << d
+    return mask
+
+
+def lake_tile_key(mask: int) -> str:
+    """Variant-group key of a lake mask's tiles: ``lake/m<mask two digits>``."""
+    if not 0 <= mask < 64:
+        raise ValueError(f"lake mask must be 0..63, got {mask}")
+    return f"{LAKE}/m{mask:02d}"
+
+
+def lake_masks(
+    coords: Iterable[tuple[int, int]], terrain_at: TerrainProbe
+) -> dict[str, int]:
+    """``lake_mask`` of every lake hex, by hex key."""
+    return {
+        _hex_key(q, r): lake_mask(q, r, terrain_at)
+        for q, r in coords
+        if terrain_at(q, r) == LAKE
+    }
 
 
 def map_edge_outlets(
@@ -1045,6 +1088,23 @@ class TileLibrary:
                 return Group(tile_set, terrain, files)
         return None
 
+    def has_lake_masks(self) -> bool:
+        """True when any set has mask-painted lake tiles (``lake/mNN_*.png``)."""
+        return any(
+            LAKE_MASK_KEY.match(key)
+            for tile_set in self.sets
+            for key in tile_set.by_oriented
+        )
+
+    def cosmetic_lake(self) -> Group | None:
+        """The first set's round-1 style lake variants (``lake/NN.png``, digits
+        only); mask-painted files are never drawn as cosmetic variants."""
+        for tile_set in self.sets:
+            files = [p for p in tile_set.by_terrain.get(LAKE, []) if p.stem.isdigit()]
+            if files:
+                return Group(tile_set, LAKE, files)
+        return None
+
     def width(self, path: Path) -> int:
         if path not in self._widths:
             with Image.open(path) as im:
@@ -1073,7 +1133,9 @@ class SiteSet:
                 if not pos_file.is_file():
                     raise TileSetError(f"{d}: missing positions.json")
                 positions = json.loads(pos_file.read_text())["positions"]
-                members = {(int(o[0]), int(o[1])): d / f"{n}.png" for n, o in positions.items()}
+                members = {
+                    (int(o[0]), int(o[1])): d / f"{n}.png" for n, o in positions.items()
+                }
                 if set(members) != set(footprint):
                     raise TileSetError(
                         f"{d}: positions {sorted(members)} != stage {stage} footprint "
@@ -1093,7 +1155,9 @@ class SiteSet:
             raise TileSetError(f"sites directory has no <kind>/l<level>_*.png: {root}")
         return cls(root, groups, stages)
 
-    def footprint_tiles(self, h: Hex, kind: str, level: int) -> dict[tuple[int, int], Path]:
+    def footprint_tiles(
+        self, h: Hex, kind: str, level: int
+    ) -> dict[tuple[int, int], Path]:
         """{axial offset: tile} for the site anchored at ``h`` (one entry unless a
         staged base); the variant is picked by the anchor's coordinate hash."""
         if kind == "base" and self.stages:
@@ -1135,16 +1199,21 @@ def choose_tile(
     river_course: dict[str, list[int]],
     road_tiles: dict[str, RoadTileRef],
     road_course: dict[str, list[int]],
+    lake_mask_by_key: dict[str, int] | None = None,
 ) -> TileChoice | None:
-    """``hexTile.ts hexTileRef``: river/bridge oriented art, baked road, cosmetic.
+    """``hexTile.ts hexTileRef``: river/bridge oriented art, baked road, lake by
+    mask, cosmetic.
 
     ``road_course`` (``road_course_edges``) is only used to label an unhandled
-    road mask in the report.
+    road mask in the report. ``lake_mask_by_key`` (``lake_masks``) is needed for
+    lake hexes when the library has mask-painted lake tiles.
     ``None`` means the hex draws no tile, only its flat base fill: its terrain
     is in ``FILL_ONLY_OK_TERRAINS`` and no tile set has any art for it.
     """
     key = _hex_key(h.q, h.r)
     primary = library.sets[0]
+    if h.terrain == LAKE:
+        return _choose_lake_tile(h, library, lake_mask_by_key)
     if h.terrain in RIVER_LIKE:
         edges = river_course.get(key, [])
         oriented = oriented_river_tile(edges)
@@ -1200,6 +1269,36 @@ def choose_tile(
         road_notes.append(f"{h.terrain} from {group.tile_set.label}")
     path = group.files[variant_index(h.q, h.r, len(group.files))]
     return TileChoice(path, False, group, "terrain", h.terrain, tuple(road_notes))
+
+
+def _choose_lake_tile(
+    h: Hex, library: TileLibrary, lake_mask_by_key: dict[str, int] | None
+) -> TileChoice | None:
+    """Lake: the mask's own tiles when the library has any mask set, else (or
+    when this mask has no tile, with a note) the cosmetic ``lake/NN`` variants,
+    else ``None`` (flat fill)."""
+    primary = library.sets[0]
+    notes: list[str] = []
+    if library.has_lake_masks():
+        if lake_mask_by_key is None:
+            raise ValueError("lake masks are needed to choose mask-painted lake tiles")
+        mask = lake_mask_by_key[_hex_key(h.q, h.r)]
+        group = library.oriented(lake_tile_key(mask))
+        if group is not None:
+            if group.tile_set is not primary:
+                notes.append(f"{group.key} from {group.tile_set.label}")
+            path = group.files[variant_index(h.q, h.r, len(group.files))]
+            return TileChoice(path, False, group, "lake", f"m{mask:02d}", tuple(notes))
+        notes.append(f"no {lake_tile_key(mask)} art")
+    group = library.cosmetic_lake()
+    if group is None:
+        return None
+    if notes:
+        notes[-1] += " -> cosmetic lake variant"
+    if group.tile_set is not primary:
+        notes.append(f"lake from {group.tile_set.label}")
+    path = group.files[variant_index(h.q, h.r, len(group.files))]
+    return TileChoice(path, False, group, "terrain", LAKE, tuple(notes))
 
 
 def draws_vector_road(
@@ -1557,11 +1656,14 @@ def choose_joins(
     shown: Sequence[Hex],
     joins: JoinSet,
     mouths: dict[str, int] | None = None,
+    skip_terrains: frozenset[str] = frozenset(),
 ) -> list[JoinChoice]:
     """Every same-terrain edge (pair) and vertex (triangle) touching a shown hex
     whose terrain has join art, in draw order: edges by (A.r, A.q, dir), then
     vertices by (A.r, A.q, i), then river mouths (``lake_mouths``, river hex R ->
-    direction d) by (R.r, R.q, d) when the set has ``lake/mouth_*`` art."""
+    direction d) by (R.r, R.q, d) when the set has ``lake/mouth_*`` art.
+    ``skip_terrains`` get no edge or vertex joins (lakes drawn from mask-painted
+    tiles: their water already runs edge to edge); mouths are still drawn."""
     shown_keys = {(h.q, h.r) for h in shown}
     ordered = sorted(game_map.hexes, key=lambda h: (h.r, h.q))
     edges: list[JoinChoice] = []
@@ -1573,6 +1675,8 @@ def choose_joins(
             else:
                 group = _same_terrain_group(game_map, a, (code - 3, code - 2))
             if group is None or not any((h.q, h.r) in shown_keys for h in group):
+                continue
+            if a.terrain in skip_terrains:
                 continue
             files = joins.groups.get((a.terrain, code))
             if files is None:
@@ -1607,7 +1711,9 @@ def choose_joins(
         ax, ay = axial_to_pixel(a.q, a.r, HEX_SIZE)
         bx, by = axial_to_pixel(lake.q, lake.r, HEX_SIZE)
         path = files[join_variant_index(a.q, a.r, code, len(files))]
-        mouth_joins.append(JoinChoice((a, lake), code, ((ax + bx) / 2, (ay + by) / 2), path))
+        mouth_joins.append(
+            JoinChoice((a, lake), code, ((ax + bx) / 2, (ay + by) / 2), path)
+        )
     return edges + vertices + mouth_joins
 
 
@@ -1638,6 +1744,8 @@ class RenderReport:
     fill_only: list[Hex] = field(default_factory=list)  # no art: flat base fill
     mouths: dict[str, int] = field(default_factory=dict)  # mouth rule results
     edge_outlets: dict[str, int] = field(default_factory=dict)  # edge rule results
+    # lake hexes whose mask has no tile in a mask-painted set (hex, mask)
+    lake_missing: list[tuple[Hex, int]] = field(default_factory=list)
 
 
 def render(
@@ -1682,6 +1790,8 @@ def render(
     river_course = river_course_edges(coords, game_map.terrain_at)
     road_course = road_course_edges(game_map.hexes, game_map.hex_at)
     road_tiles = road_tile_refs(game_map.hexes, road_course)
+    masks = lake_masks(coords, game_map.terrain_at)
+    mask_set = library.has_lake_masks()
 
     # hex.ts mapPixelBounds: centre bbox padded by one hex radius.
     centres = [axial_to_pixel(h.q, h.r, HEX_SIZE) for h in shown]
@@ -1705,6 +1815,7 @@ def render(
 
     choices: list[tuple[Hex, TileChoice]] = []
     fill_only: list[Hex] = []
+    lake_missing: list[tuple[Hex, int]] = []
     site_choices: list[tuple[Hex, Path]] = []
     site_tiles: dict[tuple[int, int], Path] = {}
     if sites is not None:
@@ -1713,10 +1824,14 @@ def render(
             for (dq, dr), tile in sites.footprint_tiles(anchor, kind, level).items():
                 site_tiles[(aq + dq, ar + dr)] = tile
     for h, (x, y) in zip(shown, centres):
-        choice = choose_tile(h, library, river_course, road_tiles, road_course)
+        choice = choose_tile(h, library, river_course, road_tiles, road_course, masks)
         if choice is None:
             fill_only.append(h)
+            if mask_set and h.terrain == LAKE:
+                lake_missing.append((h, masks[_hex_key(h.q, h.r)]))
             continue
+        if mask_set and h.terrain == LAKE and choice.kind != "lake":
+            lake_missing.append((h, masks[_hex_key(h.q, h.r)]))
         choices.append((h, choice))
         path, mirror = choice.path, choice.mirror
         if (h.q, h.r) in site_tiles:
@@ -1730,7 +1845,8 @@ def render(
 
     join_choices: list[JoinChoice] = []
     if joins is not None:
-        join_choices = choose_joins(game_map, shown, joins, mouths)
+        skip = frozenset({LAKE}) if mask_set else frozenset()
+        join_choices = choose_joins(game_map, shown, joins, mouths, skip)
         for join in join_choices:
             canvas.composite(
                 sprites.join(join.path, joins.hex_width),
@@ -1766,7 +1882,9 @@ def render(
     road_segments: list[Segment] = []
     vector_roads: list[Hex] = []
     for h, (x, y) in zip(shown, centres):
-        if not draw_vector_roads or not draws_vector_road(h, library, river_course, road_tiles):
+        if not draw_vector_roads or not draws_vector_road(
+            h, library, river_course, road_tiles
+        ):
             continue
         vector_roads.append(h)
         # stubs follow the road course graph, pruned like the baked tiles
@@ -1777,7 +1895,14 @@ def render(
     canvas.stroke(road_segments, ROAD_WIDTH, ROAD_COLOR, extend=False)
 
     return canvas.image(), RenderReport(
-        choices, vector_roads, join_choices, site_choices, fill_only, mouths, edge_outlets
+        choices,
+        vector_roads,
+        join_choices,
+        site_choices,
+        fill_only,
+        mouths,
+        edge_outlets,
+        lake_missing,
     )
 
 
@@ -1824,9 +1949,12 @@ def format_report(report: RenderReport) -> str:
 
     if report.mouths:
         listed = ", ".join(
-            f"({key}) -> {AXIAL_DIRECTION_NAMES[d]}" for key, d in sorted(report.mouths.items())
+            f"({key}) -> {AXIAL_DIRECTION_NAMES[d]}"
+            for key, d in sorted(report.mouths.items())
         )
-        lines.append(f"  mouths  {len(report.mouths)} river hexes run into a lake: {listed}")
+        lines.append(
+            f"  mouths  {len(report.mouths)} river hexes run into a lake: {listed}"
+        )
     if report.edge_outlets:
         listed = ", ".join(
             f"({key}) -> {AXIAL_DIRECTION_NAMES[d]}"
@@ -1839,6 +1967,14 @@ def format_report(report: RenderReport) -> str:
     degraded = [(h, c) for h, c in report.choices if c.notes]
     vector = {(h.q, h.r) for h in report.vector_roads}
     lines.append("")
+    if report.lake_missing:
+        missing = Counter(m for _, m in report.lake_missing)
+        listed = ", ".join(f"m{m:02d} x{n}" for m, n in sorted(missing.items()))
+        lines.append(
+            f"LAKE MASKS WITHOUT TILES ({len(report.lake_missing)} hexes): {listed}"
+        )
+        for h, m in report.lake_missing:
+            lines.append(f"  {_where(h)} lake    no lake/m{m:02d} tile")
     if report.fill_only:
         terrains = sorted({h.terrain for h in report.fill_only})
         lines.append(

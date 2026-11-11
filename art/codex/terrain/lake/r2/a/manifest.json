@@ -1,0 +1,97 @@
+{
+ "runs": [
+  {
+   "name": "lake2-a",
+   "when": "2026-11-10T20:04:50",
+   "job": "art/codex/terrain/lake/r2/a/job.json",
+   "prompt": "art/codex/terrain/lake/r2/a/prompt.txt",
+   "prompt_sha256": "652274823e163f7a0fc1aae954a4fd61a06166af4dec309410f9de0d72e976dc",
+   "sheet": "art/codex/terrain/lake/r2/a/lake2-a.sheet.png",
+   "raw": "art/codex/terrain/lake/r2/a/raw/lake2-a.png",
+   "raw_sha256": "e9efbd1e0adf202b972645ae393830aa5ea8505f2191658c658890b8e423bee8",
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c821-f95f-7013-bf05-02b31506854c",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c821-f95f-7013-bf05-02b31506854c/exec-dc34f826-8039-4b27-b22a-c674d4167e00.png",
+    "wall_seconds": 57,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/lake/r2/a/lake2-a.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/direction/refs/ref_river_lake_3x.png",
+     "/home/timg/code/hex-general/art/codex/terrain/lake/refs/river-tiles-256.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/lake/r2/a/lake2-a.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/direction/refs/ref_river_lake_3x.png",
+    "art/codex/terrain/lake/refs/river-tiles-256.png"
+   ],
+   "w0": "art/codex/terrain/lake/r2/w0/w0-v1.png",
+   "passed": [
+    "m00_00",
+    "m08_00",
+    "m13_00",
+    "m18_00",
+    "m22_00",
+    "m26_00",
+    "m30_00",
+    "m36_00",
+    "m40_00",
+    "m45_00",
+    "m51_00",
+    "m57_00",
+    "m14_01",
+    "m35_01",
+    "m03_01",
+    "m30_01"
+   ],
+   "failed": []
+  },
+  {
+   "name": "lake2-a",
+   "when": "2026-11-10T20:08:16",
+   "job": "art/codex/terrain/lake/r2/a/job.json",
+   "prompt": "art/codex/terrain/lake/r2/a/prompt.txt",
+   "prompt_sha256": "652274823e163f7a0fc1aae954a4fd61a06166af4dec309410f9de0d72e976dc",
+   "sheet": "art/codex/terrain/lake/r2/a/lake2-a.sheet.png",
+   "raw": "art/codex/terrain/lake/r2/a/raw/lake2-a.png",
+   "raw_sha256": "e9efbd1e0adf202b972645ae393830aa5ea8505f2191658c658890b8e423bee8",
+   "from_raw": true,
+   "codex": {
+    "codex_thread": "01a1c821-f95f-7013-bf05-02b31506854c",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c821-f95f-7013-bf05-02b31506854c/exec-dc34f826-8039-4b27-b22a-c674d4167e00.png",
+    "wall_seconds": 57,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/lake/r2/a/lake2-a.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/direction/refs/ref_river_lake_3x.png",
+     "/home/timg/code/hex-general/art/codex/terrain/lake/refs/river-tiles-256.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/lake/r2/a/lake2-a.sheet.png"
+   ],
+   "w0": "art/codex/terrain/lake/r2/w0/w0-v2.png",
+   "passed": [
+    "m00_00",
+    "m08_00",
+    "m13_00",
+    "m18_00",
+    "m22_00",
+    "m26_00",
+    "m30_00",
+    "m36_00",
+    "m40_00",
+    "m45_00",
+    "m51_00",
+    "m57_00",
+    "m14_01",
+    "m35_01",
+    "m03_01",
+    "m30_01"
+   ],
+   "failed": []
+  }
+ ]
+}

@@ -1,3 +1,6 @@
 # Review renders and sheet montages regenerate from the scripts; not committed
 # (same convention as art/codex/terrain/review/ in the root .gitignore).
 review/
+# Round 2 per-cell bases and normalised cuts are rebuilt by paintin_lake.py (job, run).
+r2/*/bases/
+r2/*/norm/

@@ -1,0 +1,20 @@
+PASS m01_00
+    warn ring: near-W-edge water vs deep: max |dL| 2.7, texture std ratio 0.51-1.20
+PASS m04_00
+PASS m06_00
+PASS m07_00
+PASS m12_00
+PASS m16_00
+PASS m31_00
+PASS m33_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.3, texture std ratio 0.68-1.18
+PASS m43_00
+PASS m46_00
+PASS m48_00
+PASS m55_00
+PASS m56_00
+PASS m58_00
+PASS m59_00
+PASS m61_00
+    warn ring: near-W-edge water vs deep: max |dL| 2.0, texture std ratio 0.73-1.09
+wrote art/codex/terrain/lake/r2/pilot/report.json, art/codex/terrain/lake/review/r2-sheets/lake2-pilot.montage.png

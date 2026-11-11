@@ -1,0 +1,24 @@
+PASS m02_00
+    warn ring: near-W-edge water vs deep: max |dL| 3.2, texture std ratio 0.69-1.16
+PASS m09_00
+PASS m14_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.6, texture std ratio 0.69-1.31
+PASS m19_00
+PASS m23_00
+PASS m27_00
+PASS m32_00
+    warn ring: near-W-edge water vs deep: max |dL| 2.0, texture std ratio 0.53-1.61
+PASS m37_00
+PASS m41_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.3, texture std ratio 0.71-1.08
+PASS m47_00
+PASS m52_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.3, texture std ratio 0.73-1.20
+PASS m60_00
+PASS m56_01
+PASS m48_01
+    warn ring: near-W-edge water vs deep: max |dL| 1.4, texture std ratio 0.68-1.09
+PASS m60_01
+PASS m32_01
+    warn ring: near-W-edge water vs deep: max |dL| 2.0, texture std ratio 0.56-1.38
+wrote art/codex/terrain/lake/r2/b/report.json, art/codex/terrain/lake/review/r2-sheets/lake2-b.montage.png

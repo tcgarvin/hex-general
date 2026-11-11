@@ -1,0 +1,42 @@
+{
+ "method": "coset",
+ "sources": [
+  "art/codex/terrain/lake/r2/water/norm/m63_01.png",
+  "art/codex/terrain/lake/r2/water/norm/m63_05.png",
+  "art/codex/terrain/lake/r2/water/norm/m63_09.png"
+ ],
+ "radius": 30.0,
+ "sharpness": 3.0,
+ "glint_knee": 1.5,
+ "hp_std": 6.0,
+ "hp_gain": 1.2241,
+ "periodicity": {
+  "se/nw": {
+   "across_edge_mean_abs": 1.487,
+   "in_tile_1px_mean_abs": 1.511,
+   "ratio": 0.984
+  },
+  "ne/sw": {
+   "across_edge_mean_abs": 2.632,
+   "in_tile_1px_mean_abs": 2.579,
+   "ratio": 1.021
+  },
+  "n/s": {
+   "across_edge_mean_abs": 3.248,
+   "in_tile_1px_mean_abs": 3.61,
+   "ratio": 0.9
+  }
+ },
+ "water": {
+  "median_rgb": [
+   63.0,
+   78.0,
+   75.0
+  ],
+  "lum_mean": 74.8,
+  "lum_std": 7.03,
+  "grad_x": 2.2,
+  "grad_y": 4.34
+ },
+ "sha256": "728a4f58b6903bfa021835549c055526cbe945e9db83640e90c01c8154fd8435"
+}

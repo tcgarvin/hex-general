@@ -1,0 +1,445 @@
+{
+ "w0_sources": [
+  "art/codex/terrain/lake/r2/water/norm/m63_01.png",
+  "art/codex/terrain/lake/r2/water/norm/m63_05.png",
+  "art/codex/terrain/lake/r2/water/norm/m63_09.png"
+ ],
+ "picks": [
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m01_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m04_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m06_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m07_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m12_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m16_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m31_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m33_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m43_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m46_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m48_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m55_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m56_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m58_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m59_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/pilot",
+   "cell": "m61_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m00_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m08_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m13_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m18_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m22_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m26_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m30_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m36_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m40_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m45_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m51_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m57_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m14_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m35_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m03_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/a",
+   "cell": "m30_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m02_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m09_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m14_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m19_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m23_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m27_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m32_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m37_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m41_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m47_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m52_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m60_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m56_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m48_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m60_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/b",
+   "cell": "m32_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m03_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m10_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m15_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m20_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m24_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m28_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m34_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m38_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m42_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m49_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m53_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m62_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m39_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m28_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m33_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/c",
+   "cell": "m06_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m05_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m11_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m17_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m21_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m25_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m29_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m35_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m39_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m44_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m50_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m54_00",
+   "variant": 0
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m49_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m07_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m24_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m15_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/d",
+   "cell": "m57_01",
+   "variant": 1
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/water",
+   "cell": "m63_00",
+   "variant": 0,
+   "note": "water sheet cell 0"
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/water",
+   "cell": "m63_03",
+   "variant": 1,
+   "note": "water sheet cell 3"
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/water",
+   "cell": "m63_04",
+   "variant": 2,
+   "note": "water sheet cell 4"
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/water",
+   "cell": "m63_07",
+   "variant": 3,
+   "note": "water sheet cell 7"
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/water",
+   "cell": "m63_08",
+   "variant": 4,
+   "note": "water sheet cell 8"
+  },
+  {
+   "work": "art/codex/terrain/lake/r2/water",
+   "cell": "m63_12",
+   "variant": 5,
+   "note": "water sheet cell 12"
+  }
+ ]
+}

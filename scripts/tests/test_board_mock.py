@@ -1031,3 +1031,89 @@ def test_render_draws_road_stubs_along_the_pruned_course(tmp_path: Path) -> None
     assert {(h.col, h.row) for h in report.vector_roads} == {
         (h.col, h.row) for h in m.hexes if h.road
     }
+
+
+# --- mask-painted lake tiles (round 2) -------------------------------------------
+
+
+def test_lake_mask_sets_a_bit_per_lake_neighbour() -> None:
+    cells = {(0, 0): "lake", DIRS[0]: "lake", DIRS[2]: "lake", DIRS[4]: "plains"}
+    probe = lambda q, r: cells.get((q, r))  # noqa: E731
+    assert bm.lake_mask(0, 0, probe) == 0b000101
+    # off-map neighbours count as land
+    assert bm.lake_mask(0, 0, lambda q, r: None) == 0
+    assert bm.lake_mask(0, 0, lambda q, r: "lake") == 63
+
+
+def test_lake_tile_key_names_the_mask() -> None:
+    assert bm.lake_tile_key(7) == "lake/m07"
+    assert bm.lake_tile_key(63) == "lake/m63"
+    with pytest.raises(ValueError):
+        bm.lake_tile_key(64)
+
+
+def mask_set(root: Path, masks: dict[int, int]) -> bm.TileLibrary:
+    """A tiles root with plains, river and lake/m<mask>_<nn>.png variants."""
+    write_tile(root / "plains" / "00.png", (0, 200, 0))
+    write_tile(root / "river" / "00.png", (0, 0, 200))
+    for mask, count in masks.items():
+        for v in range(count):
+            write_tile(root / "lake" / f"m{mask:02d}_{v:02d}.png", (mask, v, 100))
+    return bm.TileLibrary(bm.TileSet.discover(root, "tiles"), None)
+
+
+def test_lake_hexes_draw_their_mask_tile(tmp_path: Path) -> None:
+    library = mask_set(tmp_path / "t", {m: 1 + m % 2 for m in range(64)})
+    assert library.has_lake_masks()
+    m = bm.parse_ascii("oo\n.o\n", "t")
+    _, report = bm.render(m, library, 64, False, None)
+    masks = bm.lake_masks([(h.q, h.r) for h in m.hexes], m.terrain_at)
+    assert len(report.choices) == 4
+    for h, choice in report.choices:
+        if h.terrain != "lake":
+            continue
+        mask = masks[f"{h.q},{h.r}"]
+        assert choice.kind == "lake"
+        assert choice.group.key == bm.lake_tile_key(mask)
+        assert choice.path.name.startswith(f"m{mask:02d}_")
+        files = choice.group.files
+        assert choice.path == files[bm.variant_index(h.q, h.r, len(files))]
+    assert report.lake_missing == []
+
+
+def test_missing_lake_mask_falls_back_loudly(tmp_path: Path) -> None:
+    root = tmp_path / "t"
+    library = mask_set(root, {0: 1})
+    m = bm.parse_ascii("oo\n..\n", "t")  # two lakes side by side: masks != 0
+    _, report = bm.render(m, library, 64, False, None)
+    assert len(report.lake_missing) == 2
+    assert {h.terrain for h in report.fill_only} == {"lake"}  # no cosmetic art: flat
+    assert "LAKE MASKS WITHOUT TILES (2 hexes)" in bm.format_report(report)
+    # with round-1 cosmetic variants around, a missing mask draws one of those
+    write_tile(root / "lake" / "00.png", (5, 5, 5))
+    library = bm.TileLibrary(bm.TileSet.discover(root, "tiles"), None)
+    _, report = bm.render(m, library, 64, False, None)
+    lakes = [c for h, c in report.choices if h.terrain == "lake"]
+    assert [c.path.name for c in lakes] == ["00.png", "00.png"]
+    assert all("no lake/m" in c.notes[0] for c in lakes)
+    assert len(report.lake_missing) == 2
+
+
+def test_cosmetic_lakes_ignore_mask_files(tmp_path: Path) -> None:
+    root = tmp_path / "t"
+    write_tile(root / "plains" / "00.png", (0, 200, 0))
+    write_tile(root / "lake" / "00.png", (1, 2, 3))
+    library = bm.TileLibrary(bm.TileSet.discover(root, "tiles"), None)
+    assert not library.has_lake_masks()
+    group = library.cosmetic_lake()
+    assert group is not None and [p.name for p in group.files] == ["00.png"]
+
+
+def test_mask_set_skips_lake_edge_joins_but_draws_mouths(tmp_path: Path) -> None:
+    library = mask_set(tmp_path / "t", {m: 1 for m in range(64)})
+    joins_dir = tmp_path / "joins"
+    write_joins(joins_dir, ["lake/edge_n_00.png", "lake/mouth_s_00.png"])
+    joins = bm.JoinSet.load(joins_dir)
+    m = bm.parse_ascii("~.\n~.\no.\no.\n", "t")
+    _, report = bm.render(m, library, 64, False, None, joins=joins)
+    assert [j.path.name for j in report.joins] == ["mouth_s_00.png"]

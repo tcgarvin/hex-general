@@ -1,0 +1,32 @@
+calling Codex with ['art/codex/terrain/lake/r2/d/lake2-d.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/direction/refs/ref_river_lake_3x.png', 'art/codex/terrain/lake/refs/river-tiles-256.png'] ...
+codex thread 01a1c824-3f2a-71b2-a694-3a8a762e6327, 73 s
+PASS m05_00
+    warn ring: near-W-edge water vs deep: max |dL| 3.3, texture std ratio 0.56-1.21
+PASS m11_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.4, texture std ratio 0.57-1.10
+PASS m17_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.2, texture std ratio 0.74-1.17
+PASS m21_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.2, texture std ratio 0.69-1.02
+PASS m25_00
+PASS m29_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.2, texture std ratio 0.73-1.06
+PASS m35_00
+    warn ring: near-W-edge water vs deep: max |dL| 2.4, texture std ratio 0.68-1.04
+PASS m39_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.7, texture std ratio 0.66-1.01
+PASS m44_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.8, texture std ratio 0.67-1.03
+PASS m50_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.0, texture std ratio 0.70-1.05
+PASS m54_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.0, texture std ratio 0.74-1.26
+PASS m49_01
+    warn ring: near-W-edge water vs deep: max |dL| 2.0, texture std ratio 0.67-1.02
+PASS m07_01
+PASS m24_01
+    warn ring: near-W-edge water vs deep: max |dL| 1.7, texture std ratio 0.65-1.00
+PASS m15_01
+PASS m57_01
+    warn ring: near-W-edge water vs deep: max |dL| 1.4, texture std ratio 0.71-1.14
+wrote art/codex/terrain/lake/r2/d/report.json, art/codex/terrain/lake/review/r2-sheets/lake2-d.montage.png

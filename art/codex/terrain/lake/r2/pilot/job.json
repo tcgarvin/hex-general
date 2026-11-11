@@ -1,0 +1,90 @@
+{
+ "name": "lake2-pilot",
+ "layout": "4x4",
+ "cells": [
+  {
+   "name": "m01_00",
+   "slot": 0,
+   "base": "bases/m01_00.png"
+  },
+  {
+   "name": "m04_00",
+   "slot": 1,
+   "base": "bases/m04_00.png"
+  },
+  {
+   "name": "m06_00",
+   "slot": 2,
+   "base": "bases/m06_00.png"
+  },
+  {
+   "name": "m07_00",
+   "slot": 3,
+   "base": "bases/m07_00.png"
+  },
+  {
+   "name": "m12_00",
+   "slot": 4,
+   "base": "bases/m12_00.png"
+  },
+  {
+   "name": "m16_00",
+   "slot": 5,
+   "base": "bases/m16_00.png"
+  },
+  {
+   "name": "m31_00",
+   "slot": 6,
+   "base": "bases/m31_00.png"
+  },
+  {
+   "name": "m33_00",
+   "slot": 7,
+   "base": "bases/m33_00.png"
+  },
+  {
+   "name": "m43_00",
+   "slot": 8,
+   "base": "bases/m43_00.png"
+  },
+  {
+   "name": "m46_00",
+   "slot": 9,
+   "base": "bases/m46_00.png"
+  },
+  {
+   "name": "m48_00",
+   "slot": 10,
+   "base": "bases/m48_00.png"
+  },
+  {
+   "name": "m55_00",
+   "slot": 11,
+   "base": "bases/m55_00.png"
+  },
+  {
+   "name": "m56_00",
+   "slot": 12,
+   "base": "bases/m56_00.png"
+  },
+  {
+   "name": "m58_00",
+   "slot": 13,
+   "base": "bases/m58_00.png"
+  },
+  {
+   "name": "m59_00",
+   "slot": 14,
+   "base": "bases/m59_00.png"
+  },
+  {
+   "name": "m61_00",
+   "slot": 15,
+   "base": "bases/m61_00.png"
+  }
+ ],
+ "anchors": {
+  "lum": 96.7,
+  "hue": 62.0
+ }
+}

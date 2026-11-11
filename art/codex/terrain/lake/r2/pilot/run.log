@@ -1,0 +1,25 @@
+calling Codex with ['art/codex/terrain/lake/r2/pilot/lake2-pilot.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/direction/refs/ref_river_lake_3x.png', 'art/codex/terrain/lake/refs/river-tiles-256.png'] ...
+codex thread 01a1c81e-ac6e-74e1-8a8b-362fe398ce81, 69 s
+PASS m01_00
+    warn ring: near-W-edge water vs deep: max |dL| 2.5, texture std ratio 0.45-1.20
+PASS m04_00
+PASS m06_00
+PASS m07_00
+PASS m12_00
+PASS m16_00
+PASS m31_00
+PASS m33_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.1, texture std ratio 0.69-1.18
+PASS m43_00
+    warn ring: near-W-edge water vs deep: max |dL| 0.8, texture std ratio 0.73-1.12
+PASS m46_00
+PASS m48_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.3, texture std ratio 0.69-1.15
+PASS m55_00
+PASS m56_00
+    warn ring: near-W-edge water vs deep: max |dL| 0.9, texture std ratio 0.74-1.16
+PASS m58_00
+PASS m59_00
+PASS m61_00
+    warn ring: near-W-edge water vs deep: max |dL| 1.8, texture std ratio 0.72-1.09
+wrote art/codex/terrain/lake/r2/pilot/report.json, art/codex/terrain/lake/review/r2-sheets/lake2-pilot.montage.png

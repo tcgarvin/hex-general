@@ -1,0 +1,53 @@
+{
+ "method": "spectral",
+ "sources": [
+  "art/codex/terrain/lake/b/tiles/lake_00.png",
+  "art/codex/terrain/lake/b/tiles/lake_01.png",
+  "art/codex/terrain/lake/b/tiles/lake_02.png",
+  "art/codex/terrain/lake/b/tiles/lake_03.png",
+  "art/codex/terrain/lake/b/tiles/lake_04.png",
+  "art/codex/terrain/lake/b/tiles/lake_05.png",
+  "art/codex/terrain/lake/b/tiles/lake_06.png",
+  "art/codex/terrain/lake/b/tiles/lake_07.png",
+  "art/codex/terrain/lake/b/tiles/lake_08.png",
+  "art/codex/terrain/lake/b/tiles/lake_09.png",
+  "art/codex/terrain/lake/b/tiles/lake_10.png",
+  "art/codex/terrain/lake/b/tiles/lake_11.png",
+  "art/codex/terrain/lake/b/tiles/lake_12.png",
+  "art/codex/terrain/lake/b/tiles/lake_13.png",
+  "art/codex/terrain/lake/b/tiles/lake_14.png",
+  "art/codex/terrain/lake/b/tiles/lake_15.png"
+ ],
+ "windows": 56,
+ "seed": 1,
+ "isotropy": 0.4,
+ "periodicity": {
+  "se/nw": {
+   "across_edge_mean_abs": 2.604,
+   "in_tile_1px_mean_abs": 3.326,
+   "ratio": 0.783
+  },
+  "ne/sw": {
+   "across_edge_mean_abs": 4.125,
+   "in_tile_1px_mean_abs": 3.326,
+   "ratio": 1.24
+  },
+  "n/s": {
+   "across_edge_mean_abs": 3.992,
+   "in_tile_1px_mean_abs": 4.125,
+   "ratio": 0.968
+  }
+ },
+ "water": {
+  "median_rgb": [
+   64.0,
+   79.0,
+   76.0
+  ],
+  "lum_mean": 77.97,
+  "lum_std": 11.26,
+  "grad_x": 3.43,
+  "grad_y": 5.82
+ },
+ "sha256": "b28bc9b8a092c30bc143dabe32beadf7a751455e18e1853250f6d4dd534210bd"
+}

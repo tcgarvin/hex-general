@@ -1,0 +1,18 @@
+PASS m00_00
+PASS m08_00
+    warn ring: near-W-edge water vs deep: max |dL| 2.3, texture std ratio 0.82-1.42
+PASS m13_00
+PASS m18_00
+PASS m22_00
+PASS m26_00
+PASS m30_00
+PASS m36_00
+PASS m40_00
+PASS m45_00
+PASS m51_00
+PASS m57_00
+PASS m14_01
+PASS m35_01
+PASS m03_01
+PASS m30_01
+wrote art/codex/terrain/lake/r2/a/report.json, art/codex/terrain/lake/review/r2-sheets/lake2-a.montage.png
