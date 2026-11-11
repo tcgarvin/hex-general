@@ -11,6 +11,7 @@
 
 import { useMemo } from "react";
 
+import type { Designate } from "../designations";
 import { unitBook } from "../turnReport";
 import { useTurnReport, type ReportLoad } from "../useTurnReport";
 import type { WorldMap } from "../worldMap";
@@ -40,6 +41,7 @@ export function useTurnPlayback({
   viewer,
   map,
   wanted,
+  designate,
 }: {
   gameId: string;
   /** The last resolved turn's replay, as the shell loaded it for the report. */
@@ -48,6 +50,8 @@ export function useTurnPlayback({
   map: WorldMap;
   /** The player has asked to watch: fetch the turn before for the start picture. */
   wanted: boolean;
+  /** Names the viewer's own units ("2nd Infantry"). */
+  designate?: Designate;
 }): TurnPlayback {
   const turn = report.status === "none" ? null : report.turn;
   const before = useTurnReport(gameId, wanted && turn !== null && turn > 0 ? turn - 1 : null);
@@ -56,18 +60,18 @@ export function useTurnPlayback({
 
   const provisional = useMemo(() => {
     if (replay === null || !turnHasPlayback(replay.events)) return null;
-    const book = unitBook(replay.events, replay.state_after.units, viewer);
+    const book = unitBook(replay.events, replay.state_after.units, viewer, designate);
     return buildPlayback({ replay, viewer, before: null, terrainAt, book });
-  }, [replay, viewer, terrainAt]);
+  }, [replay, viewer, terrainAt, designate]);
 
   const beforeState = before.status === "ready" ? before.replay.state_after : null;
   const full = useMemo(() => {
     if (replay === null || provisional === null || !wanted) return null;
     if (replay.turn === 0) return provisional;
     if (beforeState === null) return null;
-    const book = unitBook(replay.events, replay.state_after.units, viewer);
+    const book = unitBook(replay.events, replay.state_after.units, viewer, designate);
     return buildPlayback({ replay, viewer, before: beforeState, terrainAt, book });
-  }, [replay, provisional, wanted, beforeState, viewer, terrainAt]);
+  }, [replay, provisional, wanted, beforeState, viewer, terrainAt, designate]);
 
   if (turn === null) return { status: "none" };
   if (replay === null) return { status: "waiting" };

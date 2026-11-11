@@ -92,6 +92,16 @@ describe("turnReport", () => {
     expect(items[0].detail).toEqual(["Your infantry took the hex and moved on."]);
   });
 
+  it("names the viewer's units by designation when it has them", () => {
+    const named = unitBook(log, units, ME, (id) => ({ 1: "2nd Infantry", 3: "1st Armor" })[id] ?? null);
+    const lines = turnReport(log, ME, named);
+    expect(lines[0].text).toBe("Attack at (3,0): 2nd Infantry −3 → 7 HP vs garrison infantry destroyed.");
+    expect(lines[0].detail).toEqual(["2nd Infantry took the hex and moved on."]);
+    expect(lines.some((i) => i.text.startsWith("1st Armor at (0,0) disbanded"))).toBe(true);
+    // A unit it doesn't know keeps the generic name.
+    expect(named.nameOf(2)).toBe("Your infantry");
+  });
+
   it("reports the base: income, disbands, repairs, then the stocks", () => {
     const base = items.filter((i) => i.section === "base");
     expect(base.map((i) => i.tone)).toEqual(["neutral", "bad", "good", "neutral"]);

@@ -62,7 +62,8 @@ const coordText = (a: Axial) => `(${a.q},${a.r})`;
 export function joinNames(names: string[]): string {
   if (names.length <= 1) return names.join("");
   const owner = names[0].split(" ")[0];
-  const shared = names.every((n) => n.startsWith(`${owner} `));
+  // "Your infantry and armor", but never "1st Infantry and Armor": an ordinal is a name.
+  const shared = !/^\d+(st|nd|rd|th)$/.test(owner) && names.every((n) => n.startsWith(`${owner} `));
   const parts = shared ? [names[0], ...names.slice(1).map((n) => n.slice(owner.length + 1))] : names;
   return `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
 }

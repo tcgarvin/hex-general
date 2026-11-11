@@ -18,6 +18,7 @@ import { eventLines, type NameOf, type Naming } from "@/replay/eventText";
 
 import { NEUTRAL_OWNER } from "./colors";
 import { DEPLOY_DISTANCE, SPREAD_GARRISON_TIER } from "./contact";
+import type { Designate } from "./designations";
 import type { MapSite } from "./worldMap";
 
 type UnitType = components["schemas"]["UnitType"];
@@ -71,7 +72,16 @@ export interface ReportContext {
   units: readonly Unit[];
 }
 
-export function unitBook(events: readonly ReplayEvent[], units: readonly Unit[], viewer: string): UnitBook {
+/**
+ * `designate` names the viewer's own units ("2nd Infantry", `designations.ts`);
+ * without it, or for a unit it doesn't know, they are "Your infantry".
+ */
+export function unitBook(
+  events: readonly ReplayEvent[],
+  units: readonly Unit[],
+  viewer: string,
+  designate: Designate = () => null,
+): UnitBook {
   const known = new Map<number, { owner: string; type: UnitType }>();
   // Guns that fired from out of sight: the event names no owner.
   const guns = new Set<number>();
@@ -96,11 +106,13 @@ export function unitBook(events: readonly ReplayEvent[], units: readonly Unit[],
         break;
     }
   }
-  const unit = (owner: string, type: UnitType) =>
-    owner === viewer ? `Your ${type}` : owner === NEUTRAL_OWNER ? `Garrison ${type}` : `${owner} ${type}`;
+  const unit = (owner: string, type: UnitType, unitId?: number) => {
+    if (owner === viewer) return (unitId === undefined ? null : designate(unitId)) ?? `Your ${type}`;
+    return owner === NEUTRAL_OWNER ? `Garrison ${type}` : `${owner} ${type}`;
+  };
   const nameOf: NameOf = (id) => {
     const u = known.get(id);
-    if (u !== undefined) return unit(u.owner, u.type);
+    if (u !== undefined) return unit(u.owner, u.type, id);
     // Out of sight, the replay gives an id but no owner: don't print the id.
     return guns.has(id) ? "An unseen gun" : "An unseen unit";
   };
@@ -354,7 +366,7 @@ function mid(name: string): string {
  * the hex).
  */
 function fightLine(e: CombatEvent, viewer: string, book: UnitBook): { text: string; detail: string[] } {
-  const name = (p: Participant) => book.naming.unit(p.owner, p.unit_type);
+  const name = (p: Participant) => book.naming.unit(p.owner, p.unit_type, p.unit_id);
   const side = (p: Participant) => {
     const mods: string[] = [];
     const dug = p.terrain_bonus + p.hold_bonus;

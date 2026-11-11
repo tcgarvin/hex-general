@@ -37,5 +37,6 @@ describe("your fights", () => {
     expect(joinNames(["Your infantry", "Your armor", "Your infantry"])).toBe("Your infantry, armor and infantry");
     expect(joinNames(["Garrison infantry", "s004 armor"])).toBe("Garrison infantry and s004 armor");
     expect(joinNames(["Your armor"])).toBe("Your armor");
+    expect(joinNames(["1st Infantry", "1st Armor"])).toBe("1st Infantry and 1st Armor");
   });
 });

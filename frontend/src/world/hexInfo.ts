@@ -4,6 +4,7 @@ import { hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
 import { NEUTRAL_OWNER } from "./colors";
+import type { Designate } from "./designations";
 import type { WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -42,6 +43,7 @@ export function hexInfo(
   visible: ReadonlySet<string>,
   viewer: string,
   hex: Axial,
+  designate: Designate = () => null,
 ): HexInfo {
   const cell = map.hexAt(hex.q, hex.r);
   if (cell === undefined) throw new Error(`hex (${hex.q}, ${hex.r}) is off the map`);
@@ -73,8 +75,9 @@ export function hexInfo(
   const units = state.units.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r).sort((a, b) => a.id - b.id);
   for (const u of units) {
     const who = u.owner === viewer ? "Your" : u.owner === NEUTRAL_OWNER ? "Garrison" : `${u.owner}'s`;
+    const name = (u.owner === viewer ? designate(u.id) : null) ?? `${who} ${u.type}`;
     const notes = [u.posture === "column" ? "column" : null, u.disordered ? "disordered" : null].filter((n) => n !== null);
-    lines.push(`${who} ${u.type}, ${u.hp}/10 HP${notes.length > 0 ? ` (${notes.join(", ")})` : ""}`);
+    lines.push(`${name}, ${u.hp}/10 HP${notes.length > 0 ? ` (${notes.join(", ")})` : ""}`);
   }
   return { title, lines };
 }

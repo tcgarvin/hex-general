@@ -28,7 +28,8 @@ export function unitName(owner: string, type: UnitType): string {
 /** How players and units are named in log lines; the default capitalises slot ids. */
 export interface Naming {
   player: (id: string) => string;
-  unit: (owner: string, type: UnitType) => string;
+  /** A unit by owner and type; `unitId` lets the viewer's own units go by their designation. */
+  unit: (owner: string, type: UnitType, unitId?: number) => string;
 }
 
 export const DEFAULT_NAMING: Naming = { player: cap, unit: unitName };
@@ -110,7 +111,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       if (hit === null || hit === undefined) {
         return [{ indent: 0, text: `${firer} barraged ${coord(event.target)} — no unit there.` }];
       }
-      const target = naming.unit(hit.owner, hit.unit_type);
+      const target = naming.unit(hit.owner, hit.unit_type, hit.unit_id);
       const lines: LogLine[] = [
         { indent: 0, text: `${firer} barraged ${mid(target)} at ${coord(event.target)}.` },
       ];
@@ -127,7 +128,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
     case "combat_resolved": {
       const attackers = event.participants.filter((p) => p.role === "attacker");
       const defender = event.participants.find((p) => p.role === "defender");
-      const nameOfP = (p: (typeof event.participants)[number]) => naming.unit(p.owner, p.unit_type);
+      const nameOfP = (p: (typeof event.participants)[number]) => naming.unit(p.owner, p.unit_type, p.unit_id);
 
       const attackerLabel =
         attackers.length === 0
@@ -235,7 +236,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
       return [
         {
           indent: 0,
-          text: `${naming.unit(event.owner, event.unit_type)} at ${coord(event.coord)} ${event.shortage === null ? "disbanded" : `disbanded: out of ${event.shortage}`}${event.chosen ? " (your pick)" : ""}.`,
+          text: `${naming.unit(event.owner, event.unit_type, event.unit_id)} at ${coord(event.coord)} ${event.shortage === null ? "disbanded" : `disbanded: out of ${event.shortage}`}${event.chosen ? " (your pick)" : ""}.`,
         },
       ];
 

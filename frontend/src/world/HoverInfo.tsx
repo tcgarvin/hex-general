@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { hexKey } from "@/board/hex";
 
 import { DEPLOY_DISTANCE } from "./contact";
+import type { Designate } from "./designations";
 import { hexInfo } from "./hexInfo";
 import type { WorldView } from "./useWorld";
 import type { TravelPreview, WorldPlanning } from "./useWorldPlan";
@@ -27,11 +28,13 @@ export function HoverInfo({
   map,
   view,
   planning,
+  designate,
 }: {
   renderer: WorldRenderer;
   map: WorldMap;
   view: WorldView;
   planning: WorldPlanning;
+  designate: Designate;
 }) {
   const [hover, setHover] = useState<Hover | null>(null);
   // Where the pointer last was over the map, for placing a notice.
@@ -82,7 +85,7 @@ export function HoverInfo({
   useEffect(() => () => renderer.setPreview(null), [renderer]);
 
   const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
-  const info = hover !== null && dweltOn === hover ? hexInfo(map, view.state, visible, view.your_slot, hover.hex) : null;
+  const info = hover !== null && dweltOn === hover ? hexInfo(map, view.state, visible, view.your_slot, hover.hex, designate) : null;
 
   const notice = planning.notice;
   const [expired, setExpired] = useState<number | null>(null);

@@ -15,6 +15,7 @@ import { ButtonLink, Card, Centered, ErrorBanner, Loading } from "@/components/u
 import type { components } from "@/lib/api/schema";
 
 import { NEUTRAL_OWNER } from "./colors";
+import type { Designate } from "./designations";
 import {
   economyOf,
   forecast,
@@ -53,6 +54,7 @@ import { SITE_TILE_KINDS } from "./siteTiles";
 import { turnReport, turnTrails, unitBook, type ReportItem } from "./turnReport";
 import { useTurnReport, type ReportLoad } from "./useTurnReport";
 import { useWorld, type WorldView } from "./useWorld";
+import { useDesignations } from "./useDesignations";
 import { useWorldHotkeys } from "./useWorldHotkeys";
 import { useWorldPlan, type PlannedRoute, type WorldPlanning } from "./useWorldPlan";
 import { WorldBoard } from "./WorldBoard";
@@ -127,6 +129,7 @@ function WorldScreen({
   refresh: () => void;
 }) {
   const planning = useWorldPlan(view, map, refresh);
+  const designate = useDesignations(view.game_id, view.your_slot, view.state.units);
   useLeaveWarning(planning.dirty);
   const economy = useMemo(() => economyOf(view.state), [view.state]);
   const outlook = useMemo(() => forecast(view.state, map, view.your_slot), [view, map]);
@@ -150,15 +153,22 @@ function WorldScreen({
     if (report.status !== "ready") return null;
     const { events, state_after } = report.replay;
     const units = state_after.units ?? [];
-    const book = unitBook(events, units, view.your_slot);
+    const book = unitBook(events, units, view.your_slot, designate);
     const context = { sites: map.sites, settlements: state_after.settlements ?? [], units };
     return { book, items: turnReport(events, view.your_slot, book, context), trails: turnTrails(events, book) };
-  }, [report, view.your_slot, map]);
+  }, [report, view.your_slot, map, designate]);
   // Turn playback: watching the last resolved turn on the board (`PlaybackBar`).
   const lastTurn = report.status === "none" ? null : report.turn;
   const [watch, setWatch] = useState<{ turn: number; autoplay: boolean; jump: BeatJump | null } | null>(null);
   const watching = watch !== null && watch.turn === lastTurn ? watch : null;
-  const turnPlayback = useTurnPlayback({ gameId: view.game_id, report, viewer: view.your_slot, map, wanted: watching !== null });
+  const turnPlayback = useTurnPlayback({
+    gameId: view.game_id,
+    report,
+    viewer: view.your_slot,
+    map,
+    wanted: watching !== null,
+    designate,
+  });
   const playback = watching !== null && turnPlayback.status === "ready" && renderer !== null ? turnPlayback.playback : null;
   const [beatNow, setBeatNow] = useState(-1);
   const watchTurn = useCallback(
@@ -224,7 +234,7 @@ function WorldScreen({
           onHexClick={planning.onHexClick}
           onRenderer={setRenderer}
         />
-        {renderer !== null && watching === null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} />}
+        {renderer !== null && watching === null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} designate={designate} />}
         {resolved !== null && (
           <ResolvedBanner
             turn={resolved.turn}
@@ -237,7 +247,7 @@ function WorldScreen({
           className="pointer-events-none absolute left-3 top-3 flex w-60 flex-col gap-2 min-[1100px]:w-72 [@media(min-height:641px)]:gap-3"
           style={{ bottom: consoleHeight(minimap) + 12 }}
         >
-          <ArmyPanel view={view} planning={planning} onJump={reveal} onHoverUnit={setHoveredUnit} />
+          <ArmyPanel view={view} planning={planning} designate={designate} onJump={reveal} onHoverUnit={setHoveredUnit} />
           <ReportPanel
             load={report}
             items={digest?.items ?? null}
@@ -260,7 +270,9 @@ function WorldScreen({
         {/* Padded so the scroll box does not clip the panel frames' outset and shadow. */}
         <div className="pointer-events-none absolute right-2 top-2 flex max-h-[calc(100%-16px)] w-[16.5rem] flex-col gap-4 overflow-y-auto p-1 pb-4 min-[1100px]:w-[20.5rem]">
           <BasePanel state={view.state} economy={economy} slot={view.your_slot} planning={planning} />
-          {planning.selectedUnit !== null && <UnitPanel unit={planning.selectedUnit} view={view} planning={planning} />}
+          {planning.selectedUnit !== null && (
+            <UnitPanel unit={planning.selectedUnit} view={view} planning={planning} designate={designate} />
+          )}
           {panelHex !== null && (
             <HexPanel
               map={map}
@@ -580,10 +592,16 @@ interface SwapInfo {
   role: "relieves" | "relieved" | "swaps";
 }
 
-const unitTag = (u: Unit) => `${UNIT_LABEL[u.type]} #${u.id}`;
+/** A unit's name in prose: its designation ("2nd Infantry"), else type and id. */
+const unitTag = (u: Unit, designate: Designate) => designate(u.id) ?? `${UNIT_LABEL[u.type]} #${u.id}`;
 const at = (a: Axial) => `(${a.q},${a.r})`;
 
-function orderText(order: WorldOrder | undefined, route: PlannedRoute | undefined, swap: SwapInfo | null = null): string {
+function orderText(
+  order: WorldOrder | undefined,
+  route: PlannedRoute | undefined,
+  swap: SwapInfo | null = null,
+  designate: Designate = () => null,
+): string {
   // Kept short: the Army row has room for about "no orders (stays put)".
   if (order === undefined) {
     if (route?.kind !== "standing") return "no orders (stays put)";
@@ -597,9 +615,10 @@ function orderText(order: WorldOrder | undefined, route: PlannedRoute | undefine
     case "move":
       if (swap !== null) {
         if (swap.role === "relieves") return `relieve ${at(swap.partner.coord)}`;
-        // The partner by number only: the Army row has no room for "Infantry #211".
-        if (swap.role === "relieved") return `relieved by #${swap.partner.id}`;
-        return `swap with #${swap.partner.id}`;
+        // The partner's short name: the Army row has no room for "2nd Infantry".
+        const partner = designate(swap.partner.id, true) ?? `#${swap.partner.id}`;
+        if (swap.role === "relieved") return `relieved by ${partner}`;
+        return `swap with ${partner}`;
       }
       return route?.attack ? `attack ${at(route.attack)}` : `move ${order.path.length} hex${order.path.length === 1 ? "" : "es"}`;
     case "march":
@@ -668,11 +687,13 @@ function HpPips({ hp, onDark = false }: { hp: number; onDark?: boolean }) {
 function ArmyPanel({
   view,
   planning,
+  designate,
   onJump,
   onHoverUnit,
 }: {
   view: WorldView;
   planning: WorldPlanning;
+  designate: Designate;
   onJump: (hex: Axial) => void;
   onHoverUnit: (unitId: number | null) => void;
 }) {
@@ -690,7 +711,8 @@ function ArmyPanel({
           {units.map((u) => {
             const route = planning.routes.find((r) => r.unitId === u.id);
             const selected = planning.selectedUnit?.id === u.id;
-            const text = orderText(planning.plan.orders[u.id], route, swaps.get(u.id) ?? null);
+            const text = orderText(planning.plan.orders[u.id], route, swaps.get(u.id) ?? null, designate);
+            const name = designate(u.id) ?? UNIT_LABEL[u.type];
             return (
               <li key={u.id} onMouseEnter={() => onHoverUnit(u.id)} onMouseLeave={() => onHoverUnit(null)}>
                 <button
@@ -703,8 +725,8 @@ function ArmyPanel({
                     selected ? "bg-wood-700 text-parchment-200" : "hover:bg-parchment-400/40"
                   }`}
                 >
-                  <span className="w-[4.5rem] shrink-0 truncate">
-                    {UNIT_LABEL[u.type]}
+                  <span className="w-[6.25rem] shrink-0 truncate" title={`${name} (#${u.id})`}>
+                    {name}
                     {u.posture === "column" ? " ▭" : ""}
                   </span>
                   <HpPips hp={u.hp} onDark={selected} />
@@ -939,7 +961,17 @@ const KIND_HELP: Record<OrderKind, string> = {
   deploy: "Unpack where it stands, ready to fight next turn.",
 };
 
-function UnitPanel({ unit, view, planning }: { unit: Unit; view: WorldView; planning: WorldPlanning }) {
+function UnitPanel({
+  unit,
+  view,
+  planning,
+  designate,
+}: {
+  unit: Unit;
+  view: WorldView;
+  planning: WorldPlanning;
+  designate: Designate;
+}) {
   const order = planning.plan.orders[unit.id];
   const route = planning.routes.find((r) => r.unitId === unit.id);
   const kinds = orderKindsFor(unit).filter((k) => k !== "march");
@@ -961,7 +993,11 @@ function UnitPanel({ unit, view, planning }: { unit: Unit; view: WorldView; plan
   };
 
   return (
-    <Panel title={`${UNIT_LABEL[unit.type]} #${unit.id}`} onClose={() => planning.selectUnit(null)}>
+    <Panel
+      title={designate(unit.id) ?? UNIT_LABEL[unit.type]}
+      actions={<span className="font-data text-xs text-wood-500">#{unit.id}</span>}
+      onClose={() => planning.selectUnit(null)}
+    >
       <div className="flex items-center gap-2 text-xs">
         <HpPips hp={unit.hp} />
         <span className="font-data text-wood-500">
@@ -983,7 +1019,7 @@ function UnitPanel({ unit, view, planning }: { unit: Unit; view: WorldView; plan
             ? route?.kind === "standing"
               ? `Carrying on its travel order: ${etaText(route.eta)}. Click a hex to send it elsewhere.`
               : `No orders: it stays put, without the Hold bonus. ${KIND_HELP.travel}`
-            : `Ordered: ${orderText(order, route, swap)}.`}
+            : `Ordered: ${orderText(order, route, swap, designate)}.`}
       </p>
       {order?.kind === "travel" && (
         <div className="mt-2 flex items-center gap-2 text-xs">
@@ -1002,10 +1038,10 @@ function UnitPanel({ unit, view, planning }: { unit: Unit; view: WorldView; plan
       {swap !== null && (
         <p className="mt-2 text-xs">
           {swap.role === "relieves"
-            ? `Steps up into ${at(swap.partner.coord)} as ${unitTag(swap.partner)} steps back here, both on the first pulse.`
+            ? `Steps up into ${at(swap.partner.coord)} as ${unitTag(swap.partner, designate)} steps back here, both on the first pulse.`
             : swap.role === "relieved"
-              ? `${unitTag(swap.partner)} takes this hex as this unit falls back to ${at(swap.partner.coord)}, both on the first pulse.`
-              : `Swaps hexes with ${unitTag(swap.partner)} on the first pulse.`}
+              ? `${unitTag(swap.partner, designate)} takes this hex as this unit falls back to ${at(swap.partner.coord)}, both on the first pulse.`
+              : `Swaps hexes with ${unitTag(swap.partner, designate)} on the first pulse.`}
         </p>
       )}
       {neighbours.length > 0 && (
@@ -1016,7 +1052,7 @@ function UnitPanel({ unit, view, planning }: { unit: Unit; view: WorldView; plan
               const blocked = swapBlocked(unit, n, zoc);
               return (
                 <Chip key={n.id} disabled={blocked !== null} title={blocked ?? undefined} onClick={() => planning.orderSwap(n.id)}>
-                  Swap with {unitTag(n)}
+                  Swap with {unitTag(n, designate)}
                 </Chip>
               );
             })}
