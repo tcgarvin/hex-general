@@ -671,6 +671,28 @@ when it leaves them, and anything that moved wholly out of sight is not shown. D
 builds only: `?turn=N` on the world URL shows and plays an earlier resolved turn, and
 `window.__hexPlayback` drives the transport from the console. Code:
 `frontend/src/world/playback/`, `PlaybackBar.tsx`, the playback mode in `WorldRenderer.ts`.
+Playback draws every site's owner as of the played turn (its own end state, with captures
+flipping at their beat), so an earlier turn does not show today's ownership.
+
+**As built (2026-11-11): planning aids after the second playtest.** Your units go by
+designations by type and seniority ("1st Infantry", "2nd Infantry", "1st Armor"), kept in
+the browser per world and seat, so survivors keep their numbers when a unit dies and a
+recruit takes the next one (`designations.ts`; `#id` stays in the unit panel). In Move mode,
+hovering a hostile hex the unit can reach shows the expected damage both ways and the
+defender's modifiers; in Barrage mode, hovering a hex in range shows the expected damage
+to each unit seen there; the unit panel repeats it for a staged attack or barrage. The maths
+(`combatPreview.ts`) is pinned to the engine by `__fixtures__/combat_fixture.py`, which runs the
+real combat and barrage code over a table of matchups. In Travel mode, Shift+click adds a
+waypoint to the selected unit's route (up to 4, drawn as diamonds, refused at the click when
+the server would refuse it), Shift while hovering previews it, and the unit panel removes one
+or all; Shift+click on a deployed unit of yours next door still means a swap. The unit panel
+warns when a Move steps a unit away from an adjacent enemy, since a unit whose hex is attacked
+on pulse 1 is pinned before it moves, and when a Travel is given to a unit that cannot pack. An
+unsent draft records the server plan it was forked from; if a newer plan was submitted
+elsewhere, the draft is set aside with a "Use my draft instead" choice rather than restored
+over it. Recruits count a barracks or workshop that finishes this turn, as the engine does. A
+turn replay withholds other players' private fields: the cost and stocks of a recruit, the
+shortage and pick behind a disband, and a gun the viewer cannot see (`app/engine/fog.py`).
 
 ## 12. Implementation phases
 
