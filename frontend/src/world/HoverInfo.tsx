@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { axialDistance, hexKey } from "@/board/hex";
+import { Glyph } from "@/components/Glyph";
 
 import { attackPreview, barragePreview, type CombatPreview } from "./combatView";
 import { DEPLOY_DISTANCE } from "./contact";
@@ -103,6 +104,7 @@ export function HoverInfo({
 
   const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
   const info = hover !== null && dweltOn === hover ? hexInfo(map, view.state, visible, view.your_slot, hover.hex, designate) : null;
+  const site = hover !== null ? map.siteAt(hover.hex.q, hover.hex.r) : undefined;
   const combat = useMemo((): CombatPreview | null => {
     if (hover === null || unit === null) return null;
     const key = hexKey(hover.hex.q, hover.hex.r);
@@ -166,6 +168,7 @@ export function HoverInfo({
           {info !== null && (
             <>
               <p className="font-label font-semibold uppercase tracking-wide">
+                {site !== undefined && <Glyph name={site.kind} size={14} className="mr-1" />}
                 {info.title} <span className="font-data font-normal normal-case text-wood-500">({hover.hex.q}, {hover.hex.r})</span>
               </p>
               {info.lines.map((line) => (

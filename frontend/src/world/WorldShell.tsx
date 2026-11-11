@@ -11,8 +11,10 @@ import { Link, useParams, useSearchParams } from "react-router";
 
 import { axialEqual, hexKey, type Axial } from "@/board/hex";
 import { AccountMenu } from "@/components/AccountMenu";
+import { Glyph } from "@/components/Glyph";
 import { ButtonLink, Card, Centered, ErrorBanner, Loading } from "@/components/ui";
 import type { components } from "@/lib/api/schema";
+import type { GlyphName } from "@/ui-art/glyphs";
 
 import { NEUTRAL_OWNER } from "./colors";
 import type { Designate } from "./designations";
@@ -413,11 +415,10 @@ function baseOf(state: WorldState, map: WorldMap, slot: string): Axial | null {
 // --- header -----------------------------------------------------------------------
 
 const RESOURCE_LABEL = { manpower: "Manpower", fuel: "Fuel", steel: "Steel" } as const;
-const RESOURCE_ABBR = { manpower: "MP", fuel: "Fuel", steel: "Stl" } as const;
 
 /**
- * One line at any width: below 1280 px the per-turn forecast goes, below 1100 px
- * the labels shorten, so the bar never wraps.
+ * One line at any width: resources and army size are named by their glyphs, and
+ * below 1280 px the per-turn forecast goes, so the bar never wraps.
  */
 function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: Forecast; onFieldManual: () => void }) {
   const player = view.state.players.find((p) => p.id === view.your_slot);
@@ -435,7 +436,7 @@ function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: For
         <Countdown clock={view.clock} nextTickAt={view.next_tick_at ?? null} />
         {stocks !== null &&
           RESOURCES.map((r) => (
-            <Stat key={r} label={RESOURCE_LABEL[r]} abbr={RESOURCE_ABBR[r]}>
+            <Stat key={r} label={RESOURCE_LABEL[r]} glyph={r}>
               <span className={`font-data ${plan.short.includes(r as "fuel" | "manpower") ? "text-invalid" : ""}`}>
                 {stocks[r]}
                 <span className="text-ivory-400">/{plan.storage}</span>
@@ -446,7 +447,7 @@ function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: For
               </span>
             </Stat>
           ))}
-        <Stat label="Army">
+        <Stat label="Army size" glyph="army">
           <span className="font-data">
             {plan.units}
             <span className="text-ivory-400">/{plan.armySize}</span>
@@ -469,21 +470,26 @@ function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: For
   );
 }
 
-function Stat({ label, abbr, children }: { label: string; abbr?: string; children: React.ReactNode }) {
+/**
+ * A header readout. With `glyph` alone the glyph names it (resources, army size:
+ * the glyph carries the label and its tooltip); with `glyph` and `text` both show
+ * (the clock); with neither, the text label.
+ */
+function Stat({
+  label,
+  glyph,
+  text = glyph === undefined,
+  children,
+}: {
+  label: string;
+  glyph?: GlyphName;
+  text?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className="font-label text-[11px] uppercase tracking-wider text-ivory-400">
-        {abbr === undefined ? (
-          label
-        ) : (
-          <>
-            <span className="hidden min-[1100px]:inline">{label}</span>
-            <span className="min-[1100px]:hidden" title={label}>
-              {abbr}
-            </span>
-          </>
-        )}
-      </span>
+      {glyph !== undefined && <Glyph name={glyph} label={text ? undefined : label} className="self-center" />}
+      {text && <span className="font-label text-[11px] uppercase tracking-wider text-ivory-400">{label}</span>}
       {children}
     </span>
   );
@@ -496,14 +502,18 @@ function Countdown({ clock, nextTickAt }: { clock: string; nextTickAt: string | 
     return () => clearInterval(id);
   }, []);
   if (nextTickAt === null) {
-    return <Stat label="Clock">{clock === "manual" ? "manual" : "unscheduled"}</Stat>;
+    return (
+      <Stat label="Clock" glyph="turn" text>
+        {clock === "manual" ? "manual" : "unscheduled"}
+      </Stat>
+    );
   }
   const at = new Date(nextTickAt);
   const seconds = Math.round((at.getTime() - now) / 1000);
   const minutes = Math.ceil(seconds / 60);
   const when = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   return (
-    <Stat label="Resolves">
+    <Stat label="Resolves" glyph="turn" text>
       <span className="font-data">
         {seconds <= 0
           ? "resolving…"
@@ -531,14 +541,38 @@ function stocksText(s: Stocks): string {
   return parts.length === 0 ? "free" : parts.join(", ");
 }
 
+/**
+ * A cost or income as the header shows stocks: each resource's glyph and amount
+ * ("free" for nothing). The tooltip and accessible name spell it out.
+ */
+function StocksGlyphs({ stocks, className = "" }: { stocks: Stocks; className?: string }) {
+  const text = stocksText(stocks);
+  const parts = RESOURCES.filter((r) => stocks[r] !== 0);
+  if (parts.length === 0) return <span className={className}>free</span>;
+  return (
+    // Plain inline layout: the glyphs sit on the text baseline like the digits.
+    <span role="img" aria-label={text} title={text} className={className}>
+      {parts.map((r) => (
+        <span key={r} className="mr-1.5 whitespace-nowrap last:mr-0">
+          <Glyph name={r} size={13} className="mr-0.5" />
+          {stocks[r]}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function Panel({
   title,
+  glyph,
   children,
   onClose,
   actions,
   className = "",
 }: {
   title: string;
+  /** Drawn on the title plate before the title. */
+  glyph?: GlyphName;
   children: React.ReactNode;
   onClose?: () => void;
   /** Extra header controls, left of Close. */
@@ -548,7 +582,10 @@ function Panel({
   return (
     <section className={`fhq-frame pointer-events-auto px-1.5 pb-1 pt-0.5 text-sm ${className}`}>
       <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="fhq-plate min-w-0 font-display text-sm uppercase tracking-wide">{title}</h2>
+        <h2 className="fhq-plate min-w-0 font-display text-sm uppercase tracking-wide">
+          {glyph !== undefined && <Glyph name={glyph} size={13} className="mr-1 align-[-1px]" />}
+          {title}
+        </h2>
         <div className="flex shrink-0 items-center gap-2">
           {actions}
           {onClose !== undefined && (
@@ -583,7 +620,7 @@ function Chip({
       disabled={disabled}
       title={title}
       data-active={active}
-      className="fhq-btn whitespace-nowrap text-xs"
+      className="fhq-btn gap-1 whitespace-nowrap text-xs"
     >
       {children}
     </button>
@@ -709,7 +746,7 @@ function ArmyPanel({
   return (
     // May shrink (and scroll) so a short screen's left column still stops above the
     // map console; the report shrinks first (`shrink-[1000]`).
-    <Panel title={`Army (${units.length})`} className="flex min-h-0 flex-col">
+    <Panel title={`Army (${units.length})`} glyph="army" className="flex min-h-0 flex-col">
       {units.length === 0 ? (
         <p className="text-xs text-wood-500">No units in the field.</p>
       ) : (
@@ -720,6 +757,8 @@ function ArmyPanel({
             const selected = planning.selectedUnit?.id === u.id;
             const text = orderText(planning.plan.orders[u.id], route, swaps.get(u.id) ?? null, designate);
             const name = designate(u.id) ?? UNIT_LABEL[u.type];
+            // The glyph gives the type, so the row can use the short designation ("2nd Inf").
+            const short = designate(u.id, true) ?? UNIT_LABEL[u.type];
             return (
               <li key={u.id} onMouseEnter={() => onHoverUnit(u.id)} onMouseLeave={() => onHoverUnit(null)}>
                 <button
@@ -732,9 +771,13 @@ function ArmyPanel({
                     selected ? "bg-wood-700 text-parchment-200" : "hover:bg-parchment-400/40"
                   }`}
                 >
-                  <span className="w-[5.5rem] shrink-0 truncate" title={`${name} (#${u.id})`}>
-                    {name}
-                    {u.posture === "column" ? " ▭" : ""}
+                  <span
+                    className="flex w-[5.5rem] shrink-0 items-center gap-1"
+                    title={`${name} (#${u.id})${u.posture === "column" ? ", packed column" : ""}`}
+                  >
+                    <Glyph name={u.type} size={15} />
+                    <span className="truncate">{short}</span>
+                    {u.posture === "column" && <Glyph name="column" size={14} label="Packed column" />}
                   </span>
                   <HpPips hp={u.hp} onDark={selected} />
                   <span className="ml-auto truncate text-xs" title={text}>
@@ -958,6 +1001,9 @@ const KIND_LABEL: Record<OrderKind, string> = {
   deploy: "Deploy",
 };
 
+/** The orders that have a glyph; the others are words only. */
+const KIND_GLYPH: Partial<Record<OrderKind, GlyphName>> = { travel: "travel", deploy: "deploy" };
+
 const KIND_HELP: Record<OrderKind, string> = {
   travel: "Click any hex: the unit packs into a column and marches there over as many turns as it takes.",
   move: "Click a highlighted hex: a short move this turn, fighting as it goes.",
@@ -1013,22 +1059,28 @@ function UnitPanel({
   return (
     <Panel
       title={designate(unit.id) ?? UNIT_LABEL[unit.type]}
+      glyph={unit.type}
       actions={<span className="font-data text-xs text-wood-500">#{unit.id}</span>}
       onClose={() => planning.selectUnit(null)}
     >
       <div className="flex items-center gap-2 text-xs">
         <HpPips hp={unit.hp} />
-        <span className="font-data text-wood-500">
+        <span className="flex items-center gap-1 font-data text-wood-500">
+          <Glyph name={unit.posture === "column" ? "column" : "deploy"} size={14} />
           {unit.posture === "column" ? "packed column" : "deployed"}
           {unit.disordered ? " · disordered" : ""}
         </span>
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
-        {kinds.map((k) => (
-          <Chip key={k} active={active === k} onClick={() => choose(k)} title={KIND_HELP[k]}>
-            {KIND_LABEL[k]}
-          </Chip>
-        ))}
+        {kinds.map((k) => {
+          const glyph = KIND_GLYPH[k];
+          return (
+            <Chip key={k} active={active === k} onClick={() => choose(k)} title={KIND_HELP[k]}>
+              {glyph !== undefined && <Glyph name={glyph} size={13} />}
+              {KIND_LABEL[k]}
+            </Chip>
+          );
+        })}
       </div>
       <p className="mt-2 text-xs">
         {planning.mode === "move" || planning.mode === "barrage"
@@ -1052,9 +1104,11 @@ function UnitPanel({
         <div className="mt-2 flex items-center gap-2 text-xs">
           <span>On arrival</span>
           <Chip active={order.onArrival === "deployed"} onClick={() => planning.setOnArrival(unit.id, "deployed")}>
+            <Glyph name="deploy" size={13} />
             Deploy
           </Chip>
           <Chip active={order.onArrival === "column"} onClick={() => planning.setOnArrival(unit.id, "column")}>
+            <Glyph name="column" size={13} />
             Stay packed
           </Chip>
         </div>
@@ -1129,6 +1183,7 @@ function UnitPanel({
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-wood-500/40 pt-2 text-xs">
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={disbandRank >= 0} onChange={() => planning.toggleDisband(unit.id)} />
+          <Glyph name="disband" size={14} className={disbandRank >= 0 ? "text-invalid" : "text-wood-500"} />
           {disbandRank >= 0 ? `Disband first in a shortage (#${disbandRank + 1})` : "Disband first in a shortage"}
         </label>
         {order !== undefined && (
@@ -1163,7 +1218,7 @@ function BasePanel({
   const building = work !== null && work.completes_on > state.turn;
   const queued = planning.plan.build;
   return (
-    <Panel title="Base buildings">
+    <Panel title="Base buildings" glyph="base">
       <ul className="flex flex-col gap-1.5">
         {(Object.keys(BUILDING_LABEL) as Building[]).map((b) => {
           const level = levelOf(player, b);
@@ -1173,6 +1228,7 @@ function BasePanel({
             <li key={b} className="flex flex-col">
               <div className="flex items-center justify-between gap-2">
                 <span className="whitespace-nowrap">
+                  <Glyph name={b} size={15} className="mr-1.5" />
                   {BUILDING_LABEL[b]} <span className="font-data">{level}</span>
                   <span className="text-wood-500">/{economy.buildings[b].length}</span>
                 </span>
@@ -1198,9 +1254,9 @@ function BasePanel({
                 )}
               </div>
               {option !== null && (
-                <span className="text-xs">
+                <span className="pl-[21px] text-xs">
                   <span className="font-data text-wood-500">
-                    Lv {option.level}: {stocksText(option.cost)}, {option.turns} turns
+                    Lv {option.level}: <StocksGlyphs stocks={option.cost} />, {option.turns} turns
                   </span>
                   {!staged && option.blocked.length > 0 && (
                     <span className="text-invalid"> · {option.blocked.join("; ")}</span>
@@ -1289,7 +1345,11 @@ function HexPanel({
   const options = recruitOptions(state, map, economy, slot, hex, planning.plan, armySize);
   const neutral = settlement !== undefined && owner === null;
   return (
-    <Panel title={site !== undefined ? siteTitle(site, settlement === undefined ? undefined : owner, slot) : (cell?.terrain ?? "Hex")} onClose={onClose}>
+    <Panel
+      title={site !== undefined ? siteTitle(site, settlement === undefined ? undefined : owner, slot) : (cell?.terrain ?? "Hex")}
+      glyph={site?.kind}
+      onClose={onClose}
+    >
       <div className="flex items-center gap-2">
         {site !== undefined && <img src={siteIconUrl(site.kind)} alt="" className="h-12 w-12 shrink-0" />}
         <p className="font-data text-xs text-wood-500">
@@ -1301,9 +1361,14 @@ function HexPanel({
       </div>
       {site !== undefined && (
         <div className="mt-1 flex flex-col gap-0.5">
-          {site.kind !== "base" && <span>Produces {stocksText(siteIncome(economy, site))} a turn.</span>}
+          {site.kind !== "base" && (
+            <span>
+              Produces <StocksGlyphs stocks={siteIncome(economy, site)} className="font-data" /> a turn.
+            </span>
+          )}
           {neutral && site.garrison > 0 && (
             <span>
+              <Glyph name="garrison" size={14} className="mr-1" />
               Garrison: {GARRISON_TEXT[site.garrison]}.
               {garrison.length > 0 ? (
                 <span className="block font-data text-xs">
@@ -1334,8 +1399,10 @@ function HexPanel({
               return (
                 <li key={o.type} className="flex flex-col">
                   <span className="flex items-center justify-between gap-2">
-                    <span>
-                      {UNIT_LABEL[o.type]} <span className="font-data text-xs text-wood-500">{stocksText(o.cost)}</span>
+                    <span className="whitespace-nowrap">
+                      <Glyph name={o.type} size={15} className="mr-1.5" />
+                      {UNIT_LABEL[o.type]}{" "}
+                      <StocksGlyphs stocks={o.cost} className="font-data text-xs text-wood-500" />
                     </span>
                     <Chip
                       active={on}
@@ -1361,11 +1428,13 @@ function HexPanel({
               <li key={u.id} className="flex items-center justify-between gap-2">
                 {u.owner === slot ? (
                   <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => planning.selectUnit(u.id)}>
+                    <Glyph name={u.type} size={15} className="mr-1.5" />
                     {designate(u.id) ?? `Your ${u.type}`}
                     {u.posture === "column" ? " (column)" : ""}
                   </button>
                 ) : (
                   <span>
+                    <Glyph name={u.type} size={15} className="mr-1.5" />
                     {u.owner} {u.type}
                     {u.posture === "column" ? " (column)" : ""}
                   </span>

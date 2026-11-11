@@ -392,6 +392,22 @@ body {
       0 3px 8px rgb(0 0 0 / 0.4);
     color: var(--color-ink-900);
   }
+  /* A UI glyph (components/Glyph.tsx): the 48 px mask filled with the text colour,
+     so it reads ivory on wood, ink on parchment, or a state colour. The component
+     sets the size and the mask image. */
+  .fhq-glyph {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: -0.15em;
+    background-color: currentColor;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+
   /* The hover tooltip: the note's construction, a touch translucent. */
   .fhq-tip {
     border: 1px solid var(--color-wood-700);

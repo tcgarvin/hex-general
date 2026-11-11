@@ -9,7 +9,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { Glyph } from "@/components/Glyph";
 import { UNIT_STATS } from "@/planning/rules";
+import type { GlyphName } from "@/ui-art/glyphs";
 
 import { DEPLOY_DISTANCE } from "./contact";
 import { RESOURCES, type Building, type Economy, type Stocks } from "./economy";
@@ -227,6 +229,16 @@ function H({ children }: { children: React.ReactNode }) {
   return <h4 className="mb-0.5 mt-3 font-label text-xs font-semibold uppercase tracking-wider text-wood-500">{children}</h4>;
 }
 
+/** A unit, site, building or resource name with its glyph, as the panels show it. */
+function Named({ glyph, children }: { glyph: GlyphName; children: React.ReactNode }) {
+  return (
+    <span className="whitespace-nowrap">
+      <Glyph name={glyph} size={14} className="mr-1" />
+      {children}
+    </span>
+  );
+}
+
 /** A term and its explanation, for the order and rule lists. */
 function Terms({ items }: { items: readonly (readonly [React.ReactNode, React.ReactNode])[] }) {
   return (
@@ -369,7 +381,7 @@ function ArmyPage({ ctx }: { ctx: Ctx }) {
         rows={UNIT_TYPES.map((t) => {
           const s = UNIT_STATS[t];
           return [
-            UNIT_NAME[t],
+            <Named glyph={t}>{UNIT_NAME[t]}</Named>,
             <N>{s.maxHp}</N>,
             <N>{s.move}</N>,
             <N>{s.attack}</N>,
@@ -517,7 +529,7 @@ function SitesPage({ economy }: { economy: Economy }) {
           const recruits = UNIT_TYPES.filter((t) => RECRUIT_SITES[t].includes(kind)).map((t) => UNIT_NAME[t]);
           const at = (level: number) => stocks(levelIncome(economy, kind, level));
           return [
-            SITE_NAME[kind],
+            <Named glyph={kind}>{SITE_NAME[kind]}</Named>,
             at(1),
             LEVELED.has(kind) ? at(2) : "",
             LEVELED.has(kind) ? at(3) : "",
@@ -562,7 +574,8 @@ function BasePage({ ctx }: { ctx: Ctx }) {
   return (
     <>
       <P>
-        You run on three resources: <b>manpower</b>, <b>fuel</b> and <b>steel</b>. Each turn your sites pay their income
+        You run on three resources: <b><Named glyph="manpower">manpower</Named></b>,{" "}
+        <b><Named glyph="fuel">fuel</Named></b> and <b><Named glyph="steel">steel</Named></b>. Each turn your sites pay their income
         and your units cost their upkeep. You can store <N>{storage[0]}</N> of each (more with a depot); anything above
         that is lost. The header shows your stocks, the limit and next turn's change.
       </P>
@@ -574,7 +587,7 @@ function BasePage({ ctx }: { ctx: Ctx }) {
       <Table
         head={["Building", "Each level: cost, turns", "Effect"]}
         rows={(Object.keys(BUILDING_NAME) as Building[]).map((b) => [
-          BUILDING_NAME[b],
+          <Named glyph={b}>{BUILDING_NAME[b]}</Named>,
           <span className="font-data">
             {economy.buildings[b].map((l, k) => (
               <span key={k} className="block">
@@ -593,7 +606,7 @@ function BasePage({ ctx }: { ctx: Ctx }) {
         this turn's recruits (and a workshop due this turn already lets you recruit guns).
       </P>
       <H>Recruiting</H>
-      <Terms items={UNIT_TYPES.map((t) => [UNIT_NAME[t], `At ${recruitWhere(t)}, for ${stocks(economy.recruitCost[t], "nothing")}.`] as const)} />
+      <Terms items={UNIT_TYPES.map((t) => [<Named glyph={t}>{UNIT_NAME[t]}</Named>, `At ${recruitWhere(t)}, for ${stocks(economy.recruitCost[t], "nothing")}.`] as const)} />
       <P>
         Choose a recruit on the site's panel. The new unit appears at full HP when the turn resolves, paid then, if the site
         is still yours, no deployed unit stands on it, and your army is below its size.
