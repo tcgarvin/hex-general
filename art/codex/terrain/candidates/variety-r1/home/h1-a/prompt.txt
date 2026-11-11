@@ -1,0 +1,28 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village: copy the look and SIZE of ONE of its houses exactly (a house is about one-twelfth of a hexagon's width): weathered pale plaster or grey stone walls, dull red-brown or slate roofs. Image 4 is a close-up of image 2's woods: copy the size and colour of one tree crown from it. The thin light lines in images 3 and 4 are the map's grid; do not paint them.
+
+Edit image 1: every hexagon stays open meadow with ONE SMALL rural homestead in it, the lone cottages and farmsteads that dot the countryside between villages in the 1940s. It is NOT a village, NOT a farm with fields: there are NO crop fields, NO ploughed strips, NO haystacks. Everything painted covers well under one-sixth of the hexagon; the rest stays the plain grass it is now.
+1. ONE small cottage with a tiny garden patch beside it and one tree, in the north-west part.
+2. TWO small houses side by side, sharing a little trodden yard, in the south-east part.
+3. ONE plain timber barn, dark weathered boards and a grey roof, with a small patch of bare trodden earth at its door, in the north-east part.
+4. A small farmhouse with ONE tree beside it and a short length of wooden fence, in the south-west part.
+5. ONE cottage and a small shed behind it, in the north part.
+6. TWO small houses a little apart from each other, with a short hedge between them, in the east part.
+7. ONE small house beside three small fruit trees, in the south part.
+8. ONE grey stone cottage with a tiny walled garden, in the west part.
+9. A small house and a slightly larger barn set at a right angle to each other around a little yard, just north-east of centre.
+
+Rules for every hexagon:
+- Seen from almost straight DOWN, with only a slight tilt from the south: buildings show only a thin sliver of their south wall. Light from the upper left; shadows fall to the lower right.
+- Buildings are small, the same size as the houses in image 3; never big toy-like buildings. At most two buildings and a shed per hexagon.
+- The homestead sits in the ground: a little worn earth around the door, a soft shadow, grass right up to it. No straight ruler-edged yards.
+- No road, path or track runs out to the edge; any path is a short faint trodden line that fades out within a house-length.
+- The homestead sits OFF-CENTRE where described. A band of plain grass about one-SIXTH of the hexagon's width stays untouched all around the edge: nothing touches or comes near the hexagon's edge.
+- Muted colours only, no bright or saturated colour, no text, no signs, no flags, no insignia, no people, no animals, no vehicles.
+- EVERY HEXAGON follows its own numbered description; all nine look different.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

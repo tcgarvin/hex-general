@@ -129,3 +129,10 @@ art/codex/terrain/sites/**/bases/**/*.png
 !art/codex/terrain/candidates/sites-r5/**/raw/*.png
 !art/codex/terrain/candidates/sites-r5/refs/*.png
 !art/codex/terrain/candidates/sites-r5/kept/**/*.png
+# Variety round 1 candidates (unratified, art/codex/terrain/candidates/variety-r1):
+# commit the raw Codex sheets and the kept candidate tiles; the opaque road bases,
+# sheets, cut/tiles/held and review renders are derived (variety1.py bases/hold).
+!art/codex/terrain/candidates/variety-r1/**/raw/*.png
+!art/codex/terrain/candidates/variety-r1/kept/**/*.png
+art/codex/terrain/candidates/variety-r1/**/held/
+art/codex/terrain/candidates/variety-r1/**/review/

@@ -1,0 +1,26 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village: a house there is about one-twelfth of a hexagon's width. Image 4 is a close-up of image 2's woods: copy the size, shape and colour of ONE tree crown from it (a crown is about one-fourteenth of a hexagon's width). The thin light lines in images 3 and 4 are the map's grid; do not paint them.
+
+Edit image 1: every hexagon stays an open meadow, and gets ONE SMALL natural feature, the kind of thing a painter scatters over open country to break up the grass. Each feature is SMALL: it covers well under one-tenth of the hexagon. It is never a wood, never a field, never a building. The rest of the hexagon stays exactly the plain grass it is now.
+1. A tight clump of THREE trees in the north-west part, crowns touching, with their soft shadows falling to the lower right.
+2. ONE lone broad tree in the south-east part, its round crown and a long soft shadow to the lower right.
+3. Two or three low patches of dark scrub and brush in the north-east part, irregular and ragged, lower and darker than trees.
+4. ONE small grey boulder with two or three smaller stones beside it, in the south-west part; lit on the upper left, a small shadow lower right.
+5. A short fragment of an old hedgerow in the north part: a ragged dark-green line of bushes about one-quarter of the hexagon long, running roughly east to west, with one small tree in it.
+6. A small damp hollow in the east part: a patch of darker, wetter grass with a few clumps of tall reeds and a tiny glint of standing water in the middle, no bigger than a tree crown.
+7. A loose patch of rougher, tussocky grass with tiny dots of pale wildflowers, in the south part; subtle, low, barely raised.
+8. TWO trees and one bush in the west part, a little apart from each other.
+9. A low grey rock outcrop, flat slabs breaking the turf, with a little scrub around it, just north-east of centre.
+
+Rules for every hexagon:
+- Seen from almost straight DOWN, with only a slight tilt from the south. Light from the upper left; shadows fall to the lower right.
+- The feature sits OFF-CENTRE where described, between the centre and the edge. The middle third of the hexagon stays mostly open grass.
+- A band of plain grass about one-SIXTH of the hexagon's width stays untouched all around the edge: nothing touches or comes near the hexagon's edge.
+- Muted colours only: cool olive and dark moss greens for trees and scrub (NOT bright green, NOT yellow-green), warm grey for stone. No flowers in bright colours. No paths, tracks, fences, buildings, animals, people, text or symbols.
+- EVERY HEXAGON follows its own numbered description; all nine look different.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

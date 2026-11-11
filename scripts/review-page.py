@@ -27,8 +27,9 @@ Images wider than 1600px are downscaled to 1600px for embedding (these are
 review montages, not delivered assets) and the caption notes the downscale.
 Each image is encoded as PNG; if that PNG exceeds ~1.5 MB it is re-encoded as
 JPEG quality 88 instead (flattened onto #2a2a2e first if it has alpha, since
-JPEG has no alpha channel). Prints a per-image size report and the final HTML
-size; warns loudly past ~18 MB (Artifact payload budget).
+JPEG has no alpha channel); `--png-max-kb N` lowers that threshold. Prints a
+per-image size report and the final HTML size; warns loudly past ~18 MB
+(Artifact payload budget).
 
 The output is a fragment ONLY — no <!DOCTYPE>/<html>/<head>/<body> — because
 the `Artifact` tool wraps it. It does include a <title> and inline <style>,
@@ -105,6 +106,13 @@ def parse_sections(argv: list[str]) -> tuple[argparse.Namespace, list[Section]]:
     ap.add_argument("--title", required=True, help="page <title> / <h1>")
     ap.add_argument("--out", required=True, help="output .html path")
     ap.add_argument("--intro", default="", help="one short paragraph under the title")
+    ap.add_argument(
+        "--png-max-kb",
+        type=int,
+        default=PNG_REENCODE_THRESHOLD // 1000,
+        help="re-encode an image as JPEG when its PNG is larger than this (KB); "
+        "lower it to fit many painterly renders under the page budget",
+    )
 
     plain_args: list[str] = []
     sections: list[Section] = []
@@ -117,7 +125,11 @@ def parse_sections(argv: list[str]) -> tuple[argparse.Namespace, list[Section]]:
             name = argv[i + 1]
             i += 2
             images: list[ImageSpec] = []
-            while i < len(argv) and argv[i] != "--section" and not argv[i].startswith("--"):
+            while (
+                i < len(argv)
+                and argv[i] != "--section"
+                and not argv[i].startswith("--")
+            ):
                 images.append(parse_image_arg(argv[i]))
                 i += 1
             if not images:
@@ -134,7 +146,9 @@ def parse_sections(argv: list[str]) -> tuple[argparse.Namespace, list[Section]]:
     return args, sections
 
 
-def load_and_encode(spec: ImageSpec) -> EncodedImage:
+def load_and_encode(
+    spec: ImageSpec, png_max_bytes: int = PNG_REENCODE_THRESHOLD
+) -> EncodedImage:
     """Load one image, downscale/re-encode as needed, and base64-embed it."""
     if not os.path.isfile(spec.path):
         raise FileNotFoundError(f"image not found: {spec.path}")
@@ -154,13 +168,15 @@ def load_and_encode(spec: ImageSpec) -> EncodedImage:
     img.save(png_buf, format="PNG", optimize=True)
     png_bytes = png_buf.getvalue()
 
-    if len(png_bytes) <= PNG_REENCODE_THRESHOLD:
+    if len(png_bytes) <= png_max_bytes:
         mime = "image/png"
         encoded_bytes = png_bytes
     else:
         # Re-encode as JPEG. Flatten alpha onto the montage's own dark
         # background colour first since JPEG has no alpha channel.
-        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        if img.mode in ("RGBA", "LA") or (
+            img.mode == "P" and "transparency" in img.info
+        ):
             flat = Image.new("RGB", img.size, JPEG_FLATTEN_BG)
             flat.paste(img.convert("RGBA"), mask=img.convert("RGBA").split()[3])
             jpeg_source = flat
@@ -195,14 +211,16 @@ def html_escape(text: str) -> str:
     )
 
 
-def build_html(title: str, intro: str, sections: list[tuple[Section, list[EncodedImage]]]) -> str:
+def build_html(
+    title: str, intro: str, sections: list[tuple[Section, list[EncodedImage]]]
+) -> str:
     parts: list[str] = []
     parts.append(f"<title>{html_escape(title)}</title>")
     parts.append(STYLE)
     parts.append('<div class="review-page">')
     parts.append(f"<h1>{html_escape(title)}</h1>")
     if intro:
-        parts.append(f"<p class=\"intro\">{html_escape(intro)}</p>")
+        parts.append(f'<p class="intro">{html_escape(intro)}</p>')
 
     for section, encoded_images in sections:
         parts.append(f"<h2>{html_escape(section.name)}</h2>")
@@ -211,12 +229,14 @@ def build_html(title: str, intro: str, sections: list[tuple[Section, list[Encode
             if enc.downscaled:
                 ow, oh = enc.original_size
                 dw, dh = enc.display_size
-                caption += f" &mdash; shown at {dw}&times;{dh}px (original {ow}&times;{oh}px)"
+                caption += (
+                    f" &mdash; shown at {dw}&times;{dh}px (original {ow}&times;{oh}px)"
+                )
             parts.append(
                 '<figure class="review-image">'
                 '<div class="image-scroll">'
                 f'<img src="{enc.data_uri}" alt="{html_escape(enc.label)}" '
-                'onclick="this.classList.toggle(\'natural-size\')">'
+                "onclick=\"this.classList.toggle('natural-size')\">"
                 "</div>"
                 f"<figcaption>{caption}</figcaption>"
                 "</figure>"
@@ -322,7 +342,7 @@ def main() -> int:
     for section in sections:
         encoded_images: list[EncodedImage] = []
         for spec in section.images:
-            enc = load_and_encode(spec)
+            enc = load_and_encode(spec, args.png_max_kb * 1000)
             encoded_images.append(enc)
             total_bytes += enc.encoded_bytes
             note = ""

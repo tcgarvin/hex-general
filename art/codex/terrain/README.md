@@ -533,3 +533,54 @@ sit in a walled bund; base trucks stay a little large and the gun pits are a mot
 `sites5_review.py --scratch <dir> --out-dir <dir>` (3x grids, board crops of
 `scripts/board-mock-maps/sites5-ladder.txt` with each candidate as the level's only
 variant via a temporary symlinked sites dir), page `.dev/review-pages/sites-r5.html`.
+
+## Variety round 1 (candidates, unratified), 2026-11-11 (`candidates/variety-r1/`)
+
+Owner's brief: plains hexes need occasional small natural features (trees, brush, a
+boulder), and near roads and towns occasional lone or paired small buildings; visual
+only. Nothing applied; `frontend/` and `candidates/sites-ratified/` are unchanged. 7 Codex
+calls (1 smoke test, 6 sheets), the paint-in recipe on 3x3 sheets (the town and woods
+scale), restore on, rim pin, gates. Refs concept1, `refs/r1/town_2x.png` (house size),
+`refs/r1/forest_cluster_2x.png` (crown size). Jobs from `variety1_jobs.py`; prompts are
+hand-written per sheet (`prompt.txt` in each work dir).
+
+| group | sheets | bases | cells passed | kept |
+|---|---|---|---|---|
+| nature | `nature/n1-a`, `n1-b` (one small feature per hex, off-centre, 1/6 grass band) | `r1-bases/` (G2 plains) | 17/18 (n_b3 rim_touch 21) | 15 |
+| home | `home/h1-a` (pale walls, red roofs), `h1-b` (slate and thatch, a house = 1/14 hex) | `r1-bases/` | 18/18 | 10 |
+| road | `road/r1-a`, `r1-b` (one building pair or trees beside the road) | `bases/road/` = the shipped road tile over its own G2 crop | 18/18 (hold gates) | 14 (3 per straight, 2 per turn) |
+
+**Road hold.** Codex re-renders the road it is given, so after `paintin.py run`,
+`variety1.py hold <work>` puts the shipped road back pixel for pixel: the road mask is
+the shipped tile vs its G2 ground (`diff_mask`, closed 1 px), held exactly for 3 px around
+it and feathered 1.2 px beyond (`held/<cell>.png`, `hold.json`). Gates: road_exact and
+rim_exact must be 0 (all 18 are), road_clash (painted px 4-7 px from the road, limit 12;
+worst kept 8) and rim_touch away from the road. paintin's own rim gates count the
+re-rendered road at the crossings and are advisory for road cells. Forks and ends were
+not painted.
+
+**Selection rule** (`scripts/board-mock.py --variety <kept dir> --variety-density
+low|medium|high`, `variety_picks`; off by default, default renders byte-identical,
+`scripts/tests/test_board_mock_variety.py`): per-mille coordinate-hash rolls
+(`salted_index`, `variant_index` with a salt term) for nature on open plains, homesteads on
+plains beside a road or town (higher beside a town, never next to a base), roadside on
+plains road hexes with a variant of their shape (higher within 2 hexes of a town); a
+candidate is kept only if it outranks every adjacent candidate of its pool, and nature
+and roadside also yield to an adjacent homestead, so no two decorated hexes touch. Site
+hexes are never decorated. Shares on the whole seed 1 world (seed 2 within 0.01):
+
+| density | all plains | nature / open plains | home / beside road or town | home / beside town | road / plains road |
+|---|---|---|---|---|---|
+| low | 7.9% | 5.1% | 9.7% | 16.7% | 6.7% |
+| medium | 12.4% | 7.9% | 16.4% | 27.8% | 9.0% |
+| high | 15.8% | 9.9% | 23.3% | 38.8% | 9.1% |
+
+Known caveats: at 64 px per hex the boulders, wall and fence posts are specks (round 2
+could paint features 1.5x larger); a homestead tile has no road, so it does not face the
+road beside it; mirrored road shapes cast shadows lower-left. `variety1.py candidates`
+builds `candidates.json` and the kept copies (`kept/<group>/<label>.png`, sha256, every
+drop with its reason); kept tiles replay byte-identically with `paintin.py run --from-raw`
+(+ `variety1.py hold` for road). Review: `variety1_review.py --out-dir <dir> --page <html>
+--notes candidates/variety-r1/review_notes.json` (boards of
+`scripts/board-mock-maps/variety-{open,town}.txt`, exported with `scripts/road-study.py
+export`, units composited by hand, 3x sheets), page `.dev/review-pages/variety-r1.html`.

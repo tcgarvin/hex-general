@@ -1,0 +1,47 @@
+{
+ "name": "variety-n1-b",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "n_b1",
+   "base": "../../../../r1-bases/03.png"
+  },
+  {
+   "name": "n_b2",
+   "base": "../../../../r1-bases/04.png"
+  },
+  {
+   "name": "n_b3",
+   "base": "../../../../r1-bases/05.png"
+  },
+  {
+   "name": "n_b4",
+   "base": "../../../../r1-bases/00.png"
+  },
+  {
+   "name": "n_b5",
+   "base": "../../../../r1-bases/01.png"
+  },
+  {
+   "name": "n_b6",
+   "base": "../../../../r1-bases/02.png"
+  },
+  {
+   "name": "n_b7",
+   "base": "../../../../r1-bases/03.png"
+  },
+  {
+   "name": "n_b8",
+   "base": "../../../../r1-bases/04.png"
+  },
+  {
+   "name": "n_b9",
+   "base": "../../../../r1-bases/05.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}
