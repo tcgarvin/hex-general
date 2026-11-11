@@ -1,0 +1,20 @@
+calling Codex with ['art/codex/terrain/candidates/variety-r2/home/m-a/variety2-home-m-a.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png', 'art/codex/terrain/refs/r1/forest_cluster_2x.png'] ...
+codex thread 01a1ca8a-2d83-75e2-9bbb-74e5a8ff8bf2, 96 s
+PASS hm_a1
+FAIL hm_a2
+    FAIL rim_clear: 6.0% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 33 salient px within 4 px of the boundary (limit 2)
+FAIL hm_a3
+    FAIL rim_clear: 5.9% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 57 salient px within 4 px of the boundary (limit 2)
+PASS hm_a4
+FAIL hm_a5
+    FAIL rim_clear: 3.7% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 20 salient px within 4 px of the boundary (limit 2)
+PASS hm_a6
+PASS hm_a7
+FAIL hm_a8
+    FAIL rim_touch: 3 salient px within 4 px of the boundary (limit 2)
+PASS hm_a9
+wrote art/codex/terrain/candidates/variety-r2/home/m-a/report.json, art/codex/terrain/candidates/variety-r2/home/m-a/review/variety2-home-m-a.montage.png
+exit 1

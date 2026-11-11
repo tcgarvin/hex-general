@@ -1,0 +1,123 @@
+{
+ "limits": {
+  "road_hold_exact_px": 3,
+  "road_hold_feather": 1.2,
+  "clash_ring": [
+   4,
+   7
+  ],
+  "clash_max": 12,
+  "rim_touch_px": 4.0,
+  "rim_touch_max": 2
+ },
+ "tiles": {
+  "rm_b1": {
+   "shipped": "plains_turn_ne_nw_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 6,
+    "rim_touch": 0
+   },
+   "painted_share": 0.04,
+   "road_px": 834
+  },
+  "rm_b2": {
+   "shipped": "plains_turn_n_se_01",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 10,
+    "rim_touch": 0
+   },
+   "painted_share": 0.043,
+   "road_px": 892
+  },
+  "rm_b3": {
+   "shipped": "plains_turn_s_nw_01",
+   "passed": false,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 21,
+    "rim_touch": 0
+   },
+   "painted_share": 0.032,
+   "road_px": 895
+  },
+  "rm_b4": {
+   "shipped": "plains_turn_se_sw_01",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 6,
+    "rim_touch": 0
+   },
+   "painted_share": 0.049,
+   "road_px": 846
+  },
+  "rm_b5": {
+   "shipped": "plains_turn_ne_nw_01",
+   "passed": false,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 23,
+    "rim_touch": 0
+   },
+   "painted_share": 0.038,
+   "road_px": 852
+  },
+  "rm_b6": {
+   "shipped": "plains_straight_v_01",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.045,
+   "road_px": 1052
+  },
+  "rm_b7": {
+   "shipped": "plains_straight_d_01",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 8,
+    "rim_touch": 0
+   },
+   "painted_share": 0.049,
+   "road_px": 963
+  },
+  "rm_b8": {
+   "shipped": "plains_straight_v_00",
+   "passed": false,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 16,
+    "rim_touch": 0
+   },
+   "painted_share": 0.06,
+   "road_px": 1080
+  },
+  "rm_b9": {
+   "shipped": "plains_straight_d_02",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.04,
+   "road_px": 957
+  }
+ }
+}

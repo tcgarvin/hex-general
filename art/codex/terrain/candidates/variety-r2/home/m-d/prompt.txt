@@ -1,0 +1,32 @@
+Use your built-in image generation tool to create ONE image. Do not write code, do not run shell commands, do not edit any files. Just generate the image and then reply with one line saying it is done.
+
+Image 1 is a sheet of nine separate flat-top hexagons of olive grass on a flat magenta (#FF00FF) background, in 3 rows of 3. Number the hexagons 1 to 9: left to right, top row first (1, 2, 3 on the top row; 4, 5, 6 in the middle; 7, 8, 9 on the bottom row). North is up, east is right.
+
+Image 2 is the target game map: copy its painting style, palette and scale (muted olive, ochre and umber; hand-painted with a fine dry-brush grain). Ignore its units, icons, interface and grid lines.
+Image 3 is a close-up of image 2's village: copy the look and SIZE of its houses exactly (a house is about one-fourteenth of a hexagon's width; never bigger), and their palette: pale ochre and grey plaster or stone walls, roofs of dull red-brown tile or dark grey slate.
+Image 4 is a close-up of image 2's woods: copy the SIZE of one tree crown from it (about one-fourteenth of a hexagon's width). The thin light lines in images 3 and 4 are the map's grid; do not paint them.
+Image 5 shows finished homesteads from this same set, painted at EXACTLY the scale of image 1's hexagons. Every house, barn and chapel you paint is the SAME SIZE as the houses in image 5, never larger: a house is about one-fourteenth of a hexagon's width, a barn or a chapel at most one and a half house-lengths long. A medium group looks bigger ONLY because it has more small buildings, trees, walls and fences, spread over more ground.
+
+Edit image 1: every hexagon stays open meadow with ONE rural settlement of MEDIUM size in it, the farmsteads, hamlets and wayside buildings that dot the countryside between villages in the 1940s. It is NOT a village like image 3's town and NOT a farm with fields.
+ROOFS: mix the two roof styles deliberately WITHIN each hexagon and across the sheet, about half dull red-brown tile and half dark grey slate, so all nine look like one set; walls pale ochre plaster, grey stone or dark timber, matching image 3.
+1. A FARMSTEAD in the south-east part: a farmhouse with a slate roof, a red-tiled barn and a shed around a yard, two trees, and a fenced grass paddock.
+2. A HAMLET of THREE small houses in the north-west part, two side by side and one across a little green, with garden hedges and a tree.
+3. An INN in the south-west part, two village-sized houses joined end to end, with a small stable and a coach shed around a yard, and one big tree.
+4. A small CHAPEL with a squat tower in the east part, inside a churchyard wall with two dark yews and a few headstones.
+5. A MILL in the north part: a stone mill building by a small pond with reeds, a miller's cottage and two willows.
+6. A FARMSTEAD in the north-east part: house, barn and a round stone outbuilding around a yard, a tree, and a fenced paddock.
+7. A HAMLET of THREE small houses in the south part, in a loose row with gardens and two trees between them.
+8. A forge or smithy in the west part: a small house and a low open-fronted workshop with a dark roof around a cinder yard, a tree.
+9. A gamekeeper's cottage in the north-west part with a small barn and a dense little group of three trees behind it.
+
+Rules for every hexagon:
+- Seen from almost straight DOWN, with only a slight tilt from the south: buildings show only a thin sliver of their south wall. Light from the upper left; shadows fall to the lower right.
+- SAME SCALE as images 3, 4 and 5: houses and tree crowns are NOT bigger than there. The feature is bigger only because it has MORE in it: it is a group, not one object. Altogether it covers about a QUARTER to a THIRD of the hexagon, so it reads clearly from far away.
+- It sits OFF-CENTRE as described: its middle is well toward one side, so the centre of the hexagon is at its edge, not inside it.
+- A band of plain grass about one-EIGHTH of the hexagon's width stays untouched all around the edge: nothing new touches or comes near the hexagon's edge.
+- NO crop fields, NO ploughed strips, NO rows of crops, NO haystacks: grass paddocks, gardens with a tree or two, and trodden earth yards only.
+- No road or track runs out to the edge; paths are short and fade out within a house-length.
+- Muted colours only, no bright or saturated colour, no text, no signs, no flags, no insignia, no people, no animals, no vehicles.
+- EVERY HEXAGON follows its own numbered description; all nine look different.
+
+Keep EXACTLY as they are: the grass where nothing is painted (same colour, same fine texture, same brightness), the hexagons' position, size and sharp straight outline, and the flat pure magenta background. Same framing and size as image 1. Do not add borders, outlines, grid lines, labels, numbers or text. NOT bright, NOT glossy, NOT airbrushed.

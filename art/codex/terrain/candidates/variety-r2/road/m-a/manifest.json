@@ -1,0 +1,82 @@
+{
+ "runs": [
+  {
+   "name": "variety2-road-m-a",
+   "when": "2026-11-11T07:20:16",
+   "job": "art/codex/terrain/candidates/variety-r2/road/m-a/job.json",
+   "job_sha256": "a043bed503425638279c9159a3d60a5771bc52d0c7f384a05dee8697c5a0780f",
+   "prompt": "art/codex/terrain/candidates/variety-r2/road/m-a/prompt.txt",
+   "prompt_sha256": "79b2428069fd0e9a6b7e84ee670ae271213137dc8edd387cd83d01ac273501c4",
+   "sheet": "art/codex/terrain/candidates/variety-r2/road/m-a/variety2-road-m-a.sheet.png",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png",
+   "raw_sha256": "819ac32449faa00978a5dcf012c285f9f53ffafe1abaa9019969424aac39e880",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1ca8b-c844-7003-883b-4596351fb4cc",
+    "codex_source": "/home/timg/.codex/generated_images/01a1ca8b-c844-7003-883b-4596351fb4cc/exec-a09d8da9-d9fd-4ad0-af23-8b7b2ed1e2d4.png",
+    "wall_seconds": 93,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/candidates/variety-r2/road/m-a/variety2-road-m-a.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/forest_cluster_2x.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/candidates/variety-r2/road/m-a/variety2-road-m-a.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png",
+    "art/codex/terrain/refs/r1/forest_cluster_2x.png"
+   ],
+   "registration": {
+    "scale": 1.0000729220046656,
+    "tx": -0.05120100139003286,
+    "ty": -0.13353010966019624,
+    "max_residual_tile_px": 0.026360632072902842,
+    "min_iou": 0.9945197845067806
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": true,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0,
+    "feature_strength": 0.0,
+    "feature_rgb": [],
+    "hold_feather_px": 3.0,
+    "tone_sigma": 0.0,
+    "tone_feature_grow_px": 2,
+    "paint_region_px": 0.0,
+    "paint_region_feather_px": 2.0
+   },
+   "gates": {},
+   "report": "art/codex/terrain/candidates/variety-r2/road/m-a/report.json",
+   "montage": "art/codex/terrain/candidates/variety-r2/road/m-a/review/variety2-road-m-a.montage.png",
+   "passed": [
+    "rm_a1",
+    "rm_a2",
+    "rm_a3",
+    "rm_a4",
+    "rm_a5",
+    "rm_a6",
+    "rm_a7",
+    "rm_a8",
+    "rm_a9"
+   ],
+   "failed": []
+  }
+ ]
+}

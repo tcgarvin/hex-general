@@ -1,0 +1,1585 @@
+{
+ "round": "variety round 2 (2026-11-11), candidates only, unratified",
+ "brief": "medium-footprint versions at the same world scale as round 1: each decorated hex reads at zoom 1 (about a quarter to a third of the hex), off-centre, plain rim",
+ "groups": {
+  "nature": {
+   "base": "r1-bases (the shipped plains tiles inside the hex)"
+  },
+  "home": {
+   "base": "r1-bases; m-c and m-d attach refs/house-scale-ref.png (round 1 home-03, home-06, road-turn_ne_nw-A at sheet scale)"
+  },
+  "road": {
+   "base": "bases/road/<shipped road tile>.png (shipped road tile over its G2 ground; forks from road/b and road/c via APPLIED.md)"
+  }
+ },
+ "counts": {
+  "nature": {
+   "cells": 18,
+   "passed": 15,
+   "kept": 12,
+   "failed_gates": [
+    "nature/m-a:nm_a2",
+    "nature/m-b:nm_b1",
+    "nature/m-b:nm_b5"
+   ]
+  },
+  "home": {
+   "cells": 36,
+   "passed": 29,
+   "kept": 8,
+   "failed_gates": [
+    "home/m-a:hm_a2",
+    "home/m-a:hm_a3",
+    "home/m-a:hm_a5",
+    "home/m-a:hm_a8",
+    "home/m-b:hm_b1",
+    "home/m-b:hm_b4",
+    "home/m-b:hm_b7"
+   ]
+  },
+  "road": {
+   "cells": 27,
+   "passed": 21,
+   "kept": 18,
+   "failed_gates": [
+    "road/m-a:rm_a2",
+    "road/m-a:rm_a6",
+    "road/m-a:rm_a9",
+    "road/m-b:rm_b3",
+    "road/m-b:rm_b5",
+    "road/m-b:rm_b8"
+   ]
+  }
+ },
+ "candidates": [
+  {
+   "label": "nature-m01",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m01.png",
+   "sha256": "0255f5a440d85a7807cf3649afafaaeda209dc5dd846a17a566e6ffb060179d2",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a1",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.029,
+    "registration_iou": 0.9931,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.263
+  },
+  {
+   "label": "nature-m02",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m02.png",
+   "sha256": "027e9fcf7d1016dff6d05c3e327e3378978baff8843efaf5701e449a5efbe6e0",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-b",
+   "cell": "nm_b2",
+   "base": "04",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png",
+   "codex_thread": "01a1ca8a-3019-75d2-aca3-0deec13f8a4c",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0187,
+    "registration_iou": 0.9962,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0065,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.242
+  },
+  {
+   "label": "nature-m03",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m03.png",
+   "sha256": "d95f6e085ab225f043c3b7c69a166e78ae403b9139363f0f6b17bf90a4bfb9b8",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a9",
+   "base": "02",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0061,
+    "registration_iou": 0.9913,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0103,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.322
+  },
+  {
+   "label": "nature-m04",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m04.png",
+   "sha256": "70eb1e5f7a4977581193f04bcbfb02b8ef52356352652bfbca2bfd0668506578",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a3",
+   "base": "02",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0228,
+    "registration_iou": 0.9925,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0068,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.321
+  },
+  {
+   "label": "nature-m05",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m05.png",
+   "sha256": "3eaaeaeee641620f14962efd398d228b02f75ec899a51e1818f6862fd2fd3159",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-b",
+   "cell": "nm_b3",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png",
+   "codex_thread": "01a1ca8a-3019-75d2-aca3-0deec13f8a4c",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0567,
+    "registration_iou": 0.997,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0008,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.278
+  },
+  {
+   "label": "nature-m06",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m06.png",
+   "sha256": "089ba670065653a072a0ec79e463f1965f520934a56f0179f3d0d8867535e6d5",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-b",
+   "cell": "nm_b4",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png",
+   "codex_thread": "01a1ca8a-3019-75d2-aca3-0deec13f8a4c",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0312,
+    "registration_iou": 0.9973,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.298
+  },
+  {
+   "label": "nature-m07",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m07.png",
+   "sha256": "bae51d9640050417568d5f4ef81ec504abef06d5e2568e88e1484d184a9d46df",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-b",
+   "cell": "nm_b9",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png",
+   "codex_thread": "01a1ca8a-3019-75d2-aca3-0deec13f8a4c",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0315,
+    "registration_iou": 0.9959,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0095,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.518
+  },
+  {
+   "label": "nature-m08",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m08.png",
+   "sha256": "8eec3baf7983aa6507f47112a7322332bd873ede005f6736f8027d0186a4f041",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a5",
+   "base": "04",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0235,
+    "registration_iou": 0.9926,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0053,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.319
+  },
+  {
+   "label": "nature-m09",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m09.png",
+   "sha256": "4fd7d35f89ce1d2d39f35f6a4c66863f0b2561ad4c229b712b050f7762f3e283",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a6",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.029,
+    "registration_iou": 0.9934,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0008,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.502
+  },
+  {
+   "label": "nature-m10",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m10.png",
+   "sha256": "54490ebd7e0dedfeb602984c34e3547ee89d6b5abf246cee68d539279aa9e7b9",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-b",
+   "cell": "nm_b6",
+   "base": "02",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png",
+   "codex_thread": "01a1ca8a-3019-75d2-aca3-0deec13f8a4c",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0134,
+    "registration_iou": 0.9972,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0072,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.419
+  },
+  {
+   "label": "nature-m11",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m11.png",
+   "sha256": "26979f33fe15875a10b73872482decee4b16d39b1f5ace8c7ff76d725206be93",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a7",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0099,
+    "registration_iou": 0.9911,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0004,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.283
+  },
+  {
+   "label": "nature-m12",
+   "group": "nature",
+   "kept": true,
+   "tile": "kept/nature/nature-m12.png",
+   "sha256": "fe0a86c5b582b83637fed90b13513a3f3305c6b9797d2301f5296c5f972c38d1",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a8",
+   "base": "01",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0223,
+    "registration_iou": 0.9906,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0076,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.315
+  },
+  {
+   "label": null,
+   "group": "nature",
+   "kept": false,
+   "why_dropped": "outcrop rock is brighter than the hills tiles (p95 L 164 vs 142-143): the nature-11 problem again",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-a",
+   "cell": "nm_a4",
+   "base": "03",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-a/raw/variety2-nature-m-a.png",
+   "codex_thread": "01a1ca8a-2d21-75d0-b1e6-b6a724b934b9",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0328,
+    "registration_iou": 0.9932,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0004,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.343
+  },
+  {
+   "label": null,
+   "group": "nature",
+   "kept": false,
+   "why_dropped": "heather painted saturated purple on pale sand; the most colourful thing on the board",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-b",
+   "cell": "nm_b7",
+   "base": "03",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png",
+   "codex_thread": "01a1ca8a-3019-75d2-aca3-0deec13f8a4c",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0219,
+    "registration_iou": 0.9958,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0015,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.462
+  },
+  {
+   "label": null,
+   "group": "nature",
+   "kept": false,
+   "why_dropped": "fine, but close to nm_a8 and twelve kept already",
+   "work": "art/codex/terrain/candidates/variety-r2/nature/m-b",
+   "cell": "nm_b8",
+   "base": "04",
+   "raw": "art/codex/terrain/candidates/variety-r2/nature/m-b/raw/variety2-nature-m-b.png",
+   "codex_thread": "01a1ca8a-3019-75d2-aca3-0deec13f8a4c",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0446,
+    "registration_iou": 0.9953,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0027,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.512
+  },
+  {
+   "label": "home-m01",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m01.png",
+   "sha256": "9b803b68e090635a3843f9f2c2dd03e267a8bd796b3d46d4437e59c8b7f3f9e3",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c1",
+   "base": "02",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0108,
+    "registration_iou": 0.9958,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.316
+  },
+  {
+   "label": "home-m02",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m02.png",
+   "sha256": "ddff7b2d17091aa7648d08a77b25701f90d7570b7b33889fce1124b727f55795",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d1",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0514,
+    "registration_iou": 0.9906,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.246
+  },
+  {
+   "label": "home-m03",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m03.png",
+   "sha256": "a5a1b1095983abd3061bfc9e38842a0136a75d1f803fd34aca2da4499757b023",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c2",
+   "base": "03",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0358,
+    "registration_iou": 0.9966,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0023,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.205
+  },
+  {
+   "label": "home-m04",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m04.png",
+   "sha256": "ee3482600992b2759e144b7d3580994fd1534689b622aa524c8387b1cb428b8c",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d7",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0728,
+    "registration_iou": 0.9904,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.287
+  },
+  {
+   "label": "home-m05",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m05.png",
+   "sha256": "0b1842fe7bd3d244b4c432dfcb668c76c42d9e8347d8ed7776781ef4797b5283",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c3",
+   "base": "04",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0265,
+    "registration_iou": 0.9959,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.214
+  },
+  {
+   "label": "home-m06",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m06.png",
+   "sha256": "0f6667cec28fb7e514764a04c6c7a92718a0a0362e4e5136df4ed2c9347d7141",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c4",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0026,
+    "registration_iou": 0.9953,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.208
+  },
+  {
+   "label": "home-m07",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m07.png",
+   "sha256": "7120669241bb454ebcb22ee0f5bd3b7ba3f4366ea4b68fb70412f3b671fd2fa9",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c8",
+   "base": "03",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0446,
+    "registration_iou": 0.9964,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.253
+  },
+  {
+   "label": "home-m08",
+   "group": "home",
+   "kept": true,
+   "tile": "kept/home/home-m08.png",
+   "sha256": "8dc1fb91a08644bd7cffee53c46698bd67c391f051034bf5bfdaa4148cd5cbb6",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c5",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0306,
+    "registration_iou": 0.9951,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0015,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.255
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-a",
+   "cell": "hm_a1",
+   "base": "01",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-a/raw/variety2-home-m-a.png",
+   "codex_thread": "01a1ca8a-2d83-75e2-9bbb-74e5a8ff8bf2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0422,
+    "registration_iou": 0.9905,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.464
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-a",
+   "cell": "hm_a4",
+   "base": "04",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-a/raw/variety2-home-m-a.png",
+   "codex_thread": "01a1ca8a-2d83-75e2-9bbb-74e5a8ff8bf2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0129,
+    "registration_iou": 0.9922,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.266
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-a",
+   "cell": "hm_a6",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-a/raw/variety2-home-m-a.png",
+   "codex_thread": "01a1ca8a-2d83-75e2-9bbb-74e5a8ff8bf2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0242,
+    "registration_iou": 0.9927,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0133,
+    "rim_touch": 1.0
+   },
+   "passed": true,
+   "occupied": 0.459
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-a",
+   "cell": "hm_a7",
+   "base": "01",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-a/raw/variety2-home-m-a.png",
+   "codex_thread": "01a1ca8a-2d83-75e2-9bbb-74e5a8ff8bf2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.007,
+    "registration_iou": 0.9921,
+    "rim_exact": 0.0,
+    "rim_clear": 0.027,
+    "rim_touch": 2.0
+   },
+   "passed": true,
+   "occupied": 0.299
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-a",
+   "cell": "hm_a9",
+   "base": "03",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-a/raw/variety2-home-m-a.png",
+   "codex_thread": "01a1ca8a-2d83-75e2-9bbb-74e5a8ff8bf2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.028,
+    "registration_iou": 0.9927,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0042,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.452
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-b",
+   "cell": "hm_b2",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-b/raw/variety2-home-m-b.png",
+   "codex_thread": "01a1ca8a-2f8a-7ce1-b93e-cf13b82fac4e",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0291,
+    "registration_iou": 0.9991,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0072,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.238
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-b",
+   "cell": "hm_b3",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-b/raw/variety2-home-m-b.png",
+   "codex_thread": "01a1ca8a-2f8a-7ce1-b93e-cf13b82fac4e",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.045,
+    "registration_iou": 0.9984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0019,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.287
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-b",
+   "cell": "hm_b5",
+   "base": "02",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-b/raw/variety2-home-m-b.png",
+   "codex_thread": "01a1ca8a-2f8a-7ce1-b93e-cf13b82fac4e",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0639,
+    "registration_iou": 0.9986,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.371
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-b",
+   "cell": "hm_b6",
+   "base": "03",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-b/raw/variety2-home-m-b.png",
+   "codex_thread": "01a1ca8a-2f8a-7ce1-b93e-cf13b82fac4e",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0619,
+    "registration_iou": 0.9987,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.294
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-b",
+   "cell": "hm_b8",
+   "base": "05",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-b/raw/variety2-home-m-b.png",
+   "codex_thread": "01a1ca8a-2f8a-7ce1-b93e-cf13b82fac4e",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0263,
+    "registration_iou": 0.999,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0004,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.226
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "houses 1.5-2x the round-1 and town house size; the sheet was re-rolled with a scale yardstick (m-c, m-d)",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-b",
+   "cell": "hm_b9",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-b/raw/variety2-home-m-b.png",
+   "codex_thread": "01a1ca8a-2f8a-7ce1-b93e-cf13b82fac4e",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0194,
+    "registration_iou": 0.9984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0076,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.246
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "fine, but a third farmstead; two kept",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c6",
+   "base": "01",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0304,
+    "registration_iou": 0.9967,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0019,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.29
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "fine, but a third hamlet; the lane reads as a track",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c7",
+   "base": "02",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0237,
+    "registration_iou": 0.9953,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.246
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "vegetable plots read as small crop beds, toward the farm site",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-c",
+   "cell": "hm_c9",
+   "base": "04",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0181,
+    "registration_iou": 0.9955,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.249
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "hedged garden plots read as small fields",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d2",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0568,
+    "registration_iou": 0.9923,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.279
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "fine, but a second inn; one kept",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d3",
+   "base": "01",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0757,
+    "registration_iou": 0.9903,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.21
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "pale churchyard fence is the brightest line on the tile",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d4",
+   "base": "02",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0821,
+    "registration_iou": 0.9915,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.265
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "willows painted bright yellow-green",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d5",
+   "base": "03",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0138,
+    "registration_iou": 0.9923,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.296
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "fine, but a third farmstead",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d6",
+   "base": "04",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0694,
+    "registration_iou": 0.9912,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.283
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "smithy reads as a small house and shed, close to round 1",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d8",
+   "base": "00",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0592,
+    "registration_iou": 0.992,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.226
+  },
+  {
+   "label": null,
+   "group": "home",
+   "kept": false,
+   "why_dropped": "fine (cottage under trees), close to round 1 home-01",
+   "work": "art/codex/terrain/candidates/variety-r2/home/m-d",
+   "cell": "hm_d9",
+   "base": "01",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-d/raw/variety2-home-m-d.png",
+   "codex_thread": "01a1ca8e-6c87-7e91-8cd6-9ba5d4b883e6",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0581,
+    "registration_iou": 0.9899,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "occupied": 0.241
+  },
+  {
+   "label": "road-straight_v-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-straight_v-mA.png",
+   "sha256": "d36eb79d075d834e816a96b41633e2c05caa1f1a97727d3ad56e0e10ebdf7ab6",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-a",
+   "cell": "rm_a1",
+   "base": "plains_straight_v_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png",
+   "codex_thread": "01a1ca8b-c844-7003-883b-4596351fb4cc",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.01,
+    "registration_iou": 0.9958,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 4,
+    "rim_touch": 0
+   },
+   "painted_share": 0.043
+  },
+  {
+   "label": "road-straight_v-mB",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-straight_v-mB.png",
+   "sha256": "28f08391f3a7a21c3c580d2590b2eccdd8cdb1299c7600051ebef2bcab181840",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-a",
+   "cell": "rm_a3",
+   "base": "plains_straight_v_02",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png",
+   "codex_thread": "01a1ca8b-c844-7003-883b-4596351fb4cc",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0182,
+    "registration_iou": 0.9957,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 7,
+    "rim_touch": 0
+   },
+   "painted_share": 0.04
+  },
+  {
+   "label": "road-straight_d-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-straight_d-mA.png",
+   "sha256": "7decb28590815a2fd3b1bb79362e29692c70a8664ec98320ecdb6ce03151164a",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-a",
+   "cell": "rm_a4",
+   "base": "plains_straight_d_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png",
+   "codex_thread": "01a1ca8b-c844-7003-883b-4596351fb4cc",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0177,
+    "registration_iou": 0.9956,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0008,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 3,
+    "rim_touch": 0
+   },
+   "painted_share": 0.065
+  },
+  {
+   "label": "road-straight_d-mB",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-straight_d-mB.png",
+   "sha256": "df9f2a40044069ebbbd9fda96b8876e5e7f17eac767c69ca86af6346fc9e3492",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-b",
+   "cell": "rm_b9",
+   "base": "plains_straight_d_02",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png",
+   "codex_thread": "01a1ca8b-c64a-7a43-84fb-555a8286fad2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0143,
+    "registration_iou": 0.9975,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.04
+  },
+  {
+   "label": "road-turn_n_se-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-turn_n_se-mA.png",
+   "sha256": "05327cc655d363d84ca72aa1aa6e6452d162990df2fbc97a11b57a0fae4ed21f",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-a",
+   "cell": "rm_a7",
+   "base": "plains_turn_n_se_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png",
+   "codex_thread": "01a1ca8b-c844-7003-883b-4596351fb4cc",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0264,
+    "registration_iou": 0.9956,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.047
+  },
+  {
+   "label": "road-turn_n_se-mB",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-turn_n_se-mB.png",
+   "sha256": "615cd5f928e8d963cac9c6f55770f5b227e78ecaee8dbda581cbcdf25fff7628",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-b",
+   "cell": "rm_b2",
+   "base": "plains_turn_n_se_01",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png",
+   "codex_thread": "01a1ca8b-c64a-7a43-84fb-555a8286fad2",
+   "paintin_passed": false,
+   "paintin_gates": {
+    "registration_residual": 0.0115,
+    "registration_iou": 0.9976,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0198,
+    "rim_touch": 8.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 10,
+    "rim_touch": 0
+   },
+   "painted_share": 0.043
+  },
+  {
+   "label": "road-turn_s_nw-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-turn_s_nw-mA.png",
+   "sha256": "27f237f6d05420c8157fe08142160585c174e8320345fa5796a13a16dd57da18",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-a",
+   "cell": "rm_a8",
+   "base": "plains_turn_s_nw_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png",
+   "codex_thread": "01a1ca8b-c844-7003-883b-4596351fb4cc",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0136,
+    "registration_iou": 0.9946,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.038
+  },
+  {
+   "label": "road-turn_se_sw-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-turn_se_sw-mA.png",
+   "sha256": "55986294b25704a182e934b45001cf0118e1c34b074d1cb0737e994a89f6ccbb",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-b",
+   "cell": "rm_b4",
+   "base": "plains_turn_se_sw_01",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png",
+   "codex_thread": "01a1ca8b-c64a-7a43-84fb-555a8286fad2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0149,
+    "registration_iou": 0.999,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 6,
+    "rim_touch": 0
+   },
+   "painted_share": 0.049
+  },
+  {
+   "label": "road-turn_ne_nw-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-turn_ne_nw-mA.png",
+   "sha256": "7353ddf286e4fea975096b0749b75f5d7b9fedf53fa11bb3b84bdf44bb7fa71f",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-b",
+   "cell": "rm_b1",
+   "base": "plains_turn_ne_nw_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png",
+   "codex_thread": "01a1ca8b-c64a-7a43-84fb-555a8286fad2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0027,
+    "registration_iou": 0.9979,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 6,
+    "rim_touch": 0
+   },
+   "painted_share": 0.04
+  },
+  {
+   "label": "road-fork_ne_nw_s-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_ne_nw_s-mA.png",
+   "sha256": "8124a868cee9787ab0d906a98189460fa7669f7eb17fe4a45772e90521813432",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c1",
+   "base": "plains_fork_ne_nw_s_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0142,
+    "registration_iou": 0.9967,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0027,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 1,
+    "rim_touch": 0
+   },
+   "painted_share": 0.041
+  },
+  {
+   "label": "road-fork_se_n_sw-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_se_n_sw-mA.png",
+   "sha256": "3de6f6244526f923f963beeb392bc53fbd3960c3207f91e39e2826347b948722",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c2",
+   "base": "plains_fork_se_n_sw_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.019,
+    "registration_iou": 0.997,
+    "rim_exact": 0.0,
+    "rim_clear": 0.008,
+    "rim_touch": 1.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 7,
+    "rim_touch": 0
+   },
+   "painted_share": 0.058
+  },
+  {
+   "label": "road-fork_se_n_sw-mB",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_se_n_sw-mB.png",
+   "sha256": "571668c89f15f48c10ad846a17806d1d6cf4538efdc3fc444f8b37288db565cb",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c9",
+   "base": "plains_fork_se_n_sw_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": false,
+   "paintin_gates": {
+    "registration_residual": 0.0171,
+    "registration_iou": 0.9981,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0183,
+    "rim_touch": 7.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 2,
+    "rim_touch": 0
+   },
+   "painted_share": 0.075
+  },
+  {
+   "label": "road-fork_se_nw_sw-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_se_nw_sw-mA.png",
+   "sha256": "aa5441cad3372fff207923fd024619a676101dc8ad8303bdab3b53002dae80cc",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c3",
+   "base": "plains_fork_se_nw_sw_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0054,
+    "registration_iou": 0.9971,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0099,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.072
+  },
+  {
+   "label": "road-fork_se_n_nw-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_se_n_nw-mA.png",
+   "sha256": "63d51f19967ac1e72b48bff64a72c4dc15e6c41d11014723f05e8bc2aaeb573c",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c4",
+   "base": "plains_fork_se_n_nw_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0241,
+    "registration_iou": 0.9972,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0015,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.053
+  },
+  {
+   "label": "road-fork_ne_n_s-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_ne_n_s-mA.png",
+   "sha256": "0fa3e15cfd47c8a9cb2424ef6cc35eb7ac9404cc5a23b096a4611af6f43b61e4",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c5",
+   "base": "plains_fork_ne_n_s_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0109,
+    "registration_iou": 0.9969,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0011,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 3,
+    "rim_touch": 0
+   },
+   "painted_share": 0.077
+  },
+  {
+   "label": "road-fork_se_ne_nw-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_se_ne_nw-mA.png",
+   "sha256": "21203af75d408cb0a3221cb26664ab757a2b702f096ff3dce6fb60da554496d2",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c6",
+   "base": "plains_fork_se_ne_nw_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0034,
+    "registration_iou": 0.9972,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0042,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.07
+  },
+  {
+   "label": "road-fork_se_nw_s-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_se_nw_s-mA.png",
+   "sha256": "729900836c006c2679f6d76f0eae7ce3a8ac7ebee2406010070126803202a2bd",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c7",
+   "base": "plains_fork_se_nw_s_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0183,
+    "registration_iou": 0.9977,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0133,
+    "rim_touch": 2.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.076
+  },
+  {
+   "label": "road-fork_se_n_s-mA",
+   "group": "road",
+   "kept": true,
+   "tile": "kept/road/road-fork_se_n_s-mA.png",
+   "sha256": "3bd4b9bf2f6664e30b86cbf973d3714b91fd63c645e0eab35d44e7a21d71c250",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-c",
+   "cell": "rm_c8",
+   "base": "plains_fork_se_n_s_00",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-c/raw/variety2-road-m-c.png",
+   "codex_thread": "01a1ca8b-c856-7be3-8917-3dff17b351f3",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0062,
+    "registration_iou": 0.997,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 5,
+    "rim_touch": 0
+   },
+   "painted_share": 0.073
+  },
+  {
+   "label": null,
+   "group": "road",
+   "kept": false,
+   "why_dropped": "fine (shrine), but two straight_d kept",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-a",
+   "cell": "rm_a5",
+   "base": "plains_straight_d_01",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-a/raw/variety2-road-m-a.png",
+   "codex_thread": "01a1ca8b-c844-7003-883b-4596351fb4cc",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0096,
+    "registration_iou": 0.9945,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0004,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 7,
+    "rim_touch": 0
+   },
+   "painted_share": 0.056
+  },
+  {
+   "label": null,
+   "group": "road",
+   "kept": false,
+   "why_dropped": "fine (shrine and milestone), but two straight_v kept",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-b",
+   "cell": "rm_b6",
+   "base": "plains_straight_v_01",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png",
+   "codex_thread": "01a1ca8b-c64a-7a43-84fb-555a8286fad2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0225,
+    "registration_iou": 0.9989,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.045
+  },
+  {
+   "label": null,
+   "group": "road",
+   "kept": false,
+   "why_dropped": "fine, but close to rm_a4 (row of three)",
+   "work": "art/codex/terrain/candidates/variety-r2/road/m-b",
+   "cell": "rm_b7",
+   "base": "plains_straight_d_01",
+   "raw": "art/codex/terrain/candidates/variety-r2/road/m-b/raw/variety2-road-m-b.png",
+   "codex_thread": "01a1ca8b-c64a-7a43-84fb-555a8286fad2",
+   "paintin_passed": true,
+   "paintin_gates": {
+    "registration_residual": 0.0053,
+    "registration_iou": 0.9984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "passed": true,
+   "hold_gates": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 8,
+    "rim_touch": 0
+   },
+   "painted_share": 0.049
+  }
+ ]
+}

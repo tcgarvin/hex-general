@@ -584,3 +584,43 @@ drop with its reason); kept tiles replay byte-identically with `paintin.py run -
 --notes candidates/variety-r1/review_notes.json` (boards of
 `scripts/board-mock-maps/variety-{open,town}.txt`, exported with `scripts/road-study.py
 export`, units composited by hand, 3x sheets), page `.dev/review-pages/variety-r1.html`.
+
+## Variety round 2 (candidates, unratified), 2026-11-11 (`candidates/variety-r2/`)
+
+Round 1's features were the right world scale but specks at 64 px per hex. Round 2
+keeps the scale (house about 1/14 hex, crowns as the woods) and makes each decorated hex
+a group covering about a quarter to a third of it, off-centre, plain rim. Nothing
+applied. 9 Codex calls, same recipe and gates as round 1, road cells held with
+`variety1.py hold`. Jobs, bases and candidates: `variety2.py` (`bases`, `jobs`,
+`candidates`); `variety1.road_ground` now finds any shipped road tile's G2 ground
+through `APPLIED.md`, so fork tiles (from `road/b`, `road/c`) work too (round 1 bases
+unchanged byte for byte). Nature refs add `refs/r1/hills_tan_ridge_2x.png` so rock
+matches the hills.
+
+| group | sheets | passed | kept | occupied (kept) |
+|---|---|---|---|---|
+| nature | `nature/m-a`, `m-b`: copse, hedgerow, tree line, thicket, outcrop, knoll, pond with willows, orchard, heath, marsh | 15/18 (rim_touch / rim_clear) | 12 | .24-.33, knoll .52, orchards .50 / .42 (round 1: .01-.15) |
+| home | `home/m-a`, `m-b` (houses came back 1.5-2x round 1, all dropped); re-rolls `m-c`, `m-d` with `refs/house-scale-ref.png` (round 1 home-03, home-06, road-turn_ne_nw-A at sheet scale) | 11/18, 18/18 | 8 (all from m-c/m-d) | .21-.32 (round 1: .08-.18) |
+| road | `road/m-a`, `m-b` (straights, turns), `m-c` (the eight forks found on generated worlds, one twice) | 21/27 on the hold gates (6 road_clash 16-76) | 18 (2 per straight, 1-2 per turn, 9 forks) | painted .04-.08 |
+
+The m-a outcrop was dropped for rock brighter than the hills tiles (p95 L 164 vs
+142-143); kept rock sits at 143-144. The yardstick image fixed the house size in one
+re-roll (`sites4_oilfac_l2ref.py` builds it).
+
+**Rule changes** (`scripts/board-mock.py`, default renders still byte-identical):
+`--variety-medium DIR --variety-mix small|mostly-small|even|mostly-medium|medium`
+(`VARIETY_MIXES`, medium share 0/250/500/750/1000 per mille): every decorated hex
+draws from the medium set when `salted_index(q, r, SIZE, 1000) < share`, else the
+small set; a road shape only one set has uses that set. Which hexes are decorated does
+not depend on the mix (it does on which shapes the sets cover: forks only exist in
+round 2). Variants are now assigned in descending rank and stepped past any tile a
+higher-ranked decorated hex within `VARIETY_REPEAT_RADIUS` (4) already uses: the first
+review build had the same chapel twice beside one town. This changes which file round 1
+picks draw, not which hexes. Shares on the whole seed 1 world with both sets: low 7.9%,
+medium 12.4%, high 15.9% of plains hexes decorated; medium share of decorated hexes
+1% / 26% / 50% / 75% / 100% for the five mixes (1% at "small" = fork hexes). Tests:
+`scripts/tests/test_board_mock_variety.py` (mix, fallback, no-repeat).
+
+Recommended: medium density, mostly-medium mix. Review: `variety2_review.py --out-dir
+<dir> --page <html> --notes candidates/variety-r2/review_notes.json`, page
+`.dev/review-pages/variety-r2.html`.

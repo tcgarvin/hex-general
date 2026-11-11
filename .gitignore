@@ -136,3 +136,10 @@ art/codex/terrain/sites/**/bases/**/*.png
 !art/codex/terrain/candidates/variety-r1/kept/**/*.png
 art/codex/terrain/candidates/variety-r1/**/held/
 art/codex/terrain/candidates/variety-r1/**/review/
+# Variety round 2 candidates (unratified, art/codex/terrain/candidates/variety-r2):
+# same rules as round 1, plus the attached house-scale reference image.
+!art/codex/terrain/candidates/variety-r2/**/raw/*.png
+!art/codex/terrain/candidates/variety-r2/kept/**/*.png
+!art/codex/terrain/candidates/variety-r2/refs/*.png
+art/codex/terrain/candidates/variety-r2/**/held/
+art/codex/terrain/candidates/variety-r2/**/review/

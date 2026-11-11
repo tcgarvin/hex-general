@@ -1,0 +1,47 @@
+{
+ "name": "variety2-home-m-d",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "hm_d1",
+   "base": "../../../../r1-bases/05.png"
+  },
+  {
+   "name": "hm_d2",
+   "base": "../../../../r1-bases/00.png"
+  },
+  {
+   "name": "hm_d3",
+   "base": "../../../../r1-bases/01.png"
+  },
+  {
+   "name": "hm_d4",
+   "base": "../../../../r1-bases/02.png"
+  },
+  {
+   "name": "hm_d5",
+   "base": "../../../../r1-bases/03.png"
+  },
+  {
+   "name": "hm_d6",
+   "base": "../../../../r1-bases/04.png"
+  },
+  {
+   "name": "hm_d7",
+   "base": "../../../../r1-bases/05.png"
+  },
+  {
+   "name": "hm_d8",
+   "base": "../../../../r1-bases/00.png"
+  },
+  {
+   "name": "hm_d9",
+   "base": "../../../../r1-bases/01.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

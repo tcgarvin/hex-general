@@ -1,0 +1,14 @@
+calling Codex with ['art/codex/terrain/candidates/variety-r2/road/m-c/variety2-road-m-c.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png', 'art/codex/terrain/refs/r1/forest_cluster_2x.png'] ...
+codex thread 01a1ca8b-c856-7be3-8917-3dff17b351f3, 96 s
+PASS rm_c1
+PASS rm_c2
+PASS rm_c3
+PASS rm_c4
+PASS rm_c5
+PASS rm_c6
+PASS rm_c7
+PASS rm_c8
+FAIL rm_c9
+    FAIL rim_touch: 7 salient px within 4 px of the boundary (limit 2)
+wrote art/codex/terrain/candidates/variety-r2/road/m-c/report.json, art/codex/terrain/candidates/variety-r2/road/m-c/review/variety2-road-m-c.montage.png
+exit 1

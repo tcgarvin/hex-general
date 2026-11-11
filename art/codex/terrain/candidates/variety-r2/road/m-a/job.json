@@ -1,0 +1,47 @@
+{
+ "name": "variety2-road-m-a",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "rm_a1",
+   "base": "../../bases/road/plains_straight_v_00.png"
+  },
+  {
+   "name": "rm_a2",
+   "base": "../../bases/road/plains_straight_v_01.png"
+  },
+  {
+   "name": "rm_a3",
+   "base": "../../bases/road/plains_straight_v_02.png"
+  },
+  {
+   "name": "rm_a4",
+   "base": "../../bases/road/plains_straight_d_00.png"
+  },
+  {
+   "name": "rm_a5",
+   "base": "../../bases/road/plains_straight_d_01.png"
+  },
+  {
+   "name": "rm_a6",
+   "base": "../../bases/road/plains_straight_d_02.png"
+  },
+  {
+   "name": "rm_a7",
+   "base": "../../bases/road/plains_turn_n_se_00.png"
+  },
+  {
+   "name": "rm_a8",
+   "base": "../../bases/road/plains_turn_s_nw_00.png"
+  },
+  {
+   "name": "rm_a9",
+   "base": "../../bases/road/plains_turn_se_sw_00.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

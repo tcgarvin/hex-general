@@ -1,0 +1,13 @@
+calling Codex with ['art/codex/terrain/candidates/variety-r2/road/m-a/variety2-road-m-a.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png', 'art/codex/terrain/refs/r1/forest_cluster_2x.png'] ...
+codex thread 01a1ca8b-c844-7003-883b-4596351fb4cc, 93 s
+PASS rm_a1
+PASS rm_a2
+PASS rm_a3
+PASS rm_a4
+PASS rm_a5
+PASS rm_a6
+PASS rm_a7
+PASS rm_a8
+PASS rm_a9
+wrote art/codex/terrain/candidates/variety-r2/road/m-a/report.json, art/codex/terrain/candidates/variety-r2/road/m-a/review/variety2-road-m-a.montage.png
+exit 0

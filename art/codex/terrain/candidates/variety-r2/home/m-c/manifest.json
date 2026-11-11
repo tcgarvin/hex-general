@@ -1,0 +1,84 @@
+{
+ "runs": [
+  {
+   "name": "variety2-home-m-c",
+   "when": "2026-11-11T07:23:03",
+   "job": "art/codex/terrain/candidates/variety-r2/home/m-c/job.json",
+   "job_sha256": "edb42e3f83a5c18b819a7f2d5818e2bf995a472fdf6b0c15d9d5e3c9d8ea4f3a",
+   "prompt": "art/codex/terrain/candidates/variety-r2/home/m-c/prompt.txt",
+   "prompt_sha256": "6465f8797caa4681bb1aa3b7535ae39e1043cc44ce70c570a0a4d65d68101ea6",
+   "sheet": "art/codex/terrain/candidates/variety-r2/home/m-c/variety2-home-m-c.sheet.png",
+   "raw": "art/codex/terrain/candidates/variety-r2/home/m-c/raw/variety2-home-m-c.png",
+   "raw_sha256": "34609ea52263e5624f1f80e1dd37c00aca44ff2bfb07397590c046fed60e8dd3",
+   "raw_size": [
+    1254,
+    1254
+   ],
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca",
+    "codex_source": "/home/timg/.codex/generated_images/01a1ca8e-6ca4-7a42-b9f2-9b141dcd5eca/exec-b441cdb1-5bf4-4552-93c3-cdd3b29800eb.png",
+    "wall_seconds": 87,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/candidates/variety-r2/home/m-c/variety2-home-m-c.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/forest_cluster_2x.png",
+     "/home/timg/code/hex-general/art/codex/terrain/candidates/variety-r2/refs/house-scale-ref.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/candidates/variety-r2/home/m-c/variety2-home-m-c.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png",
+    "art/codex/terrain/refs/r1/forest_cluster_2x.png",
+    "art/codex/terrain/candidates/variety-r2/refs/house-scale-ref.png"
+   ],
+   "registration": {
+    "scale": 1.0001246188495525,
+    "tx": -0.042256225589438035,
+    "ty": -0.24821091295649245,
+    "max_residual_tile_px": 0.04455667701878148,
+    "min_iou": 0.9950990158186237
+   },
+   "pin": {
+    "rim_exact_px": 1.5,
+    "rim_ramp_px": 6.0,
+    "cross_exact_px": 3.0,
+    "cross_ramp_px": 12.0,
+    "restore": true,
+    "restore_sigma": 0.75,
+    "restore_lo": 14.0,
+    "restore_hi": 26.0,
+    "restore_close_px": 4,
+    "restore_grow_px": 2,
+    "restore_feather_px": 1.2,
+    "restore_tone": true,
+    "restore_tone_sigma": 8.0,
+    "restore_tone_span": 20.0,
+    "feature_strength": 0.0,
+    "feature_rgb": [],
+    "hold_feather_px": 3.0,
+    "tone_sigma": 0.0,
+    "tone_feature_grow_px": 2,
+    "paint_region_px": 0.0,
+    "paint_region_feather_px": 2.0
+   },
+   "gates": {},
+   "report": "art/codex/terrain/candidates/variety-r2/home/m-c/report.json",
+   "montage": "art/codex/terrain/candidates/variety-r2/home/m-c/review/variety2-home-m-c.montage.png",
+   "passed": [
+    "hm_c1",
+    "hm_c2",
+    "hm_c3",
+    "hm_c4",
+    "hm_c5",
+    "hm_c6",
+    "hm_c7",
+    "hm_c8",
+    "hm_c9"
+   ],
+   "failed": []
+  }
+ ]
+}

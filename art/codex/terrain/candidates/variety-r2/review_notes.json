@@ -1,0 +1,61 @@
+{
+ "_intro": "Variety round 2, candidates only (nothing applied to the game). Round 1's features were the right scale but mostly specks at zoom 1, so round 2 keeps the same house and tree size and makes each decorated hex more substantial: a group instead of one object, covering about a quarter to a third of the hex, off-centre, with a plain rim. 38 kept candidates from 9 Codex sheets: 12 nature, 8 homesteads, 18 roadside including 9 at road forks. The mock rule now mixes sizes: every decorated hex draws small (round 1) or medium (round 2) tiles by a coordinate hash, with a tunable share. Sections 1 to 3 show the same two real windows as round 1 in four states: shipped, round 1 small at medium density, round 2 medium at medium density, and my recommended mix (mostly medium) at medium density.",
+ "_picks": [
+  "nature-m01",
+  "nature-m02",
+  "nature-m03",
+  "nature-m04",
+  "nature-m06",
+  "nature-m08",
+  "nature-m09",
+  "nature-m10",
+  "nature-m11",
+  "nature-m12",
+  "home-m01",
+  "home-m02",
+  "home-m03",
+  "home-m04",
+  "home-m05",
+  "home-m06",
+  "home-m07",
+  "home-m08",
+  "road-straight_v-mA",
+  "road-straight_v-mB",
+  "road-straight_d-mA",
+  "road-straight_d-mB",
+  "road-turn_n_se-mA",
+  "road-turn_n_se-mB",
+  "road-turn_s_nw-mA",
+  "road-turn_se_sw-mA",
+  "road-turn_ne_nw-mA",
+  "road-fork_ne_nw_s-mA",
+  "road-fork_se_n_sw-mA",
+  "road-fork_se_n_sw-mB",
+  "road-fork_se_nw_sw-mA",
+  "road-fork_se_n_nw-mA",
+  "road-fork_ne_n_s-mA",
+  "road-fork_se_ne_nw-mA",
+  "road-fork_se_nw_s-mA",
+  "road-fork_se_n_s-mA"
+ ],
+ "1. Board scale at 64 px per hex": [
+  "Same windows of the seed 1 world as round 1, with joins and the ratified site tiles, no grid. Which hexes are decorated is set by the density and does not depend on the size mix; the mix only decides small or medium per decorated hex. Adding the round 2 set adds the fork shapes, so a few more road hexes are candidates than in round 1.",
+  "Measured on the whole seed 1 world with both sets: low decorates 7.9% of plains hexes, medium 12.4%, high 15.9% (nature on 5.1 / 7.9 / 9.9% of open plains, homesteads on 9.7 / 16.4 / 23.3% of plains beside a road or town and 16.7 / 27.8 / 38.8% of those beside a town, roadside on 7.1 / 9.5 / 9.6% of plains road hexes). The mix then gives the medium share of decorated hexes: small 1% (fork hexes, which only round 2 has), mostly small 26%, even 50%, mostly medium 75%, medium 100%, at every density. No two decorated hexes touch."
+ ],
+ "2. Town junction at 128 px per hex": [
+  "At max zoom the round 2 groups are clearly readable as hamlets, farmsteads, a chapel, copses and orchards, and the road groups sit beside the road without touching it: the road and 3 px around it are the shipped road pixels exactly (road exact 0 on every road cell, kept or not)."
+ ],
+ "3. Units on medium features": [
+  "Unit sprites composited as the world renderer draws them (1.5 x HEX_SIZE wide, centred). The groups are off-centre, so a unit covers part of a copse or farmstead and the rest still shows round it; a small hamlet or chapel can be half hidden behind a tank. The features stay muted, so the units still read first."
+ ],
+ "4. Round 2 candidates at 3x with gate results": [
+  "Footprint (occupied, the share of the hex the ground restore keeps as painted, shadows included): round 2 kept nature 0.24 to 0.33 except the rocky knoll (0.52) and the two orchards (0.50, 0.42); homesteads 0.21 to 0.32. Round 1 was 0.01 to 0.15 for nature and 0.08 to 0.18 for homesteads. All kept tiles pass the paint-in gates; roadside tiles pass the hold gates (road exact 0, rim exact 0, road clash at most 10 px against a limit of 12).",
+  "The first two homestead sheets (m-a, m-b) came back with houses 1.5 to 2 times the round 1 and town house size, so both were re-rolled with a yardstick image (three round 1 homestead tiles at the sheet's scale) and the line that every building is the same size as in it; the re-rolls (m-c, m-d) came back at round 1 scale and all 18 cells passed. Every kept homestead is from them. The outcrop in m-a (rock p95 L 164 against 142 to 143 for the hills tiles) was dropped; the two kept rock tiles sit at the hills' values (p95 L 143 to 144).",
+  "Mirrored shapes (straight_d, turn_n_se, turn_s_nw and six of the forks) reuse one file both ways; their sheets show the mirrored copy. No text or signs, so nothing reads wrong; shadows fall lower-left on the mirrored copy."
+ ],
+ "5. Notes": [
+  "First-pass picks (above): 10 nature (copse, hedgerow, tree line, thicket, outcrop, pond with willows, two orchards, heath, marsh), all 8 homesteads (two farmsteads with paddocks, two hamlets of three, an inn with a stable, two chapels, a water mill) and all 18 roadside (2 per straight, 1 to 2 per turn, 9 at forks). Recommended: medium density with the mostly-medium mix. About one plains hex in eight is decorated; three quarters of those are round 2 groups that read at zoom 1 as landmarks, and the remaining round 1 singles add fine grain between them. All-medium is fine too but loses that grain; even and mostly-small leave many hexes with a speck.",
+  "What does not work or needs your eye. The rocky knoll (nature-m07) and the two orchards cover half the hex, more than asked; the knoll is not in my picks. Lit tree tops lean yellow-green in places (the willows, the orchard). Two chapels (home-m06, home-m07) and the mill are distinctive buildings, so they repeat noticeably on a big map. The first build of this page put the same chapel tile twice four hexes apart beside one town, so the rule now steps a hex's variant past any tile a higher-ranked decorated hex within 4 hexes already uses (picks are assigned in rank order, still deterministic and portable). Two different chapel tiles can still land near each other; if that bothers you, keep one chapel. The farmstead paddocks are grass inside a fence, no crop rows, so they stay clear of the farm site; the hamlet with hedged garden plots and the vegetable-plot smallholding were dropped for that reason. Roadside variants cover straights, turns and the eight common forks; ends (about 15 hexes on a whole world) and hills roads keep the shipped tiles.",
+  "Applying it would mean: copy the picks of both rounds into new folders the cosmetic glob does not merge with the plain variants (for example tiles/plains_nature/s_NN.png and m_NN.png, tiles/plains_home/..., and road variants as tiles/road_variety/plains_<shape>_<s|m>NN.png; the shipped plains and road groups stay as they are); port variety_picks from scripts/board-mock.py (salted_index, the per-mille rolls, the rank rule, the size roll and the per-shape fallback, one pass per map) into frontend/src/board/hexTile.ts beside the lake masks, with the site footprints passed in from the world view; add a parity fixture like the lake tiles (a script writes the picks of a few exported windows to frontend/src/board/__fixtures__/variety.json and a Vitest test checks the TypeScript port against it) and a byte-copy sync test like test_lake_tiles_sync.py. Provenance and replay: art/codex/terrain/candidates/variety-r2/ (candidates.json names every tile's sheet, cell, raw and gates) and art/codex/terrain/README.md."
+ ]
+}

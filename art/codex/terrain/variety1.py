@@ -64,7 +64,7 @@ from paintin_pin import diff_mask  # noqa: E402
 
 ROUND = HERE / "candidates" / "variety-r1"
 SHIPPED = REPO / "frontend" / "src" / "board" / "tiles"
-ROAD_JOB = HERE / "road" / "a" / "job.json"
+APPLIED = HERE / "APPLIED.md"  # shipped tile -> work dir and cell
 
 ROAD_HOLD_EXACT_PX = 3  # held exactly this far around the road mask
 ROAD_HOLD_FEATHER = 1.2  # Gaussian feather beyond it (px)
@@ -90,13 +90,23 @@ def rgb(path: Path) -> np.ndarray:
 # ------------------------------------------------------------------ bases ----
 
 
+def road_source(name: str) -> tuple[Path, str]:
+    """(work dir, cell) behind shipped road tile `name`, from APPLIED.md."""
+    for line in APPLIED.read_text().splitlines():
+        cols = [c.strip().strip("`") for c in line.split("|")]
+        if len(cols) > 4 and cols[1] == f"road/{name}.png":
+            return REPO / cols[2], cols[4]
+    raise KeyError(f"road/{name}.png is not in {rel(APPLIED)}")
+
+
 def road_ground(name: str) -> Path:
     """The G2 ground crop the shipped road tile `name` was painted on."""
-    job = json.loads(ROAD_JOB.read_text())
+    work, cell_name = road_source(name)
+    job = json.loads((work / "job.json").read_text())
     for cell in job["cells"]:
-        if cell["name"] == name:
-            return (ROAD_JOB.parent / cell["base"]).resolve()
-    raise KeyError(f"{name} is not a cell of {rel(ROAD_JOB)}")
+        if cell["name"] == cell_name:
+            return (work / cell["base"]).resolve()
+    raise KeyError(f"{cell_name} is not a cell of {rel(work / 'job.json')}")
 
 
 def road_base(name: str) -> np.ndarray:

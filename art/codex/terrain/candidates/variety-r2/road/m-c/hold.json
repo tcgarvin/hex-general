@@ -1,0 +1,123 @@
+{
+ "limits": {
+  "road_hold_exact_px": 3,
+  "road_hold_feather": 1.2,
+  "clash_ring": [
+   4,
+   7
+  ],
+  "clash_max": 12,
+  "rim_touch_px": 4.0,
+  "rim_touch_max": 2
+ },
+ "tiles": {
+  "rm_c1": {
+   "shipped": "plains_fork_ne_nw_s_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 1,
+    "rim_touch": 0
+   },
+   "painted_share": 0.041,
+   "road_px": 1449
+  },
+  "rm_c2": {
+   "shipped": "plains_fork_se_n_sw_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 7,
+    "rim_touch": 0
+   },
+   "painted_share": 0.058,
+   "road_px": 1446
+  },
+  "rm_c3": {
+   "shipped": "plains_fork_se_nw_sw_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.072,
+   "road_px": 1300
+  },
+  "rm_c4": {
+   "shipped": "plains_fork_se_n_nw_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.053,
+   "road_px": 1328
+  },
+  "rm_c5": {
+   "shipped": "plains_fork_ne_n_s_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 3,
+    "rim_touch": 0
+   },
+   "painted_share": 0.077,
+   "road_px": 1444
+  },
+  "rm_c6": {
+   "shipped": "plains_fork_se_ne_nw_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.07,
+   "road_px": 1309
+  },
+  "rm_c7": {
+   "shipped": "plains_fork_se_nw_s_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 0,
+    "rim_touch": 0
+   },
+   "painted_share": 0.076,
+   "road_px": 1287
+  },
+  "rm_c8": {
+   "shipped": "plains_fork_se_n_s_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 5,
+    "rim_touch": 0
+   },
+   "painted_share": 0.073,
+   "road_px": 1387
+  },
+  "rm_c9": {
+   "shipped": "plains_fork_se_n_sw_00",
+   "passed": true,
+   "checks": {
+    "road_exact": 0.0,
+    "rim_exact": 0.0,
+    "road_clash": 2,
+    "rim_touch": 0
+   },
+   "painted_share": 0.075,
+   "road_px": 1446
+  }
+ }
+}

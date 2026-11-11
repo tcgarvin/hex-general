@@ -1,0 +1,47 @@
+{
+ "name": "variety2-road-m-c",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "rm_c1",
+   "base": "../../bases/road/plains_fork_ne_nw_s_00.png"
+  },
+  {
+   "name": "rm_c2",
+   "base": "../../bases/road/plains_fork_se_n_sw_00.png"
+  },
+  {
+   "name": "rm_c3",
+   "base": "../../bases/road/plains_fork_se_nw_sw_00.png"
+  },
+  {
+   "name": "rm_c4",
+   "base": "../../bases/road/plains_fork_se_n_nw_00.png"
+  },
+  {
+   "name": "rm_c5",
+   "base": "../../bases/road/plains_fork_ne_n_s_00.png"
+  },
+  {
+   "name": "rm_c6",
+   "base": "../../bases/road/plains_fork_se_ne_nw_00.png"
+  },
+  {
+   "name": "rm_c7",
+   "base": "../../bases/road/plains_fork_se_nw_s_00.png"
+  },
+  {
+   "name": "rm_c8",
+   "base": "../../bases/road/plains_fork_se_n_s_00.png"
+  },
+  {
+   "name": "rm_c9",
+   "base": "../../bases/road/plains_fork_se_n_sw_00.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}

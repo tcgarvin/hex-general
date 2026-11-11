@@ -1,0 +1,14 @@
+calling Codex with ['art/codex/terrain/candidates/variety-r2/nature/m-a/variety2-nature-m-a.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png', 'art/codex/terrain/refs/r1/forest_cluster_2x.png', 'art/codex/terrain/refs/r1/hills_tan_ridge_2x.png'] ...
+codex thread 01a1ca8a-2d21-75d0-b1e6-b6a724b934b9, 101 s
+PASS nm_a1
+FAIL nm_a2
+    FAIL rim_touch: 3 salient px within 4 px of the boundary (limit 2)
+PASS nm_a3
+PASS nm_a4
+PASS nm_a5
+PASS nm_a6
+PASS nm_a7
+PASS nm_a8
+PASS nm_a9
+wrote art/codex/terrain/candidates/variety-r2/nature/m-a/report.json, art/codex/terrain/candidates/variety-r2/nature/m-a/review/variety2-nature-m-a.montage.png
+exit 1
