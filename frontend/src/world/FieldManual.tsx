@@ -419,11 +419,11 @@ function OrdersPage() {
           ],
           [
             "Attack",
-            "There is no attack order: infantry and armor attack by moving into an enemy's hex. Several units moving into the same hex all strike.",
+            "There is no attack order: infantry and armor attack by moving into an enemy's hex. Several units moving into the same hex all strike. In Move mode, hovering an enemy you can reach shows the expected damage both ways and the defender's bonuses (ground, Hold, disorder, the 1 to 5 limits); the unit panel repeats it once ordered. Another player's unit may or may not Hold, so both numbers are shown; garrisons always Hold.",
           ],
           [
             "Barrage",
-            `Artillery only. Click a hex within ${UNIT_STATS.artillery.range}: it is shelled before anything moves, hitting every unit in it. The gun does not move that turn. Barrage never captures.`,
+            `Artillery only. Click a hex within ${UNIT_STATS.artillery.range}: it is shelled before anything moves, hitting every unit in it, yours included. The gun does not move that turn. Barrage never captures. Hovering a hex in Barrage mode shows the expected damage to each unit you can see there.`,
           ],
           ["Rest", "Stay put and repair (see Your army)."],
           ["Hold", `Stay put and dig in: +${R.holdBonus} defence if attacked. A column on Hold stops where it is, still packed.`],

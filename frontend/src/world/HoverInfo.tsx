@@ -7,8 +7,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { hexKey } from "@/board/hex";
+import { axialDistance, hexKey } from "@/board/hex";
 
+import { attackPreview, barragePreview, type CombatPreview } from "./combatView";
 import { DEPLOY_DISTANCE } from "./contact";
 import type { Designate } from "./designations";
 import { hexInfo } from "./hexInfo";
@@ -86,6 +87,19 @@ export function HoverInfo({
 
   const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
   const info = hover !== null && dweltOn === hover ? hexInfo(map, view.state, visible, view.your_slot, hover.hex, designate) : null;
+  const combat = useMemo((): CombatPreview | null => {
+    if (hover === null || unit === null) return null;
+    const key = hexKey(hover.hex.q, hover.hex.r);
+    if (planning.mode === "move" && planning.moveReach.has(key) && planning.hostile.has(key)) {
+      return attackPreview(unit, hover.hex, map, view.state, view.your_slot, designate);
+    }
+    if (planning.mode === "barrage") {
+      const d = axialDistance(unit.coord, hover.hex);
+      if (d < 1 || !planning.barrageRange.some((c) => c.q === hover.hex.q && c.r === hover.hex.r)) return null;
+      return barragePreview(hover.hex, map, view.state, view.your_slot, visible, planning.plan.orders, designate);
+    }
+    return null;
+  }, [hover, unit, planning.mode, planning.moveReach, planning.hostile, planning.barrageRange, planning.plan.orders, map, view, visible, designate]);
 
   const notice = planning.notice;
   const [expired, setExpired] = useState<number | null>(null);
@@ -104,11 +118,20 @@ export function HoverInfo({
 
   return (
     <>
-      {hover !== null && (preview !== null || info !== null) && (
+      {hover !== null && (preview !== null || info !== null || combat !== null) && (
         <div
-          className="fhq-tip pointer-events-none absolute z-10 w-max max-w-64 px-2 py-1 text-xs leading-snug"
-          style={place(hover, 256, 110)}
+          className="fhq-tip pointer-events-none absolute z-10 w-max max-w-72 px-2 py-1 text-xs leading-snug"
+          style={place(hover, 288, combat !== null ? 170 : 110)}
         >
+          {combat !== null && (
+            <div className={preview !== null || info !== null ? "mb-1 border-b border-wood-500/40 pb-1" : ""}>
+              <p className="font-label font-semibold uppercase tracking-wide">{combat.title}</p>
+              {combat.lines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+              {combat.note !== null && <p className="text-wood-500">{combat.note}</p>}
+            </div>
+          )}
           {preview !== null && (
             <div className={info !== null ? "mb-1 border-b border-wood-500/40 pb-1" : ""}>
               <p className="font-label font-semibold uppercase tracking-wide">

@@ -31,6 +31,7 @@ import {
 } from "./economy";
 import { FieldManual, type ManualSection } from "./FieldManual";
 import { HoverInfo } from "./HoverInfo";
+import { attackPreview, barragePreview } from "./combatView";
 import { MapControls } from "./MapControls";
 import { withdrawalWarning } from "./moveRules";
 import { consoleHeight, useMinimapSize } from "./minimapConsole";
@@ -272,7 +273,7 @@ function WorldScreen({
         <div className="pointer-events-none absolute right-2 top-2 flex max-h-[calc(100%-16px)] w-[16.5rem] flex-col gap-4 overflow-y-auto p-1 pb-4 min-[1100px]:w-[20.5rem]">
           <BasePanel state={view.state} economy={economy} slot={view.your_slot} planning={planning} />
           {planning.selectedUnit !== null && (
-            <UnitPanel unit={planning.selectedUnit} view={view} planning={planning} designate={designate} />
+            <UnitPanel unit={planning.selectedUnit} view={view} map={map} planning={planning} designate={designate} />
           )}
           {panelHex !== null && (
             <HexPanel
@@ -965,11 +966,13 @@ const KIND_HELP: Record<OrderKind, string> = {
 function UnitPanel({
   unit,
   view,
+  map,
   planning,
   designate,
 }: {
   unit: Unit;
   view: WorldView;
+  map: WorldMap;
   planning: WorldPlanning;
   designate: Designate;
 }) {
@@ -984,6 +987,14 @@ function UnitPanel({
   const zoc = useMemo(() => hostileZoc(view.state.units, view.your_slot), [view.state.units, view.your_slot]);
   const neighbours = swapNeighbours(unit, own).filter((u) => u.id !== swap?.partner.id);
   const warning = withdrawalWarning(unit, order, view.state.units, view.your_slot, planning.hostile);
+  const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
+  // What the staged attack or barrage is expected to do, as the hover tip showed it.
+  const expected =
+    order?.kind === "move" && route?.attack
+      ? attackPreview(unit, route.attack, map, view.state, view.your_slot, designate)
+      : order?.kind === "barrage"
+        ? barragePreview(order.target, map, view.state, view.your_slot, visible, planning.plan.orders, designate)
+        : null;
 
   const choose = (kind: OrderKind) => {
     if (kind === "travel" || kind === "move" || kind === "barrage") {
@@ -1023,6 +1034,14 @@ function UnitPanel({
               : `No orders: it stays put, without the Hold bonus. ${KIND_HELP.travel}`
             : `Ordered: ${orderText(order, route, swap, designate)}.`}
       </p>
+      {expected !== null && (
+        <div className="mt-1 text-xs" aria-label="Expected result">
+          {expected.lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          {expected.note !== null && <p className="text-wood-500">{expected.note}</p>}
+        </div>
+      )}
       {warning !== null && <p className="mt-1 text-xs font-semibold text-invalid">{warning}.</p>}
       {order?.kind === "travel" && (
         <div className="mt-2 flex items-center gap-2 text-xs">
