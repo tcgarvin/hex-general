@@ -1,0 +1,107 @@
+<div class="sv-app" id="sv-app">
+  <header class="sv-head">
+    <div class="sv-title">
+      <span class="sv-label">Season record</span>
+      <h1 id="sv-h1">{{TITLE}}</h1>
+      <span class="sv-facts" id="sv-facts">Loading season</span>
+    </div>
+    <div class="sv-stats" id="sv-stats" aria-label="Season headline numbers"></div>
+  </header>
+
+  <div class="sv-main">
+    <div class="sv-mapcol">
+      <div class="sv-mapwrap" id="sv-mapwrap">
+        <canvas id="sv-map" aria-label="World map for the selected turn"></canvas>
+        <div class="sv-overlay sv-layers" role="group" aria-label="Map layers">
+          <label class="sv-chip"><input type="checkbox" id="sv-l-tint" checked> Territory</label>
+          <label class="sv-chip"><input type="checkbox" id="sv-l-garrison" checked> Garrisons</label>
+          <label class="sv-chip"><input type="checkbox" id="sv-l-events" checked> Events</label>
+          <label class="sv-chip"><input type="checkbox" id="sv-l-trails"> Trails</label>
+        </div>
+        <div class="sv-overlay sv-zoom" role="group" aria-label="Zoom">
+          <button class="sv-btn" id="sv-zoom-in" type="button" aria-label="Zoom in" title="Zoom in (+)">+</button>
+          <button class="sv-btn" id="sv-zoom-out" type="button" aria-label="Zoom out" title="Zoom out (-)">&minus;</button>
+          <button class="sv-btn" id="sv-fit" type="button" aria-label="Fit the whole map" title="Fit map (0)">Fit</button>
+        </div>
+        <div class="sv-tip" id="sv-tip" hidden></div>
+        <div class="sv-msg" id="sv-msg">Unpacking season data</div>
+      </div>
+
+      <div class="sv-timeline" role="group" aria-label="Turn timeline">
+        <button class="sv-btn" id="sv-prev" type="button" aria-label="Previous turn" title="Previous turn (Left arrow)">&#9664;</button>
+        <button class="sv-btn primary" id="sv-play" type="button" title="Play or pause (Space)">Play</button>
+        <button class="sv-btn" id="sv-next" type="button" aria-label="Next turn" title="Next turn (Right arrow)">&#9654;</button>
+        <div class="sv-scrub">
+          <canvas id="sv-hist" aria-hidden="true"></canvas>
+          <input type="range" id="sv-turn" min="0" max="1" value="0" step="1" aria-label="Turn">
+        </div>
+        <div class="sv-speed">
+          <span class="sv-turn" id="sv-turnlabel">Turn <b>0</b></span>
+          <select id="sv-speed" aria-label="Playback speed">
+            <option value="0.5">0.5/s</option>
+            <option value="1">1/s</option>
+            <option value="2" selected>2/s</option>
+            <option value="4">4/s</option>
+            <option value="8">8/s</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <aside class="sv-side">
+      <section class="sv-sec" aria-labelledby="sv-players-h">
+        <header>
+          <h2 id="sv-players-h">Players</h2>
+          <span class="sv-label" id="sv-alive"></span>
+          <label class="sv-follow"><input type="checkbox" id="sv-follow"> Follow selected</label>
+        </header>
+        <div class="sv-tablewrap">
+          <table class="sv-players" id="sv-players">
+            <thead>
+              <tr>
+                <th scope="col"><span class="sv-label">&nbsp;</span></th>
+                <th scope="col"><button type="button" data-sort="name">Player</button></th>
+                <th scope="col"><button type="button" data-sort="units" title="Units in the field">Units</button></th>
+                <th scope="col"><button type="button" data-sort="hold" title="Sites held, base included">Held</button></th>
+                <th scope="col"><button type="button" data-sort="res" title="Manpower + fuel + steel in store">Stock</button></th>
+                <th scope="col"><button type="button" data-sort="cap" title="Army size cap">Cap</button></th>
+                <th scope="col"><button type="button" data-sort="out" title="Turn eliminated">Out</button></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sv-sec" aria-labelledby="sv-charts-h">
+        <header>
+          <h2 id="sv-charts-h">Over the season</h2>
+          <span class="sv-label" id="sv-chart-who">World</span>
+        </header>
+        <div class="sv-body sv-strips" id="sv-strips"></div>
+      </section>
+
+      <section class="sv-sec" aria-labelledby="sv-events-h">
+        <header>
+          <h2 id="sv-events-h">Turn events</h2>
+          <select id="sv-evfilter" aria-label="Which events to list">
+            <option value="key" selected>Fights, captures, eliminations</option>
+            <option value="fights">Fights</option>
+            <option value="captures">Captures</option>
+            <option value="barrages">Barrages</option>
+            <option value="losses">Units lost and disbanded</option>
+            <option value="growth">Recruits and buildings</option>
+            <option value="all">Everything</option>
+          </select>
+        </header>
+        <ul class="sv-events" id="sv-events"></ul>
+      </section>
+
+      <section class="sv-sec" aria-labelledby="sv-key-h">
+        <header><h2 id="sv-key-h">Key</h2></header>
+        <div class="sv-body sv-key" id="sv-key"></div>
+        <p class="sv-body sv-chartnote">Timeline bars count fights per turn: red player against player, grey against garrisons. Ticks above the bars mark turns with captures. Territory tints every hex within 6 of a held site in its holder's colour, stronger along the borders. Drag to pan, wheel or pinch to zoom, click a hex for details. Keys: Space plays, arrows step, + and - zoom, 0 fits.</p>
+      </section>
+    </aside>
+  </div>
+</div>

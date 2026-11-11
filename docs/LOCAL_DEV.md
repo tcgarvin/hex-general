@@ -211,6 +211,35 @@ clears the countdown on exit. `POST /dev/worlds/{id}/tick` resolves a turn
 immediately. A user can hold one active world at a time; `game-setup.sh clear`
 deletes the caller's.
 
+### Watch a whole bot season offline
+
+The season viewer plays a headless bot world back on a map, with no dev stack
+needed. First record a season. The recorder runs the world the same way the
+simulator does and writes a compact JSON record of the map, every unit, site
+owners, player numbers and the located events of each turn:
+
+```bash
+cd api && uv run python -m app.world.season --slots 200 --bots 100 --seed 1 \
+  --turns 60 --out ../.dev/season/season-200x100-seed1.json
+```
+
+`--bots` defaults to every slot. A 200-slot world with 100 bots takes about
+five minutes for 60 turns; 12 slots take under half a minute. Then build the
+page:
+
+```bash
+python3 scripts/season-viewer.py .dev/season/season-200x100-seed1.json \
+  --out .dev/season/season-200x100-seed1.html
+```
+
+The result is one self-contained HTML file that opens straight from disk. It
+shows the map with territory, units and the turn's fights and captures, a
+timeline with play controls, a sortable players table and charts. Open it at
+`#turn-30` to start on turn 30, or `#turn-30-b012` to also select player
+`b012`. Add `--fragment` for the form the claude.ai Artifact tool takes, and
+`--title` to name the page. The page's CSS, markup and script live in
+`scripts/season_viewer/`.
+
 ## Tear down
 
 ```bash
