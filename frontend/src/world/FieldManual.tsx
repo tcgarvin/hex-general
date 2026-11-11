@@ -325,6 +325,13 @@ function TurnPage({ view }: { view: WorldView }) {
         Every unit controls the six hexes around it. A unit that starts a pulse next to an enemy is engaged: it can attack
         that enemy, stay, or step back to a hex no enemy controls, but not slide along the enemy line.
       </P>
+      <P>
+        Stepping back is not a sure escape. Everyone steps on pulse <N>1</N> at once, and a unit whose hex is attacked
+        that pulse is pinned: it stays and defends (with its terrain, but no Hold bonus, since it was ordered to move),
+        and its own move or attack is cancelled for the turn. So an adjacent enemy that attacks this turn catches a unit
+        stepping away; it gets away only if no enemy strikes its hex on that first pulse. Holding instead adds the Hold
+        bonus.
+      </P>
       <H>Terrain</H>
       <Table
         head={["Ground", "Defence", "Notes"]}

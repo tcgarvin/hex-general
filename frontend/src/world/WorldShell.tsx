@@ -32,6 +32,7 @@ import {
 import { FieldManual, type ManualSection } from "./FieldManual";
 import { HoverInfo } from "./HoverInfo";
 import { MapControls } from "./MapControls";
+import { withdrawalWarning } from "./moveRules";
 import { consoleHeight, useMinimapSize } from "./minimapConsole";
 import { overlayOf } from "./overlay";
 import { PlaybackBar, type BeatJump } from "./PlaybackBar";
@@ -982,6 +983,7 @@ function UnitPanel({
   const own = view.state.units.filter((u) => u.owner === view.your_slot);
   const zoc = useMemo(() => hostileZoc(view.state.units, view.your_slot), [view.state.units, view.your_slot]);
   const neighbours = swapNeighbours(unit, own).filter((u) => u.id !== swap?.partner.id);
+  const warning = withdrawalWarning(unit, order, view.state.units, view.your_slot, planning.hostile);
 
   const choose = (kind: OrderKind) => {
     if (kind === "travel" || kind === "move" || kind === "barrage") {
@@ -1021,6 +1023,7 @@ function UnitPanel({
               : `No orders: it stays put, without the Hold bonus. ${KIND_HELP.travel}`
             : `Ordered: ${orderText(order, route, swap, designate)}.`}
       </p>
+      {warning !== null && <p className="mt-1 text-xs font-semibold text-invalid">{warning}.</p>}
       {order?.kind === "travel" && (
         <div className="mt-2 flex items-center gap-2 text-xs">
           <span>On arrival</span>

@@ -37,6 +37,7 @@ import { axialNeighbors, hexKey } from "@/board/hex";
 import type { StepRules } from "@/planning/reach";
 import type { components } from "@/lib/api/schema";
 
+import { NEUTRAL_OWNER } from "./colors";
 import type { WorldOrder } from "./plan";
 import { COLUMN_RULES } from "./routing";
 
@@ -126,4 +127,38 @@ export function moveStepRules(unit: Unit, ctx: MoveContext): StepRules {
       return hostile.has(key) || !moveEnds.has(key);
     },
   };
+}
+
+export const PINNED_WARNING = "An adjacent enemy that attacks this turn will hit before you move";
+export const CANNOT_PACK_WARNING = "It starts next to the enemy, so it can't pack: this Travel ends at once. Move it away first";
+
+/**
+ * A one-line warning for an order that steps `unit` away from a visible hostile
+ * it starts next to, or `null`.
+ *
+ * Everyone steps on pulse 1 at once, and a unit whose hex is attacked that pulse
+ * is pinned (`_resolve_attacks` in movement.py): it defends, and its own move is
+ * cancelled. So a Move away from an adjacent enemy that may attack is a gamble.
+ * Neutral garrisons always hold, so they never strike first. A Travel from next
+ * to any hostile deployed unit (garrisons included) never even packs (§4.4).
+ * `hostile` is `hostileHexes`: a Move that ends on one is an attack, not a withdrawal.
+ */
+export function withdrawalWarning(
+  unit: Unit,
+  order: WorldOrder | undefined,
+  units: readonly Unit[],
+  viewer: string,
+  hostile: ReadonlySet<string>,
+): string | null {
+  if (order === undefined || unit.posture !== "deployed") return null;
+  const near = new Set(axialNeighbors(unit.coord).map((n) => hexKey(n.q, n.r)));
+  const adjacent = units.filter(
+    (u) => u.owner !== viewer && u.posture === "deployed" && near.has(hexKey(u.coord.q, u.coord.r)),
+  );
+  if (adjacent.length === 0) return null;
+  if (order.kind === "travel") return CANNOT_PACK_WARNING;
+  if (order.kind !== "move") return null;
+  const end = order.path[order.path.length - 1];
+  if (end !== undefined && hostile.has(hexKey(end.q, end.r))) return null;
+  return adjacent.some((u) => u.owner !== NEUTRAL_OWNER) ? PINNED_WARNING : null;
 }

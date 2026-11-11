@@ -4,7 +4,14 @@ import { hexKey, type Axial, type Hex } from "@/board/hex";
 import { reachableContinuations } from "@/planning/reach";
 import type { components } from "@/lib/api/schema";
 
-import { hostileHexes, moveStepRules, type MoveContext } from "./moveRules";
+import {
+  CANNOT_PACK_WARNING,
+  hostileHexes,
+  moveStepRules,
+  PINNED_WARNING,
+  withdrawalWarning,
+  type MoveContext,
+} from "./moveRules";
 import type { WorldOrder } from "./plan";
 import { decodeWorldMap } from "./worldMap";
 
@@ -161,5 +168,32 @@ describe("move reach with hostile units", () => {
     const me = unit("me", "infantry", 4, 3);
     const column = unit("rival", "infantry", 4, 4, { posture: "column" });
     expect(reach(me, [column]).has("5,3")).toBe(true);
+  });
+});
+
+describe("withdrawal warning", () => {
+  const me = unit("me", "armor", 4, 4);
+  const enemy = unit("s2", "infantry", 5, 4); // adjacent (east)
+  const garrison = unit("neutral", "infantry", 5, 4);
+  const away: WorldOrder = { kind: "move", path: [{ q: 3, r: 4 }] };
+  const warn = (order: WorldOrder | undefined, others: Unit[]) =>
+    withdrawalWarning(me, order, [me, ...others], "me", hostileHexes([me, ...others], "me"));
+
+  it("warns a unit stepping away from an adjacent enemy that it may be caught", () => {
+    expect(warn(away, [enemy])).toBe(PINNED_WARNING);
+  });
+
+  it("does not warn an attack, a unit with no enemy beside it, or one beside a garrison", () => {
+    expect(warn({ kind: "move", path: [enemy.coord] }, [enemy])).toBeNull();
+    expect(warn(away, [unit("s2", "infantry", 7, 4)])).toBeNull();
+    expect(warn(away, [garrison])).toBeNull(); // garrisons always hold
+    expect(warn(undefined, [enemy])).toBeNull();
+    expect(warn({ kind: "hold" }, [enemy])).toBeNull();
+  });
+
+  it("tells a Travel from next to any hostile that it can't pack", () => {
+    const travel: WorldOrder = { kind: "travel", destination: { q: 0, r: 0 }, via: [], onArrival: "deployed" };
+    expect(warn(travel, [garrison])).toBe(CANNOT_PACK_WARNING);
+    expect(warn(travel, [unit("s2", "infantry", 5, 4, { posture: "column" })])).toBeNull();
   });
 });
