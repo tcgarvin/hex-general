@@ -353,11 +353,13 @@ class _UnitContext:
             unit, unit_candidates(self.board, unit, objective, self.reserved)
         )
 
-    def step_toward(self, unit: Unit, goal: Axial) -> Order:
-        """A non-colliding move toward ``goal`` that stays out of combat."""
-        return self.claims.pick(
-            unit, list(moves_toward(self.board, unit, goal, self.reserved))
-        )
+    def step_toward(
+        self, unit: Unit, goal: Axial, fallback: Order | None = None
+    ) -> Order:
+        """A non-colliding move toward ``goal`` that stays out of combat, else
+        ``fallback`` (Hold if none)."""
+        moves: list[Order] = list(moves_toward(self.board, unit, goal, self.reserved))
+        return self.claims.pick(unit, moves + ([fallback] if fallback else []))
 
     def travel(self, unit: Unit, goal: Axial) -> Order | None:
         """Travel toward ``goal`` as far as a column can go without contact.
@@ -486,7 +488,8 @@ def _recover(ctx: _UnitContext, unit: Unit, threat: int) -> Order:
         return RestOrder(unit_id=unit.id)
     ground = _rest_ground(ctx, unit)
     if ground is not None:
-        return ctx.step_toward(unit, ground)
+        stay = RestOrder(unit_id=unit.id) if threat > 3 else None
+        return ctx.step_toward(unit, ground, stay)
     if threat > 3:
         ctx.claims.finals.add(unit.coord)
         return RestOrder(unit_id=unit.id)

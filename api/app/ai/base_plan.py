@@ -141,37 +141,81 @@ def _next_build(
     work = player.construction
     if work is not None and work.completes_on > view.turn:
         return None
+    want = _wanted_build(view, economy, player)
+    if want is None:
+        return None
+    if not stocks.covers(_build_cost(view, economy, player, want)):
+        return None
+    return want
+
+
+def _levels(view: GameState, player: Player) -> dict[Building, int]:
+    """Building levels, counting a level that finishes this turn as built."""
     levels = dict(player.buildings)
-    if work is not None:
-        levels[work.building] = work.level  # finishes this turn
+    work = player.construction
+    if work is not None and work.completes_on <= view.turn:
+        levels[work.building] = work.level
+    return levels
+
+
+def _wanted_build(
+    view: GameState, economy: WorldEconomy, player: Player
+) -> Building | None:
+    """The building level the bot works toward next, affordable or not.
+
+    Barracks 1, then the Workshop, then barracks levels, each preceded by the
+    depot level needed to store its cost.
+    """
+    levels = _levels(view, player)
     barracks = levels.get(Building.BARRACKS, 0)
     depot = levels.get(Building.DEPOT, 0)
     if barracks >= 1 and levels.get(Building.WORKSHOP, 0) == 0:
-        want: Building | None = Building.WORKSHOP
-    elif barracks < economy.max_level(Building.BARRACKS):
-        cost = economy.buildings[Building.BARRACKS][barracks].cost
-        too_big = max(cost.manpower, cost.fuel, cost.steel) > economy.storage_limit(
-            depot
-        )
-        want = Building.DEPOT if too_big else Building.BARRACKS
-    else:
-        want = None
-    if want is None:
+        return Building.WORKSHOP
+    if barracks >= economy.max_level(Building.BARRACKS):
         return None
-    level = levels.get(want, 0)
-    if level >= economy.max_level(want):
-        return None
-    if not stocks.covers(economy.buildings[want][level].cost):
+    cost = economy.buildings[Building.BARRACKS][barracks].cost
+    too_big = max(cost.manpower, cost.fuel, cost.steel) > economy.storage_limit(depot)
+    want = Building.DEPOT if too_big else Building.BARRACKS
+    if levels.get(want, 0) >= economy.max_level(want):
         return None
     return want
+
+
+def _build_cost(
+    view: GameState, economy: WorldEconomy, player: Player, building: Building
+) -> Stocks:
+    """What the next level of ``building`` costs."""
+    return economy.buildings[building][_levels(view, player).get(building, 0)].cost
+
+
+# Average fuel upkeep of a recruit in the target mix (60/20/20).
+_MIX_FUEL = sum(
+    share * fuel
+    for share, fuel in (
+        (_TARGET_SHARE[UnitType.ARTILLERY], 1.0),
+        (_TARGET_SHARE[UnitType.ARMOR], 2.0),
+    )
+)
+_FULL_STOCK = 0.8  # a stock this close to its storage limit needs no more income
+_PLAN_TURNS = 8  # horizon for "can the bot afford its next building"
 
 
 def site_needs(view: GameState, slot: PlayerId) -> dict[SiteKind, float]:
     """How much ``slot`` wants each kind of site right now (1.0 is neutral).
 
-    Farms count double while manpower barely covers upkeep; oil counts double
-    while fuel runs at a loss and little when the stock is near full; steel mills
-    count more until the bot holds two; the first factory is worth a lot.
+    Each resource gets a need from the bot's actual flows, looking one army
+    ahead (the units it may still recruit under its army size, each eating 1
+    manpower and the mix's fuel):
+
+    * manpower and fuel: high when the flow would turn negative with the army
+      filled (disbands follow), raised while it would be thin, low when the
+      stock is near its storage limit and the flow covers upkeep;
+    * steel: by how many turns of income the next building still needs.
+
+    Farms, oil fields and steel mills follow their resource; a factory follows
+    steel and counts more until the bot holds one (it unlocks tanks); a city
+    makes manpower and steel and is a recruiting site; a base is always worth
+    the same.
     """
     economy = view.config.economy
     if economy is None:
@@ -179,25 +223,42 @@ def site_needs(view: GameState, slot: PlayerId) -> dict[SiteKind, float]:
     player = view.player(slot)
     sites = view.map.site_index
     held_sites = [sites[s.coord] for s in view.settlements if s.controlled_by == slot]
-    held = [site.kind for site in held_sites]
     income = Stocks()
     for site in held_sites:
         income += economy.income(site.kind, site.level)
+    own = [u for u in view.units if u.owner == slot]
     upkeep = Stocks()
-    for unit in view.units:
-        if unit.owner == slot:
-            upkeep += economy.upkeep[unit.type]
+    for unit in own:
+        upkeep += economy.upkeep[unit.type]
     net = income - upkeep
     limit = economy.storage_limit(player.level(Building.DEPOT))
-    needs = {kind: 1.0 for kind in SiteKind}
-    if net.manpower <= 1:
-        needs[SiteKind.FARM] = 2.0
-    if net.fuel < 0:
-        needs[SiteKind.OIL_FIELD] = 2.0
-    elif player.stocks.fuel >= limit * 0.8:
-        needs[SiteKind.OIL_FIELD] = 0.5
-    if held.count(SiteKind.STEEL_MILL) < 2:
-        needs[SiteKind.STEEL_MILL] = 1.5
-    if SiteKind.FACTORY not in held:
-        needs[SiteKind.FACTORY] = 1.8
-    return needs
+    room = max(0, view.unit_cap_for(slot) - len(own))
+
+    def flow_need(stock: int, flow: float) -> float:
+        if flow < 0:
+            return 2.5
+        if stock >= _FULL_STOCK * limit:
+            return 0.5
+        return 1.6 if flow < 2 else 1.0
+
+    manpower = flow_need(player.stocks.manpower, net.manpower - room)
+    fuel = flow_need(player.stocks.fuel, net.fuel - _MIX_FUEL * room)
+    want = _wanted_build(view, economy, player)
+    steel_short = (
+        _build_cost(view, economy, player, want).steel - player.stocks.steel
+        if want is not None
+        else 0
+    )
+    turns = steel_short / max(net.steel, 0.5)
+    steel = 1.0 + min(1.5, max(0.0, turns) / _PLAN_TURNS)
+    if player.stocks.steel >= _FULL_STOCK * limit:
+        steel = 0.5
+    factory = SiteKind.FACTORY in {site.kind for site in held_sites}
+    return {
+        SiteKind.BASE: 1.0,
+        SiteKind.FARM: manpower,
+        SiteKind.OIL_FIELD: fuel,
+        SiteKind.STEEL_MILL: steel,
+        SiteKind.FACTORY: 0.5 * steel + (0.3 if factory else 1.3),
+        SiteKind.CITY: (3.0 * manpower + 1.5 * steel) / 4.5 * 1.2,
+    }
