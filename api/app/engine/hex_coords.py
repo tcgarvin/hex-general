@@ -230,6 +230,17 @@ def line(a: Axial, b: Axial) -> list[Axial]:
     return list(_line(a, b))
 
 
+def line_interior(a: Axial, b: Axial) -> tuple[Axial, ...]:
+    """The hexes of `line` from ``a`` to ``b`` strictly between the two ends.
+
+    What a line-of-sight test walks. Neighbours (and ``a == b``) have none, so
+    their line is never built.
+    """
+    if distance(a, b) <= 1:
+        return ()
+    return _line(a, b)[1:-1]
+
+
 @lru_cache(maxsize=1 << 18)
 def _line(a: Axial, b: Axial) -> tuple[Axial, ...]:
     # Cached on the exact endpoints: the float sampling is not translation

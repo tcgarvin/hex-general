@@ -19,7 +19,7 @@ All functions are pure queries over a `GameState`; they never mutate it.
 
 from __future__ import annotations
 
-from app.engine.hex_coords import Axial, line, within
+from app.engine.hex_coords import Axial, line_interior, within
 from app.engine.models import GameState, PlayerId, Unit
 from app.engine.stats import UNIT_STATS
 
@@ -38,10 +38,7 @@ def has_line_of_sight(state: GameState, source: Axial, target: Axial) -> bool:
 
 def _clear_sightline(blockers: frozenset[Axial], source: Axial, target: Axial) -> bool:
     """`has_line_of_sight` against the map's `GameMap.sight_blockers`."""
-    if source == target:
-        return True
-    sightline = line(source, target)
-    for coord in sightline[1:-1]:
+    for coord in line_interior(source, target):
         if coord in blockers:
             return False
     return True
