@@ -49,6 +49,20 @@ describe("move reach with own units", () => {
     expect(r.has("4,4")).toBe(false);
   });
 
+  it("never steps into a hex on the pulse another own unit steps into it (both would jam)", () => {
+    const me = unit("me", "infantry", 4, 4);
+    const friend = unit("me", "armor", 6, 3);
+    // The friend enters (5,3) on pulse 1 and (4,3) on pulse 2.
+    const orders: Record<number, WorldOrder> = {
+      [friend.id]: { kind: "move", path: [{ q: 5, r: 3 }, { q: 4, r: 3 }, { q: 3, r: 3 }] },
+    };
+    const r = reach(me, [friend], orders);
+    // (4,3) on pulse 1 is fine: the friend gets there on pulse 2 and passes on.
+    expect(r.has("4,3")).toBe(true);
+    // Pulse 1 into (5,3) would jam: no path starts there.
+    for (const path of r.values()) expect(path[0].q === 5 && path[0].r === 3).toBe(false);
+  });
+
   it("treats a friend packing for travel as in place until pulse 5", () => {
     const armor = unit("me", "armor", 2, 3);
     const friend = unit("me", "infantry", 3, 3); // adjacent: step 1
@@ -77,6 +91,38 @@ describe("move reach with hostile units", () => {
       expect(path.slice(0, -1).some((s) => s.q === 3 && s.r === 3)).toBe(false);
     }
     expect(hostileHexes([me, enemy], "me")).toEqual(new Set([k(enemy.coord)]));
+  });
+
+  it("lets several units attack the same hostile hex", () => {
+    const enemy = unit("neutral", "infantry", 4, 4);
+    const first = unit("me", "infantry", 4, 2);
+    const second = unit("me", "armor", 6, 2);
+    const orders: Record<number, WorldOrder> = {
+      [first.id]: { kind: "move", path: [{ q: 4, r: 3 }, { q: 4, r: 4 }] },
+    };
+    expect(reach(second, [first, enemy], orders).has(k(enemy.coord))).toBe(true);
+  });
+
+  it("keeps others out of the hex an attacker strikes from, since it stays there unless it wins", () => {
+    const enemy = unit("neutral", "infantry", 4, 5);
+    const attacker = unit("me", "infantry", 4, 3);
+    const orders: Record<number, WorldOrder> = {
+      [attacker.id]: { kind: "move", path: [{ q: 4, r: 4 }, { q: 4, r: 5 }] },
+    };
+    // Armor going by (4,4) would get there on pulse 3, after the attacker took it on pulse 1.
+    const armor = unit("me", "armor", 5, 1);
+    const r = reach(armor, [attacker, enemy], orders);
+    expect(r.has("4,4")).toBe(false);
+    for (const path of r.values()) expect(path.some((s) => s.q === 4 && s.r === 4)).toBe(false);
+    // It still gets at the enemy another way.
+    expect(r.has(k(enemy.coord))).toBe(true);
+  });
+
+  it("treats a unit attacking from where it stands as staying put", () => {
+    const enemy = unit("neutral", "infantry", 4, 4);
+    const attacker = unit("me", "infantry", 4, 3);
+    const orders: Record<number, WorldOrder> = { [attacker.id]: { kind: "move", path: [{ q: 4, r: 4 }] } };
+    expect(reach(unit("me", "infantry", 4, 2), [attacker, enemy], orders).has(k(attacker.coord))).toBe(false);
   });
 
   it("does not let artillery or a disordered unit attack", () => {
