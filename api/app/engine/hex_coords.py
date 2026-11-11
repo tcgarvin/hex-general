@@ -128,7 +128,21 @@ def neighbors(a: Axial) -> list[Axial]:
 
 @lru_cache(maxsize=1 << 18)
 def _neighbors(a: Axial) -> tuple[Axial, ...]:
-    return tuple(Axial(q=a.q + d.q, r=a.r + d.r) for d in AXIAL_DIRECTIONS)
+    q, r = a.q, a.r
+    return tuple(_axial(q + dq, r + dr) for dq, dr in _DIRECTION_STEPS)
+
+
+_DIRECTION_STEPS: tuple[tuple[int, int], ...] = tuple(
+    (d.q, d.r) for d in AXIAL_DIRECTIONS
+)
+
+
+@lru_cache(maxsize=1 << 18)
+def _axial(q: int, r: int) -> Axial:
+    # One shared instance per coordinate (Axial is frozen, so sharing is safe).
+    # Validating a new model costs microseconds; a cache hit costs a dict probe,
+    # and the cached discs, neighbours and lines all overlap heavily.
+    return Axial(q=q, r=r)
 
 
 def clear_geometry_caches() -> None:
@@ -138,6 +152,7 @@ def clear_geometry_caches() -> None:
     them between turns, or they grow by ~15 MB per world turn (units move, so
     every tick adds new sightlines) toward caps of several GB.
     """
+    _axial.cache_clear()
     _neighbors.cache_clear()
     _within.cache_clear()
     _line.cache_clear()
@@ -164,11 +179,18 @@ def within(center: Axial, radius: int) -> list[Axial]:
 def _within(center: Axial, radius: int) -> tuple[Axial, ...]:
     # Cached: contact and vision checks ask for the same small discs every pulse,
     # and building coordinate models dominated their cost (WORLD_SPEC §10).
-    out: list[Axial] = []
-    for dq in range(-radius, radius + 1):
-        for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1):
-            out.append(Axial(q=center.q + dq, r=center.r + dr))
-    return tuple(out)
+    q, r = center.q, center.r
+    return tuple(_axial(q + dq, r + dr) for dq, dr in _disc_offsets(radius))
+
+
+@lru_cache(maxsize=64)
+def _disc_offsets(radius: int) -> tuple[tuple[int, int], ...]:
+    """The ``(dq, dr)`` offsets of a disc of ``radius``, by ``dq`` then ``dr``."""
+    return tuple(
+        (dq, dr)
+        for dq in range(-radius, radius + 1)
+        for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1)
+    )
 
 
 def is_adjacent(a: Axial, b: Axial) -> bool:
@@ -176,11 +198,13 @@ def is_adjacent(a: Axial, b: Axial) -> bool:
     return distance(a, b) == 1
 
 
-def _cube_round(x: float, y: float, z: float) -> Cube:
+def _cube_round(x: float, y: float, z: float) -> tuple[int, int, int]:
     """Round fractional cube coordinates to the nearest valid hex (x+y+z == 0).
 
     Rounds each component, then resets whichever drifted most so the cube
-    constraint holds — the standard hex-rounding fix-up.
+    constraint holds — the standard hex-rounding fix-up. Returns plain
+    ``(x, y, z)`` ints: building a `Cube` model per sample point was most of
+    the cost of a cold sightline.
     """
     rx, ry, rz = round(x), round(y), round(z)
     dx, dy, dz = abs(rx - x), abs(ry - y), abs(rz - z)
@@ -190,7 +214,7 @@ def _cube_round(x: float, y: float, z: float) -> Cube:
         ry = -rx - rz
     else:
         rz = -rx - ry
-    return Cube(x=rx, y=ry, z=rz)
+    return rx, ry, rz
 
 
 def line(a: Axial, b: Axial) -> list[Axial]:
@@ -214,12 +238,17 @@ def _line(a: Axial, b: Axial) -> tuple[Axial, ...]:
     steps = distance(a, b)
     if steps == 0:
         return (a,)
-    start, end = to_cube(a), to_cube(b)
+    # `to_cube` on plain ints, so no `Cube` model is built per line.
+    sx, sz = a.q, a.r
+    sy = -sx - sz
+    ex, ez = b.q, b.r
+    ey = -ex - ez
     result: list[Axial] = []
     for i in range(steps + 1):
         t = i / steps
-        x = start.x + (end.x - start.x) * t + 1e-6
-        y = start.y + (end.y - start.y) * t + 1e-6
-        z = start.z + (end.z - start.z) * t - 2e-6
-        result.append(from_cube(_cube_round(x, y, z)))
+        x = sx + (ex - sx) * t + 1e-6
+        y = sy + (ey - sy) * t + 1e-6
+        z = sz + (ez - sz) * t - 2e-6
+        rx, _, rz = _cube_round(x, y, z)
+        result.append(_axial(rx, rz))
     return tuple(result)
