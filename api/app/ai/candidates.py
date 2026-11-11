@@ -23,6 +23,7 @@ from app.ai.objectives import Objective
 from app.engine.combat import compute_damage
 from app.engine.hex_coords import Axial, distance, neighbors
 from app.engine.models import (
+    NEUTRAL,
     BarrageOrder,
     HoldOrder,
     MoveOrder,
@@ -34,6 +35,10 @@ from app.engine.stats import UNIT_STATS, UnitType
 
 _MAX_CANDIDATES = 8
 _KILL_BONUS = 5.0
+_DEATH_PENALTY = 8.0  # an attack the attacker won't survive (and that doesn't kill)
+_OBJECTIVE_BONUS = 3.0  # striking the unit on the objective hex itself
+_GUN_STAND_OFF = 2  # artillery advances no closer than this to its objective
+_NO_GAP = 10**6
 # Our opponent model is "all visible enemies Hold" (AI_SPEC §4.4), so a struck
 # enemy is a stationary defender getting terrain + Hold: we score attacks/barrages
 # against that same assumption to stay consistent with the simulation.
@@ -104,14 +109,19 @@ def _path_to(reach: _Reach, goal: Axial) -> list[Axial]:
 def _advance_order(
     board: BoardIndex, unit: Unit, objective: Objective, reach: _Reach
 ) -> MoveOrder | None:
-    """A move toward ``objective``: the reachable hex nearest the objective."""
-    origin_gap = distance(unit.coord, objective.coord)
+    """A move toward ``objective``: the reachable hex nearest the objective.
+
+    Artillery stops two hexes out: it fires from there, and need not stand in
+    the line.
+    """
+    stand_off = _GUN_STAND_OFF if unit.type is UnitType.ARTILLERY else 0
+    origin_gap = max(stand_off, distance(unit.coord, objective.coord))
     best: Axial | None = None
     best_key = (origin_gap, 0)
     for coord, steps in reach.dist.items():
         if coord == unit.coord:
             continue
-        gap = distance(coord, objective.coord)
+        gap = max(stand_off, distance(coord, objective.coord))
         key = (gap, steps)
         if key < best_key:
             best_key = key
@@ -121,8 +131,14 @@ def _advance_order(
     return MoveOrder(unit_id=unit.id, path=_path_to(reach, best))
 
 
-def _attack_score(attacker: Unit, defender: Unit, board: BoardIndex) -> float:
-    """Net value of a melee attack under the enemy-Hold model (AI_SPEC §4.5)."""
+def _attack_score(
+    attacker: Unit, defender: Unit, board: BoardIndex, objective: Objective
+) -> float:
+    """Net value of a melee attack under the enemy-Hold model (AI_SPEC §4.5).
+
+    An attack the attacker wouldn't survive is a loss unless it kills, and a
+    strike on the objective itself (or the units guarding it) is worth more.
+    """
     mods = board.view.terrain_defense(defender.coord) + _ENEMY_HOLD_BONUS
     dealt = compute_damage(attacker.type, defender.type, mods)
     retaliation = compute_damage(defender.type, attacker.type, 0)
@@ -131,16 +147,29 @@ def _attack_score(attacker: Unit, defender: Unit, board: BoardIndex) -> float:
     value += 0.5 * UNIT_STATS[defender.type].recruit_cost
     if lethal:
         value += _KILL_BONUS
+    elif retaliation >= attacker.hp:
+        value -= _DEATH_PENALTY
+    gap = distance(defender.coord, objective.coord)
+    if gap == 0:
+        value += _OBJECTIVE_BONUS
+    elif gap <= 2:
+        value += _OBJECTIVE_BONUS / 2
     return value
 
 
 def _attack_orders(
-    board: BoardIndex, unit: Unit, reach: _Reach
+    board: BoardIndex, unit: Unit, reach: _Reach, objective: Objective
 ) -> list[tuple[float, MoveOrder]]:
-    """Attack-by-move candidates onto the highest-value reachable enemies (§4.5)."""
+    """Attack-by-move candidates onto the highest-value reachable enemies (§4.5).
+
+    A neutral garrison never moves or strikes first, so one is attacked only
+    when it guards the unit's objective: anywhere else it is harmless.
+    """
     move = UNIT_STATS[unit.type].move
     scored: list[tuple[float, MoveOrder]] = []
     for enemy in board.enemy_units:
+        if enemy.owner == NEUTRAL and distance(enemy.coord, objective.coord) > 3:
+            continue
         approach: Axial | None = None
         approach_steps = move
         for nb in neighbors(enemy.coord):
@@ -155,7 +184,10 @@ def _attack_orders(
             continue
         path = _path_to(reach, approach) + [enemy.coord]
         scored.append(
-            (_attack_score(unit, enemy, board), MoveOrder(unit_id=unit.id, path=path))
+            (
+                _attack_score(unit, enemy, board, objective),
+                MoveOrder(unit_id=unit.id, path=path),
+            )
         )
     scored.sort(key=lambda pair: pair[0], reverse=True)
     return scored[:3]
@@ -181,8 +213,13 @@ def _withdraw_order(board: BoardIndex, unit: Unit, reach: _Reach) -> MoveOrder |
 
 
 def _threatened(board: BoardIndex, unit: Unit) -> bool:
-    """Whether any visible enemy could strike ``unit``'s hex next turn (§4.5 rest)."""
+    """Whether any visible enemy could strike ``unit``'s hex next turn (§4.5 rest).
+
+    Neutral garrisons always hold, so they never strike a resting unit.
+    """
     for enemy in board.enemy_units:
+        if enemy.owner == NEUTRAL:
+            continue
         reach = UNIT_STATS[enemy.type].attack_range
         if enemy.type is UnitType.ARTILLERY:
             if distance(enemy.coord, unit.coord) <= reach:
@@ -207,18 +244,31 @@ def _locally_outnumbered(board: BoardIndex, unit: Unit) -> bool:
     return adj_enemy > adj_friend + 1
 
 
-def _barrage_orders(board: BoardIndex, unit: Unit) -> list[tuple[float, BarrageOrder]]:
-    """Barrage candidates for each visible enemy in range (SPEC §7.2, range 3)."""
+def _barrage_orders(
+    board: BoardIndex, unit: Unit, objective: Objective
+) -> list[tuple[float, BarrageOrder]]:
+    """Barrage candidates for each visible enemy in range (SPEC §7.2, range 3).
+
+    Fire goes where the unit's objective is (the site the group attacks), and
+    a neutral garrison elsewhere is left alone: it never moves or strikes.
+    """
     reach = UNIT_STATS[UnitType.ARTILLERY].attack_range
     scored: list[tuple[float, BarrageOrder]] = []
     for enemy in board.enemy_units:
         if distance(unit.coord, enemy.coord) > reach:
+            continue
+        gap = distance(enemy.coord, objective.coord)
+        if enemy.owner == NEUTRAL and gap > 3:
             continue
         mods = board.view.terrain_defense(enemy.coord) + _ENEMY_HOLD_BONUS
         dealt = compute_damage(UnitType.ARTILLERY, enemy.type, mods)
         value = float(dealt) + 0.5 * UNIT_STATS[enemy.type].recruit_cost
         if dealt >= enemy.hp:
             value += _KILL_BONUS
+        if gap == 0:
+            value += _OBJECTIVE_BONUS
+        elif gap <= 2:
+            value += _OBJECTIVE_BONUS / 2
         scored.append((value, BarrageOrder(unit_id=unit.id, target=enemy.coord)))
     scored.sort(key=lambda pair: pair[0], reverse=True)
     return scored
@@ -252,19 +302,25 @@ def unit_candidates(
     scored: list[tuple[float, Order]] = []
 
     if unit.type is UnitType.ARTILLERY:
-        for value, barrage in _barrage_orders(board, unit):
+        for value, barrage in _barrage_orders(board, unit, objective):
             scored.append((1000.0 + value, barrage))
         advance = _advance_order(board, unit, objective, reach)
         if advance is not None:
             scored.append((500.0, advance))
     else:
-        for value, attack in _attack_orders(board, unit, reach):
-            base = 1000.0 if value > 0 else 100.0
+        for value, attack in _attack_orders(board, unit, reach, objective):
+            # A losing attack ranks below holding: never attack at bad odds.
+            base = 1000.0 if value > 0 else 0.0
             scored.append((base + value, attack))
         advance = _advance_order(board, unit, objective, reach)
         if advance is not None:
             scored.append((500.0 + 0.1 * objective.value, advance))
-        engaged = board.adjacent_enemy(unit.coord, unit.owner)
+        # Only another player's unit makes withdrawing worth it: a garrison
+        # never strikes a unit that leaves it alone.
+        engaged = any(
+            e.owner != NEUTRAL and distance(e.coord, unit.coord) == 1
+            for e in board.enemy_units
+        )
         wounded = unit.hp < UNIT_STATS[unit.type].max_hp
         if engaged and (wounded or _locally_outnumbered(board, unit)):
             withdraw = _withdraw_order(board, unit, reach)
@@ -278,3 +334,37 @@ def unit_candidates(
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
     return _dedupe([order for _score, order in scored])[:_MAX_CANDIDATES]
+
+
+def moves_toward(
+    board: BoardIndex,
+    unit: Unit,
+    goal: Axial,
+    reserved: frozenset[Axial] = frozenset(),
+    stay_ok: bool = True,
+) -> list[MoveOrder]:
+    """Moves that bring ``unit`` closer to ``goal``, best first, none into combat.
+
+    For stepping past a garrison or toward a place to rest: a hex beside an
+    enemy counts as two hexes farther, since standing in its zone of control
+    pins the next turn's move (SPEC §8.4). Only hexes strictly closer than
+    where the unit stands (by that measure) are offered, unless ``stay_ok`` is
+    False: then every reachable hex is, for a unit that must leave its hex.
+    """
+    reach = _reach(board, unit, reserved)
+
+    def gap(coord: Axial) -> int:
+        return distance(coord, goal) + 2 * board.adjacent_enemy(coord, unit.owner)
+
+    here = gap(unit.coord) if stay_ok else _NO_GAP
+    ranked = sorted(
+        (
+            (gap(coord), steps, coord.q, coord.r)
+            for coord, steps in reach.dist.items()
+            if coord != unit.coord and gap(coord) < here
+        ),
+    )
+    return [
+        MoveOrder(unit_id=unit.id, path=_path_to(reach, Axial(q=q, r=r)))
+        for _, _, q, r in ranked[:_MAX_CANDIDATES]
+    ]

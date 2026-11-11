@@ -5,7 +5,8 @@ simple until the user's first playtest (bots fill the map; better bots come
 after). Each turn:
 
 * **Recruit** while under army size, steering toward ~60% infantry, 20% guns, 20%
-  tanks, at a free base or city (tanks at a free factory). A recruit is skipped if
+  tanks, at a held base or city (tanks at a held factory), preferring one nobody
+  stands on; a unit standing on the chosen site steps off this turn. A recruit is skipped if
   its upkeep would leave fuel or manpower running at a loss that the stock can't
   carry for `_DEFICIT_TURNS` more turns, so the bot rarely forces a disband.
 * **Build** with what is left: Barracks 1, then the Workshop, then barracks levels,
@@ -78,8 +79,13 @@ def plan_base(view: GameState, slot: PlayerId) -> BasePlan:
         upkeep += economy.upkeep[unit.type]
     budget = _Budget(stocks=player.stocks, net=income - upkeep)
 
-    occupied = {u.coord for u in view.units if u.posture is Posture.DEPLOYED}
-    free = [c for c in held if c not in occupied]
+    # Recruits appear after movement, so a site an own unit stands on is free
+    # if that unit steps off this turn (the tactical layer moves it). Sites with
+    # nobody on them come first.
+    standing = {
+        u.coord for u in view.units if u.posture is Posture.DEPLOYED and u.owner == slot
+    }
+    free = sorted(held, key=lambda c: (c in standing, c.q, c.r))
     counts = {t: sum(1 for u in own if u.type is t) for t in UnitType}
     cap = view.unit_cap_for(slot)
     recruitments: list[Recruitment] = []
@@ -124,7 +130,7 @@ def _next_recruit(
             continue
         if not budget.can_carry(economy.upkeep[unit_type]):
             continue
-        return unit_type, min(spots, key=lambda c: (c.q, c.r))
+        return unit_type, spots[0]
     return None
 
 
