@@ -497,19 +497,55 @@ A world bot's turn is split where the later LLM commander plugs in (VISION §9):
 
 - **Strategist** (`Strategist` protocol): reads the fog-redacted view, returns
   `StrategistArgs`: a `stance` (expand, attack, defend), an optional `focus` hex, a
-  `reserve_share` kept home as garrisons, and an `aggression` weight.
-  `ScriptedStrategist` is the slice-1 stand-in. It defends when another player's unit
-  is within 8 of a holding and the bot is cautious (neutral garrisons never move, so they
-  never threaten). It expands while a *cheap* neutral site lies within its `reach`: one
-  whose garrison tier HP is at most 30 for the most cautious bot and 5 for the boldest,
-  so bold bots turn on their neighbours sooner. It also keeps expanding until it has a
-  field army of five combat units. Otherwise it attacks the hostile-held settlement
-  nearest its holdings.
+  `reserve_share` kept home as garrisons, an `aggression` weight, and an optional
+  `operation` (below). `ScriptedStrategist` is the slice-1 stand-in. When it runs an
+  operation, the stance steers the units outside it. Without one it defends when
+  another player's unit is within 8 of a holding and the bot is cautious (neutral
+  garrisons never move, so they never threaten). It expands while a *cheap* neutral
+  site lies within its `reach`: one whose garrison tier HP is at most 30 for the most
+  cautious bot and 5 for the boldest, so bold bots turn on their neighbours sooner. It
+  also keeps expanding until it has a field army of five combat units. Otherwise it
+  attacks the hostile-held settlement nearest its holdings.
+- **Operation** (`app/ai/operations.py`, added 2026-11-11): one offensive as plain
+  data: `target` player, `objective` (a settlement the target holds), `staging` (where
+  the force assembles: the own holding nearest the objective if within 8, else the hex
+  5 short of it on the straight line from that holding), `force` (combat units committed) and `assemble`
+  (how many must stand ready before it advances). An LLM strategist fills the same
+  fields; `BotPlan.operation` reports it so the simulator can measure it.
 - **Tactical layer** (`plan_world_turn(view, slot, args)`): writes a legal `BotPlan`.
   An LLM strategist replaces only the first layer.
 
 Each bot has a seeded `Personality` (aggression, reach, garrison share), so a world of
 bots isn't a world of clones.
+
+**How the scripted strategist picks an operation** (`plan_operation`). Nothing
+survives between ticks on the live server: `GamesService` builds a fresh `WorldPolicy`
+each tick, and no player field or table holds bot memory. So the operation is derived
+from the view alone and made sticky by what the view does carry over: where the bot's
+units stand, and its own standing travel orders (private to it, kept between turns).
+
+- *When:* a war of choice starts once the bot has no cheap neutral land in reach and
+  its army reaches its war size, from 12 combat units for the most cautious bot to 8
+  for the boldest. While land is cheap the only war is against a *clearly beaten*
+  neighbour (the bot holds twice its settlements and at least 3 more). No operation
+  runs while two hostile units stand within 6 of the bot's base, or with fewer than 3
+  free combat units.
+- *Commitment:* a war is under way at a hostile settlement when 2 or more own combat
+  units stand within 7 of it, or march to a staging area near it. Such a war goes on
+  with an army 3 below the war size, and each engaged unit adds 3 hexes of preference
+  for that target and objective, so the more of the army is committed, the harder it
+  turns. There is no explicit horizon: an operation ends when its objective falls (the
+  next one of the same target follows), the target leaves reach, the army drops below
+  the band, or home is in danger.
+- *Whom and where:* the nearest neighbour holding a settlement within `reach` + 6,
+  preferring one already fought, clearly beaten, or with units on the bot's land. The
+  objective is that neighbour's settlement nearest the bot's holdings, or its base once
+  clearly beaten.
+- *How much:* 60% of the free combat units for the most cautious bot up to 90% for the
+  boldest (40% of that while finishing a neighbour during expansion), all of them when
+  hostile units stand within 6 of the staging area. The force must reach 1.2 times the
+  target's units in view within 3 of the objective; an objective the free army cannot
+  match is passed over for the next, and with none left the bot runs no operation.
 
 ### 12.2 Tactical layer
 
@@ -559,6 +595,21 @@ Rewritten 2026-11-10/11 (`app/ai/world.py`, with `app/ai/intel.py` and
   while manpower runs at a loss and 0.5× while the stock is near full; a steel mill is
   worth more the more turns short of the next building's steel the bot is; a second
   factory is worth little.
+- **Operations** (`_Campaign`, 2026-11-11): the force is the operation's `force`
+  healthy free combat units nearest the staging area or objective; units already in
+  the zone (staging distance + 3 around the objective) keep their place, and a worn
+  unit drops out to rest and is replaced by the next nearest. Outside the zone a unit
+  makes for the staging area. The force *gathers* there until `assemble` units stand
+  ready in the zone (deployed, 6 HP or more), then *advances*. Every visible hostile
+  unit in the zone is the battle; the *focus* is the one most ready units (and guns in
+  range) could hit this turn. The force *strikes* when enough of them can reach the
+  focus (the assembly size less one, at least 2) at 1.2:1 local odds counted within 3
+  of it; then every striker hits the focus, and in the zone nothing else is struck
+  except a nearly dead unit or one beside an own holding. Short of that the force
+  closes up on the focus but never ends adjacent to an enemy. While gathering it hits
+  back at an enemy that comes at the staging area or into contact, with 2 or more
+  units. Guns assigned to the operation stand off and barrage as elsewhere. No other
+  group is sent at the objective.
 - **Tactical units** (a hostile within 6) reuse the v0.1 candidates (§4.5). Moves claim
   the hexes they enter per pulse and their final hex, so a bot never jams itself; attack
   steps are not claimed, so several units can strike one target.
@@ -575,6 +626,16 @@ capture) and siege attackers (distinct attackers per besieged site); units lost 
 garrisons; attacks on player units and the share made with local superiority (more of
 the attacker's deployed units than the defender's within 3); and the worst single
 bot-turn think time.
+
+Added 2026-11-11 (`_War`): attacks at 2:1 local odds or better; assault sizes (distinct
+own units striking one target area, strikes within 2 hexes chained, in one turn, guns
+firing into it included); each bot's share of its units in contact per turn, over all
+bot-turns and over bot-turns with any unit in contact; operations started, succeeded
+(the bot holds the objective or the target is gone when the operation changes),
+abandoned, or open at the end, by `(target, objective)`; turns from an operation's
+start to its first strike on the target; and who took each eliminated player's last
+settlement. A one-turn blip in the operation counts as an abandon and a new start, so
+the operation counts overstate churn.
 
 ### 12.4 Measurements and known gaps
 
@@ -639,7 +700,125 @@ On the big world the median bot now tracks the economy draft's model player loos
 inside the 2 s budget; the old 1.2 s worst case was the full-map site scans that the
 intel box removed. Resolution is slower because there are more units and more fights.
 
+**Operations (2026-11-11).** Round 2 is about war between players. Baselines were re-run
+on the round-1 bots with the new sim metrics and matched round 1's numbers exactly.
+
+20 seeds of 12-slot worlds, 60 turns (shares are over all fight clusters or attacks of
+the 20 runs; units and holdings are medians across seeds of each seed's median bot):
+
+| | round 1 | operations |
+|---|---|---|
+| fight clusters with 2+ a side / 3+ a side | 16.8% / 1.9% | 24.7% / 5.5% |
+| fight clusters one against one | 60% | 53% |
+| median engagement of 3 a side (gate) | 0/20 | 0/20 |
+| assaults by 2+ units / 3+ units (one area, one turn) | 27.6% / 6.3% | 34.0% / 10.4% |
+| attacks on players with local superiority / at 2:1 | 51% / 36.5% | 49.7% / 33.1% |
+| front share, all bot-turns / bot-turns in contact | 5.5% / 17.6% | 6.2% / 19.2% |
+| operations started / succeeded / abandoned / open | none | 670 / 121 / 416 / 133 |
+| turns from an operation's start to its first strike (median) | none | 2 |
+| neighbour pairs fought by turn 30 | 155 of 447 | 144 of 447 |
+| eliminations (all by another player) | 6 | 13 |
+| neutral / player captures | 1,332 / 331 | 1,235 / 255 |
+| units lost to garrisons / shortage disbands | 11 / 124 | 12 / 164 |
+| every bot at 3 holdings by turn 20 | 8/20 | 8/20 |
+| units at turn 14 / 28 / 42 / 60 | 6 / 9 / 11 / 12 | 6 / 9 / 10.25 / 11.75 |
+| holdings at turn 14 / 28 / 42 / 60 | 3.5 / 5 / 6 / 6.5 | 3.5 / 5 / 6 / 6 |
+| think time per bot-turn, mean / worst | 26 ms / 0.84 s | 21 ms / 0.82 s |
+
+100 bots on the 200-slot world, seed 1, 60 turns, each run alone (the machine was shared
+with other work, so times are noisy):
+
+| | round 1 | operations |
+|---|---|---|
+| fight clusters with 2+ a side / 3+ a side | 14.8% / 1.3% | 14.9% / 3.4% |
+| assaults by 2+ units / 3+ units | 25.5% / 5.6% | 24.9% / 5.9% |
+| attacks on players with local superiority / at 2:1 | 54% / 43% | 51% / 41% |
+| front share, all bot-turns / bot-turns in contact | 2.3% / 12.6% | 2.7% / 13.5% |
+| operations started / succeeded / abandoned / open | none | 192 / 25 / 117 / 50 |
+| neighbour pairs in contact by turn 30 | 18 of 104 | 17 of 104 |
+| eliminations | 0 | 1 |
+| neutral / player captures | 1,034 / 105 | 982 / 98 |
+| units lost to garrisons / shortage disbands | 7 / 17 | 4 / 35 |
+| units and holdings at turn 14 / 28 / 42 / 60 | 6 / 9 / 12 / 15 and 4 / 7 / 9 / 11 | the same |
+| think time per bot-turn, mean / worst | 31 ms / 0.13 s | 36 ms / 2.3 s |
+| wall time | 404 s | 418 s |
+
+The half-filled big world has cheap land in reach for most bots all game, so wars of
+choice rarely start and little changes. The 2.3 s worst bot-turn is a garbage-collection
+pause, not planning: re-running the slow bot-turns under a profiler took 65 to 83 ms,
+and on a rerun the one slow bot-turn spent 0.91 of its 0.93 s in the collector (the
+world state is a large heap, and a full collection lands wherever the allocation count
+trips it). `gc.freeze()` after loading the state, or a higher generation-2 threshold in
+the tick, would keep such pauses out of the 2 s budget.
+
+What the numbers say. Fights are bigger: twice the share of clusters with two or more a
+side, nearly three times with three, and more assaults by three or more units. Wars are
+finished: twice the eliminations, every one by a neighbour. Operations commit: on
+seeds 1 and 3 traced turn by turn, wars start between turns 17 and 40 and most bots
+hold one target for 10 to 40 turns (a few flicker on and off as the army hovers at its
+war size), and the force strikes about two turns after an operation starts. Growth holds within a few percent of
+round 1 (neutral captures down 7%, holdings at turn 60 down half a settlement) only
+because wars of choice wait until cheap land is gone. Two things got worse: player
+captures (down 23%) and attacks at 2:1 odds (down 3 points). The median engagement is
+still one a side, so the §9 fronts gate still fails.
+
+What was tried, on the same 20 seeds:
+
+- *Wars of choice at the border while expanding* (a hostile settlement within 8 to 10
+  of the bot's holdings, 40% to 100% of the free army): clusters with 2+ a side rose to
+  29% to 38% and 3+ to 6% to 10%, but neutral captures fell 20% to 29% (950 to 1,074),
+  player captures fell to 221 to 258, and holdings at turn 60 to 4.75 to 5.5. The force
+  is taken out of expansion, and wars kill units (25% to 50% more player units died on
+  six instrumented seeds). The shipped setting is the conservative end of this trade.
+- *Waiting for the whole force* (assemble = force less one): forces sat for 25 turns at
+  the staging area while a lone enemy wore units down. Assembling at 60% fixed it.
+- *Strike discipline without odds*: the force struck as soon as enough units were in
+  reach, into equal numbers; requiring 1.2:1 within 3 of the focus raised attacks at 2:1
+  from 25% to 30% at a small cost in cluster size.
+- *Closing up on the objective* left the force short of a focus standing off to the
+  side: only 10% of operation turns struck, 60% were spent closing up. Closing up on the
+  focus raised strikes to about 25%.
+- *Force membership by distance alone* swapped units in and out of the force every turn,
+  marching them back and forth; units in the zone now keep their place.
+- *A flat stickiness bonus* let a bot flip between two neighbours it was engaged with;
+  stickiness per engaged unit cut that. *Counting every march as engagement* started
+  wars by accident (expansion columns near a neighbour's land); only marches that look
+  like staging count now.
+- *Preferring settlements seen empty* (an expected-defence term in the objective score)
+  made objectives flicker as units came into and out of view; dropped.
+- *Starting wars only when the neighbour's units stand on the bot's land* churned the
+  same way (units flicker in and out of view); dropped.
+
 Gaps:
+
+- Player captures fell. Round 1's came mostly from groups of two walking into empty
+  hostile sites. An operation goes for the neighbour's settlement nearest the bot, which
+  is usually where the neighbour's army stands, and the 1-damage combat floor makes that
+  slow: on one traced war a force of four needed 13 turns of fighting to take an oil
+  field its neighbour kept feeding defenders into. Choosing weakly held objectives needs
+  intel that persists (a remembered last sighting), not the current view, which
+  flickers.
+- Combat math (a tuning observation, not acted on): infantry against infantry deals 1
+  damage both ways in nearly every case (attack 4 against defence 5 clamps to the floor),
+  and in a dogpile every attacker takes the defender's full return blow. A massed attack
+  therefore trades HP evenly and wins only by killing sooner. Concentration pays less
+  than players will expect, which caps how much better massed bot attacks can measure.
+- No explicit commitment horizon. The live tick keeps nothing between turns, so an
+  operation lasts as long as its derivation stays put (units engaged, standing orders).
+  A 28-turn horizon, and abandoning an operation that has made no progress in N turns,
+  need a per-bot notebook: a small JSON field on the player row, written by the tick and
+  read by the strategist (VISION §9). That needs a migration and was not built.
+- Fronts and defence (goal 3) are unchanged from round 1 apart from the all-in response
+  when the enemy stands at the staging area: no line on defensible terrain, no mobile
+  reserve behind it. A losing bot does not consolidate beyond dropping its operation.
+- The operation counts in the sim overstate churn: a one-turn blip (a visible raider, an
+  army one unit short) closes an operation and starts another.
+- Neighbours fought by turn 30 stays 0/20 (144 of 447 pairs): wars of choice wait for
+  the land to run out, which in 12-slot worlds is after turn 30 for most bots.
+- Shortage disbands rose 32% (164 against 124), following the extra farm losses to
+  other players, as in round 1.
+
+Gaps before 2026-11-11 (round 1):
 
 - Fights stay small: the median engagement is still one unit a side in both worlds.
   About 63% of front clusters are one against one, mostly two moving units meeting on the
