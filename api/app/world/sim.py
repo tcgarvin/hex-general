@@ -22,6 +22,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.ai.operations import Operation
 from app.ai.policy import Policy
 from app.ai.world import WorldPolicy
 from app.engine.events import (
@@ -118,6 +119,25 @@ class SimReport(BaseModel):
     # deployed units than the defender's within two hexes of the fight.
     player_attacks: int = 0
     player_attacks_superior: int = 0
+    # War between players (see `_War`, added 2026-11-11). Attacks made with at
+    # least twice the defender's deployed units within three hexes; assault
+    # sizes (distinct own units striking one target area, within two hexes, in
+    # one turn, guns firing into it included); each bot's share of its units in
+    # contact per turn, over every bot-turn and over bot-turns with any unit in
+    # contact; operations (`BotPlan.operation`) started, and how the closed ones
+    # ended; turns from an operation's start to its first strike on the target
+    # player; and who took each eliminated player's last settlement.
+    player_attacks_2to1: int = 0
+    assault_sizes: list[int] = Field(default_factory=list)
+    front_share_all: float = 0.0
+    front_share_engaged: float = 0.0
+    operations_started: int = 0
+    operations_succeeded: int = 0
+    operations_abandoned: int = 0
+    operations_open: int = 0
+    operation_turns: list[int] = Field(default_factory=list)
+    assault_delays: list[int] = Field(default_factory=list)
+    eliminated_by: dict[PlayerId, PlayerId] = Field(default_factory=dict)
     think_ms_mean: float = 0.0
     think_ms_max: float = 0.0
     think_ms_p95: float = 0.0
@@ -152,6 +172,7 @@ def run_sim(
     travel_turns: list[int] = []
     think_all: list[float] = []
     sieges = _Sieges(state)
+    war = _War()
 
     for _ in range(turns):
         live = [p for p in ids if p not in report.eliminated]
@@ -159,11 +180,14 @@ def run_sim(
         recruitments: list[Recruitment] = []
         economy: list[EconomyOrders] = []
         think: list[float] = []
+        operations: dict[PlayerId, Operation] = {}
         for player in live:
             view = redact_state(state, player)
             start = time.perf_counter()
             plan = bots[player].plan(view, player)
             think.append((time.perf_counter() - start) * 1000.0)
+            if plan.operation is not None:
+                operations[player] = plan.operation
             base_orders = plan.economy_orders(player)
             validate_submission(
                 view, player, plan.orders, plan.recruitments, base_orders
@@ -192,11 +216,15 @@ def run_sim(
                     travel_turns.append(state.turn - issued_at.pop(event.unit_id))
         _tally(report, before, state, events, resolve_ms, max(think, default=0.0))
         sieges.fold(report, before, state.turn, events)
+        war.fold(report, before, state, events, operations, live)
         for player in live:
             if not any(u.owner == player for u in state.units) and not any(
                 s.controlled_by == player for s in state.settlements
             ):
                 report.eliminated[player] = state.turn
+                if player in war.last_captor:
+                    report.eliminated_by[player] = war.last_captor[player]
+    war.finish(report)
 
     report.travel_open_at_end = len(state.standing_orders)
     report.travel_turns_median = (
@@ -370,6 +398,153 @@ class _Sieges:
                 continue
             report.player_attacks += 1
             report.player_attacks_superior += int(near[owner] > near[defender])
+            report.player_attacks_2to1 += int(near[owner] >= 2 * near[defender])
+
+
+_ASSAULT_RADIUS = 2  # strikes this close together are one assault
+
+
+class _War:
+    """Folds each turn's war between players: assaults, front share, operations.
+
+    An operation is identified by its target player and objective; when a bot
+    reports a different one (or none), the old one closes: *succeeded* if the
+    bot now holds the objective or the target is gone, else *abandoned*.
+    """
+
+    def __init__(self) -> None:
+        self.current: dict[PlayerId, tuple[PlayerId, Axial]] = {}
+        self.started_at: dict[PlayerId, int] = {}
+        self.assaulted: set[PlayerId] = set()
+        self.last_captor: dict[PlayerId, PlayerId] = {}
+        self.front_all: list[float] = []
+        self.front_engaged: list[float] = []
+
+    def fold(
+        self,
+        report: SimReport,
+        before: GameState,
+        after: GameState,
+        events: list[Event],
+        operations: dict[PlayerId, Operation],
+        live: list[PlayerId],
+    ) -> None:
+        """Add one resolved turn to ``report``; ``operations`` are this turn's."""
+        self._operations(report, before, operations, live)
+        owner_of = {u.id: u.owner for u in before.units}
+        strikes: dict[PlayerId, list[tuple[Axial, int]]] = {}
+        struck: dict[PlayerId, set[PlayerId]] = {}
+        for event in events:
+            if isinstance(event, CombatResolved):
+                defenders = [
+                    p for p in event.participants if p.role is CombatRole.DEFENDER
+                ]
+                if not defenders or defenders[0].owner == NEUTRAL:
+                    continue
+                for p in event.participants:
+                    if p.role is CombatRole.ATTACKER and p.owner != NEUTRAL:
+                        strikes.setdefault(p.owner, []).append((event.coord, p.unit_id))
+                        struck.setdefault(p.owner, set()).add(defenders[0].owner)
+            elif isinstance(event, BarrageResolved):
+                gunner = owner_of[event.artillery_id]
+                hits = ([event.hit] if event.hit is not None else []) + event.extra_hits
+                victims = {h.owner for h in hits if h.owner not in (NEUTRAL, gunner)}
+                if gunner != NEUTRAL and victims:
+                    strikes.setdefault(gunner, []).append(
+                        (event.target, event.artillery_id)
+                    )
+                    struck.setdefault(gunner, set()).update(victims)
+            elif isinstance(event, SettlementCaptured):
+                if event.previous_owner is not None:
+                    self.last_captor[event.previous_owner] = event.captured_by
+        for owner in sorted(strikes):
+            report.assault_sizes.extend(_assaults(strikes[owner]))
+        for player, (target, _) in sorted(self.current.items()):
+            if player not in self.assaulted and target in struck.get(player, ()):
+                self.assaulted.add(player)
+                report.assault_delays.append(after.turn - self.started_at[player])
+        self._front_share(after, live)
+
+    def _operations(
+        self,
+        report: SimReport,
+        state: GameState,
+        operations: dict[PlayerId, Operation],
+        live: list[PlayerId],
+    ) -> None:
+        held = {s.coord: s.controlled_by for s in state.settlements}
+        alive = {u.owner for u in state.units} | {
+            s.controlled_by for s in state.settlements if s.controlled_by
+        }
+        for player in live:
+            op = operations.get(player)
+            key = (op.target, op.objective) if op is not None else None
+            old = self.current.get(player)
+            if old == key:
+                continue
+            if old is not None:
+                target, objective = old
+                won = held.get(objective) == player or target not in alive
+                report.operations_succeeded += int(won)
+                report.operations_abandoned += int(not won)
+                report.operation_turns.append(state.turn - self.started_at[player])
+                del self.current[player]
+                self.assaulted.discard(player)
+            if key is not None:
+                report.operations_started += 1
+                self.current[player] = key
+                self.started_at[player] = state.turn
+
+    def _front_share(self, after: GameState, live: list[PlayerId]) -> None:
+        deployed = {
+            u.coord: u.owner
+            for u in after.units
+            if u.posture is Posture.DEPLOYED and u.owner != NEUTRAL
+        }
+        in_contact = Counter(
+            owner
+            for coord, owner in deployed.items()
+            if any(deployed.get(n, owner) != owner for n in neighbors(coord))
+        )
+        units = Counter(u.owner for u in after.units if u.owner != NEUTRAL)
+        for player in live:
+            if units[player] == 0:
+                continue
+            share = in_contact[player] / units[player]
+            self.front_all.append(share)
+            if in_contact[player]:
+                self.front_engaged.append(share)
+
+    def finish(self, report: SimReport) -> None:
+        """Close the run: open operations and the front-share means."""
+        report.operations_open = len(self.current)
+        report.front_share_all = (
+            round(statistics.fmean(self.front_all), 3) if self.front_all else 0.0
+        )
+        report.front_share_engaged = (
+            round(statistics.fmean(self.front_engaged), 3)
+            if self.front_engaged
+            else 0.0
+        )
+
+
+def _assaults(strikes: list[tuple[Axial, int]]) -> list[int]:
+    """Distinct striking units per target area: strikes within `_ASSAULT_RADIUS`
+    of each other (chained) are one assault."""
+    sizes: list[int] = []
+    left = sorted(strikes, key=lambda s: (s[0].q, s[0].r, s[1]))
+    while left:
+        area = [left.pop(0)]
+        grew = True
+        while grew:
+            grew = False
+            for strike in list(left):
+                if any(distance(strike[0], a[0]) <= _ASSAULT_RADIUS for a in area):
+                    area.append(strike)
+                    left.remove(strike)
+                    grew = True
+        sizes.append(len({unit for _, unit in area}))
+    return sizes
 
 
 def _engagements(front: set[Axial], deployed: dict[Axial, PlayerId]) -> list[float]:
@@ -425,6 +600,13 @@ def _neighbor_pairs(world: GeneratedWorld, ids: list[PlayerId]) -> list[str]:
 
 def _median(values: list[int]) -> float:
     return statistics.median(values) if values else 0.0
+
+
+def _share(values: list[float], at_least: float) -> float:
+    """The share of ``values`` at or above ``at_least`` (0 when empty)."""
+    if not values:
+        return 0.0
+    return round(sum(1 for v in values if v >= at_least) / len(values), 3)
 
 
 def _percentile(values: list[float], pct: float) -> float:
@@ -551,7 +733,21 @@ def main() -> None:
     )
     print(
         f"attacks on players {report.player_attacks}, with local superiority "
-        f"{report.player_attacks_superior}"
+        f"{report.player_attacks_superior}, at 2:1 {report.player_attacks_2to1}"
+    )
+    print(
+        f"engagements with 2+ a side {_share(sizes, 2)}, 3+ {_share(sizes, 3)}; "
+        f"assaults {len(report.assault_sizes)}, with 3+ units "
+        f"{_share([float(a) for a in report.assault_sizes], 3)}"
+    )
+    print(
+        f"front share {report.front_share_all} (engaged bots {report.front_share_engaged})"
+    )
+    print(
+        f"operations started {report.operations_started}, succeeded "
+        f"{report.operations_succeeded}, abandoned {report.operations_abandoned}, "
+        f"open {report.operations_open}; turns to first assault median "
+        f"{_median(report.assault_delays)}"
     )
     print(json.dumps(report.gates, indent=1))
     print(f"wall {elapsed:.1f} s")

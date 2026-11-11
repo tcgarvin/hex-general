@@ -36,6 +36,7 @@ from app.ai.board import BoardIndex, is_combat_unit
 from app.ai.candidates import moves_toward, unit_candidates
 from app.ai.intel import Box, Intel
 from app.ai.objectives import Objective, ObjectiveKind
+from app.ai.operations import Operation, plan_operation
 from app.ai.policy import BotPlan
 from app.ai.recruit import plan_recruitment
 from app.engine.economy_rules import GARRISON_FORCES, SiteKind
@@ -111,6 +112,20 @@ _RESERVE_SPREAD = 2  # idle units gather within this many hexes of the front
 _GROUP_SLACK = 6  # a group takes units this much farther than its min_group-th
 _CORRIDOR_SLACK = 4  # travel skips routing when no garrison is this near the way
 _COMMIT_RADIUS = 3  # a unit this close to a target is matched as if on it
+# Operations (`Operation`, `_Campaign`). The campaign zone reaches this far
+# past the staging area; a force unit this healthy, deployed in the zone, counts
+# as ready; ready units gather within `_GATHER_SPREAD` of the staging area; a
+# closing force halts out of contact and at least `_RING` hexes from the
+# objective until enough of it can strike in one turn.
+_ZONE_MARGIN = 3
+_READY_HP = 6
+_GATHER_SPREAD = 2
+_RING = 2
+_OP_VALUE = 10.0
+# An advancing force strikes only with this many of its ready units per visible
+# enemy unit within `_ODDS_RADIUS` of the focus.
+_ODDS = 1.2
+_ODDS_RADIUS = 3
 
 
 class Stance(StrEnum):
@@ -134,7 +149,9 @@ class StrategistArgs(BaseModel):
     ``focus`` concentrates effort: objectives within `_FOCUS_RADIUS` of it are
     worth more. ``reserve_share`` is the share of combat units kept back to
     garrison own settlements. ``aggression`` weighs hostile-held targets against
-    neutral ones.
+    neutral ones. ``operation`` is the offensive the tactical layer runs this
+    turn with part of the army (`Operation`), ``None`` when the bot runs none;
+    the ``stance`` then steers the units outside it.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -143,6 +160,7 @@ class StrategistArgs(BaseModel):
     focus: Axial | None = None
     reserve_share: float = Field(default=0.0, ge=0.0, le=0.8)
     aggression: float = Field(default=0.5, ge=0.0, le=1.0)
+    operation: Operation | None = None
 
 
 class Personality(BaseModel):
@@ -179,9 +197,13 @@ class Strategist(Protocol):
 class ScriptedStrategist:
     """The rule-based stand-in for the LLM commander (WORLD_SPEC §8).
 
-    Defend when an own settlement is threatened by another player and the bot is
-    cautious. Otherwise expand while *cheap* neutral land lies within its reach,
-    and attack the hostile-held settlement nearest its holdings once it doesn't.
+    Wars are run as operations (`plan_operation`, `Operation`): when one is
+    on, it goes to the tactical layer in ``StrategistArgs.operation`` and the
+    stance steers the rest of the army (expand while cheap land is in reach,
+    else attack). Without one: defend when an own settlement is threatened by
+    another player and the bot is cautious, else expand while *cheap* neutral
+    land lies within its reach, and attack the hostile-held settlement nearest
+    its holdings once it doesn't.
     What counts as cheap follows aggression: a bold bot stops clearing garrisons
     and turns on its neighbours sooner, a cautious one keeps taking strongpoints.
     A bot attacks only with a field army of `_ATTACK_ARMY` combat units; short
@@ -203,16 +225,6 @@ class ScriptedStrategist:
             for c in held
             if any(distance(c, u.coord) <= _THREAT_RADIUS for u in threats)
         ]
-        if threatened and aggression < 0.5:
-            return StrategistArgs(
-                stance=Stance.DEFEND,
-                focus=threatened[0],
-                reserve_share=reserve,
-                aggression=aggression,
-            )
-        expand = StrategistArgs(
-            stance=Stance.EXPAND, reserve_share=reserve, aggression=aggression
-        )
         anchors = held or [u.coord for u in view.units if u.owner == slot]
         sites = view.map.site_index
         cheap = _CHEAP_HP_MAX - (_CHEAP_HP_MAX - _CHEAP_HP_MIN) * aggression
@@ -222,6 +234,26 @@ class ScriptedStrategist:
             and _nearest(s.coord, anchors) <= self.personality.reach
             for s in view.settlements
         )
+        operation = plan_operation(
+            view, slot, aggression, self.personality.reach, reserve, neutral_near
+        )
+        if threatened and aggression < 0.5 and operation is None:
+            return StrategistArgs(
+                stance=Stance.DEFEND,
+                focus=threatened[0],
+                reserve_share=reserve,
+                aggression=aggression,
+            )
+        expand = StrategistArgs(
+            stance=Stance.EXPAND, reserve_share=reserve, aggression=aggression
+        )
+        if operation is not None:
+            return StrategistArgs(
+                stance=Stance.EXPAND if neutral_near else Stance.ATTACK,
+                reserve_share=reserve,
+                aggression=aggression,
+                operation=operation,
+            )
         army = sum(1 for u in view.units if u.owner == slot and is_combat_unit(u))
         if neutral_near or army < _ATTACK_ARMY:
             return expand
@@ -276,6 +308,8 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
     anchors = [u.coord for u in board.own_units]
     if args.focus is not None:
         anchors.append(args.focus)
+    if args.operation is not None:
+        anchors += [args.operation.objective, args.operation.staging]
     intel = Intel(view, slot, Box.around(anchors, _HORIZON + _FOCUS_RADIUS))
     build = None
     if view.config.economy is None:
@@ -285,9 +319,16 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
         recruitments, build = base.recruitments, base.build
     reserved = frozenset(r.coord for r in recruitments)
     standing = {o.unit_id: o for o in view.standing_orders}
+    heading = {o.unit_id: o.destination for o in view.standing_orders}
     garrisons = _pick_garrisons(view, slot, board.own_units, args, intel)
+    campaign: _Campaign | None = None
+    if args.operation is not None:
+        free = [
+            u for u in board.own_units if is_combat_unit(u) and u.id not in garrisons
+        ]
+        campaign = _campaign(board, intel, args.operation, free, heading)
     assignment, groups = _assign(
-        view, slot, board.own_units, intel, args, set(garrisons)
+        view, slot, board.own_units, intel, args, set(garrisons), campaign
     )
 
     held = {s.coord for s in view.settlements if s.controlled_by == slot}
@@ -303,7 +344,9 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
         hostile_held,
         _Claims(enemy_hexes=frozenset(u.coord for u in board.enemy_units)),
         unready=_unready_attacks(board.own_units, assignment, groups, hostile_held),
-        attackable=_attackable(board, intel, held),
+        attackable=_campaign_attackable(
+            _attackable(board, intel, held), campaign, intel, held
+        ),
         front=_front(intel, held, hostile_held),
     )
     orders: list[Order] = []
@@ -318,14 +361,25 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
             or travel.destination == garrison
             or (objective is not None and travel.destination == objective.coord)
         )
-        order = _unit_order(ctx, unit, objective, garrison, keep_marching)
+        if campaign is not None and _in_campaign(unit, objective, campaign):
+            marching = travel is not None and (
+                travel.destination == campaign.op.staging
+            )
+            order = _campaign_order(ctx, unit, campaign, marching)
+        else:
+            order = _unit_order(ctx, unit, objective, garrison, keep_marching)
         if unit.coord in reserved and _stays(order, unit, ctx.claims.enemy_hexes):
             # A recruit appears on this hex after movement: step off it.
             goal = objective.coord if objective is not None else unit.coord
             order = ctx.vacate(unit, goal)
         if order is not None:
             orders.append(order)
-    return BotPlan(orders=orders, recruitments=recruitments, build=build)
+    return BotPlan(
+        orders=orders,
+        recruitments=recruitments,
+        build=build,
+        operation=args.operation,
+    )
 
 
 @dataclass
@@ -441,6 +495,224 @@ class _UnitContext:
 
     def _near(self, unit: Unit, goal: Axial) -> Order:
         return self.tactical(unit, Objective(ObjectiveKind.CAPTURE, goal, 0.0))
+
+
+@dataclass(frozen=True)
+class _Campaign:
+    """One turn of an operation: who is in the force and what it does now.
+
+    The force is the operation's ``force`` healthy free combat units nearest the
+    staging area or the objective. It is *advancing* once ``assemble`` of them
+    stand ready in the zone (deployed, at `_READY_HP` or more, within ``zone``
+    of the objective); until then it gathers at the staging area. ``battle``
+    holds the visible hostile units in the zone, and ``focus`` the one most
+    ready units could hit this turn. The force is *striking* when enough could:
+    every striker then hits the focus, so the blows land on one unit in one
+    turn. Short of that an advancing force closes up out of contact.
+    """
+
+    op: Operation
+    force: frozenset[int]
+    zone: int
+    advancing: bool
+    battle: frozenset[Axial]
+    focus: Axial | None
+    striking: bool
+
+
+def _campaign(
+    board: BoardIndex,
+    intel: Intel,
+    op: Operation,
+    free: list[Unit],
+    heading: dict[int, Axial],
+) -> _Campaign:
+    """Pick the operation's force from ``free`` combat units and its phase.
+
+    Worn units (`_REST_HP` or less) are left out, so a unit that drops out to
+    rest is replaced by the next nearest healthy unit: the force rotates. While
+    gathering, the force still strikes an enemy that comes at the staging area
+    when two ready units can hit it; while advancing it waits until
+    ``assemble`` of them can (fewer if fewer are left).
+    """
+    zone = distance(op.staging, op.objective) + _ZONE_MARGIN
+
+    def gap(unit: Unit) -> tuple[int, int]:
+        # Units already in the zone keep their place (by id), so the force
+        # doesn't swap members back and forth between turns.
+        where = heading.get(unit.id, unit.coord)
+        if distance(where, op.objective) <= zone:
+            return 0, unit.id
+        return min(distance(where, op.staging), distance(where, op.objective)), unit.id
+
+    force = sorted((u for u in free if u.hp > _REST_HP), key=gap)[: op.force]
+    ready = [
+        u
+        for u in force
+        if u.posture is Posture.DEPLOYED
+        and u.hp >= _READY_HP
+        and distance(u.coord, op.objective) <= zone
+    ]
+    advancing = len(ready) >= op.assemble
+    battle = [u for u in intel.threats if distance(u.coord, op.objective) <= zone]
+    guns = [
+        u
+        for u in board.own_units
+        if not is_combat_unit(u) and u.posture is Posture.DEPLOYED
+    ]
+
+    def strikers(enemy: Unit) -> int:
+        melee = sum(
+            1
+            for u in ready
+            if distance(u.coord, enemy.coord) <= UNIT_STATS[u.type].move
+        )
+        fire = sum(
+            1
+            for g in guns
+            if distance(g.coord, enemy.coord) <= UNIT_STATS[g.type].attack_range
+        )
+        return melee + fire
+
+    focus: Unit | None = None
+    if battle:
+        focus = min(
+            battle,
+            key=lambda e: (
+                -strikers(e),
+                e.hp,
+                distance(e.coord, op.objective),
+                e.coord.q,
+                e.coord.r,
+            ),
+        )
+
+    def odds(enemy: Unit) -> bool:
+        # Local odds: own ready units against the enemy's visible units around
+        # the focus (they support it and strike back next turn).
+        own = sum(1 for u in ready if distance(u.coord, enemy.coord) <= _ODDS_RADIUS)
+        theirs = sum(
+            1 for e in battle if distance(e.coord, enemy.coord) <= _ODDS_RADIUS
+        )
+        return own >= _ODDS * theirs
+
+    if advancing:
+        needed = max(2, min(len(ready), op.assemble) - 1)
+        striking = focus is not None and strikers(focus) >= needed and odds(focus)
+    else:
+        # Gathering: hit back at an enemy that comes at the staging area or
+        # into contact with the force, with at least two units.
+        striking = (
+            focus is not None
+            and strikers(focus) >= 2
+            and (
+                distance(focus.coord, op.staging) <= _GATHER_SPREAD + 2
+                or any(distance(focus.coord, u.coord) <= 1 for u in force)
+            )
+        )
+    return _Campaign(
+        op=op,
+        force=frozenset(u.id for u in force),
+        zone=zone,
+        advancing=advancing,
+        battle=frozenset(u.coord for u in battle),
+        focus=focus.coord if focus is not None else None,
+        striking=striking,
+    )
+
+
+def _campaign_attackable(
+    attackable: frozenset[Axial],
+    campaign: _Campaign | None,
+    intel: Intel,
+    held: set[Axial],
+) -> frozenset[Axial]:
+    """Melee targets with the operation's strike discipline applied.
+
+    In the zone only the focus may be hit, and only while the force strikes;
+    no unit goes in alone ahead of the others. A hostile unit nearly dead or
+    standing beside an own holding may still be hit, as anywhere.
+    """
+    if campaign is None:
+        return attackable
+    keep = {
+        u.coord
+        for u in intel.threats
+        if u.coord in campaign.battle
+        and (u.hp <= _FINISH_HP or any(distance(u.coord, h) <= 1 for h in held))
+    }
+    if campaign.striking and campaign.focus is not None:
+        keep.add(campaign.focus)
+    return (attackable - campaign.battle) | keep
+
+
+def _in_campaign(unit: Unit, objective: Objective | None, campaign: _Campaign) -> bool:
+    """Whether ``unit`` serves the operation: a force unit, or a gun escorting
+    it."""
+    if unit.id in campaign.force:
+        return True
+    return (
+        not is_combat_unit(unit)
+        and objective is not None
+        and objective.coord == campaign.op.objective
+    )
+
+
+def _campaign_order(
+    ctx: _UnitContext, unit: Unit, campaign: _Campaign, marching: bool
+) -> Order | None:
+    """One operation unit's order (``None`` lets its march to staging go on).
+
+    Outside the zone a unit makes for the staging area (by column when far and
+    out of contact). In the zone it gathers there while the force assembles,
+    closes up on the objective once it advances, and goes in when the force
+    strikes. Worn units drop out to rest as anywhere else.
+    """
+    op = campaign.op
+    threat = ctx.intel.threat_distance(unit.coord)
+    in_zone = distance(unit.coord, op.objective) <= campaign.zone
+    if unit.posture is Posture.COLUMN:
+        if threat <= _CONTACT_RADIUS or in_zone or unit.coord == op.staging:
+            return DeployOrder(unit_id=unit.id)
+        if marching:
+            return None
+        return ctx.travel(unit, op.staging) or DeployOrder(unit_id=unit.id)
+    goal = Objective(ObjectiveKind.CAPTURE, op.objective, _OP_VALUE)
+    if _needs_rest(ctx, unit, threat, goal):
+        return _recover(ctx, unit, threat)
+    gather = Objective(ObjectiveKind.SUPPORT, op.staging, 0.0)
+    if not in_zone:
+        if threat > _CONTACT_RADIUS and distance(unit.coord, op.staging) > _TRAVEL_MIN:
+            order = ctx.travel(unit, op.staging)
+            if order is not None:
+                return order
+        return ctx.tactical(unit, gather)
+    if campaign.striking and campaign.focus is not None:
+        return ctx.tactical(
+            unit, Objective(ObjectiveKind.CAPTURE, campaign.focus, _OP_VALUE)
+        )
+    if unit.coord in ctx.board.player_contact:
+        return ctx.tactical(unit, goal if campaign.advancing else gather)
+    if not campaign.advancing:
+        if distance(unit.coord, op.staging) > _GATHER_SPREAD:
+            return ctx.tactical(unit, gather)
+        ctx.claims.finals.add(unit.coord)
+        return _rest_or_hold(unit)
+    if not campaign.battle:
+        return ctx.tactical(unit, goal)
+    return _close_up(ctx, unit, campaign.focus or op.objective)
+
+
+def _close_up(ctx: _UnitContext, unit: Unit, objective: Axial) -> Order:
+    """Move toward ``objective`` but halt `_RING` hexes out and out of contact,
+    holding there (dug in) once no closer hex qualifies."""
+    moves: list[Order] = [
+        m
+        for m in moves_toward(ctx.board, unit, objective, ctx.reserved)
+        if distance(m.path[-1], objective) >= _RING
+        and m.path[-1] not in ctx.board.player_contact
+    ]
+    return ctx.claims.pick(unit, moves + [HoldOrder(unit_id=unit.id)])
 
 
 def _stays(order: Order | None, unit: Unit, enemy_hexes: frozenset[Axial]) -> bool:
@@ -710,25 +982,40 @@ def _assign(
     intel: Intel,
     args: StrategistArgs,
     garrisoned: set[int],
+    campaign: _Campaign | None = None,
 ) -> tuple[dict[int, Objective], dict[Axial, int]]:
     """Match units to objectives as groups (`_match_groups`).
 
     Combat units take capture/defend targets; artillery follows the nearest
-    assigned combat unit's objective. Also returns each target's smallest
-    group worth sending (`_Target.min_group`), by coord.
+    assigned combat unit's objective. The ``campaign`` force is committed to the
+    operation's objective, which no other group is sent at. Also returns each
+    target's smallest group worth sending (`_Target.min_group`), by coord.
     """
+    committed: dict[int, Objective] = {}
+    if campaign is not None:
+        goal = Objective(ObjectiveKind.CAPTURE, campaign.op.objective, _OP_VALUE)
+        committed = {uid: goal for uid in campaign.force}
     combat = sorted(
-        (u for u in own if is_combat_unit(u) and u.id not in garrisoned),
+        (
+            u
+            for u in own
+            if is_combat_unit(u) and u.id not in garrisoned and u.id not in committed
+        ),
         key=lambda u: u.id,
     )
-    targets = _targets(view, slot, intel, args, [u.coord for u in combat])
+    skip = campaign.op.objective if campaign is not None else None
+    targets = [
+        t
+        for t in _targets(view, slot, intel, args, [u.coord for u in combat])
+        if t.objective.coord != skip
+    ]
     # A marching column is effectively where it is going.
     heading = {o.unit_id: o.destination for o in view.standing_orders}
-    assignment = _match_groups(combat, targets, heading)
+    assignment = _match_groups(combat, targets, heading) | committed
+    escorting = [u for u in own if is_combat_unit(u) and u.id in assignment]
     for gun in (u for u in own if not is_combat_unit(u)):
-        escorts = [u for u in combat if u.id in assignment]
-        if escorts:
-            lead = min(escorts, key=lambda u: (distance(gun.coord, u.coord), u.id))
+        if escorting:
+            lead = min(escorting, key=lambda u: (distance(gun.coord, u.coord), u.id))
             assignment[gun.id] = Objective(
                 ObjectiveKind.SUPPORT, assignment[lead.id].coord, 0.0
             )

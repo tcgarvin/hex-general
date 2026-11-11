@@ -18,6 +18,7 @@ from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.ai.operations import Operation
 from app.engine.economy_rules import Building
 from app.engine.models import (
     EconomyOrders,
@@ -44,6 +45,9 @@ class BotPlan(BaseModel):
     # Base orders (see `SubmitOrdersRequest`).
     build: Building | None = None
     disband: list[UnitId] = Field(default_factory=list)
+    # The offensive the bot ran this turn (``None``: it ran none). Not part of
+    # the submission; the world simulator reads it to measure operations.
+    operation: Operation | None = None
 
     def economy_orders(self, slot: PlayerId) -> EconomyOrders | None:
         """This plan's base orders for ``slot``, or ``None`` if it has none."""

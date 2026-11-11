@@ -24,7 +24,7 @@ from app.engine.models import GameState, MapSite, PlayerId, TravelOrder
 from app.engine.stats import Terrain
 from app.games.validation import validate_submission
 from app.world.generate import GeneratedWorld, WorldParams, generate
-from app.world.sim import SimReport, run_sim
+from app.world.sim import SimReport, _assaults, run_sim
 
 
 @pytest.fixture(scope="module")
@@ -94,7 +94,7 @@ def test_bots_attack_when_no_neutral_land_is_left(world: GeneratedWorld) -> None
     bold = Personality(aggression=0.9, reach=20, garrison_share=0.0)
     args = ScriptedStrategist(bold).choose(redact_state(state, "b000"), "b000")
     assert args.stance is Stance.ATTACK
-    assert args.focus is not None
+    assert args.operation is not None and args.operation.target == "b001"
 
 
 def test_cautious_bot_defends_a_threatened_holding(world: GeneratedWorld) -> None:
@@ -154,3 +154,17 @@ def test_sim_runs_legal_plans_and_is_deterministic(world: GeneratedWorld) -> Non
     assert first.siege_attackers and min(first.siege_attackers) >= 1
     assert len(first.siege_turns) <= first.neutral_captures
     assert first.player_attacks_superior <= first.player_attacks
+    assert first.player_attacks_2to1 <= first.player_attacks
+    # War metrics: every operation that started is closed or still open, and
+    # front shares are shares.
+    assert first.operations_started == (
+        first.operations_succeeded + first.operations_abandoned + first.operations_open
+    )
+    assert 0.0 <= first.front_share_all <= first.front_share_engaged <= 1.0
+    assert all(size >= 1 for size in first.assault_sizes)
+
+
+def test_strikes_close_together_count_as_one_assault() -> None:
+    a, b, far = Axial(q=0, r=0), Axial(q=2, r=0), Axial(q=9, r=0)
+    strikes = [(a, 1), (a, 2), (b, 3), (b, 1), (far, 4)]
+    assert sorted(_assaults(strikes)) == [1, 3]
