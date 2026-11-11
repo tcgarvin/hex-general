@@ -1,0 +1,8 @@
+codex thread 01a1c8d3-6678-7ca2-be10-913f4fe66834, 95 s
+PASS s1_a: reg 0.06 tile px, IoU 0.989; seams [] 
+PASS s1_b: reg 0.04 tile px, IoU 0.993; seams [] 
+PASS s1_c: reg 0.03 tile px, IoU 0.992; seams [] 
+PASS s1_d: reg 0.05 tile px, IoU 0.985; seams [] 
+PASS s1_e: reg 0.04 tile px, IoU 0.988; seams [] 
+FAIL s1_f: reg 0.05 tile px, IoU 0.989; seams [] h0:rim_touch=6
+exit 1

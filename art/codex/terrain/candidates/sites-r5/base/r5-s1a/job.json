@@ -1,0 +1,153 @@
+{
+ "name": "base-r5-s1a",
+ "canvas": [
+  1536,
+  1024
+ ],
+ "hex_width": 340,
+ "ground": "../../../../ground/G2/source.png",
+ "clusters": [
+  {
+   "name": "s1_a",
+   "centre": [
+    256,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1300,
+    560
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 500,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "s1_b",
+   "centre": [
+    768,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    650,
+    830
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 501,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "s1_c",
+   "centre": [
+    1280,
+    262
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1000,
+    600
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 502,
+    "jitter": 0.2
+   }
+  },
+  {
+   "name": "s1_d",
+   "centre": [
+    256,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    300,
+    400
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 503,
+    "jitter": 0.3
+   }
+  },
+  {
+   "name": "s1_e",
+   "centre": [
+    768,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    1180,
+    320
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 504,
+    "jitter": 0.3
+   }
+  },
+  {
+   "name": "s1_f",
+   "centre": [
+    1280,
+    762
+   ],
+   "members": [
+    [
+     0,
+     0
+    ]
+   ],
+   "ground_origin": [
+    850,
+    500
+   ],
+   "guide": {
+    "margin": 12,
+    "shape": "blob",
+    "seed": 505,
+    "jitter": 0.3
+   }
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {}
+}

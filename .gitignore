@@ -123,3 +123,9 @@ art/codex/terrain/sites/**/bases/**/*.png
 !art/codex/terrain/sites/steel_mill/s2-a/raw/steel_mill-s2-a.png
 !art/codex/terrain/sites/steel_mill/s2-b/raw/steel_mill-s2-b.png
 !art/codex/terrain/sites/steel_mill/s2-d/raw/steel_mill-s2-d.png
+# Sites round 5 candidates (unratified, art/codex/terrain/candidates/sites-r5):
+# commit the raw Codex sheets, the attached reference images and the kept
+# candidate tiles; sheets, cluster bases, cut/tiles and review renders stay derived.
+!art/codex/terrain/candidates/sites-r5/**/raw/*.png
+!art/codex/terrain/candidates/sites-r5/refs/*.png
+!art/codex/terrain/candidates/sites-r5/kept/**/*.png

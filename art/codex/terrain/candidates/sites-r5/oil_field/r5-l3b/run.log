@@ -1,0 +1,26 @@
+calling Codex with ['art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b/oil_field-r5-l3b.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png', 'art/codex/terrain/candidates/sites-r5/refs/oil-l2-ref.png'] ...
+codex thread 01a1c8d8-3ffc-73a0-b782-916ba032ace2, 90 s
+FAIL l3_510
+    FAIL rim_clear: 5.7% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 40 salient px within 4 px of the boundary (limit 2)
+PASS l3_511
+FAIL l3_512
+    FAIL rim_clear: 3.4% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 7 salient px within 4 px of the boundary (limit 2)
+FAIL l3_513
+    FAIL rim_clear: 3.5% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 7 salient px within 4 px of the boundary (limit 2)
+FAIL l3_514
+    FAIL rim_clear: 5.6% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 30 salient px within 4 px of the boundary (limit 2)
+FAIL l3_515
+    FAIL rim_clear: 3.8% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 19 salient px within 4 px of the boundary (limit 2)
+FAIL l3_516
+    FAIL rim_clear: 5.2% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 13 salient px within 4 px of the boundary (limit 2)
+FAIL l3_517
+    FAIL rim_touch: 15 salient px within 4 px of the boundary (limit 2)
+PASS l3_518
+wrote art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b/report.json, art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b/review/oil_field-r5-l3b.montage.png
+exit 1

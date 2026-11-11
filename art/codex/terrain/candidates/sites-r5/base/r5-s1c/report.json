@@ -1,0 +1,422 @@
+{
+ "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png",
+ "registration": {
+  "scale": 1.0007182749344143,
+  "tx": -0.6539793848737141,
+  "ty": -1.2462790321530397,
+  "background_level": 245.0,
+  "max_residual_tile_px": 0.09756416288807657,
+  "min_iou": 0.9910938267344473,
+  "clusters": {
+   "s1_m": {
+    "name": "s1_m",
+    "expected": [
+     255.52989899833636,
+     260.94190900066354
+    ],
+    "measured": [
+     255.2862079256452,
+     261.0306354933996
+    ],
+    "width_ratio": 1.0006325716217535,
+    "residual_tile_px": 0.09756416288807657,
+    "iou": 0.9935343972709603
+   },
+   "s1_n": {
+    "name": "s1_n",
+    "expected": [
+     767.8976557647565,
+     260.94190900066354
+    ],
+    "measured": [
+     767.8377143539161,
+     260.9896276324069
+    ],
+    "width_ratio": 0.9991959792681154,
+    "residual_tile_px": 0.02882303919914714,
+    "iou": 0.9931027178733601
+   },
+   "s1_o": {
+    "name": "s1_o",
+    "expected": [
+     1280.2654125311765,
+     260.94190900066354
+    ],
+    "measured": [
+     1280.2878219948468,
+     260.97445341207424
+    ],
+    "width_ratio": 0.9995020608901486,
+    "residual_tile_px": 0.014865022445015764,
+    "iou": 0.9935410434920718
+   },
+   "s1_p": {
+    "name": "s1_p",
+    "expected": [
+     255.52989899833636,
+     761.3010464678707
+    ],
+    "measured": [
+     255.6543896883439,
+     761.263201258244
+    ],
+    "width_ratio": 0.9979686198844854,
+    "residual_tile_px": 0.048949714229700375,
+    "iou": 0.9930364887986949
+   },
+   "s1_q": {
+    "name": "s1_q",
+    "expected": [
+     767.8976557647565,
+     761.3010464678707
+    ],
+    "measured": [
+     768.0309690973195,
+     761.2261341088262
+    ],
+    "width_ratio": 0.9965886217123266,
+    "residual_tile_px": 0.057528290141857896,
+    "iou": 0.9910938267344473
+   },
+   "s1_r": {
+    "name": "s1_r",
+    "expected": [
+     1280.2654125311765,
+     761.3010464678707
+    ],
+    "measured": [
+     1280.2888315284663,
+     761.2448145006512
+    ],
+    "width_ratio": 0.9971863257375819,
+    "residual_tile_px": 0.02291577124381688,
+    "iou": 0.9917088960229232
+   }
+  }
+ },
+ "pin": {
+  "rim_exact_px": 1.5,
+  "rim_ramp_px": 6.0,
+  "cross_exact_px": 3.0,
+  "cross_ramp_px": 12.0,
+  "restore": true,
+  "restore_sigma": 0.75,
+  "restore_lo": 14.0,
+  "restore_hi": 26.0,
+  "restore_close_px": 4,
+  "restore_grow_px": 2,
+  "restore_feather_px": 1.2,
+  "restore_tone": true,
+  "restore_tone_sigma": 8.0,
+  "restore_tone_span": 20.0,
+  "feature_strength": 0.0,
+  "feature_rgb": [],
+  "hold_feather_px": 3.0,
+  "tone_sigma": 0.0,
+  "tone_feature_grow_px": 2,
+  "paint_region_px": 0.0,
+  "paint_region_feather_px": 2.0
+ },
+ "clusters": {
+  "s1_m": {
+   "registration": {
+    "name": "s1_m",
+    "expected": [
+     255.52989899833636,
+     260.94190900066354
+    ],
+    "measured": [
+     255.2862079256452,
+     261.0306354933996
+    ],
+    "width_ratio": 1.0006325716217535,
+    "residual_tile_px": 0.09756416288807657,
+    "iou": 0.9935343972709603
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 1024 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0068,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "0.7% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    }
+   },
+   "seams": [],
+   "passed": true
+  },
+  "s1_n": {
+   "registration": {
+    "name": "s1_n",
+    "expected": [
+     767.8976557647565,
+     260.94190900066354
+    ],
+    "measured": [
+     767.8377143539161,
+     260.9896276324069
+    ],
+    "width_ratio": 0.9991959792681154,
+    "residual_tile_px": 0.02882303919914714,
+    "iou": 0.9931027178733601
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 1024 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0038,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "0.4% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    }
+   },
+   "seams": [],
+   "passed": true
+  },
+  "s1_o": {
+   "registration": {
+    "name": "s1_o",
+    "expected": [
+     1280.2654125311765,
+     260.94190900066354
+    ],
+    "measured": [
+     1280.2878219948468,
+     260.97445341207424
+    ],
+    "width_ratio": 0.9995020608901486,
+    "residual_tile_px": 0.014865022445015764,
+    "iou": 0.9935410434920718
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 1024 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0076,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "0.8% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    }
+   },
+   "seams": [],
+   "passed": true
+  },
+  "s1_p": {
+   "registration": {
+    "name": "s1_p",
+    "expected": [
+     255.52989899833636,
+     761.3010464678707
+    ],
+    "measured": [
+     255.6543896883439,
+     761.263201258244
+    ],
+    "width_ratio": 0.9979686198844854,
+    "residual_tile_px": 0.048949714229700375,
+    "iou": 0.9930364887986949
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 1024 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0076,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "0.8% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 2,
+       "limit": 2,
+       "passed": true,
+       "detail": "2 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    }
+   },
+   "seams": [],
+   "passed": true
+  },
+  "s1_q": {
+   "registration": {
+    "name": "s1_q",
+    "expected": [
+     767.8976557647565,
+     761.3010464678707
+    ],
+    "measured": [
+     768.0309690973195,
+     761.2261341088262
+    ],
+    "width_ratio": 0.9965886217123266,
+    "residual_tile_px": 0.057528290141857896,
+    "iou": 0.9910938267344473
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 1024 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0099,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "1.0% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    }
+   },
+   "seams": [],
+   "passed": true
+  },
+  "s1_r": {
+   "registration": {
+    "name": "s1_r",
+    "expected": [
+     1280.2654125311765,
+     761.3010464678707
+    ],
+    "measured": [
+     1280.2888315284663,
+     761.2448145006512
+    ],
+    "width_ratio": 0.9971863257375819,
+    "residual_tile_px": 0.02291577124381688,
+    "iou": 0.9917088960229232
+   },
+   "members": {
+    "h0": {
+     "offset": [
+      0,
+      0
+     ],
+     "checks": [
+      {
+       "name": "rim_exact",
+       "value": 0.0,
+       "limit": 0.0,
+       "passed": true,
+       "detail": "max |final - base| 0 over 1024 outer-rim px"
+      },
+      {
+       "name": "rim_clear",
+       "value": 0.0004,
+       "limit": 0.03,
+       "passed": true,
+       "detail": "0.0% of the outer rim band painted over"
+      },
+      {
+       "name": "rim_touch",
+       "value": 0,
+       "limit": 2,
+       "passed": true,
+       "detail": "0 salient px within 4 px of the outer boundary"
+      }
+     ],
+     "passed": true
+    }
+   },
+   "seams": [],
+   "passed": true
+  }
+ }
+}

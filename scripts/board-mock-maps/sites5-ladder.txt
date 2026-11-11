@@ -1,0 +1,24 @@
+; Sites round 5 board (scripts/board-mock.py --sites): the factory and oil level
+; ladders side by side, and two one-hex (stage 1) bases among plains, woods, hills
+; and town neighbours. Used for the round 5 before/after review
+; (art/codex/terrain/candidates/sites-r5/).
+;   <col>,<row> <kind> <level>
+; Row 1: factory 1, 2, 3 left to right. Row 3: oil field 1, 2, 3 left to right.
+; Bases (stage 1) at 8,2 (town east, woods north) and 9,5 (woods east, hills south).
+[terrain]
+w......ww..
+...........
+..t......t.
+.......w...
+w.....h....
+...w......w
+.....t....h
+[sites]
+1,1 factory 1
+3,1 factory 2
+5,1 factory 3
+1,3 oil_field 1
+3,3 oil_field 2
+5,3 oil_field 3
+8,2 base 1
+9,5 base 1

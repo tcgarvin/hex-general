@@ -1,0 +1,13 @@
+calling Codex with ['art/codex/terrain/candidates/sites-r5/factory/r5-l1a/factory-r5-l1a.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png', 'art/codex/terrain/candidates/sites-r5/refs/factory-l2-ref.png'] ...
+codex thread 01a1c8d3-56ae-77f3-811e-12eb8b96d483, 96 s
+PASS l1_500
+PASS l1_501
+PASS l1_502
+PASS l1_503
+PASS l1_504
+PASS l1_505
+PASS l1_506
+PASS l1_507
+PASS l1_508
+wrote art/codex/terrain/candidates/sites-r5/factory/r5-l1a/report.json, art/codex/terrain/candidates/sites-r5/factory/r5-l1a/review/factory-r5-l1a.montage.png
+exit 0

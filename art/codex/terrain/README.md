@@ -504,3 +504,32 @@ Tools: `sites4_base_picks.py` (applies via `sites_apply_base.py`, adds stage, fl
 failures, guide arc, sites3 sha check), `sites4_base_review.py --scratch <dir>` (growth rows
 per flavour, wall options vs sites3, all variants, board renders per flavour from temporary
 sites dirs). Map: `scripts/board-mock-maps/sites4-base.txt` (sites1 board, bases only).
+
+## Sites round 5 (candidates, unratified), 2026-11-10 (`candidates/sites-r5/`)
+
+Candidates for the three "Known shortfalls" of `candidates/sites-ratified/`: the factory
+size ladder (L1 hall as big as an L2 hall, L3 filling about three-quarters), oil L3 light
+on industry, and the tight one-hex base. Nothing applied; the ratified set and
+`frontend/` are unchanged. 9 Codex calls (1 smoke test, 8 sheets), same recipe as rounds
+3-4 (G2 `r1-bases/`, concept1 + `refs/r1/town_2x.png`, restore on, rim pin, gates). Work
+dirs (job, prompt, refs, raw, manifest, report, run.log) are `candidates/sites-r5/<kind>/r5-*`;
+`refs/` holds the attached L2 yardstick images (`sites4_oilfac_l2ref.py` on the ratified
+factory l2_00/01 and oil l2_00/02); base sheets attach `sites/base/s4-ref/stage3_bank_ref.png`.
+
+| target | sheets (pass) | occupied, kept | kept | first-pass pick |
+|---|---|---|---|---|
+| factory L1 | r5-l1a 9/9 (one SMALL hall, half an L2 hall, L2 ref) | .26-.27 (shipped .31-.37) | A-D | A (l1_500) |
+| factory L3 | r5-l3a 0/9 ("fills the whole hex": rim_clear 3.9-7.7%, occupied .88-.91, yard squared to the hex outline); r5-l3b 6/9 ("about three-quarters", ragged outline, halls a little larger than L2's) | .75-.82 (shipped .71-.76) | A-D | B (l3_513) |
+| oil L3 | r5-l3a 3/9, r5-l3b 2/9 (works pulled in from the rim); refinery columns, stack, tank farm, pipe runs, wagons; three derricks in every cell | .63-.77 (shipped .65-.70) | A-E | D (l3_511) |
+| base stage 1 | r5-s1a 5/6, r5-s1b 6/6, r5-s1c 6/6 (cluster sheets, 6 single hexes, blob guide margin 12): complete bank, gate, two gun pits, open centre, few things inside | - | A-E | B (s1_o) |
+
+Dropped with reasons in `candidates.json` (r5-s1a: ruler-edged rectangular parade ground;
+several r5-s1b: hut-sized trucks; factory l3_514: halls in one column). Known caveats: the
+new L1 hall has brick-red walls rather than timber; oil tanks are larger than L2's and B/C
+sit in a walled bund; base trucks stay a little large and the gun pits are a motif stages
+2-4 lack. `sites5_candidates.py` builds `candidates.json` and the kept copies
+(`kept/<target>/<label>.png`, sha256 recorded); kept tiles replay byte-identically with
+`paintin.py run --from-raw` / `paintin_cluster.py run --from-raw`. Review:
+`sites5_review.py --scratch <dir> --out-dir <dir>` (3x grids, board crops of
+`scripts/board-mock-maps/sites5-ladder.txt` with each candidate as the level's only
+variant via a temporary symlinked sites dir), page `.dev/review-pages/sites-r5.html`.

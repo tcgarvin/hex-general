@@ -1,0 +1,840 @@
+{
+ "round": "sites round 5 (2026-11-10), candidates only, unratified",
+ "targets": {
+  "factory_l1": {
+   "kind": "factory",
+   "level": 1,
+   "shipped": [
+    "factory/l1_00.png",
+    "factory/l1_01.png",
+    "factory/l1_02.png",
+    "factory/l1_03.png"
+   ],
+   "context": [
+    "factory/l2_00.png",
+    "factory/l2_01.png"
+   ],
+   "context_title": "shipped level 2 (the L1 hall should be clearly smaller than one of these halls)",
+   "crop": "0,0,6,2",
+   "cells_total": 9,
+   "cells_passed": 9,
+   "cells_failed_gates": [],
+   "first_pass_pick": "factory-l1-A",
+   "pick_reason": "one small three-ridge hall with a lean-to and a little yard, clearly smaller than one L2 hall, so the ladder reads L1 < L2 at board scale"
+  },
+  "factory_l3": {
+   "kind": "factory",
+   "level": 3,
+   "shipped": [
+    "factory/l3_00.png",
+    "factory/l3_01.png",
+    "factory/l3_02.png",
+    "factory/l3_03.png"
+   ],
+   "context": [
+    "factory/l2_00.png",
+    "factory/l2_01.png"
+   ],
+   "context_title": "shipped level 2",
+   "crop": "0,0,6,2",
+   "cells_total": 18,
+   "cells_passed": 6,
+   "cells_failed_gates": [
+    "l3_500",
+    "l3_501",
+    "l3_502",
+    "l3_503",
+    "l3_504",
+    "l3_505",
+    "l3_506",
+    "l3_507",
+    "l3_508",
+    "l3_511",
+    "l3_512",
+    "l3_515"
+   ],
+   "first_pass_pick": "factory-l3-B",
+   "pick_reason": "three halls of clearly different lengths, staggered, each larger than an L2 hall, spreading over the whole hex with an irregular edge"
+  },
+  "oil_l3": {
+   "kind": "oil_field",
+   "level": 3,
+   "shipped": [
+    "oil_field/l3_00.png",
+    "oil_field/l3_01.png",
+    "oil_field/l3_02.png",
+    "oil_field/l3_03.png"
+   ],
+   "context": [
+    "oil_field/l2_00.png",
+    "oil_field/l2_02.png"
+   ],
+   "context_title": "shipped level 2",
+   "crop": "0,2,6,4",
+   "cells_total": 18,
+   "cells_passed": 5,
+   "cells_failed_gates": [
+    "l3_500",
+    "l3_504",
+    "l3_505",
+    "l3_506",
+    "l3_507",
+    "l3_508",
+    "l3_510",
+    "l3_512",
+    "l3_513",
+    "l3_514",
+    "l3_515",
+    "l3_516",
+    "l3_517"
+   ],
+   "first_pass_pick": "oil-l3-D",
+   "pick_reason": "the richest refinery block (columns, stack, pipe runs, tank wagons) with the three derricks still light and countable in the open field"
+  },
+  "base_s1": {
+   "kind": "base",
+   "level": 1,
+   "shipped": [
+    "base/stage1_a/h0.png",
+    "base/stage1_b/h0.png"
+   ],
+   "context": [
+    "base/stage2_a/h0.png",
+    "base/stage2_a/h1.png"
+   ],
+   "context_title": "shipped stage 2 (two hexes, drawn together)",
+   "crop": "7,1,10,6",
+   "board_cols": 4,
+   "cells_total": 18,
+   "cells_passed": 17,
+   "cells_failed_gates": [
+    "s1_f"
+   ],
+   "first_pass_pick": "base-s1-B",
+   "pick_reason": "complete bank with two gun pits and a gate, an open trodden centre, few things inside, and the smallest trucks of the set"
+  }
+ },
+ "candidates": [
+  {
+   "label": "factory-l1-A",
+   "target": "factory_l1",
+   "kept": true,
+   "tile": "kept/factory_l1/factory-l1-A.png",
+   "sha256": "9ca226d51e0fe1d255d56f400c4e1bbb9eacde0a1941c77cababcda418145cba",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_500",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0221,
+    "registration_iou": 0.9988,
+    "rim_exact": 0.0,
+    "rim_clear": 0.003,
+    "rim_touch": 1.0
+   },
+   "occupied": 0.257,
+   "built": 0.2
+  },
+  {
+   "label": "factory-l1-B",
+   "target": "factory_l1",
+   "kept": true,
+   "tile": "kept/factory_l1/factory-l1-B.png",
+   "sha256": "ca6491b342e883de3b8603210166f4039f24cce2eaaf9e38f3177951947e6950",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_501",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.015,
+    "registration_iou": 0.9989,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0011,
+    "rim_touch": 1.0
+   },
+   "occupied": 0.258,
+   "built": 0.191
+  },
+  {
+   "label": "factory-l1-C",
+   "target": "factory_l1",
+   "kept": true,
+   "tile": "kept/factory_l1/factory-l1-C.png",
+   "sha256": "bed9c014018a6bd630d252fabde7b9e494f40465750f0126794125508740f0a9",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_502",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0278,
+    "registration_iou": 0.9981,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.266,
+   "built": 0.198
+  },
+  {
+   "label": "factory-l1-D",
+   "target": "factory_l1",
+   "kept": true,
+   "tile": "kept/factory_l1/factory-l1-D.png",
+   "sha256": "8927ff3b216b57b075ae11e81667f25774929ca15161331b4b7aa09c79acb60b",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_508",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0388,
+    "registration_iou": 0.9957,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.274,
+   "built": 0.204
+  },
+  {
+   "label": null,
+   "target": "factory_l1",
+   "kept": false,
+   "why_dropped": "hall a little larger than the kept four (built .24)",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_503",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0313,
+    "registration_iou": 0.9989,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0034,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.317,
+   "built": 0.245
+  },
+  {
+   "label": null,
+   "target": "factory_l1",
+   "kept": false,
+   "why_dropped": "fine, but the four kept already cover the layouts; fewer to review",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_504",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0296,
+    "registration_iou": 0.9989,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0011,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.264,
+   "built": 0.206
+  },
+  {
+   "label": null,
+   "target": "factory_l1",
+   "kept": false,
+   "why_dropped": "hall a little larger than the kept four (built .23)",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_505",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0239,
+    "registration_iou": 0.9983,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.307,
+   "built": 0.232
+  },
+  {
+   "label": null,
+   "target": "factory_l1",
+   "kept": false,
+   "why_dropped": "fine, but close in layout to l1_500",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_506",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0379,
+    "registration_iou": 0.9961,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.285,
+   "built": 0.218
+  },
+  {
+   "label": null,
+   "target": "factory_l1",
+   "kept": false,
+   "why_dropped": "hall a little larger than the kept four (built .23)",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a",
+   "cell": "l1_507",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l1a/raw/factory-r5-l1a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0321,
+    "registration_iou": 0.9959,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0015,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.296,
+   "built": 0.228
+  },
+  {
+   "label": "factory-l3-A",
+   "target": "factory_l3",
+   "kept": true,
+   "tile": "kept/factory_l3/factory-l3-A.png",
+   "sha256": "ed09386208319534b4f98945844258bdad18266e0a61716f93edbb3044a9f6d9",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "cell": "l3_510",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0122,
+    "registration_iou": 0.9838,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0209,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.803,
+   "built": 0.663
+  },
+  {
+   "label": "factory-l3-B",
+   "target": "factory_l3",
+   "kept": true,
+   "tile": "kept/factory_l3/factory-l3-B.png",
+   "sha256": "5a1fe7b89fc4eba96b2242958ee3799cc94451a79b30fb680312c3478a722815",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "cell": "l3_513",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0261,
+    "registration_iou": 0.984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0171,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.824,
+   "built": 0.697
+  },
+  {
+   "label": "factory-l3-C",
+   "target": "factory_l3",
+   "kept": true,
+   "tile": "kept/factory_l3/factory-l3-C.png",
+   "sha256": "ae99fe36f31642bd22221be870c2e8d158c5c5a81d7767b01eca7eb5608bd611",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "cell": "l3_516",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0262,
+    "registration_iou": 0.984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0175,
+    "rim_touch": 2.0
+   },
+   "occupied": 0.747,
+   "built": 0.627
+  },
+  {
+   "label": "factory-l3-D",
+   "target": "factory_l3",
+   "kept": true,
+   "tile": "kept/factory_l3/factory-l3-D.png",
+   "sha256": "bda1f4c40ebe68800d243d3ffb91476e66b11ce01c922e87534c3f831e06c44c",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "cell": "l3_518",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0261,
+    "registration_iou": 0.9839,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0171,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.769,
+   "built": 0.656
+  },
+  {
+   "label": null,
+   "target": "factory_l3",
+   "kept": false,
+   "why_dropped": "three halls stacked in one column, reads as the neat grid the owner rejected in round 4",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "cell": "l3_514",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0163,
+    "registration_iou": 0.9844,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0179,
+    "rim_touch": 1.0
+   },
+   "occupied": 0.783,
+   "built": 0.645
+  },
+  {
+   "label": null,
+   "target": "factory_l3",
+   "kept": false,
+   "why_dropped": "fine, but two halls nearly the same size; the kept four show the length spread better",
+   "work": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b",
+   "cell": "l3_517",
+   "raw": "art/codex/terrain/candidates/sites-r5/factory/r5-l3b/raw/factory-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0229,
+    "registration_iou": 0.9846,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0205,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.758,
+   "built": 0.634
+  },
+  {
+   "label": "oil-l3-A",
+   "target": "oil_l3",
+   "kept": true,
+   "tile": "kept/oil_l3/oil-l3-A.png",
+   "sha256": "42718079aee42720bb8a666f0f5e6b049df56677a2c2db0b5558e584575380bd",
+   "work": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a",
+   "cell": "l3_501",
+   "raw": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a/raw/oil_field-r5-l3a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0086,
+    "registration_iou": 0.9984,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0278,
+    "rim_touch": 2.0
+   },
+   "occupied": 0.705,
+   "built": 0.444
+  },
+  {
+   "label": "oil-l3-B",
+   "target": "oil_l3",
+   "kept": true,
+   "tile": "kept/oil_l3/oil-l3-B.png",
+   "sha256": "9f38a9a3f13e8ace290c3c72932098b92f686e24b089139d80d3cf99571f4fdb",
+   "work": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a",
+   "cell": "l3_502",
+   "raw": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a/raw/oil_field-r5-l3a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0169,
+    "registration_iou": 0.9982,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0126,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.714,
+   "built": 0.423
+  },
+  {
+   "label": "oil-l3-C",
+   "target": "oil_l3",
+   "kept": true,
+   "tile": "kept/oil_l3/oil-l3-C.png",
+   "sha256": "243880c88f30507fc2bef4ca843b1c69fb03158f0779ef584394decf473f605e",
+   "work": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a",
+   "cell": "l3_503",
+   "raw": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3a/raw/oil_field-r5-l3a.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0325,
+    "registration_iou": 0.9978,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0171,
+    "rim_touch": 1.0
+   },
+   "occupied": 0.774,
+   "built": 0.44
+  },
+  {
+   "label": "oil-l3-D",
+   "target": "oil_l3",
+   "kept": true,
+   "tile": "kept/oil_l3/oil-l3-D.png",
+   "sha256": "4886ca361667845732ac5ac57e76f90fad89c73b891250800e3e14040c1626fd",
+   "work": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b",
+   "cell": "l3_511",
+   "raw": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b/raw/oil_field-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0221,
+    "registration_iou": 0.999,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0217,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.67,
+   "built": 0.466
+  },
+  {
+   "label": "oil-l3-E",
+   "target": "oil_l3",
+   "kept": true,
+   "tile": "kept/oil_l3/oil-l3-E.png",
+   "sha256": "e7ad09c29fc6d9b9381fbb25b2674f1878d99ef2dadecffd2e5368931912cd76",
+   "work": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b",
+   "cell": "l3_518",
+   "raw": "art/codex/terrain/candidates/sites-r5/oil_field/r5-l3b/raw/oil_field-r5-l3b.png",
+   "passed": true,
+   "gates": {
+    "registration_residual": 0.0643,
+    "registration_iou": 0.997,
+    "rim_exact": 0.0,
+    "rim_clear": 0.0156,
+    "rim_touch": 0.0
+   },
+   "occupied": 0.631,
+   "built": 0.419
+  },
+  {
+   "label": "base-s1-A",
+   "target": "base_s1",
+   "kept": true,
+   "tile": "kept/base_s1/base-s1-A.png",
+   "sha256": "1ae3d8aa8a536bc837911b1cf1a4f045a8d0b69bab4ff3d9cb0499839102da1d",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1c",
+   "cell": "s1_n",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0038,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.029,
+    "iou": 0.9931
+   }
+  },
+  {
+   "label": "base-s1-B",
+   "target": "base_s1",
+   "kept": true,
+   "tile": "kept/base_s1/base-s1-B.png",
+   "sha256": "7f0426a0bd4766bf3f521541ae78ab24dd4d356e97071349aac8e8ee6edcf2e3",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1c",
+   "cell": "s1_o",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0076,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.015,
+    "iou": 0.9935
+   }
+  },
+  {
+   "label": "base-s1-C",
+   "target": "base_s1",
+   "kept": true,
+   "tile": "kept/base_s1/base-s1-C.png",
+   "sha256": "cb5a7c09e169b45009fa98d37cb233976b19e042e79b6678c90e9192f8f6a76a",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1c",
+   "cell": "s1_q",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0099,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.058,
+    "iou": 0.9911
+   }
+  },
+  {
+   "label": "base-s1-D",
+   "target": "base_s1",
+   "kept": true,
+   "tile": "kept/base_s1/base-s1-D.png",
+   "sha256": "67fa6c5230974adcdaa342beafe4246f37926ba44d40955ceedec1c20deca1cb",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1c",
+   "cell": "s1_m",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0068,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.098,
+    "iou": 0.9935
+   }
+  },
+  {
+   "label": "base-s1-E",
+   "target": "base_s1",
+   "kept": true,
+   "tile": "kept/base_s1/base-s1-E.png",
+   "sha256": "d466a4d6f72cf116b4d0cd5e5f343a7cd401337310d3240153e62bb49334c88f",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1b",
+   "cell": "s1_h",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/raw/base-r5-s1b.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0103,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.178,
+    "iou": 0.9945
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "parade ground is a ruler-edged rectangle on lawn; reads as a diagram",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1a",
+   "cell": "s1_a",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1a/raw/base-r5-s1a.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0076,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.061,
+    "iou": 0.9891
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "parade ground is a ruler-edged rectangle on lawn; reads as a diagram",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1a",
+   "cell": "s1_b",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1a/raw/base-r5-s1a.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0061,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.045,
+    "iou": 0.9926
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "parade ground is a ruler-edged rectangle on lawn; reads as a diagram",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1a",
+   "cell": "s1_c",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1a/raw/base-r5-s1a.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0175,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.034,
+    "iou": 0.9921
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "parade ground is a ruler-edged rectangle on lawn; reads as a diagram",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1a",
+   "cell": "s1_d",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1a/raw/base-r5-s1a.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0057,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.053,
+    "iou": 0.9854
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "parade ground is a ruler-edged rectangle on lawn; reads as a diagram",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1a",
+   "cell": "s1_e",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1a/raw/base-r5-s1a.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0129,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.038,
+    "iou": 0.9884
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "trucks nearly as large as the hut",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1b",
+   "cell": "s1_g",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/raw/base-r5-s1b.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0061,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.229,
+    "iou": 0.9935
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "trucks nearly as large as the hut",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1b",
+   "cell": "s1_i",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/raw/base-r5-s1b.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0004,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.238,
+    "iou": 0.9935
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "trucks nearly as large as the hut; parade ground runs into the gate",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1b",
+   "cell": "s1_j",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/raw/base-r5-s1b.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.207,
+    "iou": 0.991
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "trucks and a crate pile crowd the west side",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1b",
+   "cell": "s1_k",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/raw/base-r5-s1b.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0137,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.197,
+    "iou": 0.9914
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "trucks nearly as large as the hut",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1b",
+   "cell": "s1_l",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/raw/base-r5-s1b.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.003,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.233,
+    "iou": 0.9904
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "trucks large, camp leans on the west bank",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1c",
+   "cell": "s1_p",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0076,
+    "rim_touch": 2
+   },
+   "registration": {
+    "residual_tile_px": 0.049,
+    "iou": 0.993
+   }
+  },
+  {
+   "label": null,
+   "target": "base_s1",
+   "kept": false,
+   "why_dropped": "fine, but close to s1_m with larger trucks",
+   "work": "art/codex/terrain/candidates/sites-r5/base/r5-s1c",
+   "cell": "s1_r",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1c/raw/base-r5-s1c.png",
+   "passed": true,
+   "gates": {
+    "rim_exact": 0.0,
+    "rim_clear": 0.0004,
+    "rim_touch": 0
+   },
+   "registration": {
+    "residual_tile_px": 0.023,
+    "iou": 0.9917
+   }
+  }
+ ]
+}

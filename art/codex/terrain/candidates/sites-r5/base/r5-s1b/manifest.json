@@ -1,0 +1,49 @@
+{
+ "runs": [
+  {
+   "name": "base-r5-s1b",
+   "when": "2026-11-10T23:21:49",
+   "job": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/job.json",
+   "job_sha256": "99e6b567163d7b649ecb5cfc6522ae87497fb57af8bb07de3cf7f2b3ed7787e9",
+   "prompt": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/prompt.txt",
+   "prompt_sha256": "047016608d6b14afcf07ca1a9de39f6b8b3a700ee3093505c32178a3ee121a0d",
+   "sheet": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/base-r5-s1b.sheet.png",
+   "raw": "art/codex/terrain/candidates/sites-r5/base/r5-s1b/raw/base-r5-s1b.png",
+   "raw_sha256": "6d0a3049d76338f5edd0e1d6470c1d1d7d6c7732f7ab4c8ea09479c7f8f8c38b",
+   "from_raw": false,
+   "codex": {
+    "codex_thread": "01a1c8d6-32b3-79f1-8e17-6f7bbb51351a",
+    "codex_source": "/home/timg/.codex/generated_images/01a1c8d6-32b3-79f1-8e17-6f7bbb51351a/exec-cfa211cd-7392-46a5-b45b-0c9699abe06b.png",
+    "wall_seconds": 66,
+    "refs": [
+     "/home/timg/code/hex-general/art/codex/terrain/candidates/sites-r5/base/r5-s1b/base-r5-s1b.sheet.png",
+     "/home/timg/code/hex-general/docs/concept-art/concept1.png",
+     "/home/timg/code/hex-general/art/codex/terrain/refs/r1/town_2x.png",
+     "/home/timg/code/hex-general/art/codex/terrain/sites/base/s4-ref/stage3_bank_ref.png"
+    ]
+   },
+   "refs": [
+    "art/codex/terrain/candidates/sites-r5/base/r5-s1b/base-r5-s1b.sheet.png",
+    "docs/concept-art/concept1.png",
+    "art/codex/terrain/refs/r1/town_2x.png",
+    "art/codex/terrain/sites/base/s4-ref/stage3_bank_ref.png"
+   ],
+   "registration": {
+    "scale": 1.0001493173742357,
+    "tx": -0.2686176374046446,
+    "ty": -0.7965753979302361,
+    "max_residual_tile_px": 0.23841463547834266,
+    "min_iou": 0.990350923763007
+   },
+   "passed": [
+    "s1_g",
+    "s1_h",
+    "s1_i",
+    "s1_j",
+    "s1_k",
+    "s1_l"
+   ],
+   "failed": []
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+calling Codex with ['art/codex/terrain/candidates/sites-r5/factory/r5-l3a/factory-r5-l3a.sheet.png', 'docs/concept-art/concept1.png', 'art/codex/terrain/refs/r1/town_2x.png', 'art/codex/terrain/candidates/sites-r5/refs/factory-l2-ref.png'] ...
+codex thread 01a1c8d3-573b-7d12-a3ee-2f98eb046a2d, 106 s
+FAIL l3_500
+    FAIL rim_clear: 7.7% of the rim band painted over (limit 3%)
+FAIL l3_501
+    FAIL rim_clear: 6.5% of the rim band painted over (limit 3%)
+FAIL l3_502
+    FAIL rim_clear: 4.2% of the rim band painted over (limit 3%)
+FAIL l3_503
+    FAIL rim_clear: 5.1% of the rim band painted over (limit 3%)
+FAIL l3_504
+    FAIL rim_clear: 5.7% of the rim band painted over (limit 3%)
+FAIL l3_505
+    FAIL rim_clear: 6.7% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 7 salient px within 4 px of the boundary (limit 2)
+FAIL l3_506
+    FAIL rim_clear: 5.3% of the rim band painted over (limit 3%)
+    FAIL rim_touch: 10 salient px within 4 px of the boundary (limit 2)
+FAIL l3_507
+    FAIL rim_clear: 5.9% of the rim band painted over (limit 3%)
+FAIL l3_508
+    FAIL rim_clear: 3.9% of the rim band painted over (limit 3%)
+wrote art/codex/terrain/candidates/sites-r5/factory/r5-l3a/report.json, art/codex/terrain/candidates/sites-r5/factory/r5-l3a/review/factory-r5-l3a.montage.png
+exit 1

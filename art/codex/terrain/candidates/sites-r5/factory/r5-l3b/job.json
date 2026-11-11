@@ -1,0 +1,47 @@
+{
+ "name": "factory-r5-l3b",
+ "layout": "3x3",
+ "cells": [
+  {
+   "name": "l3_510",
+   "base": "../../../../r1-bases/03.png"
+  },
+  {
+   "name": "l3_511",
+   "base": "../../../../r1-bases/04.png"
+  },
+  {
+   "name": "l3_512",
+   "base": "../../../../r1-bases/05.png"
+  },
+  {
+   "name": "l3_513",
+   "base": "../../../../r1-bases/00.png"
+  },
+  {
+   "name": "l3_514",
+   "base": "../../../../r1-bases/01.png"
+  },
+  {
+   "name": "l3_515",
+   "base": "../../../../r1-bases/02.png"
+  },
+  {
+   "name": "l3_516",
+   "base": "../../../../r1-bases/03.png"
+  },
+  {
+   "name": "l3_517",
+   "base": "../../../../r1-bases/04.png"
+  },
+  {
+   "name": "l3_518",
+   "base": "../../../../r1-bases/05.png"
+  }
+ ],
+ "pin": {
+  "restore": true
+ },
+ "gates": {},
+ "anchors": {}
+}
