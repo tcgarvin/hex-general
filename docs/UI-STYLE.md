@@ -28,6 +28,12 @@
 > tooltip use a wood keyline with a brass hairline (`.fhq-note`, `.fhq-tip`). Still
 > unused: `btn-*.png`, `frame-leather.png`, `leather.png`, `canvas.png`, `sheet*.png`,
 > `stitch-*.png` and the transport glyphs `icon-*.png` (see `docs/TODO.md`).
+>
+> **Codex UI art, ratified 2026-11-11** (`art/codex/ui/`, shipped files and hashes in
+> `art/codex/ui/APPLIED.md`; details in §4 "Icons", "Brand emblem" and "Key art"):
+> the 22-glyph set drawn by `components/Glyph.tsx`, the brand emblem in every header
+> and on the sign-in and start cards, the favicon, and the sign-in key art behind
+> `.fhq-backdrop`.
 
 The visual identity for the game's UI chrome — panels, buttons, type, icons,
 decoration — for both the Pixi game-screen chrome (UI-SPEC §2) and the React
@@ -141,6 +147,41 @@ in the Pixi panels.
   as sprite tint-masks on the keycaps (the speed keycap keeps its `1×/2×` text);
   unit-type / status / economy glyphs are cut to provenance but **unwired** —
   emit + wire them once a real consumer exists (no icon consumer today).
+  **Superseded for the world screen 2026-11-11** by the Codex glyph set
+  (`art/codex/ui/glyphs/`, picks in `art/codex/ui/README.md`): 22 single-colour glyphs,
+  shipped as 48 px grey+alpha masks in `frontend/src/ui-art/glyphs/` (about 1 KB each,
+  inlined into the bundle) and named by the game's keys: `manpower fuel steel`,
+  `barracks depot workshop`, `infantry armor artillery`, `army` (army size), `turn`
+  (the clock), `column`, `garrison`, `base city farm oil_field steel_mill factory`,
+  `travel deploy disband`. Draw them with **`<Glyph name size label?>`**
+  (`components/Glyph.tsx`, `.fhq-glyph` in `index.css`): a CSS mask filled with
+  `currentColor`, so the parent's text colour sets ivory on wood, ink on parchment, or a
+  state colour (the disband glyph goes `text-invalid` when the unit is on the list).
+  Give `label` when the glyph stands alone (it becomes `role="img"` with that name and a
+  tooltip); leave it out when text naming the thing sits beside it (it is
+  `aria-hidden`). Sizes: 16 px in the header, 13 to 15 px in panels, chips and
+  tooltips; the art holds up from 12 to 24 px at 1x and 2x. Where they are: the world
+  header (resources and army size named by glyph alone, as in the review mock; the
+  clock keeps its label), panel title plates (Army, Base buildings, the unit's type, the
+  site's kind), Army rows (type glyph, short designation, a column glyph when packed),
+  the unit panel (posture, the Travel and Deploy chips, the on-arrival chips, the
+  disband toggle), base building rows and their costs, the hex panel (income, garrison,
+  recruit rows, units there), the hover note's site title, and the field manual's unit,
+  site, building and resource names. Costs and income use the header's form, glyph then
+  amount, with the words in the tooltip. The Move, Barrage, Rest and Hold chips stay
+  words only (the set has no glyphs for them), as does the plan bar's "Spends" sentence.
+- **Brand emblem** (ratified 2026-11-11): emblem-1, the winged hex crest
+  (`frontend/src/ui-art/emblem/emblem-1.webp`), via `components/Brand.tsx`:
+  `HeaderBrand` puts it 28 px tall left of the HEX-GENERAL wordmark in every header
+  (pages, world, closed world), and `Emblem` sits above the title on the sign-in card
+  (64 px) and the world list card (48 px). The favicon is emblem-3, the compact winged
+  crest: `public/favicon.ico` (16, 32, 48), `public/favicon-32.png`, and a 180 px
+  `public/apple-touch-icon.png` on wood-900, linked from `index.html`.
+- **Key art** (ratified 2026-11-11): keyart-3-centre, a lamplit map table with a calm
+  centre for the card (`frontend/src/ui-art/keyart/centre-3.webp`, 1536x1024 WebP,
+  146 KB). `.fhq-backdrop` sets it as `--fhq-key-art` under a soft dark vignette,
+  covering and centred, so only the login and world list screens (the class's only
+  users) load it; the world screen never does.
 - **Wells** — portrait, minimap, and event log sit in recessed brass-lipped
   inset frames.
 - **DOM surfaces** — header/auth reuse the same 9-slice PNGs via CSS

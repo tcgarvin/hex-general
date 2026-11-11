@@ -208,9 +208,23 @@ spirit of the sizing-study viewers (§12):
 - **Fog-aware for players:** the theater view shows what your alliance knows, with stale
   intel marked ("last seen 2 days ago"). The omniscient view stays an observer/debug tool
   for bot worlds.
-- **Art register (proposal, needs the user's pick):** a printed staff map with
-  grease-pencil front lines and pins, drawn procedurally from the terrain data — the Field
-  HQ "map table" taken to world scale.
+- **Art register (decided 2026-11-11, implementation not started):** the light
+  **"staff-map"** style, a printed staff map with grease-pencil territory, front lines,
+  pins and counters, drawn procedurally from the map data: the Field HQ map table taken
+  to world scale. **"staff-map-night"** (the same linework on dark ops-room paper) is
+  kept as a possible theme, for example for the full-screen theater view. At the switch
+  to the painted tiles, the **grease layer (territory edges and fronts) stays on over the
+  tiles** and the two layers **cross-fade over a short zoom band**, so what the player
+  tracks does not change style. Picked from the round 1 mocks
+  (`scripts/staff-map-mock.py`, notes in `.dev/staff-map/notes-r1.json`); the
+  runner-up was "hybrid", and "painted-far" and today's overview were not recommended.
+  Known gaps to solve when it is built: hashed owner hues collide among 100 players (a
+  neighbour-aware or alliance palette); towns read as small rings at near zoom; the
+  crayon hatching is in screen space and would swim during a zoom (move it to world
+  space); fog and stale intel are not shown (the mocks are omniscient); and a
+  whole-world texture at 10 to 22 px per hex is 3,500 to 7,700 px wide, so it needs
+  chunked textures baked on demand or a WebGL pass over per-hex data textures. Tracked
+  in `docs/TODO.md`.
 
 ## 11. Art generation (decided, 2026-11-08)
 
