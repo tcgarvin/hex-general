@@ -6,7 +6,7 @@ Each test sets up one situation and asserts on the shape of the bot's plan
 
 from __future__ import annotations
 
-from app.ai.intel import Intel
+from app.ai.intel import Box, Intel
 from app.ai.world import (
     Personality,
     ScriptedStrategist,
@@ -175,8 +175,91 @@ def test_intel_assumes_an_unseen_garrison_and_reads_a_seen_one() -> None:
         [make_unit(1, INF, at(3, 1)), garrison(100, near, hp=4)],
         held={BASE: "p"},
     )
-    intel = Intel(redact_state(state, "p"), "p")
+    intel = Intel(redact_state(state, "p"), "p", Box.around([at(3, 1)], 30))
     assert intel.garrisons[near].seen and intel.garrisons[near].hp == 4
     assert not intel.garrisons[FARM].seen and intel.garrisons[FARM].hp == 20
     assert not intel.column_safe(FARM)
     assert intel.column_safe(at(15, 0))
+
+
+# --- Against other players --------------------------------------------------------
+
+HELD = at(12, 6)  # a farm player q holds
+
+
+def _held_world(units: list[Unit]) -> GameState:
+    return small_world(
+        {BASE: (SiteKind.BASE, 0), HELD: (SiteKind.FARM, 1)},
+        units,
+        held={BASE: "p", HELD: "q"},
+        stocks=Stocks(fuel=20, steel=20),  # nothing to recruit with
+    )
+
+
+def test_an_attack_group_waits_until_it_has_gathered() -> None:
+    near = at(8, 6)
+    assert distance(near, HELD) == 4
+    state = _held_world(
+        [
+            make_unit(1, INF, near),
+            make_unit(2, INF, at(1, 4)),
+            make_unit(9, INF, HELD, "q"),
+        ]
+    )
+    orders = _plan(state, StrategistArgs(stance=Stance.ATTACK, focus=HELD))
+    assert not isinstance(orders[1], MoveOrder)  # holds out of reach instead
+    assert isinstance(orders[2], TravelOrder)  # the rest of the group comes up
+
+
+def test_a_lone_unit_does_not_attack_a_player_but_a_pair_does() -> None:
+    enemy_at = at(8, 9)
+    sides = neighbors(enemy_at)
+    alone = _held_world([make_unit(1, INF, sides[0]), make_unit(9, INF, enemy_at, "q")])
+    assert not _strikes(_plan(alone)[1], enemy_at)
+    pair = _held_world(
+        [
+            make_unit(1, INF, sides[0]),
+            make_unit(2, INF, sides[3]),
+            make_unit(9, INF, enemy_at, "q"),
+        ]
+    )
+    orders = _plan(pair)
+    assert _strikes(orders[1], enemy_at) or _strikes(orders[2], enemy_at)
+
+
+def test_a_bold_bot_with_an_army_attacks_once_cheap_land_is_gone() -> None:
+    strong = at(13, 2)  # a tier-3 strongpoint: not cheap for a bold bot
+    army = [make_unit(k, INF, at(2 + k, 2)) for k in range(1, 6)]
+    state = small_world(
+        {
+            BASE: (SiteKind.BASE, 0),
+            HELD: (SiteKind.FARM, 1),
+            strong: (SiteKind.FARM, 3),
+        },
+        army,
+        held={BASE: "p", HELD: "q"},
+    )
+    bold = ScriptedStrategist(Personality(aggression=0.9, reach=20, garrison_share=0.0))
+    assert bold.choose(redact_state(state, "p"), "p").stance is Stance.ATTACK
+    cautious = ScriptedStrategist(
+        Personality(aggression=0.2, reach=20, garrison_share=0.0)
+    )
+    assert cautious.choose(redact_state(state, "p"), "p").stance is Stance.EXPAND
+    state.units = army[:3]  # too small an army to attack with
+    assert bold.choose(redact_state(state, "p"), "p").stance is Stance.EXPAND
+
+
+def test_an_idle_unit_moves_up_to_the_holding_nearest_the_enemy() -> None:
+    start = at(2, 1)
+    state = small_world(
+        {BASE: (SiteKind.BASE, 0), FARM: (SiteKind.FARM, 1), HELD: (SiteKind.FARM, 1)},
+        [make_unit(1, INF, start)],
+        held={BASE: "p", FARM: "p", HELD: "q"},
+        stocks=Stocks(fuel=20, steel=20),
+    )
+    order = _plan(state)[1]
+    if isinstance(order, TravelOrder):
+        assert order.destination == FARM
+    else:
+        assert isinstance(order, MoveOrder)
+        assert distance(order.path[-1], FARM) < distance(start, FARM)

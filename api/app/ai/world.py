@@ -34,11 +34,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.ai.base_plan import plan_base, site_needs
 from app.ai.board import BoardIndex, is_combat_unit
 from app.ai.candidates import moves_toward, unit_candidates
-from app.ai.intel import Intel
+from app.ai.intel import Box, Intel
 from app.ai.objectives import Objective, ObjectiveKind
 from app.ai.policy import BotPlan
 from app.ai.recruit import plan_recruitment
-from app.engine.economy_rules import SiteKind
+from app.engine.economy_rules import GARRISON_FORCES, SiteKind
 from app.engine.hex_coords import Axial, distance, within
 from app.engine.models import (
     DeployOrder,
@@ -100,6 +100,14 @@ _NO_HOSTILE = 10**6
 _STAGE_BACK = 5  # columns bound for a held settlement deploy this far short
 _MIN_ATTACK_GROUP = 2  # never send fewer at a hostile-held settlement
 _HORIZON = 45  # hexes: about three turns of road travel
+# The strategist expands while a neutral site with a garrison of at most this
+# many HP lies within reach: from `_CHEAP_HP_MAX` for the most cautious bot down
+# to `_CHEAP_HP_MIN` for the boldest (tiers hold 5, 10, 20 and 30 HP).
+_CHEAP_HP_MAX = 30
+_CHEAP_HP_MIN = 5
+_ATTACK_ARMY = 5  # combat units a bot needs in the field before it attacks
+_FINISH_HP = 3  # a player unit this weak may be struck by a lone attacker
+_RESERVE_SPREAD = 2  # idle units gather within this many hexes of the front
 
 
 class Stance(StrEnum):
@@ -169,10 +177,14 @@ class ScriptedStrategist:
     """The rule-based stand-in for the LLM commander (WORLD_SPEC §8).
 
     Defend when an own settlement is threatened by another player and the bot is
-    cautious; expand while neutral land lies within its reach; otherwise attack
-    the hostile-held settlement nearest its holdings. Aggression also tilts the
-    tactical layer's scoring toward hostile targets (`_targets`). Neutral
-    garrisons never threaten anything: they hold their sites and never move.
+    cautious. Otherwise expand while *cheap* neutral land lies within its reach,
+    and attack the hostile-held settlement nearest its holdings once it doesn't.
+    What counts as cheap follows aggression: a bold bot stops clearing garrisons
+    and turns on its neighbours sooner, a cautious one keeps taking strongpoints.
+    A bot attacks only with a field army of `_ATTACK_ARMY` combat units; short
+    of one it keeps expanding. Aggression also tilts the tactical layer's
+    scoring toward hostile targets (`_targets`). Neutral garrisons never
+    threaten anything: they hold their sites and never move.
     """
 
     def __init__(self, personality: Personality) -> None:
@@ -195,25 +207,28 @@ class ScriptedStrategist:
                 reserve_share=reserve,
                 aggression=aggression,
             )
+        expand = StrategistArgs(
+            stance=Stance.EXPAND, reserve_share=reserve, aggression=aggression
+        )
         anchors = held or [u.coord for u in view.units if u.owner == slot]
+        sites = view.map.site_index
+        cheap = _CHEAP_HP_MAX - (_CHEAP_HP_MAX - _CHEAP_HP_MIN) * aggression
         neutral_near = any(
             s.controlled_by is None
+            and _tier_hp(sites.get(s.coord)) <= cheap
             and _nearest(s.coord, anchors) <= self.personality.reach
             for s in view.settlements
         )
-        if neutral_near:
-            return StrategistArgs(
-                stance=Stance.EXPAND, reserve_share=reserve, aggression=aggression
-            )
+        army = sum(1 for u in view.units if u.owner == slot and is_combat_unit(u))
+        if neutral_near or army < _ATTACK_ARMY:
+            return expand
         targets = [
             s.coord
             for s in view.settlements
             if s.controlled_by is not None and view.hostile(s.controlled_by, slot)
         ]
         if not targets:
-            return StrategistArgs(
-                stance=Stance.EXPAND, reserve_share=reserve, aggression=aggression
-            )
+            return expand
         focus = min(targets, key=lambda c: (_nearest(c, anchors), c.q, c.r))
         return StrategistArgs(
             stance=Stance.ATTACK,
@@ -255,7 +270,10 @@ class _Target:
 def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> BotPlan:
     """Turn the strategist's ``args`` into a legal plan for ``slot``."""
     board = BoardIndex(view, slot)
-    intel = Intel(view, slot)
+    anchors = [u.coord for u in board.own_units]
+    if args.focus is not None:
+        anchors.append(args.focus)
+    intel = Intel(view, slot, Box.around(anchors, _HORIZON + _FOCUS_RADIUS))
     build = None
     if view.config.economy is None:
         recruitments = plan_recruitment(board, slot)
@@ -265,7 +283,9 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
     reserved = frozenset(r.coord for r in recruitments)
     standing = {o.unit_id: o for o in view.standing_orders}
     garrisons = _pick_garrisons(view, slot, board.own_units, args, intel)
-    assignment = _assign(view, slot, board.own_units, intel, args, set(garrisons))
+    assignment, groups = _assign(
+        view, slot, board.own_units, intel, args, set(garrisons)
+    )
 
     held = {s.coord for s in view.settlements if s.controlled_by == slot}
     hostile_held = {
@@ -279,6 +299,9 @@ def plan_world_turn(view: GameState, slot: PlayerId, args: StrategistArgs) -> Bo
         reserved,
         hostile_held,
         _Claims(enemy_hexes=frozenset(u.coord for u in board.enemy_units)),
+        unready=_unready_attacks(board.own_units, assignment, groups, hostile_held),
+        attackable=_attackable(board, intel, held),
+        front=_front(intel, held, hostile_held),
     )
     orders: list[Order] = []
     for unit in sorted(board.own_units, key=lambda u: u.id):
@@ -346,11 +369,20 @@ class _UnitContext:
     reserved: frozenset[Axial]
     hostile_held: set[Axial]
     claims: _Claims
+    # Hostile-held targets whose attack group hasn't gathered yet.
+    unready: frozenset[Axial] = frozenset()
+    # Player units the bot may strike in melee this turn (see `_attackable`).
+    attackable: frozenset[Axial] = frozenset()
+    # The own holding nearest the enemy, where idle units wait as a reserve.
+    front: Axial | None = None
 
     def tactical(self, unit: Unit, objective: Objective) -> Order:
         """The best non-colliding v0.1 tactical candidate toward ``objective``."""
         return self.claims.pick(
-            unit, unit_candidates(self.board, unit, objective, self.reserved)
+            unit,
+            unit_candidates(
+                self.board, unit, objective, self.reserved, self.attackable
+            ),
         )
 
     def step_toward(
@@ -446,12 +478,103 @@ def _unit_order(
                 return order
         objective = Objective(ObjectiveKind.DEFEND, garrison, 0.0)
     if objective is None:
-        objective = Objective(ObjectiveKind.SUPPORT, unit.coord, 0.0)
-    if threat > _CONTACT_RADIUS and distance(unit.coord, objective.coord) > _TRAVEL_MIN:
+        # Nothing to do: wait as a reserve at the front, healing on the way.
+        front = ctx.front
+        if front is not None and distance(unit.coord, front) > _RESERVE_SPREAD:
+            objective = Objective(ObjectiveKind.SUPPORT, front, 0.0)
+        else:
+            objective = Objective(ObjectiveKind.SUPPORT, unit.coord, 0.0)
+    gap = distance(unit.coord, objective.coord)
+    if objective.coord in ctx.unready and gap <= _STAGE_BACK + 1 and threat > 1:
+        # The attack group is still gathering: wait out of the defenders' reach.
+        ctx.claims.finals.add(unit.coord)
+        return _rest_or_hold(unit)
+    if threat > _CONTACT_RADIUS and gap > _TRAVEL_MIN:
         order = ctx.travel(unit, objective.coord)
         if order is not None:
             return order
     return ctx.tactical(unit, objective)
+
+
+def _unready_attacks(
+    own: list[Unit],
+    assignment: dict[int, Objective],
+    groups: dict[Axial, int],
+    hostile_held: set[Axial],
+) -> frozenset[Axial]:
+    """Hostile-held targets whose attack group has not gathered yet.
+
+    A group is ready once its smallest worthwhile size (`_Target.min_group`) of
+    deployed, unworn combat units stands within `_STAGE_BACK` + 1 hexes of the
+    target; until then its units wait there instead of going in one by one.
+    """
+    ready: dict[Axial, int] = {}
+    aimed: set[Axial] = set()
+    for unit in own:
+        objective = assignment.get(unit.id)
+        if objective is None or objective.coord not in hostile_held:
+            continue
+        aimed.add(objective.coord)
+        if (
+            is_combat_unit(unit)
+            and unit.posture is Posture.DEPLOYED
+            and unit.hp > _REST_HP
+            and distance(unit.coord, objective.coord) <= _STAGE_BACK + 1
+        ):
+            ready[objective.coord] = ready.get(objective.coord, 0) + 1
+    return frozenset(c for c in aimed if ready.get(c, 0) < groups.get(c, 1))
+
+
+def _attackable(board: BoardIndex, intel: Intel, held: set[Axial]) -> frozenset[Axial]:
+    """Player units the bot may strike in melee this turn.
+
+    Against a dug-in unit nearly every blow lands for the 1-damage floor, so a
+    lone attacker only trades HP evenly and feeds the defender. A player unit is
+    struck only when at least two own units (or guns in range) can hit it this
+    turn, when it is nearly dead, or when it stands beside an own holding.
+    """
+    # How far each unit can strike from: melee units move and step in, guns fire.
+    reach = {
+        u.id: (
+            UNIT_STATS[u.type].move
+            if is_combat_unit(u)
+            else UNIT_STATS[u.type].attack_range
+        )
+        for u in board.own_units
+    }
+    ready = [
+        u for u in board.own_units if u.posture is Posture.DEPLOYED and u.hp > _REST_HP
+    ]
+    coords: set[Axial] = set()
+    for enemy in intel.threats:
+        strikers = sum(
+            1 for u in ready if distance(u.coord, enemy.coord) <= reach[u.id]
+        )
+        if (
+            strikers >= 2
+            or enemy.hp <= _FINISH_HP
+            or any(distance(enemy.coord, h) <= 1 for h in held)
+        ):
+            coords.add(enemy.coord)
+    return frozenset(coords)
+
+
+def _front(intel: Intel, held: set[Axial], hostile_held: set[Axial]) -> Axial | None:
+    """The own holding nearest the enemy: visible player units if any, else the
+    nearest hostile-held settlement within the planning horizon."""
+    if not held:
+        return None
+    spots = [u.coord for u in intel.threats]
+    if not spots:
+        near = Box.around(list(held), _HORIZON)
+        spots = [
+            c
+            for c in hostile_held
+            if c in near and any(_within_horizon(c, h) for h in held)
+        ]
+    if not spots:
+        return None
+    return min(held, key=lambda h: (_nearest(h, spots), h.q, h.r))
 
 
 def _needs_rest(
@@ -466,7 +589,7 @@ def _needs_rest(
     if unit.hp <= _REST_HP:
         return True
     full = UNIT_STATS[unit.type].max_hp
-    if unit.hp >= full or not ctx.board.view.settlement_ground(unit.coord):
+    if unit.hp >= full or not ctx.board.rest_ground(unit.coord):
         return False
     if threat <= 3:
         return False
@@ -482,8 +605,7 @@ def _recover(ctx: _UnitContext, unit: Unit, threat: int) -> Order:
     rests where it stands (1 HP a turn up to 7) or, if a player threatens it,
     heads for the nearest own settlement.
     """
-    view = ctx.board.view
-    if view.settlement_ground(unit.coord) and threat > 3:
+    if ctx.board.rest_ground(unit.coord) and threat > 3:
         ctx.claims.finals.add(unit.coord)
         return RestOrder(unit_id=unit.id)
     ground = _rest_ground(ctx, unit)
@@ -514,7 +636,7 @@ def _rest_ground(ctx: _UnitContext, unit: Unit) -> Axial | None:
             continue
         if coord in ctx.hostile_held or coord in ctx.reserved:
             continue
-        if coord in ctx.claims.finals or not view.settlement_ground(coord):
+        if coord in ctx.claims.finals or not ctx.board.rest_ground(coord):
             continue
         if ctx.intel.threats_within(coord, 3):
             continue
@@ -580,11 +702,12 @@ def _assign(
     intel: Intel,
     args: StrategistArgs,
     garrisoned: set[int],
-) -> dict[int, Objective]:
+) -> tuple[dict[int, Objective], dict[Axial, int]]:
     """Greedy unit → objective matching by value over distance, with capacities.
 
     Combat units take capture/defend targets; artillery follows the nearest
-    assigned combat unit's objective.
+    assigned combat unit's objective. Also returns each target's smallest
+    group worth sending (`_Target.min_group`), by coord.
     """
     combat = sorted(
         (u for u in own if is_combat_unit(u) and u.id not in garrisoned),
@@ -635,7 +758,7 @@ def _assign(
             assignment[gun.id] = Objective(
                 ObjectiveKind.SUPPORT, assignment[lead.id].coord, 0.0
             )
-    return assignment
+    return assignment, {t.objective.coord: t.min_group for t in targets}
 
 
 def _within_horizon(a: Axial, b: Axial) -> bool:
@@ -682,14 +805,16 @@ def _targets(
     """
     index = view.map.index
     needs = site_needs(view, slot) if view.config.economy is not None else {}
+    reach = Box.around(origins, _HORIZON)
     targets: list[_Target] = []
     for settlement in view.settlements:
         near_focus = (
             args.focus is not None
             and distance(settlement.coord, args.focus) <= _FOCUS_RADIUS
         )
-        if not near_focus and not any(
-            _within_horizon(o, settlement.coord) for o in origins
+        if not near_focus and not (
+            settlement.coord in reach
+            and any(_within_horizon(o, settlement.coord) for o in origins)
         ):
             continue
         site = view.map.site_index.get(settlement.coord)
@@ -711,7 +836,7 @@ def _targets(
             targets.append(
                 _Target(
                     Objective(ObjectiveKind.DEFEND, settlement.coord, value),
-                    _DEFEND_CAP,
+                    max(_DEFEND_CAP, threat + 1),
                 )
             )
             continue
@@ -733,8 +858,9 @@ def _targets(
             hp = _expected_defence(view, intel, settlement.coord)
             value = base / (1.0 + _GARRISON_HP_DISCOUNT * hp)
             value *= _HELD_STANCE[args.stance] * (0.5 + args.aggression)
-            capacity = _HOSTILE_CAP
-            min_group = _MIN_ATTACK_GROUP
+            # One more attacker than the defenders it expects, and room for more.
+            min_group = max(_MIN_ATTACK_GROUP, hp // 10 + 1)
+            capacity = max(_HOSTILE_CAP, min_group + 2)
         if near_focus:
             value *= 2.0
         targets.append(
@@ -778,6 +904,13 @@ def _is_key_settlement(view: GameState, coord: Axial) -> bool:
     if site is None:
         return view.map.index[coord].terrain is Terrain.CITY
     return site.kind in _KEY_SITES
+
+
+def _tier_hp(site: MapSite | None) -> int:
+    """The HP of a site's starting garrison (0 for a base or a v0.1 settlement)."""
+    if site is None:
+        return 0
+    return sum(hp for _, hp in GARRISON_FORCES.get(site.garrison, ()))
 
 
 def _nearest(coord: Axial, others: list[Axial]) -> int:

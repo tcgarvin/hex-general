@@ -19,7 +19,7 @@ from collections import deque
 from dataclasses import dataclass
 
 from app.ai.board import BoardIndex
-from app.ai.objectives import Objective
+from app.ai.objectives import Objective, ObjectiveKind
 from app.engine.combat import compute_damage
 from app.engine.hex_coords import Axial, distance, neighbors
 from app.engine.models import (
@@ -39,6 +39,9 @@ _DEATH_PENALTY = 8.0  # an attack the attacker won't survive (and that doesn't k
 _OBJECTIVE_BONUS = 3.0  # striking the unit on the objective hex itself
 _GUN_STAND_OFF = 2  # artillery advances no closer than this to its objective
 _NO_GAP = 10**6
+_EXPOSED_PENALTY = (
+    2  # an advance ending beside a player's unit counts this much farther
+)
 # Our opponent model is "all visible enemies Hold" (AI_SPEC §4.4), so a struck
 # enemy is a stationary defender getting terrain + Hold: we score attacks/barrages
 # against that same assumption to stay consistent with the simulation.
@@ -112,17 +115,23 @@ def _advance_order(
     """A move toward ``objective``: the reachable hex nearest the objective.
 
     Artillery stops two hexes out: it fires from there, and need not stand in
-    the line.
+    the line. A hex beside another player's unit counts as `_EXPOSED_PENALTY`
+    hexes farther: a unit that walks up alone just stands in contact and trades
+    blows evenly, so it stops short and goes in with an attack instead.
     """
     stand_off = _GUN_STAND_OFF if unit.type is UnitType.ARTILLERY else 0
-    origin_gap = max(stand_off, distance(unit.coord, objective.coord))
+    contact = board.player_contact
+
+    def gap(coord: Axial) -> int:
+        near = max(stand_off, distance(coord, objective.coord))
+        return near + _EXPOSED_PENALTY * (coord in contact)
+
     best: Axial | None = None
-    best_key = (origin_gap, 0)
+    best_key = (gap(unit.coord), 0)
     for coord, steps in reach.dist.items():
         if coord == unit.coord:
             continue
-        gap = max(stand_off, distance(coord, objective.coord))
-        key = (gap, steps)
+        key = (gap(coord), steps)
         if key < best_key:
             best_key = key
             best = coord
@@ -139,7 +148,7 @@ def _attack_score(
     An attack the attacker wouldn't survive is a loss unless it kills, and a
     strike on the objective itself (or the units guarding it) is worth more.
     """
-    mods = board.view.terrain_defense(defender.coord) + _ENEMY_HOLD_BONUS
+    mods = board.terrain_defense(defender.coord) + _ENEMY_HOLD_BONUS
     dealt = compute_damage(attacker.type, defender.type, mods)
     retaliation = compute_damage(defender.type, attacker.type, 0)
     lethal = dealt >= defender.hp
@@ -158,17 +167,25 @@ def _attack_score(
 
 
 def _attack_orders(
-    board: BoardIndex, unit: Unit, reach: _Reach, objective: Objective
+    board: BoardIndex,
+    unit: Unit,
+    reach: _Reach,
+    objective: Objective,
+    attackable: frozenset[Axial] | None,
 ) -> list[tuple[float, MoveOrder]]:
     """Attack-by-move candidates onto the highest-value reachable enemies (§4.5).
 
     A neutral garrison never moves or strikes first, so one is attacked only
-    when it guards the unit's objective: anywhere else it is harmless.
+    when it guards the unit's objective: anywhere else it is harmless. Another
+    player's unit is attacked only if ``attackable`` (when given) lists its hex.
     """
     move = UNIT_STATS[unit.type].move
     scored: list[tuple[float, MoveOrder]] = []
     for enemy in board.enemy_units:
-        if enemy.owner == NEUTRAL and distance(enemy.coord, objective.coord) > 3:
+        if enemy.owner == NEUTRAL:
+            if distance(enemy.coord, objective.coord) > 3:
+                continue
+        elif attackable is not None and enemy.coord not in attackable:
             continue
         approach: Axial | None = None
         approach_steps = move
@@ -260,7 +277,7 @@ def _barrage_orders(
         gap = distance(enemy.coord, objective.coord)
         if enemy.owner == NEUTRAL and gap > 3:
             continue
-        mods = board.view.terrain_defense(enemy.coord) + _ENEMY_HOLD_BONUS
+        mods = board.terrain_defense(enemy.coord) + _ENEMY_HOLD_BONUS
         dealt = compute_damage(UnitType.ARTILLERY, enemy.type, mods)
         value = float(dealt) + 0.5 * UNIT_STATS[enemy.type].recruit_cost
         if dealt >= enemy.hp:
@@ -291,12 +308,14 @@ def unit_candidates(
     unit: Unit,
     objective: Objective,
     reserved: frozenset[Axial] = frozenset(),
+    attackable: frozenset[Axial] | None = None,
 ) -> list[Order]:
     """Ordered candidate orders for ``unit`` (AI_SPEC §4.5); best first, Hold last.
 
     The head of the list is the preferred order. Always includes an advance (when
     it can move closer) and Hold.
     ``reserved`` hexes (cities held for recruitment) are excluded as move targets.
+    ``attackable`` (when given) limits melee on other players' units to those hexes.
     """
     reach = _reach(board, unit, reserved)
     scored: list[tuple[float, Order]] = []
@@ -308,9 +327,11 @@ def unit_candidates(
         if advance is not None:
             scored.append((500.0, advance))
     else:
-        for value, attack in _attack_orders(board, unit, reach, objective):
+        striking = False
+        for value, attack in _attack_orders(board, unit, reach, objective, attackable):
             # A losing attack ranks below holding: never attack at bad odds.
             base = 1000.0 if value > 0 else 0.0
+            striking = striking or value > 0
             scored.append((base + value, attack))
         advance = _advance_order(board, unit, objective, reach)
         if advance is not None:
@@ -322,7 +343,15 @@ def unit_candidates(
             for e in board.enemy_units
         )
         wounded = unit.hp < UNIT_STATS[unit.type].max_hp
-        if engaged and (wounded or _locally_outnumbered(board, unit)):
+        # A unit in contact that won't strike only stands there trading blows
+        # when attacked; it steps back unless it is holding the ground it guards.
+        guarding = (
+            objective.kind is ObjectiveKind.DEFEND
+            and distance(unit.coord, objective.coord) <= 1
+        )
+        if engaged and (
+            wounded or _locally_outnumbered(board, unit) or not (striking or guarding)
+        ):
             withdraw = _withdraw_order(board, unit, reach)
             if withdraw is not None:
                 scored.append((400.0, withdraw))

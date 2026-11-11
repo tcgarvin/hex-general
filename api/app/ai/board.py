@@ -15,9 +15,25 @@ standard: it trusts its already-validated `GameState` and indexes directly.
 
 from __future__ import annotations
 
+from functools import cached_property
+
 from app.engine.hex_coords import Axial, distance, neighbors
-from app.engine.models import GameState, Hex, PlayerId, Posture, Settlement, Unit
-from app.engine.stats import TERRAIN_STATS, UNIT_STATS, Terrain
+from app.engine.models import (
+    NEUTRAL,
+    GameState,
+    Hex,
+    PlayerId,
+    Posture,
+    Settlement,
+    Unit,
+)
+from app.engine.stats import (
+    SETTLEMENT_DEFENSE_BONUS,
+    SETTLEMENT_TERRAINS,
+    TERRAIN_STATS,
+    UNIT_STATS,
+    Terrain,
+)
 
 
 class BoardIndex:
@@ -41,6 +57,16 @@ class BoardIndex:
         self.own_units: list[Unit] = [u for u in view.units if u.owner == slot]
         self.enemy_units: list[Unit] = [u for u in view.units if u.owner != slot]
 
+    @cached_property
+    def player_contact(self) -> frozenset[Axial]:
+        """Hexes beside a deployed unit of another player (garrisons excluded)."""
+        return frozenset(
+            near
+            for u in self.enemy_units
+            if u.owner != NEUTRAL and u.posture is Posture.DEPLOYED
+            for near in neighbors(u.coord)
+        )
+
     def terrain_at(self, coord: Axial) -> Terrain:
         """Terrain of an on-map hex (raises for off-map — a caller bug)."""
         return self.hex_by_coord[coord].terrain
@@ -49,6 +75,20 @@ class BoardIndex:
         """Whether ``coord`` is on-map and passable terrain (SPEC §3.4)."""
         hex_ = self.hex_by_coord.get(coord)
         return hex_ is not None and TERRAIN_STATS[hex_.terrain].passable
+
+    def rest_ground(self, coord: Axial) -> bool:
+        """`GameState.settlement_ground` from the indexes: town or city terrain, or
+        a site hex whose settlement exists (where resting heals fastest)."""
+        if self.hex_by_coord[coord].terrain in SETTLEMENT_TERRAINS:
+            return True
+        return coord in self.view.map.site_index and coord in self.settlement_by_coord
+
+    def terrain_defense(self, coord: Axial) -> int:
+        """`GameState.terrain_defense` from the indexes (no settlement scan)."""
+        bonus = TERRAIN_STATS[self.hex_by_coord[coord].terrain].defense_bonus
+        if self.rest_ground(coord):
+            return max(bonus, SETTLEMENT_DEFENSE_BONUS)
+        return bonus
 
     def is_free(self, coord: Axial) -> bool:
         """Whether ``coord`` is passable and unoccupied (for recruit/reposition)."""

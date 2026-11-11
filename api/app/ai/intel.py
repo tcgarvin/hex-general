@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from app.engine.economy_rules import GARRISON_FORCES
-from app.engine.hex_coords import Axial, distance
+from app.engine.hex_coords import Axial, distance, within
 from app.engine.models import NEUTRAL, GameState, PlayerId, Unit
 from app.engine.stats import COLUMN_RULES
 from app.engine.visibility import visible_hexes
@@ -58,12 +58,46 @@ class Garrison:
         return any(u.coord == self.site for u in self.units)
 
 
-class Intel:
-    """Fog-honest facts about one bot's view, built once per turn."""
+@dataclass(frozen=True)
+class Box:
+    """An axial bounding box, a cheap prefilter before exact distance checks.
 
-    def __init__(self, view: GameState, slot: PlayerId) -> None:
+    A hex within ``margin`` of one of the ``around`` coords has its q and r each
+    within ``margin`` of that coord, so it lies inside the box.
+    """
+
+    q0: int
+    q1: int
+    r0: int
+    r1: int
+
+    @classmethod
+    def around(cls, coords: list[Axial], margin: int) -> Box:
+        """The box holding every hex within ``margin`` of any of ``coords``."""
+        if not coords:
+            return cls(0, -1, 0, -1)  # empty
+        return cls(
+            min(c.q for c in coords) - margin,
+            max(c.q for c in coords) + margin,
+            min(c.r for c in coords) - margin,
+            max(c.r for c in coords) + margin,
+        )
+
+    def __contains__(self, coord: Axial) -> bool:
+        return self.q0 <= coord.q <= self.q1 and self.r0 <= coord.r <= self.r1
+
+
+class Intel:
+    """Fog-honest facts about one bot's view, built once per turn.
+
+    ``area`` bounds the bot's planning: garrisons and danger spots are worked
+    out only inside it (a world has thousands of sites).
+    """
+
+    def __init__(self, view: GameState, slot: PlayerId, area: Box) -> None:
         self.view = view
         self.slot = slot
+        self.area = area
         self.visible: set[Axial] = visible_hexes(view, slot)
         self.threats: list[Unit] = self.player_threats(view, slot)
         self.garrisons: dict[Axial, Garrison] = self._garrisons()
@@ -77,25 +111,27 @@ class Intel:
 
     def _garrisons(self) -> dict[Axial, Garrison]:
         sites = self.view.map.site_index
-        neutral_sites = [
+        neutral_sites = {
             s.coord
             for s in self.view.settlements
-            if s.controlled_by is None and sites[s.coord].garrison > 0
-        ]
-        seen_units: dict[Axial, list[Unit]] = {c: [] for c in neutral_sites}
+            if s.controlled_by is None
+            and s.coord in self.area
+            and sites[s.coord].garrison > 0
+        }
+        seen_units: dict[Axial, list[Unit]] = {}
         for unit in self.view.units:
             if unit.owner != NEUTRAL:
                 continue
             near = [
-                c for c in neutral_sites if distance(c, unit.coord) <= _GARRISON_SPREAD
+                c for c in within(unit.coord, _GARRISON_SPREAD) if c in neutral_sites
             ]
             if near:
                 home = min(near, key=lambda c: (distance(c, unit.coord), c.q, c.r))
-                seen_units[home].append(unit)
+                seen_units.setdefault(home, []).append(unit)
         garrisons: dict[Axial, Garrison] = {}
         for coord in neutral_sites:
             if coord in self.visible:
-                units = tuple(seen_units[coord])
+                units = tuple(seen_units.get(coord, ()))
                 garrisons[coord] = Garrison(
                     coord, sum(u.hp for u in units), True, units
                 )
@@ -123,7 +159,9 @@ class Intel:
         """
         reach = COLUMN_RULES.deploy_distance
         spots: list[tuple[Axial, int]] = [
-            (u.coord, reach) for u in self.view.units if u.owner == NEUTRAL
+            (u.coord, reach)
+            for u in self.view.units
+            if u.owner == NEUTRAL and u.coord in self.area
         ]
         for garrison in self.garrisons.values():
             if not garrison.seen:

@@ -8,7 +8,8 @@ after). Each turn:
   tanks, at a held base or city (tanks at a held factory), preferring one nobody
   stands on; a unit standing on the chosen site steps off this turn. A recruit is skipped if
   its upkeep would leave fuel or manpower running at a loss that the stock can't
-  carry for `_DEFICIT_TURNS` more turns, so the bot rarely forces a disband.
+  carry for `_DEFICIT_TURNS` more turns (never into a fuel deficit), so the bot
+  rarely forces a disband.
 * **Build** with what is left: Barracks 1, then the Workshop, then barracks levels,
   each preceded by the depot level needed to store its cost.
 
@@ -31,7 +32,7 @@ _TARGET_SHARE: dict[UnitType, float] = {
     UnitType.ARTILLERY: 0.2,
     UnitType.ARMOR: 0.2,
 }
-_DEFICIT_TURNS = 10
+_DEFICIT_TURNS = 20
 
 
 @dataclass(frozen=True)
@@ -50,7 +51,14 @@ class _Budget:
     net: Stocks
 
     def can_carry(self, upkeep: Stocks) -> bool:
-        """Whether adding ``upkeep`` keeps fuel and manpower sustainable."""
+        """Whether adding ``upkeep`` keeps fuel and manpower sustainable.
+
+        A unit that burns fuel is never recruited into a fuel deficit (a fuel
+        shortage disbands a tank or gun). Manpower may run at a loss only while
+        the stock covers `_DEFICIT_TURNS` turns of it.
+        """
+        if upkeep.fuel > 0 and self.net.fuel - upkeep.fuel < 0:
+            return False
         for have, rate, extra in (
             (self.stocks.fuel, self.net.fuel, upkeep.fuel),
             (self.stocks.manpower, self.net.manpower, upkeep.manpower),

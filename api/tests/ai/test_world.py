@@ -86,6 +86,11 @@ def test_bots_attack_when_no_neutral_land_is_left(world: GeneratedWorld) -> None
     for settlement in state.settlements:
         if settlement.controlled_by is None:
             settlement.controlled_by = "b001"
+    # A field army big enough to attack with.
+    own = [u for u in state.units if u.owner == "b000"]
+    state.units.extend(
+        u.model_copy(update={"id": 900 + k}) for k, u in enumerate(own[:2])
+    )
     bold = Personality(aggression=0.9, reach=20, garrison_share=0.0)
     args = ScriptedStrategist(bold).choose(redact_state(state, "b000"), "b000")
     assert args.stance is Stance.ATTACK
