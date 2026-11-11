@@ -173,6 +173,21 @@ class Intel:
             buckets.setdefault(key, []).append((coord, radius))
         return buckets
 
+    def corridor_clear(self, start: Axial, goal: Axial, slack: int) -> bool:
+        """Whether no danger spot lies anywhere near the way from ``start`` to
+        ``goal``: within ``slack`` hexes (plus its radius) of the detour through it.
+
+        A cheap test before routing: a route seldom strays far from the straight
+        line, so with no spot in the corridor a column can travel straight there.
+        """
+        direct = distance(start, goal)
+        for spots in self._danger_buckets.values():
+            for spot, radius in spots:
+                detour = distance(start, spot) + distance(spot, goal)
+                if detour <= direct + 2 * (radius + slack):
+                    return False
+        return True
+
     def column_safe(self, coord: Axial) -> bool:
         """Whether a column may step onto ``coord`` without meeting a garrison."""
         bq, br = coord.q // _BUCKET, coord.r // _BUCKET

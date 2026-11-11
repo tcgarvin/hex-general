@@ -108,6 +108,8 @@ _CHEAP_HP_MIN = 5
 _ATTACK_ARMY = 5  # combat units a bot needs in the field before it attacks
 _FINISH_HP = 3  # a player unit this weak may be struck by a lone attacker
 _RESERVE_SPREAD = 2  # idle units gather within this many hexes of the front
+_GROUP_SLACK = 6  # a group takes units this much farther than its min_group-th
+_CORRIDOR_SLACK = 4  # travel skips routing when no garrison is this near the way
 
 
 class Stance(StrEnum):
@@ -404,6 +406,10 @@ class _UnitContext:
         tactically if the garrison is its goal), and a column gets ``None`` (it
         should deploy).
         """
+        if goal not in self.hostile_held and self.intel.corridor_clear(
+            unit.coord, goal, _CORRIDOR_SLACK
+        ):
+            return TravelOrder(unit_id=unit.id, destination=goal)
         route = find_route(self.board.view.map, unit.coord, goal)
         if route is None:
             return None if unit.posture is Posture.COLUMN else self._near(unit, goal)
@@ -703,7 +709,7 @@ def _assign(
     args: StrategistArgs,
     garrisoned: set[int],
 ) -> tuple[dict[int, Objective], dict[Axial, int]]:
-    """Greedy unit → objective matching by value over distance, with capacities.
+    """Match units to objectives as groups (`_match_groups`).
 
     Combat units take capture/defend targets; artillery follows the nearest
     assigned combat unit's objective. Also returns each target's smallest
@@ -714,43 +720,7 @@ def _assign(
         key=lambda u: u.id,
     )
     targets = _targets(view, slot, intel, args, [u.coord for u in combat])
-    load: dict[Axial, int] = {}
-    assignment: dict[int, Objective] = {}
-    pairs = sorted(
-        (
-            (
-                -t.objective.value / (1.0 + distance(u.coord, t.objective.coord) / 4.0),
-                u.id,
-                k,
-            )
-            for u in combat
-            for k, t in enumerate(targets)
-            if t.near_focus or _within_horizon(u.coord, t.objective.coord)
-        ),
-    )
-    dropped: set[Axial] = set()
-    for _ in range(3):
-        assignment = {}
-        load = {}
-        for _, unit_id, k in pairs:
-            target = targets[k]
-            coord = target.objective.coord
-            if unit_id in assignment or coord in dropped:
-                continue
-            if load.get(coord, 0) >= target.capacity:
-                continue
-            assignment[unit_id] = target.objective
-            load[coord] = load.get(coord, 0) + 1
-        # Too few units for a target just feed its defenders: drop such targets
-        # and match again, so attacks go in as groups.
-        lone = {
-            t.objective.coord
-            for t in targets
-            if t.min_group > 1 and 0 < load.get(t.objective.coord, 0) < t.min_group
-        }
-        if not lone:
-            break
-        dropped |= lone
+    assignment = _match_groups(combat, targets)
     for gun in (u for u in own if not is_combat_unit(u)):
         escorts = [u for u in combat if u.id in assignment]
         if escorts:
@@ -759,6 +729,55 @@ def _assign(
                 ObjectiveKind.SUPPORT, assignment[lead.id].coord, 0.0
             )
     return assignment, {t.objective.coord: t.min_group for t in targets}
+
+
+def _match_groups(combat: list[Unit], targets: list[_Target]) -> dict[int, Objective]:
+    """Greedy group matching: the best target first, with the units nearest it.
+
+    A target is scored by its value over the distance of its `min_group`-th
+    nearest free unit (a group moves at its farthest member's pace), so it is
+    only taken when a whole group can be sent. The group is its nearest free
+    units, up to its capacity, among those no more than `_GROUP_SLACK` hexes
+    farther than that unit. Matching whole groups keeps a unit's objective
+    stable from turn to turn: matching unit by unit flipped lone units between
+    targets as they moved.
+    """
+    free = {u.id for u in combat}
+    near = [
+        sorted(
+            (distance(u.coord, t.objective.coord), u.id)
+            for u in combat
+            if t.near_focus or _within_horizon(u.coord, t.objective.coord)
+        )
+        for t in targets
+    ]
+    open_targets = set(range(len(targets)))
+    assignment: dict[int, Objective] = {}
+    while free and open_targets:
+        best: tuple[float, int] | None = None
+        group: list[tuple[int, int]] = []
+        for k in sorted(open_targets):
+            target = targets[k]
+            avail = [pair for pair in near[k] if pair[1] in free]
+            if len(avail) < target.min_group:
+                continue
+            gap = avail[target.min_group - 1][0]
+            key = (target.objective.value / (1.0 + gap / 4.0), -k)
+            if best is None or key > best:
+                best = key
+                group = [
+                    pair
+                    for pair in avail[: target.capacity]
+                    if pair[0] <= gap + _GROUP_SLACK
+                ]
+        if best is None:
+            break
+        chosen = -best[1]
+        open_targets.discard(chosen)
+        for _, unit_id in group:
+            assignment[unit_id] = targets[chosen].objective
+            free.discard(unit_id)
+    return assignment
 
 
 def _within_horizon(a: Axial, b: Axial) -> bool:

@@ -6,12 +6,14 @@ Each test sets up one situation and asserts on the shape of the bot's plan
 
 from __future__ import annotations
 
+from app.ai.board import BoardIndex
 from app.ai.intel import Box, Intel
 from app.ai.world import (
     Personality,
     ScriptedStrategist,
     Stance,
     StrategistArgs,
+    _assign,
     plan_world_turn,
     siege_group,
 )
@@ -158,6 +160,33 @@ def test_neutral_garrisons_never_make_a_cautious_bot_defend() -> None:
     cautious = Personality(aggression=0.2, reach=20, garrison_share=0.0)
     args = ScriptedStrategist(cautious).choose(redact_state(state, "p"), "p")
     assert args.stance is Stance.EXPAND
+
+
+def test_units_are_matched_to_targets_as_whole_groups() -> None:
+    strong = at(9, 2)  # tier 2: needs a group of two
+    weak = at(14, 10)  # tier 1: one unit will do
+    state = small_world(
+        {
+            BASE: (SiteKind.BASE, 0),
+            strong: (SiteKind.FARM, 2),
+            weak: (SiteKind.FARM, 1),
+        },
+        [
+            garrison(100, strong),
+            garrison(101, weak, hp=5),
+            make_unit(1, INF, at(7, 2)),
+            make_unit(2, INF, at(7, 3)),
+            make_unit(3, INF, at(13, 10)),
+        ],
+        held={BASE: "p"},
+    )
+    view = redact_state(state, "p")
+    intel = Intel(view, "p", Box.around([u.coord for u in view.units], 60))
+    board = BoardIndex(view, "p")
+    assignment, groups = _assign(view, "p", board.own_units, intel, EXPAND, set())
+    assert groups[strong] == 2
+    assert assignment[1].coord == assignment[2].coord == strong
+    assert assignment[3].coord == weak
 
 
 def test_siege_groups_grow_with_the_garrison() -> None:
