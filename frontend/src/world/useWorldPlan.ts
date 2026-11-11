@@ -17,7 +17,9 @@
 // enemy.
 //
 // Unsent edits are mirrored into `sessionStorage` (`planStore.ts`) and restored
-// after a reload of the same turn.
+// after a reload of the same turn, but only over the server plan they were forked
+// from: if a newer plan was submitted elsewhere, the draft is set aside and the
+// player may take it back ("Use my draft instead").
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -34,12 +36,14 @@ import { hostileHexes, moveStepRules } from "./moveRules";
 import {
   inBarrageRange,
   planFromSubmission,
+  planKey,
   samePlan,
+  submissionKey,
   toSubmission,
   type WorldOrder,
   type WorldPlan,
 } from "./plan";
-import { clearUnsentPlan, loadUnsentPlan, saveUnsentPlan } from "./planStore";
+import { clearUnsentPlan, draftOnLoad, loadUnsentPlan, saveUnsentPlan, supersededBy } from "./planStore";
 import { hostileZoc, swapBlocked, swapOrders, swapPartner } from "./relief";
 import { columnCosts, findRoute, RouteSearch, travelEta, type ColumnCosts } from "./routing";
 import { cycleUnit } from "./unitCycle";
@@ -99,6 +103,15 @@ export interface WorldPlanning {
   droppedTurn: number | null;
   /** The plan shown was restored from this tab's storage after a reload, unsent. */
   restored: boolean;
+  /**
+   * This tab's unsent draft, set aside because a newer plan was submitted
+   * elsewhere (another device or the API); the server's plan is shown instead.
+   */
+  setAside: boolean;
+  /** Take the set-aside draft back as the unsent plan (it then replaces the server's on submit). */
+  restoreSetAside: () => void;
+  /** Forget the set-aside draft. */
+  dismissSetAside: () => void;
   selectedUnit: Unit | null;
   selectedHex: Axial | null;
   mode: PlanMode;
@@ -142,25 +155,50 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   const slot = view.your_slot;
   const state = view.state;
   const server = useMemo(() => planFromSubmission(view.submission), [view.submission]);
+  const serverKey = useMemo(() => submissionKey(view.submission, slot), [view.submission, slot]);
+  // What a stored draft from this tab does on load: restored over the server
+  // plan it was forked from, else set aside (`planStore.draftOnLoad`).
+  const [onLoad] = useState(() => draftOnLoad(loadUnsentPlan(view.game_id, view.turn), serverKey));
+  // `base`: the `submissionKey` of the server plan these edits were forked from.
   // `sent`: the server accepted this exact local plan (so a turn resolving under
   // it loses nothing).
   // `restored`: the plan came back from storage after a reload and is still unsent.
-  const [local, setLocal] = useState<{ turn: number; plan: WorldPlan; sent: boolean; restored: boolean } | null>(() => {
-    const saved = loadUnsentPlan(view.game_id, view.turn);
-    return saved === null ? null : { turn: view.turn, plan: saved, sent: false, restored: true };
-  });
-  const plan = local !== null && local.turn === view.turn ? local.plan : server;
+  const [local, setLocal] = useState<LocalPlan | null>(() =>
+    onLoad.restore === null
+      ? null
+      : { turn: view.turn, plan: onLoad.restore, base: serverKey, sent: false, restored: true },
+  );
+  const [setAside, setSetAside] = useState<{ turn: number; plan: WorldPlan } | null>(() =>
+    onLoad.setAside === null ? null : { turn: view.turn, plan: onLoad.setAside },
+  );
+  const current = local !== null && local.turn === view.turn ? local : null;
+  const plan = current !== null ? current.plan : server;
   const droppedTurn = local !== null && local.turn < view.turn && !local.sent ? local.turn : null;
   const dirty = !samePlan(plan, server, slot);
-  const restored = dirty && local !== null && local.turn === view.turn && local.restored;
+  const restored = dirty && current !== null && current.restored;
+  const asideNow = setAside !== null && setAside.turn === view.turn ? setAside : null;
 
-  // Mirror unsent edits into this tab's storage; forget them once sent or undone.
+  // A plan submitted elsewhere while this tab had unsent edits: set them aside
+  // rather than let Resubmit quietly overwrite the newer plan. Checked when the
+  // server's plan changes (state adjusted during render, not in an effect).
+  const [seenKey, setSeenKey] = useState(serverKey);
+  if (seenKey !== serverKey) {
+    setSeenKey(serverKey);
+    if (current !== null && supersededBy({ base: current.base, sent: current.sent, dirty }, serverKey)) {
+      setSetAside({ turn: current.turn, plan: current.plan });
+      setLocal(null);
+    }
+  }
+
+  // Mirror unsent edits into this tab's storage; forget them once sent or undone
+  // (a set-aside draft stays stored until the player decides).
   const gameId = view.game_id;
   const turn = view.turn;
   useEffect(() => {
-    if (dirty) saveUnsentPlan(gameId, turn, plan);
+    if (dirty && current !== null) saveUnsentPlan(gameId, turn, { plan, base: current.base });
+    else if (asideNow !== null) saveUnsentPlan(gameId, turn, { plan: asideNow.plan, base: "" });
     else clearUnsentPlan(gameId, turn);
-  }, [gameId, turn, plan, dirty]);
+  }, [gameId, turn, plan, dirty, current, asideNow]);
 
   const [selection, setSelection] = useState<{ turn: number; unitId: number | null; hex: Axial | null; mode: PlanMode }>(
     { turn: view.turn, unitId: null, hex: null, mode: "travel" },
@@ -182,11 +220,17 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   const edit = useCallback(
     (change: (p: WorldPlan) => WorldPlan) => {
       setLocal((prev) => {
-        const base = prev !== null && prev.turn === view.turn ? prev.plan : server;
-        return { turn: view.turn, plan: change(base), sent: false, restored: false };
+        const mine = prev !== null && prev.turn === view.turn ? prev : null;
+        return {
+          turn: view.turn,
+          plan: change(mine !== null ? mine.plan : server),
+          base: mine !== null ? mine.base : serverKey,
+          sent: false,
+          restored: false,
+        };
       });
     },
-    [server, view.turn],
+    [server, serverKey, view.turn],
   );
 
   const setOrder = useCallback(
@@ -351,7 +395,11 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       if (error) setSubmitError(describeApiError(error));
       else {
         const turn = view.turn;
-        setLocal((prev) => (prev !== null && prev.turn === turn && prev.plan === plan ? { ...prev, sent: true } : prev));
+        // The server now holds this plan: later edits fork from it.
+        const base = planKey(plan, slot);
+        setLocal((prev) =>
+          prev !== null && prev.turn === turn && prev.plan === plan ? { ...prev, sent: true, base } : prev,
+        );
         onSubmitted();
       }
     } catch (err) {
@@ -367,6 +415,13 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     submitted: view.submission !== null && view.submission !== undefined,
     droppedTurn,
     restored,
+    setAside: asideNow !== null,
+    restoreSetAside: () => {
+      if (asideNow === null) return;
+      setLocal({ turn: asideNow.turn, plan: asideNow.plan, base: serverKey, sent: false, restored: true });
+      setSetAside(null);
+    },
+    dismissSetAside: () => setSetAside(null),
     selectedUnit,
     selectedHex: sel.hex,
     mode: selectedUnit === null ? "travel" : sel.mode,
@@ -418,6 +473,15 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     submitting,
     submitError,
   };
+}
+
+/** This tab's edits to a turn's plan (see `useWorldPlan`). */
+interface LocalPlan {
+  turn: number;
+  plan: WorldPlan;
+  base: string;
+  sent: boolean;
+  restored: boolean;
 }
 
 /** Every own unit's path: fresh orders this turn, else the standing travel order. */

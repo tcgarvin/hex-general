@@ -1315,6 +1315,20 @@ function PlanBar({
           Unsent changes restored from before the page reloaded. Submit to send them, or revert.
         </div>
       )}
+      {planning.setAside && (
+        <div className="fhq-note pointer-events-auto flex items-center gap-3 px-3 py-1.5 text-xs">
+          <span>
+            A newer plan was submitted elsewhere, so this tab's unsent draft was set aside. The plan shown is the
+            one the server holds.
+          </span>
+          <button type="button" onClick={planning.restoreSetAside} className="font-label uppercase text-brass-600 hover:underline">
+            Use my draft instead
+          </button>
+          <button type="button" onClick={planning.dismissSetAside} className="font-label uppercase text-wood-500 hover:underline">
+            Dismiss
+          </button>
+        </div>
+      )}
       {(problems.length > 0 || planning.submitError !== null) && (
         <div className="fhq-note pointer-events-auto border-invalid! px-3 py-1.5 text-xs text-invalid">
           {[...problems, ...(planning.submitError !== null ? [planning.submitError] : [])].map((p) => (

@@ -128,11 +128,38 @@ function toWire(unitId: number, o: WorldOrder): WireOrder {
 
 /** Whether two plans would submit the same thing (order of map keys aside). */
 export function samePlan(a: WorldPlan, b: WorldPlan, slot: string): boolean {
-  const norm = (p: WorldPlan) => {
-    const s = toSubmission(p, slot);
-    return JSON.stringify({ ...s, recruitments: [...(s.recruitments ?? [])].sort(byCoord) });
-  };
-  return norm(a) === norm(b);
+  return normalPlan(a, slot) === normalPlan(b, slot);
+}
+
+/** A plan's submission as one canonical string: equal for plans that submit the same thing. */
+function normalPlan(p: WorldPlan, slot: string): string {
+  const s = toSubmission(p, slot);
+  return JSON.stringify({ ...s, recruitments: [...(s.recruitments ?? [])].sort(byCoord) });
+}
+
+/** What `submissionKey` gives a turn with nothing submitted. */
+export const NO_SUBMISSION = "none";
+
+/**
+ * A short stable identity for the plan the server holds this turn (`NO_SUBMISSION`
+ * if none): a hash of the canonical submission, so a draft can record which server
+ * plan it was forked from and notice when a newer one was sent elsewhere.
+ */
+export function submissionKey(submission: Submission | null | undefined, slot: string): string {
+  if (submission === null || submission === undefined) return NO_SUBMISSION;
+  return planKey(planFromSubmission(submission), slot);
+}
+
+/** `submissionKey` of the submission `plan` would make. */
+export function planKey(plan: WorldPlan, slot: string): string {
+  // FNV-1a, 32 bits: plenty to tell one turn's few plans apart.
+  let h = 0x811c9dc5;
+  const text = normalPlan(plan, slot);
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
 }
 
 function byCoord(a: { coord: Axial }, b: { coord: Axial }): number {
