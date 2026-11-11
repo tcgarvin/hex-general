@@ -3,11 +3,17 @@
 Builds a synthetic world-size state (default 350×350 hexes, 100 players × 15
 units, ~15% woods), gives every unit a random two-step move, and times the hot
 paths a scheduled world turn exercises: full turn resolution, one player's
-visibility, fog redaction, and state serialization.
+visibility, fog redaction for one player and for every player (the bots plan on
+one redacted view each), and state serialization. Every probe starts with cold
+geometry caches.
 
 Run: ``uv run python -m app.world.bench [--size 350] [--players 100]``.
 Recorded baseline (2026-11-08, after W0): resolve 0.07 s, visibility 0.01 s per
 player, 7.4 MB state JSON. Before W0 the same probe took 5.9 s and 25.6 s.
+2026-11-11, cold caches, on a loaded 16-core box: resolve 0.3 s, one player's
+visibility 0.04-0.06 s (the first call also builds the map's sight blockers),
+every player's redacted view 1.3-1.6 s. Real late-season turns are heavier than
+this probe: see WORLD_SPEC §9.
 """
 
 from __future__ import annotations
@@ -20,7 +26,12 @@ from typing import TypeVar
 
 from app.engine.execution import resolve_execution
 from app.engine.fog import redact_state
-from app.engine.hex_coords import Axial, neighbors, offset_to_axial
+from app.engine.hex_coords import (
+    Axial,
+    clear_geometry_caches,
+    neighbors,
+    offset_to_axial,
+)
 from app.engine.models import (
     GameConfig,
     GameMap,
@@ -91,6 +102,8 @@ T = TypeVar("T")
 
 def _timed(label: str, fn: Callable[[], T]) -> T:
     """Run ``fn`` once, print its wall time, and return its result."""
+    # Each probe starts cold, as a tick does after `clear_geometry_caches`.
+    clear_geometry_caches()
     start = time.perf_counter()
     result = fn()
     print(f"{label:<28} {time.perf_counter() - start:8.3f} s")
@@ -111,6 +124,10 @@ def main(argv: list[str] | None = None) -> None:
     _timed("resolve_execution", lambda: resolve_execution(state, orders))
     _timed("visible_hexes (1 player)", lambda: visible_hexes(state, "p0"))
     _timed("redact_state (1 player)", lambda: redact_state(state, "p0"))
+    _timed(
+        "redact_state (all players)",
+        lambda: [redact_state(state, p.id) for p in state.players],
+    )
     blob = _timed("serialize state", state.model_dump_json)
     print(f"{'state JSON size':<28} {len(blob) / 1e6:8.1f} MB")
 

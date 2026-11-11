@@ -443,6 +443,24 @@ main way to judge whether the world is fun before a human plays it.
 
 The real gate is the user playing a live world on the real clock for a week.
 
+**Perf pass (2026-11-11).** Measured on the 200-slot map with 100 bots, seed 1:
+turns 35 to 59 saved and resolved again (about 2,900 units and 1,300 orders a
+turn), on a shared 16-core machine under heavy load, best of five with cold
+geometry caches. Resolution went from 0.76 s median and 1.0 s worst to 0.57 s
+median and 0.69 s worst. Redacting the views of all 100 players went from 4.6 s
+to 1.4 s (one player: 0.04 s to 0.01 s). The whole 60-turn season, bots
+included, went from 596 s to 309 s. The fixes were indexes and shared values,
+with byte-identical turns: one shared coordinate object per hex in the geometry
+caches, a per-phase snapshot of settlement ground, a cached set of
+sight-blocking hexes, and fewer unit copies. The slow outliers left are Python's
+full garbage collections, which walk the whole map (one world state is about
+650,000 tracked objects): one costs 0.15 s with a single state alive and up to
+0.9 s with several, whenever it lands inside a resolve. Freezing
+the loaded map out of the collector (`gc.freeze()` after load) is the next step
+for the server and the simulator. After that, the remaining profile is flat
+(column contact checks, unit copies, route search), and the next real gain
+needs a design change: resolving independent contact clusters separately (§10).
+
 ## 10. Engine, persistence, clock
 
 - **One engine, generalized.** Posture defaults to `deployed`, so the v0.1 rules
