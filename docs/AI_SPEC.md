@@ -498,9 +498,13 @@ A world bot's turn is split where the later LLM commander plugs in (VISION §9):
 - **Strategist** (`Strategist` protocol): reads the fog-redacted view, returns
   `StrategistArgs`: a `stance` (expand, attack, defend), an optional `focus` hex, a
   `reserve_share` kept home as garrisons, and an `aggression` weight.
-  `ScriptedStrategist` is the slice-1 stand-in. It defends when a holding is threatened
-  and the bot is cautious, expands while neutral land is within its `reach`, and
-  otherwise attacks the hostile-held settlement nearest its holdings.
+  `ScriptedStrategist` is the slice-1 stand-in. It defends when another player's unit
+  is within 8 of a holding and the bot is cautious (neutral garrisons never move, so they
+  never threaten). It expands while a *cheap* neutral site lies within its `reach`: one
+  whose garrison tier HP is at most 30 for the most cautious bot and 5 for the boldest,
+  so bold bots turn on their neighbours sooner. It also keeps expanding until it has a
+  field army of five combat units. Otherwise it attacks the hostile-held settlement
+  nearest its holdings.
 - **Tactical layer** (`plan_world_turn(view, slot, args)`): writes a legal `BotPlan`.
   An LLM strategist replaces only the first layer.
 
@@ -509,23 +513,55 @@ bots isn't a world of clones.
 
 ### 12.2 Tactical layer
 
-- **Objectives** are settlements: neutral and hostile-held ones to capture, and own ones
-  near a visible hostile to defend. Scores are value ÷ (1 + distance ÷ 4), shaped by
-  stance, aggression and focus. Each target has a capacity (one captor for a neutral
-  town, two for a city, four for a held settlement).
-- **Groups:** a held settlement is attacked only if at least two units can be assigned;
-  otherwise the target is dropped and matching reruns.
-- **Strategic units** (no visible hostile within 6) travel to objectives more than
-  6 hexes away. A column keeps its standing order while the destination is still wanted.
-  Columns bound for a held settlement stop 5 hexes short and deploy there clean, rather
-  than marching into the garrison's contact range and deploying disordered. Settlement
-  control is public, so this is fog-honest.
+Rewritten 2026-11-10/11 (`app/ai/world.py`, with `app/ai/intel.py` and
+`app/ai/base_plan.py`).
+
+- **Intel** (`Intel`) is built once per turn from the redacted view, inside a box around
+  the bot's units and focus. It holds the visible player units (threats) and every
+  garrisoned neutral site in the box. A site within 3 of a visible neutral unit is
+  *seen* and counted at the units' real HP; an unseen one is counted at its tier's full
+  HP (the tier is on the public map). It also marks *danger spots*, the hexes where a
+  column would meet a garrison and auto-deploy disordered.
+- **Targets** are settlements. A neutral site is worth its value (by kind and by what the
+  bot lacks, below) ÷ (1 + 0.15 × garrison HP) and gets a siege group sized to the
+  garrison by `siege_group`: 2 units for a militia post, 3 for tier 2, 4 for tier 3 and 5
+  for tier 4, with a smaller minimum. A hostile-held settlement is valued by its guessed
+  defence and needs at least two units. Own holdings near a visible player unit become
+  defend targets sized to the threat.
+- **Groups** (`_match_groups`): targets are filled best first, each scored by value ÷
+  (1 + d ÷ 4), where d is the distance of the nearest free unit that would complete its
+  minimum group. A target takes its nearest units up to capacity, so units are matched
+  as whole groups, never one at a time. Units already at a target (within 3), and
+  columns still marching to it, stay with it.
+- **Staging:** a group that is not yet gathered waits about 6 hexes out, on ground where
+  it can rest, and strikes when its minimum has arrived. Against a player a unit attacks
+  only with a second striker on the same enemy, or to finish an enemy at 3 HP or less,
+  or to clear an enemy next to an own holding.
+- **Attack scoring** (`candidates.py`): an attack that the return fire would kill the
+  attacker on, without killing the target, carries a large penalty; attacks and barrages
+  on the group's objective carry a bonus, and attacks on garrisons far from it are not
+  offered. Artillery stands off 2 hexes and barrages the besieged site.
+- **Rest:** a unit at 4 HP or less leaves the fight for the nearest settlement ground
+  within 8 (+3 HP a turn there) and returns at 8 HP. It rests in place when no such
+  ground is in reach.
+- **Travel:** a column travels straight to its goal when no garrison lies near the way.
+  Otherwise its route is cut at the first danger spot, so it stops short and goes on
+  deployed rather than marching into contact. Columns bound for a held settlement still
+  stop 5 short. A column deploys on purpose within 6 of a player unit.
+- **Front reserve:** a unit with no target joins the front (the own holding nearest a
+  hostile one) and waits there in support.
+- **Garrisons:** `reserve_share` of the combat units, rounded down, stay home, so a small
+  army keeps nobody home. A unit standing on the recruit hex steps off so the recruit can
+  appear.
+- **Economy** (`base_plan.py`): barracks 2 comes before the workshop. A fuel-burning unit
+  is never recruited into a fuel deficit; manpower may run at a loss only while the stock
+  covers 20 turns of it. Site needs follow the flow and the stock: a farm is worth 2.5×
+  while manpower runs at a loss and 0.5× while the stock is near full; a steel mill is
+  worth more the more turns short of the next building's steel the bot is; a second
+  factory is worth little.
 - **Tactical units** (a hostile within 6) reuse the v0.1 candidates (§4.5). Moves claim
-  the hexes they enter per pulse and their final hex, so a bot never jams itself.
-- Columns within 6 of a hostile deploy on purpose. Wounded units go to rest in the
-  nearest own settlement.
-- Recruitment reuses §4.6, against `GameState.unit_cap_for` (the holdings-based command
-  cap).
+  the hexes they enter per pulse and their final hex, so a bot never jams itself; attack
+  steps are not claimed, so several units can strike one target.
 
 ### 12.3 Simulator and gates
 
@@ -533,6 +569,12 @@ bots isn't a world of clones.
 `--seeds 20` for the WORLD_SPEC §9 gate tally. Every plan is validated before it resolves.
 The engagement size is the mean deployed units per side in each cluster of front units
 (units within two hexes joined), per turn.
+
+Added 2026-11-10: neutral and player captures; siege turns (first attack on a garrison to
+capture) and siege attackers (distinct attackers per besieged site); units lost to
+garrisons; attacks on player units and the share made with local superiority (more of
+the attacker's deployed units than the defender's within 3); and the worst single
+bot-turn think time.
 
 ### 12.4 Measurements and known gaps
 
@@ -556,14 +598,68 @@ holdings including the base 3 / 4 / 5 / 7. That is about half the economy draft'
 model player (11 units at turn 28, 15 by turn 45), which is fine while bots only fill
 the map; better bots wait for the user's first playtest. 31 units disbanded by
 shortages in 60 turns across all bots. Bots attack a garrison with one unit at a time,
-which is slow; massing on a site is the first bot improvement to make.
+which is slow; massing on a site was the first bot improvement to make (done, below).
+
+**Bot rework (2026-11-10/11).** The same runs before and after the §12.2 rewrite.
+
+20 seeds of 12-slot worlds, 60 turns (medians across seeds of each seed's median bot):
+
+| | before | after |
+|---|---|---|
+| every bot at 3 holdings by turn 20 | 1/20 | 8/20 |
+| neighbours fought by turn 30 | 0/20 (112 of 447 pairs) | 0/20 (155 of 447 pairs) |
+| median engagement of 3 a side | 0/20 | 0/20 |
+| travel, jams, resolution gates | 20/20 each | 20/20 each |
+| units at turn 14 / 28 / 42 / 60 | 5 / 5.5 / 6 / 6.5 | 6 / 9 / 11 / 12 |
+| holdings at turn 14 / 28 / 42 / 60 | 2.5 / 3.25 / 4 / 4 | 3.5 / 5 / 6 / 6.5 |
+| eliminations / shortage disbands | 17 / 102 | 6 / 124 |
+| neutral / player captures | 862 / 211 | 1,332 / 331 |
+| attackers per besieged site (mean) | 1.42 | 1.84 |
+| units lost to garrisons | 268 | 11 |
+| attacks on players with local superiority | 39% | 52% |
+
+100 bots on the 200-slot world, seed 1, 60 turns, each run alone on one core:
+
+| | before | after |
+|---|---|---|
+| units at turn 14 / 28 / 42 / 60 | 5 / 6 / 7 / 8 | 6 / 9 / 12 / 15 |
+| holdings at turn 14 / 28 / 42 / 60 | 3 / 4 / 5 / 6 | 4 / 7 / 9 / 11 |
+| eliminations / shortage disbands | 0 / 26 | 0 / 17 |
+| median engagement a side | 1.0 | 1.0 |
+| neutral / player captures | 561 / 66 | 1,034 / 105 |
+| units lost to garrisons | 192 | 7 |
+| attacks with local superiority | 42% | 54% |
+| neighbour pairs in contact by turn 30 | 11 of 104 | 18 of 104 |
+| think time per bot-turn, mean / worst | 16 ms / 1.19 s | 30 ms / 0.16 s |
+| resolution, worst turn | 2.8 s | 4.3 s |
+| wall time | 264 s | 395 s |
+
+On the big world the median bot now tracks the economy draft's model player loosely:
+9 units at turn 28 (model 11) and 12 at turn 42 (model 15 by 45). Planning stays well
+inside the 2 s budget; the old 1.2 s worst case was the full-map site scans that the
+intel box removed. Resolution is slower because there are more units and more fights.
 
 Gaps:
 
-- Fights stay small: the median engagement is about one unit per side. Bots spread across
-  many objectives instead of massing on a front. Concentration (fronts, reserves,
-  rotation) is the next bot work.
-- Some bots snowball while their neighbours are eliminated by turn 15–50. The start
-  economy is tight: four units cost 6 upkeep against the capital's 3 income, so a bot
-  must take two towns to afford anything.
+- Fights stay small: the median engagement is still one unit a side in both worlds.
+  About 63% of front clusters are one against one, mostly two moving units meeting on the
+  way somewhere. Group attacks on a lone defender measure about two a side. Neither
+  holding attack groups back nor withdrawing lone units from contact moved the median.
+  Bigger fights probably need fronts that stay put (borders that bots hold), which is a
+  strategist job, or a world denser than the 12-slot test maps where every bot spends
+  its first 20 turns on garrisons.
+- Neighbours fought by turn 30 fails on the strict count: the 12-slot worlds still have
+  neutral land between most bots at turn 30, and a bot keeps expanding while cheap
+  neutral land is in reach.
+- Shortage disbands in the 12-slot worlds rose with the fighting: nearly all of them
+  (33 of 36 traced on three seeds) follow the loss of a farm to another player, when
+  manpower income drops below upkeep with an empty stock. Recruiting only into a
+  manpower surplus, or keeping a manpower reserve of 8, did not reduce them. Per player
+  capture they fell from 0.48 to 0.37.
+- Steel binds the build order: at turn 20 most bots sit at their army size cap with
+  24 to 30 manpower (the storage limit) and 16 or less steel, earning 1 to 4 a turn,
+  against barracks costs of 13 and 23 (a tuning question, not a bot one).
+- About a quarter of unit-turns change objective, mostly when new intel re-values a
+  target. Columns stop short of unseen garrisons, which costs time; routing around them
+  through a waypoint did not help and raised disbands.
 - No scouting, so columns still meet hidden enemies; disorder is the price.
