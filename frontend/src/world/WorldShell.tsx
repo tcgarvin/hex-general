@@ -216,10 +216,16 @@ function WorldScreen({
   );
 }
 
-/** Ask before leaving the page while the plan has changes the server doesn't have. */
+/**
+ * Ask before leaving the page while the plan has changes the server doesn't have.
+ *
+ * Not in dev builds: a Vite full reload with unsent changes would raise the native
+ * prompt, which freezes automated browser sessions (and the unsent plan is restored
+ * from sessionStorage after a reload anyway).
+ */
 function useLeaveWarning(dirty: boolean): void {
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || import.meta.env.DEV) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       // Older browsers only prompt when a return value is set.
