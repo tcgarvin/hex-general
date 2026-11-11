@@ -679,7 +679,9 @@ function ArmyPanel({
   const units = view.state.units.filter((u) => u.owner === view.your_slot).sort((a, b) => a.id - b.id);
   const swaps = useSwaps(view, planning);
   return (
-    <Panel title={`Army (${units.length})`} className="flex min-h-0 shrink-0 flex-col">
+    // May shrink (and scroll) so a short screen's left column still stops above the
+    // map console; the report shrinks first (`shrink-[1000]`).
+    <Panel title={`Army (${units.length})`} className="flex min-h-0 flex-col">
       {units.length === 0 ? (
         <p className="text-xs text-wood-500">No units in the field.</p>
       ) : (
@@ -820,7 +822,7 @@ function ReportPanel({
       title={title}
       onClose={onToggle}
       actions={<PlayButton play={play} turn={load.turn} />}
-      className={`flex min-h-[6rem] flex-col ${flashing}`}
+      className={`flex min-h-[6rem] shrink-[1000] flex-col ${flashing}`}
     >
       {load.status === "loading" && <p className="text-xs text-wood-500">Loading…</p>}
       {load.status === "error" && <p className="text-xs text-invalid">{load.message}</p>}
