@@ -116,7 +116,12 @@ const IVORY = 0xf2e6c8;
 const DARK = 0x101114;
 const OVERVIEW_HEX = 2; // overview texture: hex radius in texture pixels
 const MINIMAP_SIZE = 220;
-const MINIMAP_MARGIN = 12;
+/**
+ * The minimap's inset from the board's left and bottom edges. The DOM console in
+ * `MapControls` frames it with an 8 px well, whose outer edge then lines up with the
+ * left panels' frames (8 px in) and sits 4 px off the bottom edge.
+ */
+export const MINIMAP_MARGIN = { x: 16, y: 12 } as const;
 /** Join codes per owner hex (edges 0-2, vertices 3-4, mouths 5-10); sprite key = index * count + code. */
 const JOIN_CODES_PER_HEX = JOIN_CODE_COUNT;
 const NO_JOINS: readonly JoinPlacement[] = [];
@@ -1542,7 +1547,7 @@ export class WorldRenderer {
 
   private positionMinimap(): void {
     const h = (this.bounds.maxY - this.bounds.minY) * this.minimapScale;
-    this.minimap.position.set(MINIMAP_MARGIN, this.app.screen.height - h - MINIMAP_MARGIN);
+    this.minimap.position.set(MINIMAP_MARGIN.x, this.app.screen.height - h - MINIMAP_MARGIN.y);
   }
 
   private minimapHit(x: number, y: number): boolean {

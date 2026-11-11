@@ -51,14 +51,14 @@ export function Stats() {
       <AppHeader homeTo="/" />
       <main className="flex flex-1 flex-col items-center justify-center gap-10 px-4 py-10 text-center">
         {state.status === "error" ? (
-          <p className="max-w-xs rounded-sm border border-invalid bg-parchment-200 px-4 py-2 text-sm text-invalid">
+          <p className="fhq-note max-w-xs border-invalid! px-4 py-2 text-sm text-invalid">
             Couldn’t reach the API: {state.message}
           </p>
         ) : (
           // The API's own definitions: active_users counts browser sessions seen
           // in the last 5 minutes (api/app/stats.py ACTIVE_WINDOW), and game_count
           // is every row of the games table, finished worlds included.
-          <div className="flex w-full max-w-lg flex-col gap-4 sm:flex-row">
+          <div className="flex w-full max-w-lg flex-col gap-6 sm:flex-row">
             <Stat
               label="Sessions online"
               caption="Browser sessions seen in the last 5 minutes"
@@ -88,8 +88,8 @@ function Stat({
   value: number | undefined;
 }) {
   return (
-    <section className="flex flex-1 flex-col items-center gap-2 rounded-sm border border-wood-700 bg-parchment-200 p-5 text-ink-900 shadow-lg shadow-black/40">
-      <h2 className="font-display text-sm uppercase tracking-wide">{label}</h2>
+    <section className="fhq-frame fhq-frame-lg flex flex-1 flex-col items-center gap-2 p-4">
+      <h2 className="fhq-plate font-display text-sm uppercase tracking-wide">{label}</h2>
       <p className="font-data text-6xl tabular-nums">{value ?? "…"}</p>
       <p className="text-xs text-wood-700">{caption}</p>
     </section>

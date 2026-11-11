@@ -30,6 +30,7 @@ import {
 } from "./economy";
 import { HoverInfo } from "./HoverInfo";
 import { MapControls } from "./MapControls";
+import { consoleHeight, useMinimapSize } from "./minimapConsole";
 import { overlayOf } from "./overlay";
 import { PlaybackBar, type BeatJump } from "./PlaybackBar";
 import { reportItemBeats } from "./playback/session";
@@ -133,6 +134,7 @@ function WorldScreen({
   const jump = useCallback((hex: Axial) => setPanTo((p) => ({ hex, seq: (p?.seq ?? 0) + 1 })), []);
   const reveal = useCallback((hex: Axial) => setPanTo((p) => ({ hex, seq: (p?.seq ?? 0) + 1, reveal: true })), []);
   const [renderer, setRenderer] = useState<WorldRenderer | null>(null);
+  const minimap = useMinimapSize(renderer);
   const [helpOpen, setHelpOpen] = useState(false);
   const [hoveredUnit, setHoveredUnit] = useState<number | null>(null);
   // Dev builds only: `?turn=N` shows (and plays) an earlier resolved turn, for checks.
@@ -220,7 +222,6 @@ function WorldScreen({
           onRenderer={setRenderer}
         />
         {renderer !== null && watching === null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} />}
-        <MapControls renderer={renderer} home={base} helpOpen={helpOpen} setHelpOpen={setHelpOpen} />
         {resolved !== null && (
           <ResolvedBanner
             turn={resolved.turn}
@@ -228,8 +229,11 @@ function WorldScreen({
             onWatch={turnPlayback.status === "idle" ? () => watchTurn(null) : null}
           />
         )}
-        {/* The minimap and its buttons sit under this column, bottom left. */}
-        <div className="pointer-events-none absolute left-3 top-3 flex max-h-[calc(100%-244px)] w-60 flex-col gap-3 min-[1100px]:w-72">
+        {/* The map keys and the minimap's well sit under this column, bottom left. */}
+        <div
+          className="pointer-events-none absolute left-3 top-3 flex w-60 flex-col gap-2 min-[1100px]:w-72 [@media(min-height:641px)]:gap-3"
+          style={{ bottom: consoleHeight(minimap) + 12 }}
+        >
           <ArmyPanel view={view} planning={planning} onJump={reveal} onHoverUnit={setHoveredUnit} />
           <ReportPanel
             load={report}
@@ -249,7 +253,9 @@ function WorldScreen({
             }}
           />
         </div>
-        <div className="pointer-events-none absolute right-3 top-3 flex max-h-[calc(100%-24px)] w-64 flex-col gap-3 overflow-y-auto min-[1100px]:w-80">
+        <MapControls renderer={renderer} minimap={minimap} home={base} helpOpen={helpOpen} setHelpOpen={setHelpOpen} />
+        {/* Padded so the scroll box does not clip the panel frames' outset and shadow. */}
+        <div className="pointer-events-none absolute right-2 top-2 flex max-h-[calc(100%-16px)] w-[16.5rem] flex-col gap-4 overflow-y-auto p-1 pb-4 min-[1100px]:w-[20.5rem]">
           <BasePanel state={view.state} economy={economy} slot={view.your_slot} planning={planning} />
           {planning.selectedUnit !== null && <UnitPanel unit={planning.selectedUnit} view={view} planning={planning} />}
           {panelHex !== null && (
@@ -279,7 +285,7 @@ function WorldScreen({
             onExit={exitWatch}
           />
         ) : (
-          <div className="fhq-wood pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2 rounded-sm border-2 border-brass-600/70 px-4 py-2 font-label text-xs uppercase tracking-wide shadow-lg">
+          <div className="fhq-tray pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 font-label text-xs uppercase tracking-wide">
             Loading turn {watching.turn}…{" "}
             <button type="button" onClick={exitWatch} className="ml-2 text-ivory-400 hover:text-ivory-100">
               Cancel
@@ -347,7 +353,7 @@ function ResolvedBanner({ turn, onWatch }: { turn: number; onWatch: (() => void)
   return (
     <div
       role="status"
-      className="fhq-wood pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-1/2 animate-[fhq-drop_6s_ease-out_forwards] rounded-sm border-2 border-brass-600 px-6 py-2 text-center shadow-xl shadow-black/50"
+      className="fhq-tray fhq-on-wood pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-1/2 animate-[fhq-drop_6s_ease-out_forwards] px-6 py-1.5 text-center"
     >
       <p className="font-display text-xl uppercase tracking-wider text-brass-400">Turn {turn} resolved</p>
       <p className="font-label text-xs uppercase tracking-wider text-ivory-100">
@@ -357,7 +363,7 @@ function ResolvedBanner({ turn, onWatch }: { turn: number; onWatch: (() => void)
         <button
           type="button"
           onClick={onWatch}
-          className="pointer-events-auto mt-1.5 rounded-sm border border-brass-600 bg-brass-600 px-3 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 hover:bg-brass-400"
+          className="fhq-btn pointer-events-auto mt-1.5 text-xs"
         >
           Watch turn {turn}
         </button>
@@ -506,12 +512,10 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section
-      className={`pointer-events-auto rounded-sm border border-wood-700 bg-parchment-200 p-3 text-sm text-ink-900 shadow-lg ${className}`}
-    >
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="font-display text-sm uppercase tracking-wide">{title}</h2>
-        <div className="flex items-center gap-2">
+    <section className={`fhq-frame pointer-events-auto px-1.5 pb-1 pt-0.5 text-sm ${className}`}>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <h2 className="fhq-plate min-w-0 font-display text-sm uppercase tracking-wide">{title}</h2>
+        <div className="flex shrink-0 items-center gap-2">
           {actions}
           {onClose !== undefined && (
             <button type="button" onClick={onClose} className="font-label text-xs uppercase text-wood-500 hover:text-ink-900">
@@ -544,11 +548,8 @@ function Chip({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`whitespace-nowrap rounded-sm border px-2 py-0.5 font-label text-xs uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        active
-          ? "border-wood-900 bg-wood-700 text-parchment-200"
-          : "border-wood-500 bg-parchment-200 text-ink-900 hover:bg-parchment-400/40"
-      }`}
+      data-active={active}
+      className="fhq-btn whitespace-nowrap text-xs"
     >
       {children}
     </button>
@@ -737,7 +738,7 @@ function PlayButton({ play, turn }: { play: ReportPlay; turn: number }) {
       onClick={play.onPlay}
       title={`Watch turn ${turn} on the board, pulse by pulse`}
       aria-label={`Play turn ${turn}`}
-      className="whitespace-nowrap rounded-sm border border-brass-600 bg-brass-600 px-2 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 transition-colors hover:bg-brass-400"
+      className="fhq-btn whitespace-nowrap text-xs"
     >
       ▶ Play
     </button>
@@ -771,7 +772,7 @@ function ReportPanel({
         type="button"
         key={flash ?? "still"}
         onClick={onToggle}
-        className={`pointer-events-auto shrink-0 self-start rounded-sm border border-wood-700 bg-parchment-200 px-3 py-1 font-label text-xs uppercase tracking-wide text-ink-900 shadow ${flashing}`}
+        className={`fhq-btn pointer-events-auto shrink-0 self-start px-3 py-1 text-xs shadow-md shadow-black/40 ${flashing}`}
       >
         Show {title.toLowerCase()}
       </button>
@@ -1277,23 +1278,23 @@ function PlanBar({
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 flex max-w-[calc(100%-24px)] -translate-x-1/2 flex-col items-center gap-2">
       {planning.droppedTurn !== null && (
-        <div className="pointer-events-auto rounded-sm border border-brass-600 bg-parchment-200 px-3 py-1.5 text-xs text-ink-900 shadow">
+        <div className="fhq-note pointer-events-auto px-3 py-1.5 text-xs">
           Turn {planning.droppedTurn} resolved before your last changes were sent; they were dropped.
         </div>
       )}
       {planning.restored && (
-        <div className="pointer-events-auto rounded-sm border border-brass-600 bg-parchment-200 px-3 py-1.5 text-xs text-ink-900 shadow">
+        <div className="fhq-note pointer-events-auto px-3 py-1.5 text-xs">
           Unsent changes restored from before the page reloaded. Submit to send them, or revert.
         </div>
       )}
       {(problems.length > 0 || planning.submitError !== null) && (
-        <div className="pointer-events-auto rounded-sm border border-invalid bg-parchment-200 px-3 py-1.5 text-xs text-invalid shadow">
+        <div className="fhq-note pointer-events-auto border-invalid! px-3 py-1.5 text-xs text-invalid">
           {[...problems, ...(planning.submitError !== null ? [planning.submitError] : [])].map((p) => (
             <p key={p}>{p}</p>
           ))}
         </div>
       )}
-      <div className="fhq-wood pointer-events-auto flex items-center gap-4 whitespace-nowrap rounded-sm border-2 border-brass-600/70 px-4 py-2 text-sm shadow-lg">
+      <div className="fhq-tray fhq-on-wood pointer-events-auto flex items-center gap-4 whitespace-nowrap py-0.5 pl-3 pr-1 text-sm">
         <span className="font-data text-xs text-ivory-400">
           {orders} order{orders === 1 ? "" : "s"} · {recruits} recruit{recruits === 1 ? "" : "s"}
           {plan.build !== null ? ` · ${BUILDING_LABEL[plan.build]}` : ""}
@@ -1315,7 +1316,7 @@ function PlanBar({
           type="button"
           onClick={() => void planning.submit()}
           disabled={planning.submitting || problems.length > 0 || (!planning.dirty && planning.submitted)}
-          className="rounded-sm border border-brass-600 bg-brass-600 px-3 py-1 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 transition-colors hover:bg-brass-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="fhq-commit text-xs"
         >
           {planning.submitting ? "Sending…" : planning.submitted ? "Resubmit" : "Submit plan"}
         </button>

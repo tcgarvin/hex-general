@@ -103,7 +103,7 @@ export function HoverInfo({
     <>
       {hover !== null && (preview !== null || info !== null) && (
         <div
-          className="pointer-events-none absolute z-10 w-max max-w-64 rounded-sm border border-wood-700 bg-parchment-200/95 px-2 py-1 text-xs leading-snug text-ink-900 shadow-lg"
+          className="fhq-tip pointer-events-none absolute z-10 w-max max-w-64 px-2 py-1 text-xs leading-snug"
           style={place(hover, 256, 110)}
         >
           {preview !== null && (
@@ -131,7 +131,7 @@ export function HoverInfo({
       {showNotice && (
         <div
           role="status"
-          className="pointer-events-none absolute z-20 w-max max-w-72 rounded-sm border border-invalid bg-parchment-200 px-2 py-1 text-xs font-semibold text-invalid shadow-lg"
+          className="fhq-tip pointer-events-none absolute z-20 w-max max-w-72 border-invalid! px-2 py-1 text-xs font-semibold text-invalid"
           style={place({ x: lastAt.x, y: lastAt.y - 44 }, 288, 28)}
         >
           {notice.text}

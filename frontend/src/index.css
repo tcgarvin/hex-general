@@ -72,6 +72,301 @@ body {
   background-repeat: repeat;
 }
 
+/* --- Field-HQ chrome kit on the DOM (UI-STYLE §4 "DOM surfaces") ---------------
+   The ratified kit PNGs in board/panels/chrome/ as CSS 9-slices, plus CSS stand-ins
+   built from the tokens where a PNG does not scale down cleanly. In the components
+   layer, so a Tailwind utility on the element still wins (e.g. a different padding).
+
+   Kit files used here: frame.png (panel and card frame, bar trays), plate.png (panel
+   title nameplate), parchment.png (panel face grain), commit-{up,pressed,disabled}.png
+   (the Submit plan plate), iconbtn-{up,pressed}.png (square map and transport keys),
+   well.png (the minimap well), wood.png (trays, header; see .fhq-wood above). */
+@layer components {
+  /* Wood-and-brass frame with L-shaped corner brackets around a parchment face.
+     frame.png's 70 px corner slice holds the whole bracket; drawn at 22 px the rail
+     is ~13 px, of which 4 px sit outside the box (outset) and 9 px inside (the
+     border), so the frame costs content only ~9 px a side. */
+  .fhq-frame {
+    border: 9px solid transparent;
+    border-image: url("./board/panels/chrome/frame.png") 70 / 22px / 4px stretch;
+    background-color: var(--color-parchment-200);
+    background-image:
+      linear-gradient(rgb(228 205 162 / 0.8), rgb(228 205 162 / 0.8)),
+      url("./board/panels/chrome/parchment.png");
+    background-clip: padding-box;
+    /* Spread matches the outset, so the shadow sits under the whole frame. */
+    box-shadow: 0 6px 14px 4px rgb(0 0 0 / 0.4);
+    color: var(--color-ink-900);
+  }
+  /* The same frame a step heavier, for page cards. */
+  .fhq-frame-lg {
+    border-width: 12px;
+    border-image-width: 30px;
+    border-image-outset: 5px;
+    box-shadow: 0 10px 24px 5px rgb(0 0 0 / 0.45);
+  }
+
+  /* Engraved brass nameplate behind a panel title (plate.png, ends with screws). */
+  .fhq-plate {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    height: 20px;
+    padding: 1px 4px 0;
+    border-style: solid;
+    border-width: 0 10px;
+    border-image: url("./board/panels/chrome/plate.png") 23 24 fill / 10px 10px stretch;
+    line-height: 19px;
+    color: var(--color-ink-900);
+    text-shadow: 0 1px 0 rgb(255 240 200 / 0.5);
+  }
+
+  /* Small text button: a flat brushed-brass face with an octagonal machined
+     chamfer and a dark wood rim (UI-STYLE §4 buttons). CSS rather than the kit's
+     btn-*.png, whose wood backplate and screws swamp a 20 px label. The face is a
+     ::before so the chamfer clip never clips the focus ring. States: hover (warm
+     rim glow), pressed (face sinks, chamfer light inverts), data-active="true"
+     (pressed and amber-lit: the current order mode), disabled (desaturated). */
+  .fhq-btn {
+    --fhq-rim: #2a1a10;
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 9px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--color-ink-900);
+    font-family: var(--font-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 14px;
+    text-shadow: 0 1px 0 rgb(255 236 190 / 0.45);
+    cursor: pointer;
+  }
+  .fhq-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    clip-path: polygon(
+      3px 0,
+      calc(100% - 3px) 0,
+      100% 3px,
+      100% calc(100% - 3px),
+      calc(100% - 3px) 100%,
+      3px 100%,
+      0 calc(100% - 3px),
+      0 3px
+    );
+    /* Four corner bands draw the rim along the chamfer cuts. */
+    background:
+      linear-gradient(135deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(225deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(315deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(45deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      repeating-linear-gradient(90deg, rgb(255 255 255 / 0.07) 0 1px, transparent 1px 3px),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-brass-400) 75%, white),
+        color-mix(in srgb, var(--color-brass-400) 60%, var(--color-brass-600)) 55%,
+        var(--color-brass-600)
+      );
+    box-shadow:
+      inset 0 0 0 1px var(--fhq-rim),
+      inset 0 2px 0 rgb(255 242 200 / 0.6),
+      inset 0 -2px 0 rgb(90 58 24 / 0.45);
+  }
+  .fhq-btn:hover:not(:disabled)::before {
+    filter: brightness(1.07);
+    box-shadow:
+      inset 0 0 0 1px var(--fhq-rim),
+      inset 0 2px 0 rgb(255 242 200 / 0.6),
+      inset 0 0 6px 1px rgb(255 196 90 / 0.9);
+  }
+  .fhq-btn:active:not(:disabled),
+  .fhq-btn[data-active="true"] {
+    transform: translateY(1px);
+  }
+  .fhq-btn:active:not(:disabled)::before,
+  .fhq-btn[data-active="true"]::before {
+    background:
+      linear-gradient(135deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(225deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(315deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(45deg, transparent 2.1px, var(--fhq-rim) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(180deg, var(--color-brass-600), color-mix(in srgb, var(--color-brass-400) 70%, var(--color-brass-600)));
+    box-shadow:
+      inset 0 0 0 1px var(--fhq-rim),
+      inset 0 2px 3px rgb(50 28 8 / 0.7),
+      inset 0 -1px 0 rgb(255 242 200 / 0.45);
+  }
+  .fhq-btn[data-active="true"]::before {
+    box-shadow:
+      inset 0 0 0 1px var(--fhq-rim),
+      inset 0 0 0 2px var(--color-warn),
+      inset 0 0 7px 2px rgb(245 179 66 / 0.85);
+  }
+  .fhq-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    filter: grayscale(0.85);
+  }
+  .fhq-btn:focus-visible {
+    outline: 2px solid var(--color-ink-900);
+    outline-offset: 1px;
+  }
+  /* Secondary page action: the same construction on a quiet parchment face. */
+  .fhq-btn-quiet::before,
+  .fhq-btn-quiet:active:not(:disabled)::before {
+    background:
+      linear-gradient(135deg, transparent 2.1px, var(--color-wood-500) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(225deg, transparent 2.1px, var(--color-wood-500) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(315deg, transparent 2.1px, var(--color-wood-500) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(45deg, transparent 2.1px, var(--color-wood-500) 2.1px 3.3px, transparent 3.3px),
+      linear-gradient(180deg, rgb(240 226 196), var(--color-parchment-200));
+    box-shadow:
+      inset 0 0 0 1px var(--color-wood-500),
+      inset 0 -2px 0 rgb(90 58 24 / 0.2);
+  }
+  .fhq-btn-quiet:hover:not(:disabled)::before {
+    box-shadow:
+      inset 0 0 0 1px var(--color-wood-500),
+      inset 0 0 5px 1px rgb(217 176 96 / 0.9);
+  }
+  /* On dark wood the focus ring goes brass. */
+  .fhq-on-wood .fhq-btn:focus-visible,
+  .fhq-on-wood .fhq-key:focus-visible,
+  .fhq-on-wood .fhq-commit:focus-visible {
+    outline-color: var(--color-brass-400);
+  }
+
+  /* The primary commit action (Submit plan): the kit's wide commit plate, a brass
+     face on a screwed wood backplate, with its own up, pressed and disabled art.
+     The kit has no hover art: hover warms the plate. */
+  .fhq-commit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 8px solid transparent;
+    border-image: url("./board/panels/chrome/commit-up.png") 46 fill / 10px stretch;
+    padding: 2px 6px;
+    background: none;
+    color: var(--color-ink-900);
+    font-family: var(--font-label);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-shadow: 0 1px 0 rgb(255 236 190 / 0.5);
+    cursor: pointer;
+  }
+  .fhq-commit:hover:not(:disabled) {
+    filter: brightness(1.08) saturate(1.1);
+  }
+  .fhq-commit:active:not(:disabled) {
+    border-image-source: url("./board/panels/chrome/commit-pressed.png");
+    padding-top: 3px;
+    padding-bottom: 1px;
+  }
+  .fhq-commit:disabled {
+    border-image-source: url("./board/panels/chrome/commit-disabled.png");
+    color: rgb(43 33 24 / 0.6);
+    cursor: not-allowed;
+  }
+  .fhq-commit:focus-visible {
+    outline: 2px solid var(--color-ink-900);
+    outline-offset: 1px;
+  }
+
+  /* Square brass keycap (iconbtn-*.png), for the map and transport keys. The art
+     is a square cap with transparent margins above and below; drawn to the
+     button's width it fills a square button. Icons sit on the brass face in ink. */
+  .fhq-key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    background: url("./board/panels/chrome/iconbtn-up.png") center / 100% auto no-repeat;
+    color: var(--color-ink-900);
+    cursor: pointer;
+  }
+  .fhq-key:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+  .fhq-key:active:not(:disabled) {
+    background-image: url("./board/panels/chrome/iconbtn-pressed.png");
+  }
+  .fhq-key[aria-expanded="true"] {
+    background-image: url("./board/panels/chrome/iconbtn-pressed.png");
+    filter: drop-shadow(0 0 3px rgb(245 179 66 / 0.9));
+  }
+  .fhq-key:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    filter: grayscale(0.85);
+  }
+  .fhq-key:focus-visible {
+    outline: 2px solid var(--color-ink-900);
+    outline-offset: 1px;
+  }
+
+  /* A wood tray with a slim wood-and-brass frame: the plan and transport bars, the
+     map controls, the turn banner. */
+  .fhq-tray {
+    border: 6px solid transparent;
+    border-image: url("./board/panels/chrome/frame.png") 70 / 15px / 3px stretch;
+    background-color: var(--color-wood-900);
+    background-image:
+      linear-gradient(rgb(43 33 24 / 0.18), rgb(43 33 24 / 0.18)),
+      url("./board/panels/chrome/wood.png");
+    background-clip: padding-box;
+    box-shadow: 0 5px 12px 3px rgb(0 0 0 / 0.45);
+    color: var(--color-ivory-100);
+  }
+
+  /* A tray open at the bottom, resting on what sits under it (the map keys on the
+     minimap's well): no bottom rail or brackets. */
+  .fhq-tray-open {
+    border-bottom-width: 0;
+    border-image-width: 15px 15px 0;
+    border-image-outset: 3px 3px 0;
+  }
+
+  /* Recessed brass-lipped well (well.png; no fill: what it frames shows through). */
+  .fhq-well {
+    border: 8px solid transparent;
+    border-image: url("./board/panels/chrome/well.png") 23 / 8px stretch;
+  }
+
+  /* A short parchment notice (the plan bar's notes, error banners): too small for
+     the full frame, so a wood keyline with a brass hairline inside. */
+  .fhq-note {
+    border: 1px solid var(--color-wood-700);
+    border-radius: 0;
+    background-color: var(--color-parchment-200);
+    box-shadow:
+      inset 0 0 0 1px rgb(161 121 62 / 0.7),
+      0 3px 8px rgb(0 0 0 / 0.4);
+    color: var(--color-ink-900);
+  }
+  /* The hover tooltip: the note's construction, a touch translucent. */
+  .fhq-tip {
+    border: 1px solid var(--color-wood-700);
+    background-color: rgb(228 205 162 / 0.96);
+    box-shadow:
+      inset 0 0 0 1px rgb(161 121 62 / 0.6),
+      0 4px 10px rgb(0 0 0 / 0.45);
+    color: var(--color-ink-900);
+  }
+}
+
 /* World screen moments (WorldShell): the "Turn N resolved" banner drops in and
    fades; the report panel flashes a brass ring when a new report arrives. */
 @keyframes fhq-drop {
@@ -96,6 +391,7 @@ body {
     box-shadow: 0 0 0 0 rgb(217 176 96 / 0);
   }
   30% {
-    box-shadow: 0 0 0 4px rgb(217 176 96 / 0.9);
+    /* Wide enough to show past a panel frame's 4 px outset. */
+    box-shadow: 0 0 0 9px rgb(217 176 96 / 0.9);
   }
 }

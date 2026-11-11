@@ -18,8 +18,10 @@ import { beatMarks, beatTitle, playDurationMs } from "./playback/session";
 import { usePlayback } from "./playback/usePlayback";
 import type { WorldRenderer } from "./WorldRenderer";
 
-const BUTTON =
-  "flex h-8 min-w-8 items-center justify-center rounded-sm border border-brass-600/70 bg-wood-700/90 px-1.5 text-ivory-100 shadow transition-colors hover:bg-wood-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brass-400 disabled:cursor-not-allowed disabled:opacity-40";
+/** Transport keys: the square brass keycaps of the map controls (`.fhq-key`). */
+const KEY = "fhq-key";
+/** Text keys (speed, Follow, Exit): the brass button (`.fhq-btn`). */
+const TEXT_KEY = "fhq-btn h-[26px] text-xs";
 
 function Icon({ d, fill = false }: { d: string; fill?: boolean }) {
   return (
@@ -181,34 +183,34 @@ export function PlaybackBar({
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 flex max-w-[calc(100%-24px)] -translate-x-1/2 flex-col items-center gap-2">
       {note !== null && (
-        <div className="pointer-events-auto rounded-sm border border-brass-600 bg-parchment-200 px-3 py-1.5 text-xs text-ink-900 shadow">
+        <div className="fhq-note pointer-events-auto px-3 py-1.5 text-xs">
           {note}
         </div>
       )}
       <div
         role="toolbar"
         aria-label={`Playback of turn ${pb.turn}`}
-        className="fhq-wood pointer-events-auto flex items-center gap-2 whitespace-nowrap rounded-sm border-2 border-brass-600/70 px-3 py-2 text-sm shadow-lg"
+        className="fhq-tray fhq-on-wood pointer-events-auto flex items-center gap-2 whitespace-nowrap px-2 py-0.5 text-sm"
       >
         <span className="font-display text-xs uppercase tracking-wide text-brass-400">Turn {pb.turn}</span>
-        <button type="button" className={BUTTON} onClick={controls.stepBack} disabled={state.t <= 0} title="Step back (←)" aria-label="Step back">
+        <button type="button" className={KEY} onClick={controls.stepBack} disabled={state.t <= 0} title="Step back (←)" aria-label="Step back">
           <Icon d="M12 3.5v9L6 8zM4 3.5v9" />
         </button>
         <button
           type="button"
-          className={BUTTON}
+          className={KEY}
           onClick={controls.toggle}
           title={state.playing ? "Pause (Space)" : atEnd ? "Play again (Space)" : "Play (Space)"}
           aria-label={state.playing ? "Pause" : "Play"}
         >
           {state.playing ? <Icon d="M5 3.5v9M11 3.5v9" /> : <Icon d="M5 3.5v9l7-4.5z" fill />}
         </button>
-        <button type="button" className={BUTTON} onClick={controls.stepForward} disabled={atEnd} title="Step forward (→)" aria-label="Step forward">
+        <button type="button" className={KEY} onClick={controls.stepForward} disabled={atEnd} title="Step forward (→)" aria-label="Step forward">
           <Icon d="M4 3.5v9L10 8zM12 3.5v9" />
         </button>
         <button
           type="button"
-          className={`${BUTTON} w-11 font-data text-xs`}
+          className={`${TEXT_KEY} w-11 px-0 font-data normal-case`}
           onClick={() => controls.setSpeed(nextSpeed)}
           title="Playback speed"
           aria-label={`Speed ${state.speed}x`}
@@ -220,7 +222,7 @@ export function PlaybackBar({
           {title}
         </span>
         {followPaused && (
-          <button type="button" className={`${BUTTON} font-label text-xs uppercase`} onClick={() => setFollowPaused(false)} title="Let the camera follow your units again">
+          <button type="button" className={TEXT_KEY} onClick={() => setFollowPaused(false)} title="Let the camera follow your units again">
             Follow
           </button>
         )}
@@ -228,7 +230,7 @@ export function PlaybackBar({
         <button
           type="button"
           onClick={onExit}
-          className="rounded-sm border border-brass-600 bg-brass-600 px-3 py-1 font-label text-xs font-semibold uppercase tracking-wider text-wood-900 transition-colors hover:bg-brass-400"
+          className={`${TEXT_KEY} px-3`}
           title="Back to planning (Esc)"
         >
           Exit
@@ -254,7 +256,7 @@ function Scrubber({
 }) {
   return (
     <div className="relative mx-1 h-8 w-56 min-[1100px]:w-72">
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded bg-wood-900/80" />
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 bg-[#1a120c] shadow-[inset_0_1px_2px_black] ring-1 ring-brass-600/50" />
       {marks.map((mark, k) => (
         <span
           key={k}

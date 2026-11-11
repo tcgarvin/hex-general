@@ -1,17 +1,15 @@
 // On-screen camera buttons (zoom, centre on base, whole world) and the keyboard
-// shortcut list. The buttons sit just above the minimap in the board's
-// bottom-left corner, under the left panels; the list opens beside the minimap,
-// where it has the height it needs without covering a panel.
-
-import { useEffect, useState } from "react";
+// shortcut list, in a wood console in the board's bottom-left corner, under the
+// left panels: a row of brass keys over the recessed well that frames the minimap
+// (the minimap itself is drawn by the renderer; the well is see-through, so clicks
+// reach it). The list opens beside the console, where it has the height it needs
+// without covering a panel.
 
 import type { Axial } from "@/board/hex";
 
+import { TRAY_MIN_W, TRAY_OVERLAP, WELL, type MinimapSize } from "./minimapConsole";
 import { SHORTCUTS, ZOOM_STEP } from "./useWorldHotkeys";
-import { TACTICAL_SCALE, type WorldRenderer } from "./WorldRenderer";
-
-const BUTTON =
-  "flex h-8 w-8 items-center justify-center rounded-sm border border-brass-600/70 bg-wood-700/90 text-ivory-100 shadow transition-colors hover:bg-wood-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brass-400 disabled:cursor-not-allowed disabled:opacity-40";
+import { MINIMAP_MARGIN, TACTICAL_SCALE, type WorldRenderer } from "./WorldRenderer";
 
 function Icon({ d }: { d: string }) {
   return (
@@ -23,43 +21,33 @@ function Icon({ d }: { d: string }) {
 
 export function MapControls({
   renderer,
+  minimap,
   home,
   helpOpen,
   setHelpOpen,
 }: {
   renderer: WorldRenderer | null;
+  /** From `useMinimapSize`. */
+  minimap: MinimapSize | null;
   home: Axial | null;
   helpOpen: boolean;
   setHelpOpen: (open: boolean) => void;
 }) {
-  // The minimap's size depends on the map's shape; sit just above it and open
-  // the list just right of it.
-  const [box, setBox] = useState({ bottom: 244, right: 244 });
-  useEffect(() => {
-    if (renderer === null) return;
-    const place = () => {
-      const m = renderer.minimapBox;
-      setBox({ bottom: renderer.app.screen.height - m.y + 8, right: m.x + m.width + 12 });
-    };
-    place();
-    renderer.app.renderer.on("resize", place);
-    return () => {
-      if (!renderer.destroyed) renderer.app.renderer.off("resize", place);
-    };
-  }, [renderer]);
-
   const off = renderer === null;
+  // The well's outer edge, and the tray over it: as wide as the well, or wider
+  // (hanging off its right side) when a narrow minimap leaves no room for the keys.
+  const left = MINIMAP_MARGIN.x - WELL;
+  const wellW = minimap === null ? TRAY_MIN_W : minimap.width + 2 * WELL;
   return (
-    <>
+    <div className="pointer-events-none absolute flex flex-col items-start" style={{ left, bottom: MINIMAP_MARGIN.y - WELL }}>
       {helpOpen && (
         <div
           role="dialog"
           aria-label="Keyboard shortcuts"
-          className="absolute bottom-3 z-20 w-72 rounded-sm border border-wood-700 bg-parchment-200 p-3 text-xs text-ink-900 shadow-lg"
-          style={{ left: box.right }}
+          className="fhq-frame pointer-events-auto absolute bottom-0 left-full z-20 ml-4 w-72 px-1.5 pb-1.5 pt-1 text-xs"
         >
-          <div className="mb-1.5 flex items-center justify-between">
-            <h2 className="font-display text-sm uppercase tracking-wide">Keys</h2>
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="fhq-plate font-display text-sm uppercase tracking-wide">Keys</h2>
             <button
               type="button"
               onClick={() => setHelpOpen(false)}
@@ -79,16 +67,21 @@ export function MapControls({
           <p className="mt-1.5 text-wood-500">Drag or use the minimap to move; scroll or pinch to zoom.</p>
         </div>
       )}
-      <div className="absolute left-3 flex gap-1" role="toolbar" aria-label="Map controls" style={{ bottom: box.bottom }}>
-        <button type="button" className={BUTTON} disabled={off} onClick={() => renderer?.zoomBy(ZOOM_STEP)} title="Zoom in (+)" aria-label="Zoom in">
+      <div
+        className="fhq-tray fhq-tray-open fhq-on-wood pointer-events-auto relative z-[1] flex justify-center gap-0.5 py-px"
+        style={{ width: Math.max(TRAY_MIN_W, wellW - 6), marginLeft: 3, marginBottom: -TRAY_OVERLAP }}
+        role="toolbar"
+        aria-label="Map controls"
+      >
+        <button type="button" className="fhq-key size-7" disabled={off} onClick={() => renderer?.zoomBy(ZOOM_STEP)} title="Zoom in (+)" aria-label="Zoom in">
           <Icon d="M8 3v10M3 8h10" />
         </button>
-        <button type="button" className={BUTTON} disabled={off} onClick={() => renderer?.zoomBy(1 / ZOOM_STEP)} title="Zoom out (−)" aria-label="Zoom out">
+        <button type="button" className="fhq-key size-7" disabled={off} onClick={() => renderer?.zoomBy(1 / ZOOM_STEP)} title="Zoom out (−)" aria-label="Zoom out">
           <Icon d="M3 8h10" />
         </button>
         <button
           type="button"
-          className={BUTTON}
+          className="fhq-key size-7"
           disabled={off || home === null}
           onClick={() => home !== null && renderer?.centerOn(home, TACTICAL_SCALE)}
           title="Centre on your base (Home)"
@@ -96,12 +89,12 @@ export function MapControls({
         >
           <Icon d="M2.5 8 8 3l5.5 5M4.5 6.5V13h7V6.5" />
         </button>
-        <button type="button" className={BUTTON} disabled={off} onClick={() => renderer?.fitAll()} title="Show the whole world (F)" aria-label="Show the whole world">
+        <button type="button" className="fhq-key size-7" disabled={off} onClick={() => renderer?.fitAll()} title="Show the whole world (F)" aria-label="Show the whole world">
           <Icon d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" />
         </button>
         <button
           type="button"
-          className={`${BUTTON} font-label text-sm font-semibold`}
+          className="fhq-key size-7 font-label text-sm font-bold"
           onClick={() => setHelpOpen(!helpOpen)}
           title="Keyboard shortcuts (?)"
           aria-label="Keyboard shortcuts"
@@ -110,6 +103,7 @@ export function MapControls({
           ?
         </button>
       </div>
-    </>
+      {minimap !== null && <div className="fhq-well" style={{ width: wellW, height: minimap.height + 2 * WELL }} />}
+    </div>
   );
 }

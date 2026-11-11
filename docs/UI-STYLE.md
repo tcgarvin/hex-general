@@ -1,12 +1,32 @@
 # UI style — "Field HQ" (ratified direction)
 
-> **Note, 2026-11-10:** the look-and-material direction below is still the art
-> direction, and its art assets are kept on disk. The Pixi panel components it
-> describes (`frontend/src/board/panels/*`: dock, roster, inspector, lock plate,
-> replay panels) belonged to the retired 2-player game and are deleted; only
-> `board/panels/chrome/wood.png` is still used by the app (`frontend/src/index.css`).
-> Per-panel constants and build-order notes below are history. See `docs/TODO.md` for
-> the leftover chrome art awaiting a keep-or-delete decision.
+> **Note, 2026-11-10 (updated 2026-11-11):** the look-and-material direction below is
+> still the art direction. The Pixi panel components it describes
+> (`frontend/src/board/panels/*`: dock, roster, inspector, lock plate, replay panels)
+> belonged to the retired 2-player game and are deleted; per-panel constants and
+> build-order notes below are history. **The kit is now applied to the world screen's
+> DOM panels and the pages** as CSS 9-slices and CSS stand-ins, all in
+> `frontend/src/index.css` (`.fhq-*` classes, used through `components/ui.tsx` and the
+> world panels):
+>
+> - `frame.png`: every panel and page card (`.fhq-frame`, drawn at 22 px with a 4 px
+>   outset; 30 px for cards), and the wood trays of the plan bar, transport bar, turn
+>   banner and map keys (`.fhq-tray`, 15 px).
+> - `plate.png`: panel titles (`.fhq-plate`, 20 px tall).
+> - `parchment.png`: the panel face grain, under an 80% parchment-200 wash.
+> - `commit-up/pressed/disabled.png`: the Submit plan / Resubmit button (`.fhq-commit`).
+> - `iconbtn-up/pressed.png`: the square map keys and playback transport keys (`.fhq-key`).
+> - `well.png`: the recessed well around the minimap (a DOM overlay in `MapControls`).
+> - `wood.png`: the header and trays (`.fhq-wood`, `.fhq-tray`).
+>
+> CSS stand-ins, from the tokens: the small text buttons (order chips, Build, Recruit,
+> Play, Exit, page buttons) are `.fhq-btn`, a flat brushed-brass face with an octagonal
+> chamfer and dark wood rim, because the kit's `btn-*.png` (a square cap on a screwed
+> wood backplate) swamps a 20 px label when scaled down; its states are hover glow,
+> pressed, amber-lit active (`data-active`) and desaturated disabled. Notes and the hover
+> tooltip use a wood keyline with a brass hairline (`.fhq-note`, `.fhq-tip`). Still
+> unused: `btn-*.png`, `frame-leather.png`, `leather.png`, `canvas.png`, `sheet*.png`,
+> `stitch-*.png` and the transport glyphs `icon-*.png` (see `docs/TODO.md`).
 
 The visual identity for the game's UI chrome — panels, buttons, type, icons,
 decoration — for both the Pixi game-screen chrome (UI-SPEC §2) and the React
