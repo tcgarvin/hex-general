@@ -44,7 +44,7 @@ art/foundry/units/gens/*.png
 # Codex terrain paint-in (art/codex/terrain): commit the replay seed, not the
 # derived files. Kept: prompts, job/refs files, manifests, picks, profiles, the
 # direction notes and refs, the paint-in bases, scripts, the shipped candidate set
-# (candidates/review1) and joins (candidates/review1-joins), and the raw Codex
+# (candidates/review1, lake2) and joins (candidates/review1-joins, lake2-joins), and the raw Codex
 # sheets that produced shipped tiles (replay with `paintin.py run --from-raw`;
 # plains from raw/G2 via ground/G2/set.json). Ignored: review renders, generated
 # input sheets, per-sheet cut/tiles/graded intermediates, recoloured ground
@@ -60,6 +60,8 @@ art/codex/terrain/candidates/**/*.png
 !art/codex/terrain/candidates/review1/**/*.png
 !art/codex/terrain/candidates/review1-joins/**/*.png
 !art/codex/terrain/candidates/hills-roads/**/*.png
+!art/codex/terrain/candidates/lake2/**/*.png
+!art/codex/terrain/candidates/lake2-joins/**/*.png
 art/codex/terrain/**/raw/*.png
 !art/codex/terrain/raw/G2-meadow-crop-bare.png
 !art/codex/terrain/woods/r2-d/raw/woods-r2-d.png
@@ -73,6 +75,7 @@ art/codex/terrain/**/raw/*.png
 !art/codex/terrain/road/b/raw/road-b.png
 !art/codex/terrain/road/c/raw/road-c.png
 !art/codex/terrain/bridge/a/raw/bridge-a-v2.png
+!art/codex/terrain/lake/r2/*/raw/lake2-*.png
 !art/codex/terrain/road-hills/a/raw/road-hills-a.png
 !art/codex/terrain/road-hills/b/raw/road-hills-b.png
 !art/codex/terrain/road-hills/c/raw/road-hills-c.png
