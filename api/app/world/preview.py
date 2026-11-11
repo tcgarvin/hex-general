@@ -9,7 +9,7 @@ lakes and always run off the map edge. Written with the standard library (zlib +
 struct) so previews need no imaging dependency.
 
 Run: ``uv run python -m app.world.preview --slots 200 --seed 1 --out world.png
-[--style natural] [--no-roads] [--road-style natural]``.
+[--style natural] [--no-roads] [--road-style direct]``.
 """
 
 from __future__ import annotations
@@ -24,7 +24,13 @@ from typing import Literal
 
 from app.engine.economy_rules import SiteKind
 from app.engine.stats import Terrain
-from app.world.generate import ROAD_STYLES, GeneratedWorld, WorldParams, generate
+from app.world.generate import (
+    DEFAULT_ROAD_STYLE,
+    ROAD_STYLES,
+    GeneratedWorld,
+    WorldParams,
+    generate,
+)
 
 _Rgb = tuple[int, int, int]
 Style = Literal["territory", "natural"]
@@ -312,7 +318,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--style", choices=STYLES, default="territory")
     parser.add_argument("--no-roads", action="store_true", help="leave roads out")
-    parser.add_argument("--road-style", choices=ROAD_STYLES, default="direct")
+    parser.add_argument("--road-style", choices=ROAD_STYLES, default=DEFAULT_ROAD_STYLE)
     args = parser.parse_args()
     world = generate(
         WorldParams.for_slots(args.slots, args.seed, road_style=args.road_style)

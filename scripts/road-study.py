@@ -2,8 +2,9 @@
 """Compare the world generator's road styles (``direct`` vs ``natural``) on real seeds.
 
 The generator (``api/app/world/generate.py``) can lay roads two ways
-(``WorldParams.road_style``). This tool generates the same seed in both styles
-and produces the review material for choosing between them:
+(``WorldParams.road_style``; ``natural`` is the default for new worlds since
+2026-11-11, ``direct`` stays as an option). This tool generates the same seed in
+both styles and produces the review material for comparing them:
 
 * ``metrics``: a table of road shape and travel numbers per seed and style
   (``app.world.road_metrics``), plus a **board check** of how the frontend would

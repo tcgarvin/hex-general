@@ -141,6 +141,8 @@ class GameRepo(Protocol):
         """Store ``game_map`` once and return its id.
 
         ``params`` regenerate the map; ``slots`` are its capitals in fill order.
+        Maps stored before road styles existed (early 2026-11-11) have no
+        ``road_style`` in ``params``: their roads are ``direct``, not the default.
         """
         ...
 

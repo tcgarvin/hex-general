@@ -264,9 +264,14 @@ from the fix-ups. Terrain is now built from sized objects, in this order:
   hex with exactly two river neighbours and no lake beside it (not at a junction, a
   river end or a lake mouth). Sharp turns over new ground are removed from each laid
   road; the only sharp road corners left are at towns beside a through-road.
-- *Natural road style (option, 2026-11-11, proposal awaiting the user's pick):*
-  `WorldParams.road_style` is `"direct"` (the default: the roads above, every existing
-  seed byte-identical, pinned by a digest test) or `"natural"` (`app/world/roads.py`).
+- *Natural road style (the default for new worlds, user, 2026-11-11):*
+  `WorldParams.road_style` is `"natural"` (`app/world/roads.py`, the default,
+  `DEFAULT_ROAD_STYLE`; seeds pinned by a digest test) or `"direct"` (the roads above,
+  kept as an option: every seed regenerates byte-identical to the worlds made before
+  the natural style existed, pinned by a digest test). Worlds already created keep
+  their roads: a world's map is stored once in `game_maps` and always read back from
+  there, never regenerated from its seed (§10.1). The CLIs (`app.world.preview`,
+  `road_metrics`, `sim`, `season`) take `--road-style direct` for the old style.
   Why direct roads read as a lattice: a hex step costs the same at any heading, but a
   heading 30° off the axes is a zig-zag that gains only cos 30° per step, so least-cost
   search prices off-axis travel ~15% dearer and picks straight axis legs joined by 60°

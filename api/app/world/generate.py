@@ -16,9 +16,10 @@
    reuses road cheaply (so roads merge), wiggles with a noise field, shuns
    running beside another road and never makes a sharp turn on new ground. A
    road crosses a river only where the river runs plainly (a bridge); it never
-   touches a lake. With ``road_style="natural"`` (`app.world.roads`) roads are
-   instead routed at any heading along the land, smoothed, and bridged only
-   where bridge art fits.
+   touches a lake. That is the ``direct`` road style; the default
+   ``natural`` style (`app.world.roads`, `DEFAULT_ROAD_STYLE`) instead routes
+   roads at any heading along the land, smoothed, and bridged only where
+   bridge art fits.
 5. **Fix-ups (fairness):** in each start region (*territory*, the land nearest
    its seat) every settlement reaches the seat by road inside the territory,
    every real border is crossed by a road, and each has at least half the median
@@ -161,6 +162,9 @@ RoadStyle = Literal["direct", "natural"]
 """How roads are laid: ``direct`` is the original least-cost hex search;
 ``natural`` routes them along the land (`app.world.roads`, 2026-11-11)."""
 ROAD_STYLES: tuple[RoadStyle, ...] = ("direct", "natural")
+DEFAULT_ROAD_STYLE: RoadStyle = "natural"
+"""The road style of new worlds (user, 2026-11-11). Worlds already created keep
+the roads stored with their map; ``direct`` stays available on request."""
 
 _ROAD_NEIGHBORS = 6  # nearest settlements considered for the road graph
 _ROAD_EXTRA_SHARE = 0.3  # redundant links, as a share of spanning-tree links
@@ -179,10 +183,11 @@ class WorldParams:
 
     The shares are targets for the map area under woods, hills and river courses;
     ``hexes_per_settlement`` and ``hexes_per_lake`` set those densities.
-    ``road_style`` picks how roads are routed (`RoadStyle`); the default keeps
-    every existing seed's world unchanged. Raises `WorldGenError` on
-    construction for unusable values (this is the
-    generator's boundary: parameters come from a CLI or an admin request).
+    ``road_style`` picks how roads are routed (`RoadStyle`, default
+    `DEFAULT_ROAD_STYLE`); ``road_style="direct"`` regenerates any seed's world
+    as it was before the natural style existed. Raises `WorldGenError` on
+    construction for unusable values (this is the generator's boundary:
+    parameters come from a CLI or an admin request).
     """
 
     width: int
@@ -195,7 +200,7 @@ class WorldParams:
     hills_share: float = 0.07
     river_share: float = 0.024
     hexes_per_lake: int = 1000
-    road_style: RoadStyle = "direct"
+    road_style: RoadStyle = DEFAULT_ROAD_STYLE
 
     def __post_init__(self) -> None:
         if self.width < 12 or self.height < 12:
@@ -226,7 +231,7 @@ class WorldParams:
 
     @classmethod
     def for_slots(
-        cls, slots: int, seed: int, road_style: RoadStyle = "direct"
+        cls, slots: int, seed: int, road_style: RoadStyle = DEFAULT_ROAD_STYLE
     ) -> WorldParams:
         """A square world with `HEXES_PER_SLOT` hexes per slot."""
         side = round(math.sqrt(HEXES_PER_SLOT * slots))
@@ -420,7 +425,7 @@ class _Draft:
     terrain: list[Terrain]
     road_wiggle: list[float]
     road: list[bool] = field(default_factory=list)
-    road_style: RoadStyle = "direct"
+    road_style: RoadStyle = DEFAULT_ROAD_STYLE
     road_bend: list[float] = field(default_factory=list)
     ramps: dict[int, tuple[int, int]] = field(default_factory=dict)
     natural_fallbacks: int = 0

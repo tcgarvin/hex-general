@@ -4,7 +4,8 @@ Generates a world, fills slots with world bots, and resolves turns on a manual
 clock, measuring what the slice-1 acceptance gates ask about: transit (jams,
 travel outcomes), contact, fronts, expansion and performance.
 
-Run: ``uv run python -m app.world.sim --slots 12 --seed 1 --turns 60 [--json out.json]``.
+Run: ``uv run python -m app.world.sim --slots 12 --seed 1 --turns 60 [--json out.json]
+[--road-style direct]``.
 
 Every plan is checked with `validate_submission` before it resolves, so an illegal
 bot order crashes the run instead of skewing the numbers. The same arguments
@@ -55,7 +56,14 @@ from app.engine.models import (
 )
 from app.games.validation import validate_submission
 from app.world.collector import quiet_collector
-from app.world.generate import GeneratedWorld, WorldParams, generate
+from app.world.generate import (
+    DEFAULT_ROAD_STYLE,
+    ROAD_STYLES,
+    GeneratedWorld,
+    RoadStyle,
+    WorldParams,
+    generate,
+)
 
 _NEAR_CONTACT = 6  # a jam within this many hexes of a hostile unit is "near contact"
 
@@ -153,9 +161,13 @@ def run_sim(
     players: int | None = None,
     world: GeneratedWorld | None = None,
     policies: dict[PlayerId, Policy] | None = None,
+    road_style: RoadStyle = DEFAULT_ROAD_STYLE,
 ) -> SimReport:
-    """Generate (or take) a world, play ``turns`` turns with bots, and report."""
-    world = world or generate(WorldParams.for_slots(slots, seed))
+    """Generate (or take) a world, play ``turns`` turns with bots, and report.
+
+    ``road_style`` applies only when the world is generated here.
+    """
+    world = world or generate(WorldParams.for_slots(slots, seed, road_style=road_style))
     count = players if players is not None else slots
     ids = [f"b{k:03d}" for k in range(count)]
     state = world.to_state(ids)
@@ -649,14 +661,19 @@ def _gates(report: SimReport) -> dict[str, bool]:
 
 
 def _batch(
-    slots: int, seeds: int, turns: int, players: int | None, out: Path | None
+    slots: int,
+    seeds: int,
+    turns: int,
+    players: int | None,
+    out: Path | None,
+    road_style: RoadStyle,
 ) -> None:
     """Run seeds 1..``seeds`` and tally gate passes (WORLD_SPEC §9)."""
     passes: Counter[str] = Counter()
     gate_names: list[str] = []
     summary: list[dict[str, object]] = []
     for seed in range(1, seeds + 1):
-        report = run_sim(slots, seed, turns, players)
+        report = run_sim(slots, seed, turns, players, road_style=road_style)
         passes.update(name for name, ok in report.gates.items() if ok)
         gate_names = sorted(report.gates)
         last = report.turn_stats[-1]
@@ -691,6 +708,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--turns", type=int, default=60)
     parser.add_argument("--json", type=Path, default=None)
+    parser.add_argument("--road-style", choices=ROAD_STYLES, default=DEFAULT_ROAD_STYLE)
     parser.add_argument(
         "--seeds",
         type=int,
@@ -699,10 +717,19 @@ def main() -> None:
     )
     args = parser.parse_args()
     if args.seeds is not None:
-        _batch(args.slots, args.seeds, args.turns, args.players, args.json)
+        _batch(
+            args.slots,
+            args.seeds,
+            args.turns,
+            args.players,
+            args.json,
+            args.road_style,
+        )
         return
     started = time.perf_counter()
-    report = run_sim(args.slots, args.seed, args.turns, args.players)
+    report = run_sim(
+        args.slots, args.seed, args.turns, args.players, road_style=args.road_style
+    )
     elapsed = time.perf_counter() - started
     if args.json is not None:
         args.json.write_text(report.model_dump_json(indent=1))

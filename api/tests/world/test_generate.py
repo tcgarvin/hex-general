@@ -22,6 +22,7 @@ from app.engine.models import BASE_FOOTPRINT, NEUTRAL, base_footprint
 from app.engine.routing import find_route
 from app.engine.stats import TERRAIN_STATS, Terrain
 from app.world.generate import (
+    DEFAULT_ROAD_STYLE,
     ROAD_STYLES,
     SITE_LEVEL_WEIGHTS,
     STARTING_UNITS,
@@ -132,6 +133,13 @@ def _fingerprint(world: GeneratedWorld) -> str:
     return digest.hexdigest()[:16]
 
 
+def test_new_worlds_default_to_natural_roads() -> None:
+    # The user picked natural roads for new worlds on 2026-11-11.
+    assert DEFAULT_ROAD_STYLE == "natural"
+    assert WorldParams.for_slots(12, 1).road_style == "natural"
+    assert WorldParams(width=40, height=40, slots=1, seed=1).road_style == "natural"
+
+
 @pytest.mark.parametrize(
     ("slots", "seed", "expected"),
     [
@@ -141,14 +149,30 @@ def _fingerprint(world: GeneratedWorld) -> str:
         (24, 7, "c4e64302c377bc0b"),
     ],
 )
-def test_the_default_road_style_leaves_existing_worlds_unchanged(
+def test_direct_roads_on_request_regenerate_earlier_worlds_byte_identical(
     slots: int, seed: int, expected: str
 ) -> None:
-    # Digests recorded before the natural road style existed (2026-11-11): the
-    # default must keep generating byte-identical worlds for existing seeds.
-    params = WorldParams.for_slots(slots, seed)
-    assert params.road_style == "direct"
+    # Digests recorded before the natural road style existed (2026-11-11), when
+    # direct was the only style: asking for it must keep reproducing those worlds.
+    params = WorldParams.for_slots(slots, seed, road_style="direct")
     assert _fingerprint(generate(params)) == expected
+
+
+@pytest.mark.parametrize(
+    ("slots", "seed", "expected"),
+    [
+        (12, 1, "191fe607d2dd40de"),
+        (12, 2, "fe94dd073374cee8"),
+        (12, 3, "8f5c4f6949fdbd0b"),
+        (24, 7, "a7e966dedf7e9ecf"),
+    ],
+)
+def test_default_natural_worlds_are_pinned(
+    slots: int, seed: int, expected: str
+) -> None:
+    # Digests recorded when natural became the default (2026-11-11). A change here
+    # changes every new world for a seed: make it on purpose and re-record.
+    assert _fingerprint(generate(WorldParams.for_slots(slots, seed))) == expected
 
 
 @pytest.mark.parametrize("style", ROAD_STYLES)
@@ -571,7 +595,7 @@ def test_to_state_rejects_too_many_players(world: GeneratedWorld) -> None:
 
 
 def test_natural_roads_keep_the_land_towns_and_seats() -> None:
-    direct = generate(WorldParams.for_slots(12, 4))
+    direct = generate(WorldParams.for_slots(12, 4, road_style="direct"))
     natural = generate(WorldParams.for_slots(12, 4, road_style="natural"))
 
     def land(world: GeneratedWorld) -> list[Terrain]:
@@ -591,7 +615,7 @@ def test_natural_roads_keep_the_land_towns_and_seats() -> None:
 
 @pytest.mark.parametrize("seed", SEEDS)
 def test_natural_roads_are_far_less_ruled_than_direct_ones(seed: int) -> None:
-    direct = measure(generate(WorldParams.for_slots(12, seed)))
+    direct = measure(generate(WorldParams.for_slots(12, seed, road_style="direct")))
     natural = measure(generate(WorldParams.for_slots(12, seed, road_style="natural")))
     assert natural.long_run_share < 0.5 * direct.long_run_share
     assert natural.run_max < direct.run_max

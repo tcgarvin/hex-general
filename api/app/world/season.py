@@ -6,7 +6,7 @@ It runs a world the way `app.world.sim` does: generate, seat bots, and each turn
 plan every live bot on its fog-redacted view, validate the plan, and resolve.
 
 Run: ``uv run python -m app.world.season --slots 200 --bots 100 --seed 1
---turns 60 --out season.json``.
+--turns 60 --out season.json [--road-style direct]``.
 
 The record is JSON with short keys and integer arrays (`SCHEMA_VERSION`). Hexes
 are flat offset indices ``row * width + col``, the same row-major order as the
@@ -66,7 +66,14 @@ from app.engine.models import (
 from app.engine.stats import UnitType
 from app.games.validation import validate_submission
 from app.world.collector import quiet_collector
-from app.world.generate import GeneratedWorld, WorldParams, generate
+from app.world.generate import (
+    DEFAULT_ROAD_STYLE,
+    ROAD_STYLES,
+    GeneratedWorld,
+    RoadStyle,
+    WorldParams,
+    generate,
+)
 
 SCHEMA_VERSION = 1
 
@@ -160,14 +167,16 @@ def record_season(
     turns: int,
     world: GeneratedWorld | None = None,
     progress: Callable[[int, float], None] | None = None,
+    road_style: RoadStyle = DEFAULT_ROAD_STYLE,
 ) -> Season:
     """Generate (or take) a world, seat ``bots`` world bots, play ``turns`` turns.
 
     ``progress`` is called after each resolved turn with the turn number and the
     seconds that turn took. Every plan is validated before it resolves, so an
     illegal bot order crashes the recording rather than the viewer showing it.
+    ``road_style`` applies only when the world is generated here.
     """
-    world = world or generate(WorldParams.for_slots(slots, seed))
+    world = world or generate(WorldParams.for_slots(slots, seed, road_style=road_style))
     players = [f"b{k:03d}" for k in range(bots)]
     state = world.to_state(players)
     bases = [world.capitals[world.fill_order[k]] for k in range(bots)]
@@ -499,6 +508,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--turns", type=int, default=60)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--road-style", choices=ROAD_STYLES, default=DEFAULT_ROAD_STYLE)
     args = parser.parse_args()
     bots = args.slots if args.bots is None else args.bots
     if not 1 <= bots <= args.slots:
@@ -512,7 +522,14 @@ def main() -> None:
         total = time.perf_counter() - started
         print(f"turn {turn:3d}  {seconds:5.1f} s  ({total:6.1f} s)", file=sys.stderr)
 
-    season = record_season(args.slots, bots, args.seed, args.turns, progress=report)
+    season = record_season(
+        args.slots,
+        bots,
+        args.seed,
+        args.turns,
+        progress=report,
+        road_style=args.road_style,
+    )
     size = write_season(season, args.out)
     elapsed = time.perf_counter() - started
     print(

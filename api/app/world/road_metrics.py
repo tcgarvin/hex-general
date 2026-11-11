@@ -7,7 +7,7 @@ straight-line distance), what ground they take, and what that means for travel
 like the engine's `GameMap.column_costs`).
 
 Run: ``uv run python -m app.world.road_metrics --slots 12 --seed 1
-[--road-style natural]``.
+[--road-style direct]``.
 """
 
 from __future__ import annotations
@@ -22,7 +22,13 @@ from dataclasses import dataclass
 from app.engine.economy_rules import SiteKind
 from app.engine.hex_coords import Axial
 from app.engine.stats import COLUMN_RULES, TERRAIN_STATS, Terrain
-from app.world.generate import ROAD_STYLES, GeneratedWorld, WorldParams, generate
+from app.world.generate import (
+    DEFAULT_ROAD_STYLE,
+    ROAD_STYLES,
+    GeneratedWorld,
+    WorldParams,
+    generate,
+)
 from app.world.grid import HexGrid
 
 LONG_RUN = 8
@@ -296,7 +302,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--slots", type=int, default=12)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--road-style", choices=ROAD_STYLES, default="direct")
+    parser.add_argument("--road-style", choices=ROAD_STYLES, default=DEFAULT_ROAD_STYLE)
     args = parser.parse_args()
     world = generate(
         WorldParams.for_slots(args.slots, args.seed, road_style=args.road_style)

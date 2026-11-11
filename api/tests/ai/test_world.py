@@ -21,7 +21,7 @@ from app.engine.fog import redact_state
 from app.engine.economy_rules import SiteKind
 from app.engine.hex_coords import Axial, distance
 from app.engine.models import GameState, MapSite, PlayerId, TravelOrder
-from app.engine.stats import Terrain
+from app.engine.stats import UNIT_STATS, Terrain
 from app.games.validation import validate_submission
 from app.world.generate import GeneratedWorld, WorldParams, generate
 from app.world.sim import SimReport, _assaults, run_sim
@@ -86,10 +86,15 @@ def test_bots_attack_when_no_neutral_land_is_left(world: GeneratedWorld) -> None
     for settlement in state.settlements:
         if settlement.controlled_by is None:
             settlement.controlled_by = "b001"
-    # A field army big enough to attack with.
-    own = [u for u in state.units if u.owner == "b000"]
+    # A field army big enough to open a war: a bold bot (aggression 0.9) wants
+    # 8 combat units. Fewer only carry on a war already under way, which counts
+    # one when the army happens to stand within 7 hexes of a hostile town.
+    combat = [
+        u for u in state.units if u.owner == "b000" and UNIT_STATS[u.type].can_capture
+    ]
     state.units.extend(
-        u.model_copy(update={"id": 900 + k}) for k, u in enumerate(own[:2])
+        combat[k % len(combat)].model_copy(update={"id": 900 + k})
+        for k in range(8 - len(combat))
     )
     bold = Personality(aggression=0.9, reach=20, garrison_share=0.0)
     args = ScriptedStrategist(bold).choose(redact_state(state, "b000"), "b000")
