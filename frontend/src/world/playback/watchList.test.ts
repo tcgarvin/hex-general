@@ -24,16 +24,16 @@ describe("your fights", () => {
   });
 
   it("lists fire from a gun the viewer cannot see on their own unit", () => {
-    const c = FIXTURE_CASES.find((x) => x.viewer === "b003" && x.turn === 20)!;
+    const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 16)!;
     const pb = casePlayback(c);
     const list = engagements(pb, unitBook(c.replay.events, c.replay.state_after.units, c.viewer));
     const unseen = c.replay.events.findIndex((e) => e.kind === "barrage_resolved" && e.artillery_id === null);
     expect(list.find((e) => e.eventIndex === unseen)).toMatchObject({
       kind: "barrage",
       result: "under_fire",
-      at: { q: 23, r: 15 },
-      ours: [{ unitId: 74 }],
-      summary: "Your infantry came under fire at (23,15).",
+      at: { q: 21, r: 18 },
+      ours: [{ unitId: 7 }],
+      summary: "Your armor came under fire at (21,18).",
     });
   });
 

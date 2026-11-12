@@ -121,22 +121,22 @@ describe("reconstruction on recorded turns", () => {
   });
 
   it("lands a barrage from a gun the viewer cannot see", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 20 && x.viewer === "b003")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 16 && x.viewer === "b001")!;
     const pb = casePlayback(c);
-    const k = pb.beats.findIndex((b) => b.phase === "barrage");
+    const k = pb.beats.findIndex((b) => b.phase === "barrage" && b.actions.some((a) => a.kind === "barrage" && a.gunId === null));
     const unseen = pb.beats[k].actions.find((a) => a.kind === "barrage" && a.gunId === null)!;
-    expect(unseen).toMatchObject({ from: null, target: { q: 23, r: 15 }, strikes: [{ unitId: 74, owner: "b003", hpAfter: 2 }] });
-    expect(pb.snapshots[k].get(74)!.hp).toBe(3);
-    expect(pb.snapshots[k + 1].get(74)!.hp).toBe(2);
+    expect(unseen).toMatchObject({ from: null, target: { q: 21, r: 18 }, strikes: [{ unitId: 7, owner: "b001", hpAfter: 3 }] });
+    expect(pb.snapshots[k].get(7)!.hp).toBe(4);
+    expect(pb.snapshots[k + 1].get(7)!.hp).toBe(3);
   });
 
   it("draws another player's recruit, served without its cost", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 32 && x.viewer === "b001")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 30 && x.viewer === "b003")!;
     const pb = casePlayback(c);
-    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 91));
+    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 92));
     expect(pb.beats[k].phase).toBe("recruit");
-    expect(pb.snapshots[k].has(91)).toBe(false);
-    expect(pb.snapshots[k + 1].get(91)).toMatchObject({ owner: "b002", type: "armor", coord: { q: 22, r: 16 } });
+    expect(pb.snapshots[k].has(92)).toBe(false);
+    expect(pb.snapshots[k + 1].get(92)).toMatchObject({ owner: "b000", type: "infantry", coord: { q: 22, r: 0 } });
   });
 
   it("resolves barrage guns and recruits from the board", () => {
@@ -223,9 +223,9 @@ describe("fog: units entering and leaving sight", () => {
   });
 
   it("an enemy that sits still is revealed when the viewer's sight reaches it", () => {
-    // My unit walks from (0,0) to (3,0); the enemy at (6,0) is within sight 3 from pulse 3.
+    // My unit walks from (0,0) to (3,0); the enemy at (6,0) is within sight 4 from pulse 3.
     const events = [move(1, 1, [0, 0], [1, 0]), move(2, 1, [1, 0], [2, 0]), move(3, 1, [2, 0], [3, 0])];
-    const pb = build(events, [unit(1, "me", 0, 0)], [unit(1, "me", 3, 0), unit(2, "them", 6, 0)]);
+    const pb = build(events, [unit(1, "me", 0, 0)], [unit(1, "me", 3, 0), unit(2, "them", 7, 0)]);
     expect(pb.snapshots[2].has(2)).toBe(false);
     expect(pb.beats[2].actions[0]).toMatchObject({ kind: "reveal", unit: { id: 2 } });
     expect(pb.snapshots[3].has(2)).toBe(true);
@@ -233,8 +233,8 @@ describe("fog: units entering and leaving sight", () => {
 
   it("an enemy left behind fades out once it drops out of sight", () => {
     const events = [move(1, 1, [0, 0], [1, 0]), move(2, 1, [1, 0], [2, 0]), move(3, 1, [2, 0], [3, 0])];
-    // From (1,0) the enemy at (-3,0) is 4 away, past sight 3: it fades out in pulse 1.
-    const pb = build(events, [unit(1, "me", 0, 0), unit(2, "them", -3, 0)], [unit(1, "me", 3, 0)]);
+    // From (1,0) the enemy at (-4,0) is 5 away, past sight 4: it fades out in pulse 1.
+    const pb = build(events, [unit(1, "me", 0, 0), unit(2, "them", -4, 0)], [unit(1, "me", 3, 0)]);
     expect(pb.snapshots[0].has(2)).toBe(true);
     expect(pb.beats[0].actions.at(-1)).toEqual({ kind: "conceal", unitId: 2 });
     expect(pb.snapshots[1].has(2)).toBe(false);

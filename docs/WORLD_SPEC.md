@@ -73,7 +73,7 @@ Hold / Rest, deployed movement rates (infantry 2, armor 4, artillery 1).
 | Attack | Cannot attack |
 | Defense | Defense −3, no terrain or Hold bonus [tunable] |
 | Capture | Cannot capture |
-| Vision | As deployed |
+| Vision | As deployed (every unit type sees 4 hexes since 2026-11-11, one past the deploy distance, so a column halted on contact sees what stopped it) |
 | Repair | Rests like a deployed unit (+2 in a friendly settlement, so garrisons stack and heal) |
 
 ### 4.3 Turn pulses

@@ -70,8 +70,8 @@ INF, ART = UnitType.INFANTRY, UnitType.ARTILLERY
 # in sight at (2,0) (id 2), one deep in the fog at (9,0) (id 3) and a gun in the
 # fog at (8,0) (id 4).
 SEEN = Axial(q=2, r=0)
-EDGE = Axial(q=3, r=0)  # the last hex blue sees
-DARK = Axial(q=4, r=0)  # the first hex blue does not see
+EDGE = Axial(q=4, r=0)  # the last hex blue sees
+DARK = Axial(q=5, r=0)  # the first hex blue does not see
 FAR = Axial(q=9, r=0)
 BLUE_UNIT, RED_SEEN, RED_FAR, RED_GUN = 1, 2, 3, 4
 RED_STOCKS = Stocks(manpower=27, fuel=30, steel=10)
@@ -385,7 +385,7 @@ def test_column_and_repair_events_in_the_fog_are_not_shown(event: Event) -> None
 def test_a_jam_shows_only_the_jammed_units_in_sight() -> None:
     jam = TrafficJam(pulse=1, coord=EDGE, unit_ids=[RED_SEEN, RED_FAR])
     assert _seen_by_blue(jam) == [
-        {"kind": "traffic_jam", "pulse": 1, "coord": {"q": 3, "r": 0}, "unit_ids": [2]}
+        {"kind": "traffic_jam", "pulse": 1, "coord": {"q": 4, "r": 0}, "unit_ids": [2]}
     ]
     assert _seen_by_blue(TrafficJam(pulse=1, coord=FAR, unit_ids=[RED_FAR])) == []
 

@@ -219,8 +219,8 @@ This cap is not directly tied to towns, cities, or land control in v0.1.
 | Unit      | Upkeep |
 | --------- | -----: |
 | Infantry  |      1 |
-| Armor     |      2 |
-| Artillery |      2 |
+| Armor     |      4 |
+| Artillery |      4 |
 
 Economy calculation:
 
@@ -428,9 +428,11 @@ Do not add special rules for hidden units inside woods yet. Either the hex is vi
 
 | Unit      | Vision |
 | --------- | -----: |
-| Infantry  |      2 |
-| Armor     |      2 |
-| Artillery |      2 |
+| Infantry  |      4 |
+| Armor     |      4 |
+| Artillery |      4 |
+
+World games (2026-11-11): every unit type sees 4 hexes, one past the deploy distance; see `WORLD_SPEC.md`.
 
 Dedicated recon units are deferred.
 

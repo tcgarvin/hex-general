@@ -69,10 +69,12 @@ CASES: list[tuple[str, int]] = [
     # by guns the viewer cannot see.
     ("b003", 15),
     ("b003", 16),
+    ("b001", 16),
     ("b000", 20),
     ("b003", 20),
     # Another player's recruit, seen without its cost.
     ("b001", 32),
+    ("b003", 30),
 ]
 TURNS = max(turn for _, turn in CASES) + 1
 REQUIRED = {

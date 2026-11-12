@@ -17,7 +17,7 @@ export interface UnitStats {
   defense: number;
   /** Weapon/attack range in hexes — inf/armor 1, artillery 3 (distinct from vision). */
   range: number;
-  /** Sight radius in hexes, 3 for every type (`vision` in stats.py). */
+  /** Sight radius in hexes, 4 for every type (`vision` in stats.py). */
   vision: number;
   /** Full hit points at recruit time, 10 for every type in v0.1 (`max_hp` in stats.py). */
   maxHp: number;
@@ -33,9 +33,9 @@ export interface UnitStats {
  * (range/path prediction, the muster forecast).
  */
 export const UNIT_STATS: Record<UnitType, UnitStats> = {
-  infantry: { move: 2, attack: 4, defense: 5, range: 1, vision: 3, maxHp: 10, upkeep: 1, recruitCost: 3 },
-  armor: { move: 4, attack: 7, defense: 4, range: 1, vision: 3, maxHp: 10, upkeep: 2, recruitCost: 6 },
-  artillery: { move: 1, attack: 5, defense: 2, range: 3, vision: 3, maxHp: 10, upkeep: 2, recruitCost: 5 },
+  infantry: { move: 2, attack: 4, defense: 5, range: 1, vision: 4, maxHp: 10, upkeep: 1, recruitCost: 3 },
+  armor: { move: 4, attack: 7, defense: 4, range: 1, vision: 4, maxHp: 10, upkeep: 2, recruitCost: 6 },
+  artillery: { move: 1, attack: 5, defense: 2, range: 3, vision: 4, maxHp: 10, upkeep: 2, recruitCost: 5 },
 };
 
 /** Base movement points per unit type (convenience view over {@link UNIT_STATS}). */
