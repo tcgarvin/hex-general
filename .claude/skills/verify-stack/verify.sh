@@ -36,17 +36,27 @@ grep -q '"version"' <<<"$ver" \
   && pass "/version: $ver" || bad "/version missing version"
 
 # World build (exists only after the 2026-11-10 cutover; the old API 404s these).
-# Expected commit: the last one that touched the API (a fixtures-only push runs
-# the API tests but does not redeploy). Override with HEX_EXPECT_COMMIT.
+# The image is built from the head of the push that last deployed the API, so the
+# live commit must contain the last commit that touched the API and must itself
+# be in local history (a fixtures-only or docs-only push does not redeploy).
+# HEX_EXPECT_COMMIT demands one exact commit instead.
 echo "[api] world build"
-expect="${HEX_EXPECT_COMMIT:-$(git -C "$(dirname "$0")" rev-list -1 HEAD -- ":(top)api" ":(top).github/workflows/api.yml" 2>/dev/null)}"
+repo="$(dirname "$0")"
 commit=$(jq -r '.commit // empty' <<<"$ver" 2>/dev/null)
-if [ -z "$expect" ]; then
-  bad "no expected commit (set HEX_EXPECT_COMMIT); /version commit is '${commit:-<none>}'"
-elif [ "$commit" = "$expect" ]; then
-  pass "/version commit is $expect"
+last_api=$(git -C "$repo" rev-list -1 HEAD -- ":(top)api" ":(top).github/workflows/api.yml" 2>/dev/null)
+if [ -n "${HEX_EXPECT_COMMIT:-}" ]; then
+  [ "$commit" = "$HEX_EXPECT_COMMIT" ] \
+    && pass "/version commit is $HEX_EXPECT_COMMIT" \
+    || bad "/version commit '${commit:-<none>}' is not $HEX_EXPECT_COMMIT"
+elif [ -z "$commit" ] || [ -z "$last_api" ]; then
+  bad "cannot compare commits (/version commit '${commit:-<none>}', last API commit '${last_api:-<none>}')"
+elif ! git -C "$repo" cat-file -e "$commit^{commit}" 2>/dev/null; then
+  bad "/version commit $commit is not in local history (fetch, or a build from elsewhere)"
+elif git -C "$repo" merge-base --is-ancestor "$last_api" "$commit" \
+  && git -C "$repo" merge-base --is-ancestor "$commit" HEAD; then
+  pass "/version commit $commit includes the last API change ($last_api)"
 else
-  bad "/version commit '${commit:-<none>}' is not $expect (old build still serving, or deploy not done)"
+  bad "/version commit $commit does not include the last API change $last_api (old build still serving, or deploy not done)"
 fi
 code=$(curl -sS -o /dev/null -w '%{http_code}' "$API/worlds" 2>/dev/null)
 [ "$code" = "401" ] \

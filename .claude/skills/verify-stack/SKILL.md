@@ -28,8 +28,7 @@ HEX_API_URL=https://... HEX_WEB_URL=https://... bash .claude/skills/verify-stack
 
 Defaults: `HEX_API_URL=https://hex-api-qfzj5tg56a-uc.a.run.app`,
 `HEX_WEB_URL=https://hex-general.vercel.app`, `HEX_WEB_ORIGIN=$HEX_WEB_URL`,
-`HEX_EXPECT_COMMIT=` the last local commit that touched `api/` or
-`.github/workflows/api.yml` (a push that changes neither does not redeploy).
+`HEX_EXPECT_COMMIT` unset (set it to demand one exact deployed commit).
 
 ## What it checks
 
@@ -37,7 +36,10 @@ Defaults: `HEX_API_URL=https://hex-api-qfzj5tg56a-uc.a.run.app`,
 2. `GET /version` → has a version
 3. World build (only after the world cutover; the old API answers 404 and an
    old image has no `commit`, so these four fail until the new build is live):
-   - `/version` `commit` equals the expected commit
+   - `/version` `commit` is in local history and contains the last local commit
+     that touched `api/` or `.github/workflows/api.yml` (the image is built from
+     the head of the push that last deployed the API; a push that changes
+     neither does not redeploy)
    - `GET /worlds` without a token → 401
    - `POST /internal/clock` without a token → 401
    - `POST /internal/clock` with a malformed bearer → 403, not 503. A missing
