@@ -78,7 +78,7 @@ import {
   type PanInput,
 } from "./camera";
 import { NEUTRAL_OWNER, ownerColor } from "./colors";
-import { dashSegments } from "./dashes";
+import { dashSegments, type Point } from "./dashes";
 import type { LoadedColumns } from "./columnArt";
 import type { DrawnUnit, Effect } from "./playback/interpolate";
 import type { LoadedSites } from "./siteArt";
@@ -180,16 +180,25 @@ export interface OverlayRoute {
   attack: Axial | null;
   /** A travel order's waypoints, drawn as small diamonds on the route. */
   waypoints: readonly Axial[];
+  /** Where a travel halts on known contact (a stop mark, on a strong route), else `null`. */
+  halt: Axial | null;
+  /** Per hex of `path`: out of sight this turn (that stretch is drawn dotted). */
+  unscouted: readonly boolean[];
 }
 
 /** A travel route previewed under the pointer before a click commits it. */
 export interface RoutePreview {
   from: Axial;
   path: readonly Axial[];
-  /** The route runs within auto-deploy distance of a hostile (drawn amber). */
-  caution: boolean;
   /** Waypoints on the previewed route (diamonds). */
   waypoints: readonly Axial[];
+  /**
+   * Where the column would halt on contact (a stop mark; the route is then drawn
+   * amber), else `null`.
+   */
+  halt: Axial | null;
+  /** Per hex of `path`: out of sight this turn (that stretch is drawn dotted). */
+  unscouted: readonly boolean[];
 }
 
 /** The hex under the pointer, with the pointer's position on the canvas. */
@@ -815,16 +824,27 @@ export class WorldRenderer {
     }
     const preview = this.preview;
     if (preview === null || preview.path.length === 0) return;
-    const color = preview.caution ? DISORDER_COLOR : 0x3d7eff;
+    const color = preview.halt !== null ? DISORDER_COLOR : 0x3d7eff;
     const pts = [preview.from, ...preview.path].map(centre);
-    const dashes = dashSegments(pts, px(9), px(6));
-    for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
-    g.stroke({ color: DARK, width: px(5), alpha: 0.45, cap: "round" });
-    for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
-    g.stroke({ color, width: px(3), alpha: 0.95, cap: "round" });
+    // Scouted stretches dashed, unscouted ones dotted (and a touch fainter).
+    const runs = fogRuns(pts, preview.unscouted);
+    const segments = (hidden: boolean) =>
+      runs
+        .filter((run) => run.hidden === hidden)
+        .flatMap((run) => (hidden ? dashSegments(run.pts, px(DOTS[0]), px(DOTS[1])) : dashSegments(run.pts, px(9), px(6))));
+    for (const hidden of [false, true]) {
+      const dashes = segments(hidden);
+      if (dashes.length === 0) continue;
+      const width = hidden ? px(4.5) : px(3);
+      for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
+      g.stroke({ color: DARK, width: width + px(2), alpha: 0.45, cap: "round" });
+      for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
+      g.stroke({ color, width, alpha: hidden ? 0.8 : 0.95, cap: "round" });
+    }
     const end = pts[pts.length - 1];
     g.circle(end.x, end.y, Math.max(px(6), HEX_SIZE * 0.24)).stroke({ color, width: px(2.5) });
     for (const w of preview.waypoints) drawWaypoint(g, centre(w), px, color, 0.95);
+    if (preview.halt !== null) drawHaltMark(g, preview.from, preview.path, preview.halt, px, 1);
   }
 
   // --- drawing ----------------------------------------------------------------------
@@ -1458,15 +1478,33 @@ export class WorldRenderer {
       const width = px(strong ? 4 : 2);
       const alpha = strong ? 0.95 : route.kind === "standing" ? 0.4 : 0.55;
       const pts = [route.from, ...route.path].map(centre);
+      // Scouted stretches solid, unscouted ones dotted: a column may meet something
+      // hidden there.
+      const runs = fogRuns(pts, route.unscouted);
       const line = () => {
-        g.moveTo(pts[0].x, pts[0].y);
-        for (const p of pts.slice(1)) g.lineTo(p.x, p.y);
+        for (const run of runs) {
+          if (run.hidden) continue;
+          g.moveTo(run.pts[0].x, run.pts[0].y);
+          for (const p of run.pts.slice(1)) g.lineTo(p.x, p.y);
+        }
       };
+      const dots = runs.filter((run) => run.hidden).flatMap((run) => dashSegments(run.pts, px(DOTS[0]), px(DOTS[1] + (strong ? 2 : 0))));
+      const dotted = () => {
+        for (const [x0, y0, x1, y1] of dots) g.moveTo(x0, y0).lineTo(x1, y1);
+      };
+      const dotWidth = width + px(1.5);
       line();
       g.stroke({ color: DARK, width: width + px(2), alpha: alpha * 0.6, cap: "round", join: "round" });
       line();
       g.stroke({ color, width, alpha, cap: "round", join: "round" });
+      if (dots.length > 0) {
+        dotted();
+        g.stroke({ color: DARK, width: dotWidth + px(2), alpha: alpha * 0.6, cap: "round" });
+        dotted();
+        g.stroke({ color, width: dotWidth, alpha: alpha * 0.85, cap: "round" });
+      }
       for (const w of route.waypoints) drawWaypoint(g, centre(w), px, color, strong ? 1 : alpha);
+      if (route.halt !== null && strong) drawHaltMark(g, route.from, route.path, route.halt, px, 1);
       const end = pts[pts.length - 1];
       if (route.attack !== null) {
         // Up and left of centre: a garrison's shield sits in the lower right.
@@ -1772,6 +1810,61 @@ export function drawOverview(map: WorldMap): HTMLCanvasElement {
 }
 
 /** A waypoint on a travel route: a small diamond, outlined so it reads on any ground. */
+/** Dotted-line pattern (dash, gap) in screen pixels: round caps make each dash a dot. */
+const DOTS: readonly [number, number] = [0.1, 8];
+
+/**
+ * A route's points split into runs by fog: `pts[0]` is the origin and the step
+ * into `pts[i + 1]` is unscouted when `unscouted[i]` is. Runs share their joining
+ * point, so the line stays continuous.
+ */
+function fogRuns(pts: readonly Point[], unscouted: readonly boolean[]): { pts: Point[]; hidden: boolean }[] {
+  const runs: { pts: Point[]; hidden: boolean }[] = [];
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const hidden = unscouted[i];
+    const last = runs[runs.length - 1];
+    if (last !== undefined && last.hidden === hidden) last.pts.push(pts[i + 1]);
+    else runs.push({ pts: [pts[i], pts[i + 1]], hidden });
+  }
+  return runs;
+}
+
+/**
+ * Where a column halts on contact: an amber hex ring with a stop bar across the
+ * route, facing the step it will not take.
+ */
+function drawHaltMark(
+  g: Graphics,
+  from: Axial,
+  path: readonly Axial[],
+  halt: Axial,
+  px: (n: number) => number,
+  alpha: number,
+): void {
+  const route = [from, ...path];
+  const i = route.findIndex((a) => axialEqual(a, halt));
+  const at = axialToPixel(halt.q, halt.r, HEX_SIZE);
+  const next = route[i + 1];
+  g.poly(hexCornerPoints(at.x, at.y, HEX_SIZE * 0.78))
+    .stroke({ color: DARK, width: px(5), alpha: alpha * 0.6 })
+    .poly(hexCornerPoints(at.x, at.y, HEX_SIZE * 0.78))
+    .stroke({ color: DISORDER_COLOR, width: px(3), alpha });
+  if (next === undefined) return;
+  // The bar sits on the edge towards the next hex, across the line.
+  const to = axialToPixel(next.q, next.r, HEX_SIZE);
+  const len = Math.hypot(to.x - at.x, to.y - at.y);
+  const ux = (to.x - at.x) / len;
+  const uy = (to.y - at.y) / len;
+  const cx = at.x + ux * HEX_SIZE * 0.55;
+  const cy = at.y + uy * HEX_SIZE * 0.55;
+  const half = Math.max(px(9), HEX_SIZE * 0.36);
+  const bar = () => g.moveTo(cx - uy * half, cy + ux * half).lineTo(cx + uy * half, cy - ux * half);
+  bar();
+  g.stroke({ color: DARK, width: px(8), alpha: alpha * 0.7, cap: "round" });
+  bar();
+  g.stroke({ color: DISORDER_COLOR, width: px(5), alpha, cap: "round" });
+}
+
 function drawWaypoint(
   g: Graphics,
   at: { x: number; y: number },

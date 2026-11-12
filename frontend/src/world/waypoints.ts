@@ -16,7 +16,8 @@ export type RouteFn = (from: Axial, to: Axial, via: readonly Axial[]) => Axial[]
 /** `TravelOrder.via`'s `max_length` in api/app/engine/models.py. */
 export const MAX_WAYPOINTS = 4;
 
-const at = (a: Axial) => `(${a.q},${a.r})`;
+/** A hex as the planner writes it in prose: "(q,r)". */
+export const at = (a: Axial) => `(${a.q},${a.r})`;
 
 /**
  * The waypoints after adding `hex` as the last one, with the route through them,

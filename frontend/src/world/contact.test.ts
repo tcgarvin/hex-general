@@ -3,7 +3,17 @@ import { describe, expect, it } from "vitest";
 import { axialDistance, hexKey } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
-import { contactSources, contactZone, runsIntoContact } from "./contact";
+import {
+  contactSources,
+  contactZone,
+  defaultPlanMode,
+  fogText,
+  haltHex,
+  haltText,
+  routeFog,
+  runsIntoContact,
+  stopShort,
+} from "./contact";
 import { decodeWorldMap, offsetToAxial } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -67,5 +77,86 @@ describe("contactSources", () => {
     // Four from the site, three from the gun that may stand beside it.
     expect(zone.has(hexKey(4, 6))).toBe(true);
     expect(zone.has(hexKey(4, 7))).toBe(false);
+  });
+});
+
+const line = (...qs: number[]) => qs.map((q) => ({ q, r: 0 }));
+
+describe("haltHex", () => {
+  const zone = contactZone([{ q: 10, r: 0 }], 3);
+
+  it("stops on the last route hex before the zone", () => {
+    expect(haltHex({ q: 0, r: 0 }, line(1, 2, 3, 4, 5, 6, 7, 8), zone)).toEqual({ q: 6, r: 0 });
+  });
+
+  it("stops where it stands when the first step is into the zone, or it is already inside", () => {
+    expect(haltHex({ q: 6, r: 0 }, line(7, 8), zone)).toEqual({ q: 6, r: 0 });
+    expect(haltHex({ q: 8, r: 0 }, line(9), zone)).toEqual({ q: 8, r: 0 });
+  });
+
+  it("is null for a route clear of the zone", () => {
+    expect(haltHex({ q: 0, r: 0 }, line(1, 2, 3), zone)).toBeNull();
+  });
+
+  it("reads as prose", () => {
+    expect(haltText({ q: 6, r: 0 }, { q: 0, r: 0 })).toBe("halts on contact at (6,0), disordered");
+    expect(haltText({ q: 6, r: 0 }, { q: 6, r: 0 })).toBe("halts on contact where it stands, disordered");
+  });
+});
+
+describe("defaultPlanMode", () => {
+  const zone = contactZone([{ q: 10, r: 0 }], 3);
+
+  it("is Move for a deployed unit inside the zone, Travel otherwise", () => {
+    expect(defaultPlanMode({ coord: { q: 8, r: 0 }, posture: "deployed" }, zone)).toBe("move");
+    expect(defaultPlanMode({ coord: { q: 8, r: 0 }, posture: "column" }, zone)).toBe("travel");
+    expect(defaultPlanMode({ coord: { q: 0, r: 0 }, posture: "deployed" }, zone)).toBe("travel");
+  });
+});
+
+describe("stopShort", () => {
+  const path = line(1, 2, 3, 4, 5, 6, 7, 8);
+
+  it("ends the travel at the halt, deployed, keeping only the waypoints before it", () => {
+    const order = { destination: { q: 8, r: 0 }, via: line(2, 5, 7) };
+    expect(stopShort(order, path, { q: 6, r: 0 })).toEqual({
+      kind: "travel",
+      destination: { q: 6, r: 0 },
+      via: line(2, 5),
+      onArrival: "deployed",
+    });
+  });
+
+  it("drops a waypoint on the halt hex itself", () => {
+    expect(stopShort({ destination: { q: 8, r: 0 }, via: line(6) }, path, { q: 6, r: 0 }).via).toEqual([]);
+  });
+
+  it("refuses a halt that is not on the route", () => {
+    expect(() => stopShort({ destination: { q: 8, r: 0 }, via: [] }, path, { q: 0, r: 5 })).toThrow();
+  });
+});
+
+describe("routeFog", () => {
+  const seen = (...qs: number[]) => new Set(qs.map((q) => hexKey(q, 0)));
+
+  it("finds nothing unscouted on a route in view", () => {
+    const fog = routeFog(line(1, 2), seen(0, 1, 2));
+    expect(fog).toEqual({ unscouted: [false, false], count: 0, trailing: false });
+    expect(fogText(fog)).toBeNull();
+  });
+
+  it("counts the unscouted tail", () => {
+    const fog = routeFog(line(1, 2, 3, 4), seen(1, 2));
+    expect(fog).toEqual({ unscouted: [false, false, true, true], count: 2, trailing: true });
+    expect(fogText(fog)).toBe("Last 2 hexes unscouted: a column that meets something hidden there halts, disordered.");
+    expect(fogText(routeFog(line(1, 2), seen(1)))).toMatch(/^Last hex unscouted: /);
+  });
+
+  it("words unscouted hexes in the middle and a route wholly out of sight", () => {
+    const gap = routeFog(line(1, 2, 3, 4), seen(1, 4));
+    expect(gap.trailing).toBe(false);
+    expect(fogText(gap)).toMatch(/^2 hexes of the route are unscouted: /);
+    expect(fogText(routeFog(line(1, 2, 3), seen()))).toMatch(/^All 3 hexes of the route are unscouted: /);
+    expect(fogText(routeFog(line(1), seen()))).toMatch(/^The destination is unscouted: /);
   });
 });

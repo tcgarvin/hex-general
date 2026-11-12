@@ -719,6 +719,23 @@ over it. Recruits count a barracks or workshop that finishes this turn, as the e
 turn replay withholds other players' private fields: the cost and stocks of a recruit, the
 shortage and pick behind a disband, and a gun the viewer cannot see (`app/engine/fog.py`).
 
+**As built (2026-11-11): contact and fog cues on travel routes.** After a playtest column
+halted three hexes out of a town, came out disordered and was sent on by Travel again (which
+broke off at once), the planner keeps its contact warning past the click. Against the zone it
+knows (visible hostiles, and still-garrisoned neutral sites with the hexes beside a garrison of
+several), a staged or standing travel's halt hex is the last route hex, origin included,
+before the first inside the zone (`haltHex` in `frontend/src/world/contact.ts`); the selected
+route and the hover preview mark it with an amber ring and a stop bar, and the hover tip, the
+unit panel's "Ordered" line and the Army list say "halts on contact at (q,r), disordered". The
+unit panel offers "Stop short at (q,r), deploy clean", which rewrites the travel to end on the
+halt hex deployed, keeping the waypoints before it (`stopShort`). Route hexes outside the
+viewer's sight are unscouted: drawn dotted on the preview and on staged and standing routes,
+and counted in the hover tip and unit panel (`routeFog`, `fogText`), since anything hidden
+there halts the column too. A deployed unit already inside the zone opens in Move rather than
+Travel (`defaultPlanMode`; Escape and the stay-put orders return to it), and the unit panel
+warns if a Travel is still staged for it. Planner cues only; the engine rules (§4.5, §5) are
+unchanged.
+
 ## 12. Implementation phases
 
 | Phase | Delivers | Gate |

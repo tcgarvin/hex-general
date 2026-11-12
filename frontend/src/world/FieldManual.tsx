@@ -492,8 +492,14 @@ function ColumnsPage() {
       <P>
         A column halts and deploys when its next step would bring it within <N>{DEPLOY_DISTANCE}</N> hexes of a hostile
         unit (even one hidden in woods), when an enemy comes within <N>{DEPLOY_DISTANCE}</N> of it, or when it is attacked
-        or shelled. Neutral garrisons count. While you plan a Travel order, the hover note warns when the route runs into
-        contact.
+        or shelled. Neutral garrisons count.
+      </P>
+      <P>
+        While you plan a Travel order, and after you give it, the route shows where the column would halt on contact
+        (an amber ring with a stop bar), and the hover note, the unit panel and the Army list say so. Stop short ends
+        the travel on that hex and deploys there by choice, in order. Route hexes you cannot see this turn are drawn
+        dotted: something hidden there halts the column too. A deployed unit already within{" "}
+        <N>{DEPLOY_DISTANCE}</N> hexes of contact opens in Move, since a Travel would pack it and halt it at once.
       </P>
       <P>
         A column that deploys on contact is <b>disordered</b> for the next turn: −<N>{R.disorderDefensePenalty}</N>{" "}

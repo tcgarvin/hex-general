@@ -213,7 +213,7 @@ function handleKey(e: KeyboardEvent, o: HotkeyOptions, renderer: WorldRenderer):
   if (kind === "travel" || kind === "move" || kind === "barrage") {
     planning.setMode(kind);
   } else {
-    planning.setMode("travel");
+    planning.setMode(planning.defaultMode);
     planning.setOrder(unit.id, { kind } as { kind: "rest" | "hold" });
   }
   return true;

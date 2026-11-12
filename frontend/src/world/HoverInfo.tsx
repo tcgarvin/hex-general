@@ -1,6 +1,7 @@
 // What the pointer is over: a tooltip for the hovered hex after a short dwell,
-// the travel route a click would order (dashed on the board, with its ETA and a
-// contact warning), and the short notice a refused click leaves.
+// the travel route a click would order (dashed on the board, with its ETA, where
+// it would halt on contact and how much of it is unscouted), and the short notice
+// a refused click leaves.
 //
 // It listens to the renderer, which reports only hex changes, and keeps its own
 // state, so moving the mouse re-renders this small component and never the shell.
@@ -11,7 +12,7 @@ import { axialDistance, hexKey } from "@/board/hex";
 import { Glyph } from "@/components/Glyph";
 
 import { attackPreview, barragePreview, type CombatPreview } from "./combatView";
-import { DEPLOY_DISTANCE } from "./contact";
+import { fogText, haltText } from "./contact";
 import type { Designate } from "./designations";
 import { hexInfo } from "./hexInfo";
 import type { WorldView } from "./useWorld";
@@ -94,10 +95,19 @@ export function HoverInfo({
     computed.shift === shift
       ? computed.preview
       : null;
+  const fog = preview === null ? null : fogText(preview.fog);
   const hasTravel = unit !== null && planning.plan.orders[unit.id]?.kind === "travel";
   useEffect(() => {
     renderer.setPreview(
-      preview === null ? null : { from: preview.from, path: preview.path, caution: preview.caution, waypoints: preview.waypoints },
+      preview === null
+        ? null
+        : {
+            from: preview.from,
+            path: preview.path,
+            waypoints: preview.waypoints,
+            halt: preview.halt,
+            unscouted: preview.fog.unscouted,
+          },
     );
   }, [renderer, preview]);
   useEffect(() => () => renderer.setPreview(null), [renderer]);
@@ -160,9 +170,8 @@ export function HoverInfo({
               ) : (
                 hasTravel && <p className="text-wood-500">Click: new destination · Shift: pass through here</p>
               )}
-              {preview.caution && (
-                <p className="text-invalid">Columns deploy on contact about {DEPLOY_DISTANCE} hexes out</p>
-              )}
+              {preview.halt !== null && <p className="text-invalid">{capitalize(haltText(preview.halt, preview.from))}</p>}
+              {fog !== null && <p className="text-[#9a6510]">{fog}</p>}
             </div>
           )}
           {info !== null && (
@@ -190,6 +199,8 @@ export function HoverInfo({
     </>
   );
 }
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Whether Shift is held (for previews that change with it); false again when the window loses focus. */
 function useShiftHeld(): boolean {

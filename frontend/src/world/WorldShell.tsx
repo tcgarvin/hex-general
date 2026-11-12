@@ -18,6 +18,7 @@ import type { components } from "@/lib/api/schema";
 import type { GlyphName } from "@/ui-art/glyphs";
 
 import { NEUTRAL_OWNER } from "./colors";
+import { DEPLOY_DISTANCE, fogText, haltText, stopShort } from "./contact";
 import type { Designate } from "./designations";
 import {
   economyOf,
@@ -35,7 +36,7 @@ import {
 import { FieldManual, type ManualSection } from "./FieldManual";
 import { HoverInfo } from "./HoverInfo";
 import { attackPreview, barragePreview } from "./combatView";
-import { MAX_WAYPOINTS } from "./waypoints";
+import { at, MAX_WAYPOINTS } from "./waypoints";
 import { MapControls } from "./MapControls";
 import { withdrawalWarning } from "./moveRules";
 import { consoleHeight, useMinimapSize } from "./minimapConsole";
@@ -634,7 +635,6 @@ interface SwapInfo {
 
 /** A unit's name in prose: its designation ("2nd Infantry"), else type and id. */
 const unitTag = (u: Unit, designate: Designate) => designate(u.id) ?? `${UNIT_LABEL[u.type]} #${u.id}`;
-const at = (a: Axial) => `(${a.q},${a.r})`;
 
 function orderText(
   order: WorldOrder | undefined,
@@ -644,12 +644,15 @@ function orderText(
 ): string {
   // Kept short: beside a designation ("3rd Infantry") and the HP pips the Army row
   // has room for about a dozen characters. The unit panel says what "no orders" means.
+  // A halt on contact leads, so a truncated Army row still shows it.
   if (order === undefined) {
     if (route?.kind !== "standing") return "no orders";
+    if (route.halt !== null) return `travelling: ${haltText(route.halt, route.from)}`;
     return route.eta !== null && route.eta <= 1 ? "arriving this turn" : `travelling${turnsText(route.eta)}`;
   }
   switch (order.kind) {
     case "travel": {
+      if (route !== undefined && route.halt !== null) return `travel: ${haltText(route.halt, route.from)}`;
       const eta = route?.eta ?? null;
       return eta !== null && eta <= 1 ? "travel, this turn" : `travel${turnsText(eta)}`;
     }
@@ -1037,6 +1040,14 @@ function UnitPanel({
   const zoc = useMemo(() => hostileZoc(view.state.units, view.your_slot), [view.state.units, view.your_slot]);
   const neighbours = swapNeighbours(unit, own).filter((u) => u.id !== swap?.partner.id);
   const warning = withdrawalWarning(unit, order, view.state.units, view.your_slot, planning.hostile);
+  // A deployed unit already within contact distance (it opens in Move) told to Travel.
+  const packIntoContact = order?.kind === "travel" && planning.defaultMode === "move";
+  const travelling = route !== undefined && (route.kind === "travel" || route.kind === "standing");
+  const fog = travelling ? fogText(route.fog) : null;
+  const shortStop =
+    order?.kind === "travel" && route !== undefined && route.halt !== null && !axialEqual(route.halt, unit.coord)
+      ? route.halt
+      : null;
   const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
   // What the staged attack or barrage is expected to do, as the hover tip showed it.
   const expected =
@@ -1051,7 +1062,7 @@ function UnitPanel({
       planning.setMode(kind);
       return;
     }
-    planning.setMode("travel");
+    planning.setMode(planning.defaultMode);
     planning.setOrder(unit.id, { kind } as WorldOrder);
   };
 
@@ -1086,7 +1097,7 @@ function UnitPanel({
           ? KIND_HELP[planning.mode]
           : order === undefined
             ? route?.kind === "standing"
-              ? `Carrying on its travel order: ${etaText(route.eta)}. Click a hex to send it elsewhere.`
+              ? `Carrying on its travel order: ${route.halt !== null ? haltText(route.halt, route.from) : etaText(route.eta)}. Click a hex to send it elsewhere.`
               : `No orders: it stays put, without the Hold bonus. ${KIND_HELP.travel}`
             : `Ordered: ${orderText(order, route, swap, designate)}.`}
       </p>
@@ -1099,6 +1110,22 @@ function UnitPanel({
         </div>
       )}
       {warning !== null && <p className="mt-1 text-xs font-semibold text-invalid">{warning}.</p>}
+      {packIntoContact && (
+        <p className="mt-1 text-xs font-semibold text-invalid">
+          Within {DEPLOY_DISTANCE} hexes of contact: it would pack, then halt again at once, disordered. Use Move.
+        </p>
+      )}
+      {fog !== null && <p className="mt-1 text-xs text-[#9a6510]">{fog}</p>}
+      {order?.kind === "travel" && shortStop !== null && route !== undefined && (
+        <div className="mt-2 text-xs">
+          <Chip
+            onClick={() => planning.setOrder(unit.id, stopShort(order, route.path, shortStop))}
+            title="End the travel on the last hex before contact and deploy there by choice, in order"
+          >
+            Stop short at {at(shortStop)}, deploy clean
+          </Chip>
+        </div>
+      )}
       {order?.kind === "travel" && (
         <div className="mt-2 flex items-center gap-2 text-xs">
           <span>On arrival</span>
