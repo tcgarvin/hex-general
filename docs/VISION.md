@@ -281,7 +281,10 @@ build until the cutover deploy, and the turn-clock infra
    403. The API requires `email_verified` in the OIDC token, which is unverified for
    Scheduler's tokens until this run. Then `verify-stack` (it checks the world routes,
    the clock config and the live commit).
-7. Create the world with `scripts/prod-world.py create --slots 60 --bots 30`.
+7. Create the world on the admin screen (`/admin` on the site, signed in with the
+   owner's Google account; the form is prefilled with 60 slots, 30 bots and the
+   `twice_daily` clock). `scripts/prod-world.py create --slots 60 --bots 30` stays as
+   the fallback.
 8. Join, submit a plan, and watch the first 01:00 or 13:00 America/New_York tick.
 9. Add alerting on clock failures (the endpoint answers 500 when a world fails).
 

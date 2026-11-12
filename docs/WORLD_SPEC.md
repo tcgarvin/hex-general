@@ -567,7 +567,7 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
   The caller is Cloud Scheduler with a Google OIDC token for `hex-clock@`, verified
   in-app (`app/games/scheduler_auth.py`: Google signature, issuer, audience, verified
   email), because the API is public. With `CLOCK_AUDIENCE` or `CLOCK_INVOKER_EMAIL`
-  unset the endpoint answers 503. `POST /dev/clock` runs the same sweep for a dev, and
+  unset the endpoint answers 503. `POST /dev/clock` runs the same sweep for an admin, and
   `python -m app.world.tick_loop --game ID --every 300` is a fast clock for a local
   playtest. The `WorldView` carries `clock` and `next_tick_at` for a countdown.
 - **Routes ✅ (built 2026-11-09, `app/games/world_routes.py`):**
@@ -579,8 +579,20 @@ it map. Embedding that in every `games.state` and `turns.state_after` row would 
     `GameState` minus the map.
   - `GET /worlds/{id}/map` returns the `CompactMap` with `Cache-Control: immutable`.
   - `GET /worlds/{id}/turns/{n}` returns the fogged replay.
-  - Dev-only: `POST /dev/worlds` creates a world and `POST /dev/worlds/{id}/tick`
-    is the manual clock; `DELETE /dev/worlds/{id}` removes a world.
+  - Admin-only (built 2026-11-11, the admin screen at `/admin`): `GET /dev/worlds`
+    lists every world whatever its status with its size, seats (humans, bots,
+    open), turn, clock, next tick, created time and seed, plus the clock's zone and
+    hours; `POST /dev/worlds` creates a world (bots may not exceed slots);
+    `POST /dev/worlds/{id}/tick` is the manual clock; `DELETE /dev/worlds/{id}`
+    removes a world (CORS allows DELETE for the browser); `POST /dev/clock` runs the
+    sweep. The `/dev` prefix is historical. An admin is a dev (`DEV_USER_IDS`) or an
+    account on `ADMIN_USER_IDS` (`require_admin` in `app/games/deps.py`, checked on
+    the real account). The admin list grants no impersonation: `X-Dev-Profile` stays
+    dev-only, and `GET /me` reports `is_dev` and `is_admin`. Production sets no
+    `ADMIN_USER_IDS`: the owner is an admin as a dev, and the seeded `playtest*`
+    accounts are not admins there because they are password logins and the
+    production site offers Google sign-in only, so they could not reach the screen.
+    Adding an account later is one entry in `api.yml`'s `--set-env-vars`.
 
   *Retired 2026-11-10 (in code, not yet deployed):* the server runs only world games.
   The 2-player `/games` routes, the match service paths, `app/games/routes.py`

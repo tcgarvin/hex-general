@@ -152,8 +152,14 @@ freshly rendered montage is immediately reachable at
 1. Open the App URL printed by `dev.sh up` and **sign in with email + password**:
    - `dev1@hex.local` / password in `api/app/dev_seed.py` (`DEV_PASSWORD`).
 2. Confirm you're a dev: `GET /me` reports `is_dev: true` (the switcher appears).
+   Every dev is also an admin (`is_admin: true`), so the local dev accounts get the
+   admin screen (`/admin`, linked from the account menu and the worlds page) with no
+   extra setup. `ADMIN_USER_IDS` in `api/.env` can add non-dev admins; it is not
+   needed locally. The admin screen lists every local world, including other
+   people's playtests: only tick or delete worlds you created.
 3. Get a world to play. The start screen (`/`) lists open worlds with a "Join" button;
-   a fresh local database has none, so create one first (dev-only API, below).
+   a fresh local database has none, so create one first (on `/admin`, or the admin
+   API below).
    Once you hold a seat, `/` redirects to `/world/<game_id>`.
 
 Create, join and tick a world from the shell with `scripts/game-setup.sh` (it reads
@@ -163,10 +169,10 @@ this worktree's URLs from `frontend/.env.local` and talks only to the local stac
 ```bash
 ./scripts/game-setup.sh create-world --slots 8 --bots 4   # prints the world JSON (game_id); does not seat you
 ./scripts/game-setup.sh join <game_id>                     # seat dev1 in the first open slot
-./scripts/game-setup.sh tick <game_id>                     # resolve a turn now (dev-only)
+./scripts/game-setup.sh tick <game_id>                     # resolve a turn now (admin)
 ./scripts/game-setup.sh active                             # {"active_world": {"game_id", "slot"} | null}
 ./scripts/game-setup.sh clear                              # delete the caller's active world
-./scripts/game-setup.sh delete-world <game_id>             # delete any world (dev-only)
+./scripts/game-setup.sh delete-world <game_id>             # delete any world (admin)
 ```
 
 `create-world` defaults to `--slots 8 --bots 4 --seed 0 --clock manual`
@@ -185,7 +191,7 @@ An account can hold only one active world, so checks that need a new world use
 
 Local worlds are disposable: do not add dev accounts to get a fresh world. Run
 `scripts/game-setup.sh clear <email>` or `scripts/game-setup.sh delete-world <id> [email]`
-(both call the dev-only `DELETE /dev/worlds/{id}`, which removes the world's game,
+(both call the admin `DELETE /dev/worlds/{id}`, which removes the world's game,
 players, turns and map).
 
 To add or rename accounts, edit `DEV_USER_EMAILS` in `api/app/dev_seed.py` and

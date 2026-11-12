@@ -86,8 +86,8 @@ to `dev1@hex.local`; diagnostics go to stderr, JSON to stdout.
 Raw endpoints (under `$API`, bearer required) if you need something the script
 doesn't cover: `GET /worlds`, `GET /worlds/active`, `GET /worlds/{id}`,
 `POST /worlds/{id}/join`, `GET /worlds/{id}/map`, `POST /worlds/{id}/orders`,
-`GET /worlds/{id}/turns/{n}`, and dev-only `POST /dev/worlds`,
-`POST /dev/worlds/{id}/tick`, `DELETE /dev/worlds/{id}`. Mint a token with
+`GET /worlds/{id}/turns/{n}`, and admin-only `GET /dev/worlds`, `POST /dev/worlds`,
+`POST /dev/worlds/{id}/tick`, `DELETE /dev/worlds/{id}` (every dev is an admin). Mint a token with
 `TOKEN=$(./scripts/game-setup.sh token)`.
 
 ---
