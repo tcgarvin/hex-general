@@ -40,6 +40,126 @@
         "title": "ActiveWorldView",
         "type": "object"
       },
+      "AdminWorld": {
+        "description": "One world as the admin screen lists it (``GET /dev/worlds``).\n\nEvery world, whatever its status. ``slots`` is how many seats the map has;\n``humans`` and ``bots`` hold seats and ``open`` is what is left to join.\n``width`` x ``height`` is the map in hexes. ``seed`` is the generator seed the\nmap was made from (``None``: the map was not made by the generator).\n``next_tick_at`` is as in `WorldView`.",
+        "properties": {
+          "bots": {
+            "title": "Bots",
+            "type": "integer"
+          },
+          "clock": {
+            "enum": [
+              "manual",
+              "twice_daily"
+            ],
+            "title": "Clock",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "humans": {
+            "title": "Humans",
+            "type": "integer"
+          },
+          "next_tick_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Tick At"
+          },
+          "open": {
+            "title": "Open",
+            "type": "integer"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "slots": {
+            "title": "Slots",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "lobby",
+              "active",
+              "finished"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "game_id",
+          "status",
+          "turn",
+          "slots",
+          "width",
+          "height",
+          "humans",
+          "bots",
+          "open",
+          "seed",
+          "clock",
+          "next_tick_at",
+          "created_at"
+        ],
+        "title": "AdminWorld",
+        "type": "object"
+      },
+      "AdminWorldList": {
+        "description": "Returned by ``GET /dev/worlds``: every world, newest first, and the clock.",
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/ClockSchedule"
+          },
+          "worlds": {
+            "items": {
+              "$ref": "#/components/schemas/AdminWorld"
+            },
+            "title": "Worlds",
+            "type": "array"
+          }
+        },
+        "required": [
+          "worlds",
+          "schedule"
+        ],
+        "title": "AdminWorldList",
+        "type": "object"
+      },
       "ArmySize": {
         "description": "The army size rule: ``base + per_barracks \u00d7 barracks level + held sites \u00f7\nsites_per_point``, never above ``ceiling``. Your own base is not a held site.",
         "properties": {
@@ -269,6 +389,28 @@
           "skipped"
         ],
         "title": "ClockRunView",
+        "type": "object"
+      },
+      "ClockSchedule": {
+        "description": "When the scheduled clock resolves ``twice_daily`` worlds: these whole hours\nof local time in the IANA ``zone``.",
+        "properties": {
+          "hours": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Hours",
+            "type": "array"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "zone",
+          "hours"
+        ],
+        "title": "ClockSchedule",
         "type": "object"
       },
       "ColumnHeld": {
@@ -662,7 +804,7 @@
       },
       "CreateWorldRequest": {
         "additionalProperties": false,
-        "description": "Body for ``POST /dev/worlds``: the world to generate and how many bots.",
+        "description": "Body for ``POST /dev/worlds``: the world to generate and how many bots.\n\n``bots`` may not exceed ``slots`` (each bot holds a slot); the generator\nrefuses a slot count it cannot fit, as a 422.",
         "properties": {
           "bots": {
             "minimum": 0.0,
@@ -960,8 +1102,12 @@
         "type": "object"
       },
       "MeView": {
-        "description": "The authenticated caller's own identity and dev role.\n\nBacks the frontend dev profile switcher: ``is_dev`` decides whether the switcher\nis shown, and reflects the *real* account (impersonation is not applied).",
+        "description": "The authenticated caller's own identity, dev role and admin role.\n\nBacks the frontend dev profile switcher and the admin screen: ``is_dev``\ndecides whether the switcher is shown and ``is_admin`` whether the admin link\nand page are (every dev is an admin). Both reflect the *real* account\n(impersonation is not applied); the API checks the roles again on every call.",
         "properties": {
+          "is_admin": {
+            "title": "Is Admin",
+            "type": "boolean"
+          },
           "is_dev": {
             "title": "Is Dev",
             "type": "boolean"
@@ -973,7 +1119,8 @@
         },
         "required": [
           "user_id",
-          "is_dev"
+          "is_dev",
+          "is_admin"
         ],
         "title": "MeView",
         "type": "object"
@@ -2532,25 +2679,9 @@
   "paths": {
     "/dev/clock": {
       "post": {
-        "description": "Run the scheduler's sweep now (dev-only): resolves whatever is due.",
+        "description": "Run the scheduler's sweep now (admin-only): resolves whatever is due.",
         "operationId": "dev_clock_dev_clock_post",
         "parameters": [
-          {
-            "in": "header",
-            "name": "x-dev-profile",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Profile"
-            }
-          },
           {
             "in": "header",
             "name": "authorization",
@@ -2565,6 +2696,22 @@
                 }
               ],
               "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
             }
           }
         ],
@@ -2648,10 +2795,26 @@
       }
     },
     "/dev/worlds": {
-      "post": {
-        "description": "Generate a world and fill ``bots`` slots with world bots (dev-only).",
-        "operationId": "create_world_dev_worlds_post",
+      "get": {
+        "description": "Every world whatever its status, with its size and seats (admin-only).",
+        "operationId": "list_admin_worlds_dev_worlds_get",
         "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
           {
             "in": "header",
             "name": "x-dev-profile",
@@ -2667,7 +2830,39 @@
               ],
               "title": "X-Dev-Profile"
             }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminWorldList"
+                }
+              }
+            },
+            "description": "Successful Response"
           },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Admin Worlds",
+        "tags": [
+          "worlds"
+        ]
+      },
+      "post": {
+        "description": "Generate a world and fill ``bots`` slots with world bots (admin-only).",
+        "operationId": "create_world_dev_worlds_post",
+        "parameters": [
           {
             "in": "header",
             "name": "authorization",
@@ -2682,6 +2877,22 @@
                 }
               ],
               "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
             }
           }
         ],
@@ -2725,7 +2936,7 @@
     },
     "/dev/worlds/{game_id}": {
       "delete": {
-        "description": "Delete a world and its players, orders, turns and map (dev-only).",
+        "description": "Delete a world and its players, orders, turns and map (admin-only).",
         "operationId": "delete_world_dev_worlds__game_id__delete",
         "parameters": [
           {
@@ -2735,22 +2946,6 @@
             "schema": {
               "title": "Game Id",
               "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "x-dev-profile",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Profile"
             }
           },
           {
@@ -2767,6 +2962,22 @@
                 }
               ],
               "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
             }
           }
         ],
@@ -2793,7 +3004,7 @@
     },
     "/dev/worlds/{game_id}/tick": {
       "post": {
-        "description": "Resolve the world's current turn now: the dev manual clock.",
+        "description": "Resolve the world's current turn now: the manual clock (admin-only).",
         "operationId": "tick_world_dev_worlds__game_id__tick_post",
         "parameters": [
           {
@@ -2803,22 +3014,6 @@
             "schema": {
               "title": "Game Id",
               "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "x-dev-profile",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Profile"
             }
           },
           {
@@ -2835,6 +3030,22 @@
                 }
               ],
               "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-dev-profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Profile"
             }
           }
         ],
@@ -2941,7 +3152,7 @@
     },
     "/me": {
       "get": {
-        "description": "Return the authenticated caller's own identity and dev role.\n\nReports the *real* account (dev impersonation is not applied), so the frontend\ndev switcher stays visible for a dev even while they act as another user.",
+        "description": "Return the authenticated caller's own identity, dev role and admin role.\n\nReports the *real* account (dev impersonation is not applied), so the frontend\ndev switcher and admin link stay visible for a dev even while they act as\nanother user.",
         "operationId": "me_me_get",
         "parameters": [
           {

@@ -19,6 +19,7 @@ from app.engine.models import GameMap, GameState
 from app.engine.victory import VictoryStatus
 from app.games.repo import (
     KEEP,
+    AdminWorldRow,
     Clock,
     GameRecord,
     Keep,
@@ -44,6 +45,7 @@ class FakeGameRepo:
         self._turns: dict[tuple[str, int], TurnRecord] = {}
         self._maps: dict[str, GameMap] = {}
         self._map_slots: dict[str, list[Axial]] = {}
+        self._map_params: dict[str, dict[str, Any] | None] = {}
 
     def create_map(
         self,
@@ -55,6 +57,7 @@ class FakeGameRepo:
         # Round-trip through the storage encoding, as the real table does.
         self._maps[map_id] = decode_map(encode_map(game_map))
         self._map_slots[map_id] = list(slots)
+        self._map_params[map_id] = params
         return map_id
 
     def get_map(self, map_id: str) -> GameMap:
@@ -125,6 +128,33 @@ class FakeGameRepo:
             )
             for g in sorted(worlds, key=lambda g: self._created_at[g.id], reverse=True)
         ]
+
+    def list_admin_worlds(self) -> list[AdminWorldRow]:
+        rows = []
+        for g in sorted(
+            self._games.values(), key=lambda g: self._created_at[g.id], reverse=True
+        ):
+            game_map = self._maps[g.map_id]
+            params = self._map_params[g.map_id]
+            players = self.list_players(g.id)
+            bots = sum(1 for p in players if p.bot_policy is not None)
+            rows.append(
+                AdminWorldRow(
+                    id=g.id,
+                    status=g.status,
+                    turn=g.state.turn,
+                    clock=g.clock,
+                    next_tick_at=g.next_tick_at,
+                    created_at=self._created_at[g.id],
+                    width=game_map.width,
+                    height=game_map.height,
+                    slots=len(self._map_slots[g.map_id]),
+                    seed=None if params is None else params["seed"],
+                    humans=len(players) - bots,
+                    bots=bots,
+                )
+            )
+        return rows
 
     def list_due_worlds(self, now: datetime) -> list[str]:
         due = [
@@ -219,3 +249,4 @@ class FakeGameRepo:
         if not any(g.map_id == map_id for g in self._games.values()):
             del self._maps[map_id]
             del self._map_slots[map_id]
+            del self._map_params[map_id]

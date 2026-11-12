@@ -8,7 +8,7 @@ from app import __version__
 from app.accounts import list_dev_profiles
 from app.config import get_settings
 from app.db import get_supabase_client
-from app.games.auth import AuthIdentity, is_dev
+from app.games.auth import AuthIdentity, is_admin, is_dev
 from app.games.deps import real_identity
 from app.games.schemas import DevProfile, MeView
 from app.games.world_routes import clock_router
@@ -21,7 +21,8 @@ app = FastAPI(title="Hex General API", version=__version__)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=get_settings().cors_allow_origin_regex,
-    allow_methods=["GET", "POST"],
+    # DELETE for the admin screen's world teardown (DELETE /dev/worlds/{id}).
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -49,12 +50,17 @@ def version() -> dict[str, str]:
 
 @app.get("/me")
 def me(identity: AuthIdentity = Depends(real_identity)) -> MeView:
-    """Return the authenticated caller's own identity and dev role.
+    """Return the authenticated caller's own identity, dev role and admin role.
 
     Reports the *real* account (dev impersonation is not applied), so the frontend
-    dev switcher stays visible for a dev even while they act as another user.
+    dev switcher and admin link stay visible for a dev even while they act as
+    another user.
     """
-    return MeView(user_id=identity.user_id, is_dev=is_dev(identity.user_id))
+    return MeView(
+        user_id=identity.user_id,
+        is_dev=is_dev(identity.user_id),
+        is_admin=is_admin(identity.user_id),
+    )
 
 
 @app.get("/dev/profiles")

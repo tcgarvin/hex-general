@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.engine.economy_rules import Building
 from app.engine.fog import ReplayEvent
@@ -93,14 +93,17 @@ class PlayerCredentials(BaseModel):
 
 
 class MeView(BaseModel):
-    """The authenticated caller's own identity and dev role.
+    """The authenticated caller's own identity, dev role and admin role.
 
-    Backs the frontend dev profile switcher: ``is_dev`` decides whether the switcher
-    is shown, and reflects the *real* account (impersonation is not applied).
+    Backs the frontend dev profile switcher and the admin screen: ``is_dev``
+    decides whether the switcher is shown and ``is_admin`` whether the admin link
+    and page are (every dev is an admin). Both reflect the *real* account
+    (impersonation is not applied); the API checks the roles again on every call.
     """
 
     user_id: str
     is_dev: bool
+    is_admin: bool
 
 
 class DevProfile(BaseModel):
@@ -180,17 +183,34 @@ class WorldState(BaseModel):
         return cls(**{name: getattr(state, name) for name in cls.model_fields})
 
 
+MAX_WORLD_SLOTS = 400
+"""Most slots a created world may have (the generator is sized up to here)."""
+
+
 class CreateWorldRequest(BaseModel):
-    """Body for ``POST /dev/worlds``: the world to generate and how many bots."""
+    """Body for ``POST /dev/worlds``: the world to generate and how many bots.
+
+    ``bots`` may not exceed ``slots`` (each bot holds a slot); the generator
+    refuses a slot count it cannot fit, as a 422.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    slots: int = Field(ge=1, le=400)
+    slots: int = Field(ge=1, le=MAX_WORLD_SLOTS)
     seed: int = 0
     bots: int = Field(ge=0)
     # "manual" moves only when ticked (dev); "twice_daily" resolves at 01:00 and
     # 13:00 New York time on the scheduler.
     clock: Literal["manual", "twice_daily"] = "manual"
+
+    @model_validator(mode="after")
+    def _bots_fit(self) -> CreateWorldRequest:
+        if self.bots > self.slots:
+            raise ValueError(
+                f"bots ({self.bots}) cannot exceed slots ({self.slots}): "
+                "each bot holds a slot"
+            )
+        return self
 
 
 class WorldCreated(BaseModel):
@@ -220,6 +240,46 @@ class WorldView(BaseModel):
     # When the current turn resolves: the scheduled clock's next tick, or the time
     # a local tick loop announced on a manual world; None when nothing has said.
     next_tick_at: datetime | None
+
+
+class AdminWorld(BaseModel):
+    """One world as the admin screen lists it (``GET /dev/worlds``).
+
+    Every world, whatever its status. ``slots`` is how many seats the map has;
+    ``humans`` and ``bots`` hold seats and ``open`` is what is left to join.
+    ``width`` x ``height`` is the map in hexes. ``seed`` is the generator seed the
+    map was made from (``None``: the map was not made by the generator).
+    ``next_tick_at`` is as in `WorldView`.
+    """
+
+    game_id: str
+    status: Literal["lobby", "active", "finished"]
+    turn: int
+    slots: int
+    width: int
+    height: int
+    humans: int
+    bots: int
+    open: int
+    seed: int | None
+    clock: Literal["manual", "twice_daily"]
+    next_tick_at: datetime | None
+    created_at: datetime
+
+
+class ClockSchedule(BaseModel):
+    """When the scheduled clock resolves ``twice_daily`` worlds: these whole hours
+    of local time in the IANA ``zone``."""
+
+    zone: str
+    hours: list[int]
+
+
+class AdminWorldList(BaseModel):
+    """Returned by ``GET /dev/worlds``: every world, newest first, and the clock."""
+
+    worlds: list[AdminWorld]
+    schedule: ClockSchedule
 
 
 class ClockRunView(BaseModel):

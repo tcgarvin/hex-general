@@ -13,18 +13,19 @@
 #   scripts/game-setup.sh active [email]                 caller's active world (JSON)
 #   scripts/game-setup.sh create-world [--slots N] [--bots N] [--seed N]
 #                         [--clock manual|twice_daily] [email]
-#                                                        create a world (dev-only API route)
+#                                                        create a world (admin API route)
 #   scripts/game-setup.sh join <game_id> [email]         seat the caller in a world
-#   scripts/game-setup.sh tick <game_id> [email]         resolve a world's turn now (dev-only)
+#   scripts/game-setup.sh tick <game_id> [email]         resolve a world's turn now (admin)
 #   scripts/game-setup.sh clear [email]                  delete the caller's active world
-#   scripts/game-setup.sh delete-world <game_id> [email] delete a world outright (dev-only)
+#   scripts/game-setup.sh delete-world <game_id> [email] delete a world outright (admin)
 #   scripts/game-setup.sh token [email]                  print a bearer token (for curl)
 #
 # `clear` and `delete-world` exit non-zero if the account still has an active world.
 # `create-world` defaults: --slots 8 --bots 4 --seed 0 --clock manual; it prints the
 # created world's JSON (includes game_id) to stdout and does NOT seat the caller
-# (follow with `join`). `join` and `tick` print the API response JSON. The dev-only
-# routes need a dev account (the seeded @hex.local accounts are devs locally).
+# (follow with `join`). `join` and `tick` print the API response JSON. The admin
+# routes need an admin (every dev is one; the seeded @hex.local accounts are devs
+# locally).
 # email defaults to dev1@hex.local; diagnostics go to stderr.
 set -uo pipefail
 
@@ -75,7 +76,7 @@ api_post() {  # $1 = path, $2 = JSON body (defaults to an empty object)
 
 active_world_id() { api_get /worlds/active | json_get active_world.game_id; }
 
-delete_world() {  # $1 = world game id; dev-only route, deletes game + map
+delete_world() {  # $1 = world game id; admin route, deletes game + map
   local code
   code="$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$API/dev/worlds/$1" \
     -H "Authorization: Bearer $TOKEN")"
@@ -155,6 +156,6 @@ case "$CMD" in
     need_world_id; TOKEN="$(mint_token "$EMAIL")"; delete_world "$WORLD_ID"
     [ "$(active_world_id)" != "$WORLD_ID" ] || die "account still in world $WORLD_ID" ;;
   ""|-h|--help|help)
-    sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
+    sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
   *) die "unknown command: $CMD (try: active create-world join tick clear delete-world token)" ;;
 esac

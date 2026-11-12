@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Dev Clock
-         * @description Run the scheduler's sweep now (dev-only): resolves whatever is due.
+         * @description Run the scheduler's sweep now (admin-only): resolves whatever is due.
          */
         post: operations["dev_clock_dev_clock_post"];
         delete?: never;
@@ -54,11 +54,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Admin Worlds
+         * @description Every world whatever its status, with its size and seats (admin-only).
+         */
+        get: operations["list_admin_worlds_dev_worlds_get"];
         put?: never;
         /**
          * Create World
-         * @description Generate a world and fill ``bots`` slots with world bots (dev-only).
+         * @description Generate a world and fill ``bots`` slots with world bots (admin-only).
          */
         post: operations["create_world_dev_worlds_post"];
         delete?: never;
@@ -79,7 +83,7 @@ export interface paths {
         post?: never;
         /**
          * Delete World
-         * @description Delete a world and its players, orders, turns and map (dev-only).
+         * @description Delete a world and its players, orders, turns and map (admin-only).
          */
         delete: operations["delete_world_dev_worlds__game_id__delete"];
         options?: never;
@@ -98,7 +102,7 @@ export interface paths {
         put?: never;
         /**
          * Tick World
-         * @description Resolve the world's current turn now: the dev manual clock.
+         * @description Resolve the world's current turn now: the manual clock (admin-only).
          */
         post: operations["tick_world_dev_worlds__game_id__tick_post"];
         delete?: never;
@@ -156,10 +160,11 @@ export interface paths {
         };
         /**
          * Me
-         * @description Return the authenticated caller's own identity and dev role.
+         * @description Return the authenticated caller's own identity, dev role and admin role.
          *
          *     Reports the *real* account (dev impersonation is not applied), so the frontend
-         *     dev switcher stays visible for a dev even while they act as another user.
+         *     dev switcher and admin link stay visible for a dev even while they act as
+         *     another user.
          */
         get: operations["me_me_get"];
         put?: never;
@@ -385,6 +390,62 @@ export interface components {
             active_world: components["schemas"]["ActiveWorld"] | null;
         };
         /**
+         * AdminWorld
+         * @description One world as the admin screen lists it (``GET /dev/worlds``).
+         *
+         *     Every world, whatever its status. ``slots`` is how many seats the map has;
+         *     ``humans`` and ``bots`` hold seats and ``open`` is what is left to join.
+         *     ``width`` x ``height`` is the map in hexes. ``seed`` is the generator seed the
+         *     map was made from (``None``: the map was not made by the generator).
+         *     ``next_tick_at`` is as in `WorldView`.
+         */
+        AdminWorld: {
+            /** Bots */
+            bots: number;
+            /**
+             * Clock
+             * @enum {string}
+             */
+            clock: "manual" | "twice_daily";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Game Id */
+            game_id: string;
+            /** Height */
+            height: number;
+            /** Humans */
+            humans: number;
+            /** Next Tick At */
+            next_tick_at: string | null;
+            /** Open */
+            open: number;
+            /** Seed */
+            seed: number | null;
+            /** Slots */
+            slots: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "lobby" | "active" | "finished";
+            /** Turn */
+            turn: number;
+            /** Width */
+            width: number;
+        };
+        /**
+         * AdminWorldList
+         * @description Returned by ``GET /dev/worlds``: every world, newest first, and the clock.
+         */
+        AdminWorldList: {
+            schedule: components["schemas"]["ClockSchedule"];
+            /** Worlds */
+            worlds: components["schemas"]["AdminWorld"][];
+        };
+        /**
          * ArmySize
          * @description The army size rule: ``base + per_barracks × barracks level + held sites ÷
          *     sites_per_point``, never above ``ceiling``. Your own base is not a held site.
@@ -513,6 +574,17 @@ export interface components {
             skipped: string[];
             /** Ticked */
             ticked: string[];
+        };
+        /**
+         * ClockSchedule
+         * @description When the scheduled clock resolves ``twice_daily`` worlds: these whole hours
+         *     of local time in the IANA ``zone``.
+         */
+        ClockSchedule: {
+            /** Hours */
+            hours: number[];
+            /** Zone */
+            zone: string;
         };
         /**
          * ColumnHeld
@@ -749,6 +821,9 @@ export interface components {
         /**
          * CreateWorldRequest
          * @description Body for ``POST /dev/worlds``: the world to generate and how many bots.
+         *
+         *     ``bots`` may not exceed ``slots`` (each bot holds a slot); the generator
+         *     refuses a slot count it cannot fit, as a 422.
          */
         CreateWorldRequest: {
             /** Bots */
@@ -945,12 +1020,16 @@ export interface components {
         };
         /**
          * MeView
-         * @description The authenticated caller's own identity and dev role.
+         * @description The authenticated caller's own identity, dev role and admin role.
          *
-         *     Backs the frontend dev profile switcher: ``is_dev`` decides whether the switcher
-         *     is shown, and reflects the *real* account (impersonation is not applied).
+         *     Backs the frontend dev profile switcher and the admin screen: ``is_dev``
+         *     decides whether the switcher is shown and ``is_admin`` whether the admin link
+         *     and page are (every dev is an admin). Both reflect the *real* account
+         *     (impersonation is not applied); the API checks the roles again on every call.
          */
         MeView: {
+            /** Is Admin */
+            is_admin: boolean;
             /** Is Dev */
             is_dev: boolean;
             /** User Id */
@@ -1768,8 +1847,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-dev-profile"?: string | null;
                 authorization?: string | null;
+                "x-dev-profile"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -1827,12 +1906,44 @@ export interface operations {
             };
         };
     };
+    list_admin_worlds_dev_worlds_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-profile"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWorldList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_world_dev_worlds_post: {
         parameters: {
             query?: never;
             header?: {
-                "x-dev-profile"?: string | null;
                 authorization?: string | null;
+                "x-dev-profile"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -1867,8 +1978,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-dev-profile"?: string | null;
                 authorization?: string | null;
+                "x-dev-profile"?: string | null;
             };
             path: {
                 game_id: string;
@@ -1899,8 +2010,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-dev-profile"?: string | null;
                 authorization?: string | null;
+                "x-dev-profile"?: string | null;
             };
             path: {
                 game_id: string;

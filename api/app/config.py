@@ -3,6 +3,11 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _id_set(csv: str) -> frozenset[str]:
+    """A comma-separated user id list as a set (blank entries dropped)."""
+    return frozenset(u.strip() for u in csv.split(",") if u.strip())
+
+
 class Settings(BaseSettings):
     """Application configuration loaded from environment variables.
 
@@ -23,10 +28,21 @@ class Settings(BaseSettings):
     # so impersonation is denied unless an env explicitly names dev accounts.
     dev_user_ids: str = ""
 
+    # Comma-separated Supabase user ids allowed to manage worlds from the admin
+    # screen (create, list, tick, run the clock, delete) without being devs: no
+    # impersonation or other dev power. Every dev is an admin too, so this only
+    # needs the extra accounts. Empty by default.
+    admin_user_ids: str = ""
+
     @property
     def dev_user_id_set(self) -> frozenset[str]:
         """The dev allowlist as a set (empty entries from the CSV are dropped)."""
-        return frozenset(u.strip() for u in self.dev_user_ids.split(",") if u.strip())
+        return _id_set(self.dev_user_ids)
+
+    @property
+    def admin_user_id_set(self) -> frozenset[str]:
+        """The admin allowlist as a set, parsed like `dev_user_id_set`."""
+        return _id_set(self.admin_user_ids)
 
     # The world turn clock (app.games.scheduler_auth): the OIDC audience Cloud
     # Scheduler's token names (the API's URL) and the scheduler's service-account

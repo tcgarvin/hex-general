@@ -5,8 +5,9 @@ The production counterpart of `scripts/game-setup.sh` (which only talks to the
 local stack). It calls the live API with the owner's own Supabase access token,
 read from the HEX_PROD_TOKEN environment variable, so creating a world no
 longer means hand-writing a curl with a JWT. The create, tick, clock and delete
-routes are dev-only: the token must belong to an account in the API's
-DEV_USER_IDS.
+routes are admin-only: the token must belong to an account in the API's
+DEV_USER_IDS (or ADMIN_USER_IDS). The admin screen on the site (/admin) does
+the same things from the browser; this script is the fallback.
 
 Every command prints the target host first. A write (create, tick, clock,
 delete) then asks for a typed confirmation unless --yes is given. The token is
@@ -43,7 +44,8 @@ WRITES = frozenset({"create", "tick", "clock", "delete"})
 TOKEN_HELP = f"""\
 getting a token:
   1. Sign in on the production site (https://hex-general.vercel.app) with the
-     owner's Google account; it must be listed in the API's DEV_USER_IDS.
+     owner's Google account; it must be listed in the API's DEV_USER_IDS
+     (or ADMIN_USER_IDS).
   2. Open the browser's developer tools, Application (Chrome) or Storage
      (Firefox) tab, Local Storage, the site's origin. The Supabase client keeps
      the session under the key sb-amhkpsrvjlthmmemwssc-auth-token; its value is
@@ -90,7 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="skip the typed confirmation before a write (non-interactive use)",
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("whoami", help="the token's account and whether it is a dev")
+    commands.add_parser(
+        "whoami", help="the token's account and whether it is a dev and an admin"
+    )
     commands.add_parser("list", help="every running world (GET /worlds)")
     status = commands.add_parser(
         "status", help="one world's turn, clock and next tick (from GET /worlds)"

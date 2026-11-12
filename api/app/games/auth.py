@@ -14,8 +14,10 @@ verify with that JWKS, so the signing secret never leaves Supabase. The
 
 A *dev role* rides alongside identity: `is_dev` consults the ``DEV_USER_IDS``
 allowlist (config) to decide whether a caller may impersonate another user via the
-dev profile switcher. The impersonation mechanics live in the route dependencies;
-this module only answers "is this user a dev?".
+dev profile switcher. An *admin role* is wider and weaker: `is_admin` passes for
+every dev and for the ``ADMIN_USER_IDS`` allowlist, and lets a caller manage worlds
+(the admin screen) but never impersonate. The mechanics live in the route
+dependencies; this module only answers "is this user a dev / an admin?".
 """
 
 from __future__ import annotations
@@ -84,3 +86,8 @@ def verify_jwt(token: str) -> AuthIdentity:
 def is_dev(user_id: str) -> bool:
     """Whether ``user_id`` is allowlisted as a dev (may impersonate others)."""
     return user_id in get_settings().dev_user_id_set
+
+
+def is_admin(user_id: str) -> bool:
+    """Whether ``user_id`` may manage worlds: a dev, or on the admin allowlist."""
+    return is_dev(user_id) or user_id in get_settings().admin_user_id_set

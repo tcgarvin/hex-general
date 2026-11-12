@@ -6,7 +6,9 @@ on failure). A dev (allowlisted in config) may additionally send
 ``X-Dev-Profile: <user_id>`` to impersonate another user for solo playtesting —
 honored only for devs (403 otherwise), the same on local and deployed stacks.
 Per-game endpoints then require that the user holds a slot in *that* game
-(`require_player`).
+(`require_player`). World management (the admin screen) requires an admin
+(`require_admin`): a dev, or an account on the separate admin allowlist, which
+grants no impersonation.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from fastapi import Depends, Header, HTTPException, Path
 from supabase import Client
 
 from app.db import get_supabase_client
-from app.games.auth import AuthError, AuthIdentity, is_dev, verify_jwt
+from app.games.auth import AuthError, AuthIdentity, is_admin, is_dev, verify_jwt
 from app.games.repo import GameRepo, PlayerRecord, SupabaseGameRepo
 from app.games.service import GameService
 
@@ -79,3 +81,19 @@ def require_player(
     if player is None:
         raise HTTPException(status_code=403, detail="not a player in this game")
     return player
+
+
+def require_admin(
+    identity: AuthIdentity = Depends(real_identity),
+    _effective: AuthIdentity = Depends(current_identity),
+) -> AuthIdentity:
+    """403 unless the *real* caller is an admin (a dev or on ``ADMIN_USER_IDS``).
+
+    The role is checked on the real account, so a dev who is acting as another
+    user through the switcher can still manage worlds. ``_effective`` is resolved
+    only for its gate: an ``X-Dev-Profile`` from a caller who is not a dev is still
+    a 403, so the admin allowlist never grants impersonation.
+    """
+    if not is_admin(identity.user_id):
+        raise HTTPException(status_code=403, detail="admin-only endpoint")
+    return identity

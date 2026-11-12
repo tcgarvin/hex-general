@@ -14,7 +14,6 @@ import pytest
 from fastapi import Header, HTTPException
 from fastapi.testclient import TestClient
 
-import app.games.world_routes as world_routes
 import app.main as main_module
 from app.engine.economy_rules import Stocks
 from app.engine.events import (
@@ -27,6 +26,7 @@ from app.engine.map_codec import CompactMap, decode_map
 from app.engine.models import GameState, Player
 from app.engine.victory import VictoryReason, VictoryStatus
 from app.engine.visibility import visible_hexes
+from app.games import deps
 from app.games.auth import AuthIdentity
 from app.games.deps import current_identity, get_repo, real_identity
 from app.games.schemas import (
@@ -58,7 +58,7 @@ def client(monkeypatch: pytest.MonkeyPatch, repo: FakeGameRepo) -> Iterator[Test
     app.dependency_overrides[get_repo] = lambda: repo
     app.dependency_overrides[current_identity] = _fake_identity
     app.dependency_overrides[real_identity] = _fake_identity
-    monkeypatch.setattr(world_routes, "is_dev", lambda user_id: user_id == DEV)
+    monkeypatch.setattr(deps, "is_admin", lambda user_id: user_id == DEV)
     try:
         yield TestClient(app)
     finally:
@@ -121,7 +121,7 @@ def test_join_view_map_tick_and_replay(client: TestClient) -> None:
     assert "map" not in replay.json()["state_after"]
 
 
-def test_dev_endpoints_refuse_non_devs(client: TestClient) -> None:
+def test_admin_endpoints_refuse_non_admins(client: TestClient) -> None:
     create = client.post(
         "/dev/worlds", json={"slots": 4, "bots": 1}, headers=_as(PLAYER)
     )
@@ -192,7 +192,9 @@ def test_delete_world_unknown_id_is_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
-def test_delete_world_refuses_non_devs(client: TestClient, repo: FakeGameRepo) -> None:
+def test_delete_world_refuses_non_admins(
+    client: TestClient, repo: FakeGameRepo
+) -> None:
     game_id = _create(client)
     response = client.delete(f"/dev/worlds/{game_id}", headers=_as(PLAYER))
     assert response.status_code == 403
@@ -419,13 +421,16 @@ def test_me_reports_identity_and_dev_role(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(main_module, "is_dev", lambda user_id: user_id == DEV)
+    monkeypatch.setattr(main_module, "is_admin", lambda user_id: user_id == DEV)
     assert client.get("/me", headers=_as(DEV)).json() == {
         "user_id": DEV,
         "is_dev": True,
+        "is_admin": True,
     }
     assert client.get("/me", headers=_as(PLAYER)).json() == {
         "user_id": PLAYER,
         "is_dev": False,
+        "is_admin": False,
     }
 
 

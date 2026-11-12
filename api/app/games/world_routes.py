@@ -14,13 +14,15 @@ identity (`app.games.deps`), calls the service, and maps the service's typed
 - ``GET /worlds/{id}/turns/{turn}``: the caller's replay of a resolved turn.
 - ``POST /worlds/{id}/orders``: the caller's plan for the current turn, stored
   (and revisable) until the tick resolves it.
-- ``POST /dev/worlds``, ``POST /dev/worlds/{id}/tick`` and
-  ``DELETE /dev/worlds/{id}``: dev-only world creation, a manual clock and
-  teardown.
+- ``GET /dev/worlds``, ``POST /dev/worlds``, ``POST /dev/worlds/{id}/tick`` and
+  ``DELETE /dev/worlds/{id}``: world management for the admin screen (every
+  world with its seats, creation, a manual clock and teardown). They need an
+  admin (`require_admin`: a dev, or an account on ``ADMIN_USER_IDS``); the
+  ``/dev`` prefix is historical and kept so the scripts keep working.
 - ``POST /internal/clock``: the turn clock. Cloud Scheduler calls it at 01:00 and
   13:00 New York time with a Google OIDC token (`app.games.scheduler_auth`); it
   resolves every scheduled world that is due. ``POST /dev/clock`` runs the same
-  sweep for a dev.
+  sweep for an admin.
 """
 
 from __future__ import annotations
@@ -30,8 +32,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from app.ai.policy import economy_orders_for
 from app.config import get_settings
 from app.engine.map_codec import CompactMap
-from app.games.auth import AuthIdentity, is_dev
-from app.games.deps import current_identity, get_service, require_player
+from app.games.auth import AuthIdentity
+from app.games.deps import (
+    current_identity,
+    get_service,
+    require_admin,
+    require_player,
+)
 from app.games.repo import PlayerRecord
 from app.games.scheduler_auth import (
     ClockNotConfigured,
@@ -40,6 +47,7 @@ from app.games.scheduler_auth import (
 )
 from app.games.schemas import (
     ActiveWorldView,
+    AdminWorldList,
     ClockRunView,
     CreateWorldRequest,
     PlayerCredentials,
@@ -67,13 +75,6 @@ dev_router = APIRouter(prefix="/dev/worlds", tags=["worlds"])
 clock_router = APIRouter(tags=["worlds"])
 
 _MAP_CACHE_CONTROL = "private, max-age=31536000, immutable"
-
-
-def require_dev(identity: AuthIdentity = Depends(current_identity)) -> AuthIdentity:
-    """403 unless the caller is an allowlisted dev."""
-    if not is_dev(identity.user_id):
-        raise HTTPException(status_code=403, detail="dev-only endpoint")
-    return identity
 
 
 @router.get("")
@@ -168,13 +169,22 @@ def submit_orders(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+@dev_router.get("")
+def list_admin_worlds(
+    _admin: AuthIdentity = Depends(require_admin),
+    service: GameService = Depends(get_service),
+) -> AdminWorldList:
+    """Every world whatever its status, with its size and seats (admin-only)."""
+    return service.list_admin_worlds()
+
+
 @dev_router.post("", status_code=201)
 def create_world(
     body: CreateWorldRequest,
-    _dev: AuthIdentity = Depends(require_dev),
+    _admin: AuthIdentity = Depends(require_admin),
     service: GameService = Depends(get_service),
 ) -> WorldCreated:
-    """Generate a world and fill ``bots`` slots with world bots (dev-only)."""
+    """Generate a world and fill ``bots`` slots with world bots (admin-only)."""
     try:
         return WorldCreated(
             game_id=service.create_world(
@@ -188,10 +198,10 @@ def create_world(
 @dev_router.post("/{game_id}/tick")
 def tick_world(
     game_id: str,
-    _dev: AuthIdentity = Depends(require_dev),
+    _admin: AuthIdentity = Depends(require_admin),
     service: GameService = Depends(get_service),
 ) -> SubmitResult:
-    """Resolve the world's current turn now: the dev manual clock."""
+    """Resolve the world's current turn now: the manual clock (admin-only)."""
     try:
         return service.tick_world(game_id)
     except GameNotFound as exc:
@@ -203,10 +213,10 @@ def tick_world(
 @dev_router.delete("/{game_id}", status_code=204)
 def delete_world(
     game_id: str,
-    _dev: AuthIdentity = Depends(require_dev),
+    _admin: AuthIdentity = Depends(require_admin),
     service: GameService = Depends(get_service),
 ) -> Response:
-    """Delete a world and its players, orders, turns and map (dev-only)."""
+    """Delete a world and its players, orders, turns and map (admin-only)."""
     try:
         service.delete_world(game_id)
     except GameNotFound as exc:
@@ -252,8 +262,8 @@ def scheduled_clock(
 
 @clock_router.post("/dev/clock")
 def dev_clock(
-    _dev: AuthIdentity = Depends(require_dev),
+    _admin: AuthIdentity = Depends(require_admin),
     service: GameService = Depends(get_service),
 ) -> ClockRunView:
-    """Run the scheduler's sweep now (dev-only): resolves whatever is due."""
+    """Run the scheduler's sweep now (admin-only): resolves whatever is due."""
     return _run_clock(service)

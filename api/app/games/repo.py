@@ -69,6 +69,30 @@ class WorldRow(BaseModel):
     next_tick_at: datetime | None
 
 
+class AdminWorldRow(BaseModel):
+    """A world as the admin screen lists it: its games row (any status), its map's
+    size and seed, and who holds its seats.
+
+    ``slots`` is the map's seat count; ``humans`` and ``bots`` count the players
+    rows by kind. ``seed`` is ``None`` when the map has no generator params.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    status: Literal["lobby", "active", "finished"]
+    turn: int
+    clock: Clock
+    next_tick_at: datetime | None
+    created_at: datetime
+    width: int
+    height: int
+    slots: int
+    seed: int | None
+    humans: int
+    bots: int
+
+
 class GameRecord(BaseModel):
     """A games row with its canonical state parsed back into a `GameState`.
 
@@ -182,6 +206,10 @@ class GameRepo(Protocol):
 
     def list_worlds(self) -> list[WorldRow]:
         """Every active world, newest first, without loading states."""
+        ...
+
+    def list_admin_worlds(self) -> list[AdminWorldRow]:
+        """Every world whatever its status, newest first, for the admin screen."""
         ...
 
     def list_due_worlds(self, now: datetime) -> list[str]:
@@ -298,6 +326,28 @@ def _player_record(row: dict[str, Any]) -> PlayerRecord:
         slot=row["slot"],
         user_id=row["user_id"],
         bot_policy=row["bot_policy"],
+    )
+
+
+def _admin_world_row(row: dict[str, Any]) -> AdminWorldRow:
+    """Flatten a games row with its embedded map and players into a typed row."""
+    game_map = row["game_maps"]
+    params = game_map["params"]
+    players = row["players"]
+    bots = sum(1 for p in players if p["bot_policy"] is not None)
+    return AdminWorldRow(
+        id=row["id"],
+        status=row["status"],
+        turn=row["turn"],
+        clock=row["clock"],
+        next_tick_at=row["next_tick_at"],
+        created_at=row["created_at"],
+        width=game_map["width"],
+        height=game_map["height"],
+        slots=len(game_map["slots"]),
+        seed=None if params is None else params["seed"],
+        humans=len(players) - bots,
+        bots=bots,
     )
 
 
@@ -447,6 +497,20 @@ class SupabaseGameRepo:
             .execute()
         )
         return [WorldRow.model_validate(row) for row in _rows(response)]
+
+    def list_admin_worlds(self) -> list[AdminWorldRow]:
+        # One query: the map and the players rows ride along as embedded
+        # resources (games.map_id and players.game_id are foreign keys).
+        response = (
+            self._client.table("games")
+            .select(
+                "id, status, turn:state->turn, clock, next_tick_at, created_at, "
+                "game_maps(width, height, slots, params), players(bot_policy)"
+            )
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return [_admin_world_row(row) for row in _rows(response)]
 
     def list_due_worlds(self, now: datetime) -> list[str]:
         response = (

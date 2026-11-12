@@ -87,6 +87,11 @@ jobs:
           echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
           docker build --build-arg GIT_COMMIT="$GITHUB_SHA" -t "$IMAGE" api
           docker push "$IMAGE"
+      # ADMIN_USER_IDS (accounts that may use the admin screen without being
+      # devs) is deliberately not set: production sign-in is Google only, so the
+      # password-login playtest accounts could not reach it, and the owner is an
+      # admin through DEV_USER_IDS. To add an account, append
+      # |ADMIN_USER_IDS=<id>[,<id>...] to --set-env-vars below.
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy "$SERVICE" \

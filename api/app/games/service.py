@@ -52,6 +52,9 @@ from app.games.repo import (
 from app.games.schemas import (
     ActiveWorld,
     ActiveWorldView,
+    AdminWorld,
+    AdminWorldList,
+    ClockSchedule,
     PlayerCredentials,
     SubmitOrdersRequest,
     SubmitResult,
@@ -61,7 +64,7 @@ from app.games.schemas import (
     WorldView,
 )
 from app.games.validation import validate_submission
-from app.world.clock import next_tick_after
+from app.world.clock import TICK_HOURS, TICK_ZONE, next_tick_after
 from app.world.collector import quiet_collector
 from app.world.generate import WorldParams, generate
 from app.world.seating import WorldFull, seat_player, slot_id, unseat_player
@@ -222,6 +225,31 @@ class GameService:
             raise TurnClosed(f"turn {turn} resolved first; resubmit for the next")
         return SubmitResult(locked=True, executed=False, turn=turn, status=game.status)
 
+    def list_admin_worlds(self) -> AdminWorldList:
+        """Every world whatever its status, newest first, for the admin screen,
+        with the scheduled clock's hours."""
+        return AdminWorldList(
+            worlds=[
+                AdminWorld(
+                    game_id=row.id,
+                    status=row.status,
+                    turn=row.turn,
+                    slots=row.slots,
+                    width=row.width,
+                    height=row.height,
+                    humans=row.humans,
+                    bots=row.bots,
+                    open=row.slots - row.humans - row.bots,
+                    seed=row.seed,
+                    clock=row.clock,
+                    next_tick_at=row.next_tick_at,
+                    created_at=row.created_at,
+                )
+                for row in self._repo.list_admin_worlds()
+            ],
+            schedule=ClockSchedule(zone=TICK_ZONE.key, hours=sorted(TICK_HOURS)),
+        )
+
     def create_world(
         self, slots: int, seed: int, bots: int, clock: Clock = "manual"
     ) -> str:
@@ -333,7 +361,7 @@ class GameService:
         )
 
     def delete_world(self, game_id: str) -> None:
-        """Delete a world and everything stored for it (dev-only teardown)."""
+        """Delete a world and everything stored for it (admin teardown)."""
         game = self._require_game(game_id)
         self._repo.delete_world(game.id, game.map_id)
 
