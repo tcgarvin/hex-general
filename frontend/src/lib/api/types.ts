@@ -11,3 +11,8 @@ type WorldReplay = components["schemas"]["WorldReplay"];
 // (api/app/engine/events.py), tagged on `kind`. Narrow on `kind` to access the
 // per-event fields.
 export type ReplayEvent = WorldReplay["events"][number];
+
+// The admin screen (`GET /dev/worlds` and `POST /dev/worlds`).
+export type AdminWorld = components["schemas"]["AdminWorld"];
+export type AdminWorldList = components["schemas"]["AdminWorldList"];
+export type ClockRunView = components["schemas"]["ClockRunView"];

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
+import { useMe } from "@/auth/useMe";
 import { Emblem } from "@/components/Brand";
 import { Button, ButtonLink, Card, ErrorBanner } from "@/components/ui";
 import { api } from "@/lib/api/client";
@@ -19,6 +20,8 @@ type WorldSummary = components["schemas"]["WorldSummary"];
  * Key art can go behind it through `.fhq-backdrop` (index.css).
  */
 export function WorldsScreen({ seat }: { seat: ActiveWorld | null }) {
+  const me = useMe();
+  const isAdmin = me.status === "ready" && me.me.is_admin;
   return (
     <div className="fhq-backdrop flex flex-1 flex-col items-center px-4 py-10">
       <Card className="max-w-xl">
@@ -34,10 +37,15 @@ export function WorldsScreen({ seat }: { seat: ActiveWorld | null }) {
           </p>
         </header>
         <WorldList seat={seat} />
-        <div className="mt-5 border-t border-wood-500/40 pt-3 text-sm">
+        <div className="mt-5 flex gap-5 border-t border-wood-500/40 pt-3 text-sm">
           <Link to="/account" className="font-label uppercase tracking-wider text-wood-700 hover:text-ink-900">
             Account
           </Link>
+          {isAdmin && (
+            <Link to="/admin" className="font-label uppercase tracking-wider text-wood-700 hover:text-ink-900">
+              Admin
+            </Link>
+          )}
         </div>
       </Card>
     </div>

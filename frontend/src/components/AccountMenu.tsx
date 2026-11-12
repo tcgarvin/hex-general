@@ -22,12 +22,14 @@ import type { DevProfile } from "@/lib/api/types";
  * and the choice makes every API request carry `X-Dev-Profile` (clearing it when
  * acting as oneself). Switching identity reloads to the dispatcher so the chosen
  * user's active game is re-resolved cleanly rather than leaving stale state.
+ * For admins (`GET /me`'s `is_admin`; every dev is one) it links the admin screen.
  */
 /** `onFieldManual`: on the world screen, a menu item opens the field manual. */
 export function AccountMenu({ onFieldManual }: { onFieldManual?: () => void } = {}) {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [isDev, setIsDev] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [profiles, setProfiles] = useState<DevProfile[]>([]);
   const [impersonating, setImpersonating] = useState(getImpersonatedUserId());
 
@@ -36,6 +38,7 @@ export function AccountMenu({ onFieldManual }: { onFieldManual?: () => void } = 
     api.GET("/me").then(({ data, error }) => {
       if (!cancelled && !error && data) {
         setIsDev(data.is_dev);
+        setIsAdmin(data.is_admin);
       }
     });
     return () => {
@@ -118,6 +121,15 @@ export function AccountMenu({ onFieldManual }: { onFieldManual?: () => void } = 
             >
               Account
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="px-3 py-1.5 text-left text-ivory-100 hover:bg-ink-900/60"
+                onClick={() => setOpen(false)}
+              >
+                Admin
+              </Link>
+            )}
             {onFieldManual !== undefined && (
               <button
                 type="button"
