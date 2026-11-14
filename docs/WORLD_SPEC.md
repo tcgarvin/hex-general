@@ -736,6 +736,35 @@ Travel (`defaultPlanMode`; Escape and the stay-put orders return to it), and the
 warns if a Travel is still staged for it. Planner cues only; the engine rules (§4.5, §5) are
 unchanged.
 
+**As built (2026-11-13, unpushed): the phone layout.** Below 768 px wide (or a phone
+held sideways) the world screen draws a phone layout over the same state (mock-ups approved
+2026-11-12; `frontend/src/world/mobile/`). A wood top bar carries the turn, the countdown,
+manpower, fuel, steel and army size as glyph and number, and a menu (field manual, all
+worlds, account, sign out). The map fills the screen with no minimap and no zoom keys
+(pinch and drag; a touch that drifts under 10 px still counts as a tap), with two keys on
+the right edge: centre on base and the whole world. With nothing selected a bottom bar
+offers Army (badge: units with nothing to do), Report, Base and the Submit plate, each
+opening a bottom sheet over the map: the army list (those without orders first; a row
+selects the unit and brings it into view; "Hold the N without orders"), the turn report
+(lines jump to their hex; Watch starts playback, whose bar then replaces the bottom bar),
+the base (stocks with storage and net, buildings, recruiting at the base), and the plan
+review (who stays put without the Hold bonus, with "Hold all", what is ordered, spending,
+problems, draft notes and Revert, then Submit or Resubmit). A tap on a hex without one of
+your units opens a hex sheet (site, garrison, recruiting there). Selecting one of your units
+shows a dock: previous and next idle unit, its name plate, a readout of its order in plain
+words (destination and arrival, the stop short of contact, halts and unscouted hexes, the
+expected result of an attack or barrage, the withdrawal warning) or a prompt, and keys for
+Clear, Deploy (columns), Barrage (deployed artillery), Hold, Rest and More (a stop on the
+way, on arrival, swaps, the disband pick). There are no mode chips: a tap picks the order
+(`autoOrder.ts`). Your unit's hex selects it; an armed stop or barrage takes the tap; deployed
+artillery shells a visible hostile in range; a deployed unit moves (or attacks) within this
+turn's reach; a deployed unit that a Travel would halt where it stands (inside the contact
+zone, or its first step enters it) moves to the reachable hex ending closest to the tap
+instead, with a notice; anything else travels there, deploying on arrival, and a route that
+runs into known contact stops one hex short and deploys in order. "Hold all" holds deployed
+units with nothing to do; columns are left out, since Hold gives a column no bonus. The
+desktop layout is unchanged.
+
 ## 12. Implementation phases
 
 | Phase | Delivers | Gate |

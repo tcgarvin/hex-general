@@ -111,6 +111,11 @@ const FIT_ZOOM_SLACK = 0.85;
  * bar): a unit under them counts as hidden for `reveal`.
  */
 const PANEL_INSETS: Insets = { left: 312, right: 344, top: 16, bottom: 76 };
+/**
+ * How far a press may travel and still count as a click, in screen pixels: a
+ * mouse barely moves, a fingertip wobbles (a tap that drifts this far is a drag).
+ */
+const CLICK_SLOP = { mouse: 4, touch: 10 } as const;
 const ATTACK_COLOR = 0xe0503a;
 const DISORDER_COLOR = 0xf5b342;
 const IVORY = 0xf2e6c8;
@@ -299,11 +304,13 @@ export class WorldRenderer {
   private scene: WorldScene | null = null;
   private readonly options: WorldRendererOptions;
   private readonly bounds: ReturnType<typeof worldPixelBounds>;
-  private drag: { x: number; y: number; moved: boolean } | null = null;
+  private drag: { x: number; y: number; moved: boolean; slop: number } | null = null;
   /** Live pointers on the canvas (two of them pinch-zoom). */
   private readonly pointers = new Map<number, { x: number; y: number }>();
   private pinch: { dist: number; midX: number; midY: number } | null = null;
   private minimapDrag = false;
+  /** Where the camera keeps clear of the screen's edges for the DOM panels (`setChrome`). */
+  private insets: Insets = PANEL_INSETS;
   /** The last mouse position over the canvas (`null`: outside it). */
   private pointer: { x: number; y: number } | null = null;
   private hovered: Axial | null = null;
@@ -505,7 +512,7 @@ export class WorldRenderer {
       from,
       { minX, minY, maxX, maxY },
       this.app.screen,
-      PANEL_INSETS,
+      this.insets,
       TILE_MIN_SCALE,
       TACTICAL_SCALE,
     );
@@ -558,6 +565,16 @@ export class WorldRenderer {
     return { x: this.world.x, y: this.world.y, scale: this.world.scale.x };
   }
 
+  /**
+   * Fit the board to the DOM chrome around it: whether the minimap shows (the
+   * phone layout has none) and how far the camera keeps a hex in view from each
+   * edge for the panels (`reveal`, playback follow). Defaults: the desktop panels.
+   */
+  setChrome(chrome: { minimap: boolean; insets?: Insets }): void {
+    this.minimap.visible = chrome.minimap;
+    this.insets = chrome.insets ?? PANEL_INSETS;
+  }
+
   /** The minimap's box on the canvas, so DOM controls can sit clear of it. */
   get minimapBox(): { x: number; y: number; width: number; height: number } {
     const b = this.bounds;
@@ -596,7 +613,7 @@ export class WorldRenderer {
   comfortablyVisible(hex: Axial): boolean {
     const { x, y } = axialToPixel(hex.q, hex.r, HEX_SIZE);
     const s = this.world.scale.x;
-    return comfortablyVisible(this.world.x + x * s, this.world.y + y * s, this.app.screen, PANEL_INSETS);
+    return comfortablyVisible(this.world.x + x * s, this.world.y + y * s, this.app.screen, this.insets);
   }
 
   /** Zoom by `factor` about the screen centre. */
@@ -703,7 +720,7 @@ export class WorldRenderer {
       this.drag = null;
       this.setHovered(null);
     } else if (this.pointers.size === 1) {
-      this.drag = { x, y, moved: false };
+      this.drag = { x, y, moved: false, slop: e.pointerType === "mouse" ? CLICK_SLOP.mouse : CLICK_SLOP.touch };
     }
   };
 
@@ -726,12 +743,12 @@ export class WorldRenderer {
     }
     const dx = x - this.drag.x;
     const dy = y - this.drag.y;
-    if (!this.drag.moved && Math.hypot(dx, dy) < 4) return;
+    if (!this.drag.moved && Math.hypot(dx, dy) < this.drag.slop) return;
     if (!this.drag.moved) {
       this.setHovered(null);
       this.userMovedCamera();
     }
-    this.drag = { x, y, moved: true };
+    this.drag = { x, y, moved: true, slop: this.drag.slop };
     this.setCamera({ ...this.camera, x: this.world.x + dx, y: this.world.y + dy });
   };
 
@@ -758,7 +775,7 @@ export class WorldRenderer {
       // Lifting one finger of a pinch carries on as a drag with the other.
       this.pinch = null;
       const rest = [...this.pointers.values()][0];
-      this.drag = rest === undefined ? null : { x: rest.x, y: rest.y, moved: true };
+      this.drag = rest === undefined ? null : { x: rest.x, y: rest.y, moved: true, slop: CLICK_SLOP.touch };
       return;
     }
     const drag = this.drag;
@@ -1600,6 +1617,7 @@ export class WorldRenderer {
   }
 
   private minimapHit(x: number, y: number): boolean {
+    if (!this.minimap.visible) return false;
     const box = this.minimapBox;
     return x >= box.x && y >= box.y && x <= box.x + box.width && y <= box.y + box.height;
   }

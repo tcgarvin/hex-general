@@ -39,10 +39,14 @@ export function overlayOf(
       unscouted: r.fog.unscouted,
     })),
     barrages,
-    reach: [...planning.moveReach.values()].map((path) => {
-      const hex = path[path.length - 1];
-      return { hex, attack: planning.hostile.has(hexKey(hex.q, hex.r)) };
-    }),
+    // Auto mode adds the hostiles deployed artillery can shell, marked as targets.
+    reach: [
+      ...[...planning.moveReach.values()].map((path) => {
+        const hex = path[path.length - 1];
+        return { hex, attack: planning.hostile.has(hexKey(hex.q, hex.r)) };
+      }),
+      ...planning.shellable.filter((hex) => !planning.moveReach.has(hexKey(hex.q, hex.r))).map((hex) => ({ hex, attack: true })),
+    ],
     barrageRange: planning.barrageRange,
     recruits: Object.values(planning.plan.recruits).map((r) => r.coord),
     lastTurn: trails,

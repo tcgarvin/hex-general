@@ -6,7 +6,7 @@
 // held sites; start a building; pick who disbands first in a shortage; and
 // submit, revising as often as you like until the turn resolves.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 
 import { axialEqual, hexKey, type Axial } from "@/board/hex";
@@ -31,20 +31,38 @@ import {
   type Building,
   type Economy,
   type Forecast,
-  type Stocks,
 } from "./economy";
 import { FieldManual, type ManualSection } from "./FieldManual";
 import { HoverInfo } from "./HoverInfo";
+import {
+  BUILDING_LABEL,
+  etaText,
+  FIGHT_RESULT,
+  GARRISON_TEXT,
+  orderText,
+  RESOURCE_LABEL,
+  SECTION_LABEL,
+  siteTitle,
+  stocksLeft,
+  stocksText,
+  TONE_CLASS,
+  UNIT_LABEL,
+  unitTag,
+} from "./labels";
+import { Countdown, HpPips, PlayButton, ReportLine, Stat, StocksGlyphs, type ReportPlay } from "./parts";
+import { useSwaps } from "./useSwaps";
 import { attackPreview, barragePreview } from "./combatView";
 import { at, MAX_WAYPOINTS } from "./waypoints";
 import { MapControls } from "./MapControls";
+import { PhoneWorld } from "./mobile/PhoneWorld";
+import { usePhoneLayout } from "./mobile/usePhoneLayout";
 import { withdrawalWarning } from "./moveRules";
 import { consoleHeight, useMinimapSize } from "./minimapConsole";
 import { overlayOf } from "./overlay";
 import { PlaybackBar, type BeatJump } from "./PlaybackBar";
 import { reportItemBeats } from "./playback/session";
-import { useTurnPlayback, type TurnPlayback } from "./playback/useTurnPlayback";
-import { engagements, type Engagement } from "./playback/watchList";
+import { useTurnPlayback } from "./playback/useTurnPlayback";
+import { engagements } from "./playback/watchList";
 import {
   buildOption,
   inBarrageRange,
@@ -55,18 +73,17 @@ import {
   type OrderKind,
   type WorldOrder,
 } from "./plan";
-import { hostileZoc, swapBlocked, swapNeighbours, swapPartner, swapRole } from "./relief";
+import { hostileZoc, swapBlocked, swapNeighbours } from "./relief";
 import { siteIconUrl } from "./siteArt";
-import { SITE_TILE_KINDS } from "./siteTiles";
 import { turnReport, turnTrails, unitBook, type ReportItem } from "./turnReport";
 import { useTurnReport, type ReportLoad } from "./useTurnReport";
 import { useWorld, type GoneReason, type WorldView } from "./useWorld";
 import { useDesignations } from "./useDesignations";
 import { useWorldHotkeys } from "./useWorldHotkeys";
-import { useWorldPlan, type PlannedRoute, type WorldPlanning } from "./useWorldPlan";
+import { useWorldPlan, type WorldPlanning } from "./useWorldPlan";
 import { WorldBoard } from "./WorldBoard";
 import type { WorldRenderer } from "./WorldRenderer";
-import type { MapSite, WorldMap } from "./worldMap";
+import type { WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
 type Unit = components["schemas"]["Unit"];
@@ -135,7 +152,10 @@ function WorldScreen({
   error: string | null;
   refresh: () => void;
 }) {
-  const planning = useWorldPlan(view, map, refresh);
+  // One composition for both layouts; the phone's differs only in what it draws
+  // and in one-tap orders (`auto`).
+  const phone = usePhoneLayout();
+  const planning = useWorldPlan(view, map, refresh, phone);
   const designate = useDesignations(view.game_id, view.your_slot, view.state.units);
   useLeaveWarning(planning.dirty);
   const economy = useMemo(() => economyOf(view.state), [view.state]);
@@ -222,6 +242,48 @@ function WorldScreen({
   const unitHex = planning.selectedUnit?.coord ?? null;
   const panelHex =
     unitHex === null ? planning.selectedHex : map.siteAt(unitHex.q, unitHex.r) !== undefined ? unitHex : null;
+  const play: ReportPlay = {
+    turnPlayback,
+    watching: watching !== null,
+    beat: playback !== null ? beatNow : -1,
+    itemBeats,
+    fights,
+    onPlay: () => watchTurn(null),
+    onBeat: (beat) => watchTurn(beat),
+  };
+
+  if (phone) {
+    return (
+      <PhoneWorld
+        map={map}
+        view={view}
+        error={error}
+        planning={planning}
+        designate={designate}
+        economy={economy}
+        outlook={outlook}
+        home={base}
+        overlay={overlay}
+        panTo={panTo}
+        jump={jump}
+        reveal={reveal}
+        renderer={renderer}
+        onRenderer={setRenderer}
+        report={report}
+        items={digest?.items ?? null}
+        play={play}
+        trails={reportOpen}
+        onToggleTrails={() => setReportToggle({ turn: view.turn, open: !reportOpen })}
+        resolved={resolved}
+        watching={watching}
+        playback={playback}
+        playbackNote={turnPlayback.status === "ready" ? turnPlayback.message : null}
+        onBeatNow={setBeatNow}
+        onExitWatch={exitWatch}
+        manual={{ open: manualOpen, setOpen: setManualOpen, section: manualSection, setSection: setManualSection }}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#1a1d22] text-ivory-100">
@@ -262,15 +324,7 @@ function WorldScreen({
             flash={resolved?.seq ?? null}
             onToggle={() => setReportToggle({ turn: view.turn, open: !reportOpen })}
             onJump={jump}
-            play={{
-              turnPlayback,
-              watching: watching !== null,
-              beat: playback !== null ? beatNow : -1,
-              itemBeats,
-              fights,
-              onPlay: () => watchTurn(null),
-              onBeat: (beat) => watchTurn(beat),
-            }}
+            play={play}
           />
         </div>
         <MapControls renderer={renderer} minimap={minimap} home={base} manualOpen={manualOpen} setManualOpen={setManualOpen} />
@@ -414,7 +468,6 @@ function baseOf(state: WorldState, map: WorldMap, slot: string): Axial | null {
 
 // --- header -----------------------------------------------------------------------
 
-const RESOURCE_LABEL = { manpower: "Manpower", fuel: "Fuel", steel: "Steel" } as const;
 
 /**
  * One line at any width: resources and army size are named by their glyphs, and
@@ -468,97 +521,11 @@ function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: For
   );
 }
 
-/**
- * A header readout. With `glyph` alone the glyph names it (resources, army size:
- * the glyph carries the label and its tooltip); with `glyph` and `text` both show
- * (the clock); with neither, the text label.
- */
-function Stat({
-  label,
-  glyph,
-  text = glyph === undefined,
-  children,
-}: {
-  label: string;
-  glyph?: GlyphName;
-  text?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <span className="flex items-baseline gap-1.5">
-      {glyph !== undefined && <Glyph name={glyph} label={text ? undefined : label} className="self-center" />}
-      {text && <span className="font-label text-[11px] uppercase tracking-wider text-ivory-400">{label}</span>}
-      {children}
-    </span>
-  );
-}
-
-function Countdown({ clock, nextTickAt }: { clock: string; nextTickAt: string | null }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 5_000);
-    return () => clearInterval(id);
-  }, []);
-  if (nextTickAt === null) {
-    return (
-      <Stat label="Clock" glyph="turn" text>
-        {clock === "manual" ? "manual" : "unscheduled"}
-      </Stat>
-    );
-  }
-  const at = new Date(nextTickAt);
-  const seconds = Math.round((at.getTime() - now) / 1000);
-  const minutes = Math.ceil(seconds / 60);
-  const when = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  return (
-    <Stat label="Resolves" glyph="turn" text>
-      <span className="font-data">
-        {seconds <= 0
-          ? "resolving…"
-          : minutes >= 60
-            ? `${Math.floor(minutes / 60)}h ${minutes % 60}m`
-            : `${minutes}m`}
-      </span>{" "}
-      <span className="hidden text-ivory-400 xl:inline">({when})</span>
-    </Stat>
-  );
-}
 
 // --- shared panel bits --------------------------------------------------------------
 
-const BUILDING_LABEL: Record<Building, string> = {
-  barracks: "Barracks",
-  depot: "Depot",
-  workshop: "Workshop",
-};
 
-const UNIT_LABEL = { infantry: "Infantry", artillery: "Artillery", armor: "Armor" } as const;
 
-function stocksText(s: Stocks): string {
-  const parts = RESOURCES.filter((r) => s[r] !== 0).map((r) => `${s[r]} ${r}`);
-  return parts.length === 0 ? "free" : parts.join(", ");
-}
-
-/**
- * A cost or income as the header shows stocks: each resource's glyph and amount
- * ("free" for nothing). The tooltip and accessible name spell it out.
- */
-function StocksGlyphs({ stocks, className = "" }: { stocks: Stocks; className?: string }) {
-  const text = stocksText(stocks);
-  const parts = RESOURCES.filter((r) => stocks[r] !== 0);
-  if (parts.length === 0) return <span className={className}>free</span>;
-  return (
-    // Plain inline layout: the glyphs sit on the text baseline like the digits.
-    <span role="img" aria-label={text} title={text} className={className}>
-      {parts.map((r) => (
-        <span key={r} className="mr-1.5 whitespace-nowrap last:mr-0">
-          <Glyph name={r} size={13} className="mr-0.5" />
-          {stocks[r]}
-        </span>
-      ))}
-    </span>
-  );
-}
 
 function Panel({
   title,
@@ -627,106 +594,8 @@ function Chip({
 
 // --- army ---------------------------------------------------------------------------
 
-/** How a unit's swap reads: who it swaps with and whether it relieves or is relieved. */
-interface SwapInfo {
-  partner: Unit;
-  role: "relieves" | "relieved" | "swaps";
-}
 
-/** A unit's name in prose: its designation ("2nd Infantry"), else type and id. */
-const unitTag = (u: Unit, designate: Designate) => designate(u.id) ?? `${UNIT_LABEL[u.type]} #${u.id}`;
 
-function orderText(
-  order: WorldOrder | undefined,
-  route: PlannedRoute | undefined,
-  swap: SwapInfo | null = null,
-  designate: Designate = () => null,
-): string {
-  // Kept short: beside a designation ("3rd Infantry") and the HP pips the Army row
-  // has room for about a dozen characters. The unit panel says what "no orders" means.
-  // A halt on contact leads, so a truncated Army row still shows it.
-  if (order === undefined) {
-    if (route?.kind !== "standing") return "no orders";
-    if (route.halt !== null) return `travelling: ${haltText(route.halt, route.from)}`;
-    return route.eta !== null && route.eta <= 1 ? "arriving this turn" : `travelling${turnsText(route.eta)}`;
-  }
-  switch (order.kind) {
-    case "travel": {
-      if (route !== undefined && route.halt !== null) return `travel: ${haltText(route.halt, route.from)}`;
-      const eta = route?.eta ?? null;
-      return eta !== null && eta <= 1 ? "travel, this turn" : `travel${turnsText(eta)}`;
-    }
-    case "move":
-      if (swap !== null) {
-        if (swap.role === "relieves") return `relieve ${at(swap.partner.coord)}`;
-        // The partner's short name: the Army row has no room for "2nd Infantry".
-        const partner = designate(swap.partner.id, true) ?? `#${swap.partner.id}`;
-        if (swap.role === "relieved") return `relieved by ${partner}`;
-        return `swap with ${partner}`;
-      }
-      return route?.attack ? `attack ${at(route.attack)}` : `move ${order.path.length} hex${order.path.length === 1 ? "" : "es"}`;
-    case "march":
-      return "march";
-    case "barrage":
-      return `barrage ${at(order.target)}`;
-    case "rest":
-      return "rest";
-    case "hold":
-      return "hold";
-    case "deploy":
-      return "deploy";
-  }
-}
-
-/** ", 3 turns" for a travel taking more than one turn, else nothing. */
-function turnsText(eta: number | null): string {
-  return eta !== null && eta > 1 ? `, ${eta} turns` : "";
-}
-
-function etaText(eta: number | null): string {
-  if (eta === null) return "";
-  if (eta <= 1) return "arrives this turn";
-  return `${eta} turns`;
-}
-
-/** The swap each own unit is half of under the plan, by unit id. */
-function useSwaps(view: WorldView, planning: WorldPlanning): ReadonlyMap<number, SwapInfo> {
-  const { units } = view.state;
-  const slot = view.your_slot;
-  const orders = planning.plan.orders;
-  return useMemo(() => {
-    const own = units.filter((u) => u.owner === slot);
-    const zoc = hostileZoc(units, slot);
-    const swaps = new Map<number, SwapInfo>();
-    for (const u of own) {
-      const partner = swapPartner(u, orders, own);
-      if (partner !== null) swaps.set(u.id, { partner, role: swapRole(u, partner, zoc) });
-    }
-    return swaps;
-  }, [units, slot, orders]);
-}
-
-/**
- * HP as a number in the data face plus ten pips, amber at 6 and below, red at 3
- * and below, so a glance tells a fresh unit from a spent one.
- */
-function HpPips({ hp, onDark = false }: { hp: number; onDark?: boolean }) {
-  const tone = hp <= 3 ? "bg-invalid" : hp <= 6 ? "bg-warn" : "bg-valid";
-  const text = hp <= 3 ? "text-invalid" : hp <= 6 && !onDark ? "text-[#9a6510]" : hp <= 6 ? "text-warn" : "";
-  return (
-    <span className="flex shrink-0 items-center gap-1" title={`${hp} of 10 HP`}>
-      <span className={`w-4 text-right font-data text-sm tabular-nums ${text}`}>{hp}</span>
-      <span className="flex gap-px" aria-hidden>
-        {Array.from({ length: 10 }, (_, i) => (
-          <span
-            key={i}
-            className={`h-2.5 w-[3px] rounded-[1px] ${i < hp ? tone : onDark ? "bg-parchment-200/25" : "bg-ink-900/15"}`}
-          />
-        ))}
-      </span>
-    </span>
-  );
-}
 
 function ArmyPanel({
   view,
@@ -797,55 +666,9 @@ function ArmyPanel({
 
 // --- last turn ----------------------------------------------------------------------
 
-const SECTION_LABEL = { fighting: "Fighting", base: "Base", movement: "Movement", seen: "Also seen" } as const;
-// The status greens and reds are tuned for dark wood; on parchment they need more ink.
-const TONE_CLASS = { good: "text-[#466428]", bad: "text-invalid", neutral: "" } as const;
 
-/** What the report panel needs for turn playback. */
-interface ReportPlay {
-  turnPlayback: TurnPlayback;
-  watching: boolean;
-  /** The beat on the board during playback (`-1`: not playing). */
-  beat: number;
-  /** The beat each report item shows in (`-1`: none), aligned with `items`. */
-  itemBeats: readonly number[] | null;
-  fights: readonly Engagement[];
-  onPlay: () => void;
-  /** Watch from this beat, paused there (or jump to it if already watching). */
-  onBeat: (beat: number) => void;
-}
 
-const FIGHT_RESULT: Record<Engagement["result"], { text: string; tone: keyof typeof TONE_CLASS }> = {
-  won: { text: "Won", tone: "good" },
-  took: { text: "Took", tone: "good" },
-  shelled: { text: "Shelled", tone: "good" },
-  held: { text: "Held", tone: "good" },
-  lost: { text: "Lost", tone: "bad" },
-  lost_site: { text: "Lost", tone: "bad" },
-  under_fire: { text: "Shelled", tone: "bad" },
-  traded: { text: "Traded", tone: "neutral" },
-  repulsed: { text: "Repulsed", tone: "bad" },
-  missed: { text: "Missed", tone: "neutral" },
-};
 
-function PlayButton({ play, turn }: { play: ReportPlay; turn: number }) {
-  const status = play.turnPlayback.status;
-  if (status === "none" || status === "waiting" || play.watching) return null;
-  if (status === "empty") {
-    return <span className="font-label text-[11px] uppercase tracking-wide text-wood-500">Nothing moved in your sight</span>;
-  }
-  return (
-    <button
-      type="button"
-      onClick={play.onPlay}
-      title={`Watch turn ${turn} on the board, pulse by pulse`}
-      aria-label={`Play turn ${turn}`}
-      className="fhq-btn whitespace-nowrap text-xs"
-    >
-      ▶ Play
-    </button>
-  );
-}
 
 function ReportPanel({
   load,
@@ -960,38 +783,6 @@ function ReportPanel({
   );
 }
 
-function ReportLine({ item, current, onClick }: { item: ReportItem; current: boolean; onClick: (() => void) | null }) {
-  const ref = useRef<HTMLLIElement>(null);
-  useEffect(() => {
-    if (current) ref.current?.scrollIntoView({ block: "nearest" });
-  }, [current]);
-  const body = (
-    <>
-      <span className={TONE_CLASS[item.tone]}>{item.text}</span>
-      {item.detail.map((d) => (
-        <span key={d} className="block pl-3 text-wood-500">
-          {d}
-        </span>
-      ))}
-    </>
-  );
-  const highlight = current ? "bg-brass-400/40 ring-1 ring-brass-600" : "";
-  return (
-    <li ref={ref} className="text-xs leading-snug" aria-current={current || undefined}>
-      {onClick === null ? (
-        <span className={`block rounded-sm px-1 py-0.5 ${highlight}`}>{body}</span>
-      ) : (
-        <button
-          type="button"
-          onClick={onClick}
-          className={`block w-full rounded-sm px-1 py-0.5 text-left hover:bg-parchment-400/40 ${highlight}`}
-        >
-          {body}
-        </button>
-      )}
-    </li>
-  );
-}
 
 const KIND_LABEL: Record<OrderKind, string> = {
   travel: "Travel",
@@ -1311,34 +1102,6 @@ function BasePanel({
   );
 }
 
-const SITE_LABEL = {
-  base: "Base",
-  city: "City",
-  farm: "Farm",
-  oil_field: "Oil field",
-  steel_mill: "Steel mill",
-  factory: "Factory",
-} as const;
-
-/** What defends a neutral site at each garrison tier (WORLD_SPEC §7). */
-const GARRISON_TEXT = [
-  "",
-  "militia, one infantry at 5 HP",
-  "one infantry",
-  "an infantry and a gun",
-  "two infantry and a gun",
-];
-
-/**
- * A site's panel title: leveled sites (farm, oil field, steel mill, factory) add
- * their level; a base says whose it is, so it never reads like the buildings panel.
- */
-function siteTitle(site: MapSite, owner: string | null | undefined, slot: string): string {
-  if (site.kind === "base") return owner === undefined ? "Vacant base site" : owner === slot ? "Your base" : "Enemy base";
-  return (SITE_TILE_KINDS as readonly string[]).includes(site.kind)
-    ? `${SITE_LABEL[site.kind]} · Level ${site.level}`
-    : SITE_LABEL[site.kind];
-}
 
 function HexPanel({
   map,
@@ -1564,7 +1327,3 @@ function PlanBar({
   );
 }
 
-/** "5 manpower, 20 fuel, 2 steel": what the stocks hold after the plan's spending. */
-function stocksLeft(s: Stocks): string {
-  return RESOURCES.map((r) => `${s[r]} ${r}`).join(", ");
-}

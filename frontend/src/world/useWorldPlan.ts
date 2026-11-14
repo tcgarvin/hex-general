@@ -23,6 +23,13 @@
 // it and then halt it at once, disordered. Escape and the stay-put orders go back
 // to that default.
 //
+// One-tap orders ("auto", the phone layout): `onHexTap` lets the tap pick the
+// order (`autoOrder.ts`) instead of a mode. With `auto` on, a selected deployed
+// unit always has its move reach worked out (and drawn), deployed artillery marks
+// the visible hostiles it can shell (`shellable`), and the next tap can be armed
+// for a waypoint or a barrage (`arm`). The desktop shell leaves `auto` off and
+// keeps its modes.
+//
 // Unsent edits are mirrored into `sessionStorage` (`planStore.ts`) and restored
 // after a reload of the same turn, but only over the server plan they were forked
 // from: if a newer plan was submitted elsewhere, the draft is set aside and the
@@ -37,6 +44,7 @@ import { reachableContinuations, type HexIndex } from "@/planning/reach";
 import { ARTILLERY_RANGE, isPassable, UNIT_MOVE } from "@/planning/rules";
 import type { components } from "@/lib/api/schema";
 
+import { autoTap, holdAllUnits, type Armed } from "./autoOrder";
 import { contactSources, contactZone, defaultPlanMode, haltHex, inView, routeFog, type RouteFog } from "./contact";
 import type { Building } from "./economy";
 import { hostileHexes, moveStepRules } from "./moveRules";
@@ -150,8 +158,25 @@ export interface WorldPlanning {
   hostile: ReadonlySet<string>;
   /** Hexes the selected artillery could shell (barrage mode). */
   barrageRange: readonly Axial[];
+  /** Hexes within the deploy distance of known contact (`contactZone`). */
+  contactZone: ReadonlySet<string>;
   notice: Notice | null;
   onHexClick: (hex: Axial, mods?: ClickMods) => void;
+  /**
+   * A tap in auto mode: with a unit selected the tap picks its order
+   * (`autoTap`); otherwise it selects your unit there or inspects the hex.
+   */
+  onHexTap: (hex: Axial) => void;
+  /** What the next tap is armed for (auto mode), else `null`. */
+  armed: Armed | null;
+  /** Arm (or with `null`, disarm) the next tap for the selected unit. */
+  arm: (armed: Armed | null) => void;
+  /** Visible hostile hexes the selected deployed artillery can shell (auto mode; else empty). */
+  shellable: readonly Axial[];
+  /** The unit has something to do this turn: a staged order or a standing travel. */
+  busy: (unit: Unit) => boolean;
+  /** Hold every deployed unit with nothing to do (`holdAllUnits`). */
+  holdAll: () => void;
   selectUnit: (unitId: number | null) => void;
   /** Select the next (1) or previous (-1) own unit, idle ones first; returns it. */
   cycleUnit: (dir: 1 | -1) => Unit | null;
@@ -185,7 +210,8 @@ export interface WorldPlanning {
   submitError: string | null;
 }
 
-export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => void): WorldPlanning {
+/** `auto`: one-tap orders for the phone layout (see the header). */
+export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => void, auto = false): WorldPlanning {
   const slot = view.your_slot;
   const state = view.state;
   const server = useMemo(() => planFromSubmission(view.submission), [view.submission]);
@@ -234,11 +260,10 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     else clearUnsentPlan(gameId, turn);
   }, [gameId, turn, plan, dirty, current, asideNow]);
 
-  const [selection, setSelection] = useState<{ turn: number; unitId: number | null; hex: Axial | null; mode: PlanMode }>(
-    { turn: view.turn, unitId: null, hex: null, mode: "travel" },
-  );
+  const [selection, setSelection] = useState<Selection>({ turn: view.turn, unitId: null, hex: null, mode: "travel", armed: null });
   const sel = useMemo(
-    () => (selection.turn === view.turn ? selection : { turn: view.turn, unitId: null, hex: null, mode: "travel" as const }),
+    (): Selection =>
+      selection.turn === view.turn ? selection : { turn: view.turn, unitId: null, hex: null, mode: "travel", armed: null },
     [selection, view.turn],
   );
   const ownUnits = useMemo(() => state.units.filter((u) => u.owner === slot), [state.units, slot]);
@@ -298,18 +323,20 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
   );
 
   const moveReach = useMemo(() => {
-    if (selectedUnit === null || sel.mode !== "move" || selectedUnit.posture === "column") return new Map<string, Axial[]>();
+    if (selectedUnit === null || (sel.mode !== "move" && !auto) || selectedUnit.posture === "column") return new Map<string, Axial[]>();
     const order = plan.orders[selectedUnit.id];
-    const base = order?.kind === "move" ? order.path : [];
+    // Auto mode works from a fresh move each tap: a tap replaces the move, never extends it.
+    const base = order?.kind === "move" && !auto ? order.path : [];
     const index = localIndex(map, selectedUnit.coord, UNIT_MOVE[selectedUnit.type] + 2);
     const rules = moveStepRules(selectedUnit, { units: state.units, viewer: slot, orders: plan.orders, standing });
     const reach = reachableContinuations(selectedUnit, [], index, rules);
     if (base.length > 0) for (const [k, v] of reachableContinuations(selectedUnit, base, index, rules)) reach.set(k, v);
     return reach;
-  }, [selectedUnit, sel.mode, plan.orders, map, state.units, slot, standing]);
+  }, [selectedUnit, sel.mode, auto, plan.orders, map, state.units, slot, standing]);
 
+  const barrageArmed = sel.mode === "barrage" || (auto && sel.armed === "barrage");
   const barrageRange = useMemo(() => {
-    if (selectedUnit === null || sel.mode !== "barrage") return [];
+    if (selectedUnit === null || !barrageArmed) return [];
     const { q, r } = selectedUnit.coord;
     const hexes: Axial[] = [];
     for (let dq = -ARTILLERY_RANGE; dq <= ARTILLERY_RANGE; dq++) {
@@ -320,12 +347,49 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       }
     }
     return hexes;
-  }, [selectedUnit, sel.mode, map]);
+  }, [selectedUnit, barrageArmed, map]);
+
+  const shellable = useMemo(() => {
+    if (!auto || selectedUnit === null || selectedUnit.type !== "artillery" || selectedUnit.posture !== "deployed") return [];
+    const seen = new Set<string>();
+    const targets: Axial[] = [];
+    for (const u of state.units) {
+      const key = hexKey(u.coord.q, u.coord.r);
+      if (u.owner === slot || seen.has(key) || !inBarrageRange(selectedUnit, u.coord) || axialEqual(u.coord, selectedUnit.coord)) continue;
+      seen.add(key);
+      targets.push(u.coord);
+    }
+    return targets;
+  }, [auto, selectedUnit, state.units, slot]);
 
   const select = useCallback(
     (unitId: number | null, hex: Axial | null, mode: PlanMode = modeFor(unitId)) =>
-      setSelection({ turn: view.turn, unitId, hex, mode }),
+      setSelection({ turn: view.turn, unitId, hex, mode, armed: null }),
     [view.turn, modeFor],
+  );
+
+  /** Add `hex` as the next waypoint of the unit's travel (Shift+click, or an armed tap). */
+  const addStop = useCallback(
+    (unit: Unit, hex: Axial) => {
+      const base = travelBase(unit, plan.orders, standing);
+      if (base === null) {
+        warn("Set a destination first: click a hex, then Shift+click hexes to pass through");
+        return;
+      }
+      const added = addWaypoint((from, to, via) => cachedRoute(costs, from, to, via), map, unit.coord, base, hex);
+      if ("error" in added) warn(added.error);
+      else setOrder(unit.id, { kind: "travel", destination: base.destination, via: added.via, onArrival: base.onArrival });
+    },
+    [plan.orders, standing, warn, costs, map, setOrder],
+  );
+
+  /** A click or tap on a hex with your own units: select one, stepping through a stack, then the hex. */
+  const selectAt = useCallback(
+    (here: readonly Unit[], hex: Axial) => {
+      const at = here.findIndex((u) => u.id === sel.unitId);
+      select(at < here.length - 1 ? here[at + 1].id : null, hex);
+    },
+    [sel.unitId, select],
   );
 
   const zoc = useMemo(() => hostileZoc(state.units, slot), [state.units, slot]);
@@ -369,20 +433,7 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
           return;
         }
         if (sel.mode === "travel") {
-          const base = travelBase(selectedUnit, plan.orders, standing);
-          if (base === null) {
-            warn("Set a destination first: click a hex, then Shift+click hexes to pass through");
-            return;
-          }
-          const added = addWaypoint(
-            (from, to, via) => cachedRoute(costs, from, to, via),
-            map,
-            selectedUnit.coord,
-            base,
-            hex,
-          );
-          if ("error" in added) warn(added.error);
-          else setOrder(selectedUnit.id, { kind: "travel", destination: base.destination, via: added.via, onArrival: base.onArrival });
+          addStop(selectedUnit, hex);
           return;
         }
         if (friend !== undefined && friend.id !== selectedUnit.id) {
@@ -393,8 +444,7 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       if (here.length > 0) {
         // Your own unit always selects, in every mode. Clicking a stack again
         // steps through its units, then the hex itself.
-        const at = here.findIndex((u) => u.id === sel.unitId);
-        select(at < here.length - 1 ? here[at + 1].id : null, hex);
+        selectAt(here, hex);
         return;
       }
       if (selectedUnit !== null && sel.mode === "barrage") {
@@ -423,7 +473,53 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       }
       select(null, hex);
     },
-    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, standing, setOrder, select, warn, orderSwap],
+    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, setOrder, select, selectAt, addStop, warn, orderSwap],
+  );
+
+  const onHexTap = useCallback(
+    (hex: Axial) => {
+      const here = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
+      if (selectedUnit === null) {
+        if (here.length > 0) selectAt(here, hex);
+        else select(null, hex);
+        return;
+      }
+      const cell = map.hexAt(hex.q, hex.r);
+      const unit = selectedUnit;
+      const result = autoTap({
+        unit,
+        hex,
+        ownHere: here.length > 0,
+        armed: sel.armed,
+        reach: moveReach,
+        hostile,
+        zone,
+        passable: cell !== undefined && isPassable(cell.terrain),
+        route: (to) => cachedRoute(costs, unit.coord, to, []),
+        previous: plan.orders[unit.id],
+        outOfRange: OUT_OF_RANGE,
+      });
+      const setArmed = (armed: Armed | null) => setSelection({ ...sel, armed });
+      switch (result.kind) {
+        case "select":
+          selectAt(here, hex);
+          return;
+        case "waypoint":
+          setArmed(null);
+          addStop(unit, hex);
+          return;
+        case "order":
+          setOrder(unit.id, result.order);
+          if (result.notice !== null) warn(result.notice);
+          setArmed(result.armed);
+          return;
+        case "notice":
+          warn(result.text);
+          setArmed(result.armed);
+          return;
+      }
+    },
+    [ownUnits, selectedUnit, map, sel, moveReach, hostile, zone, costs, plan.orders, selectAt, select, addStop, setOrder, warn],
   );
 
   const previewTravel = useCallback(
@@ -529,8 +625,20 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     moveReach,
     hostile,
     barrageRange,
+    contactZone: zone,
     notice,
     onHexClick,
+    onHexTap,
+    armed: selectedUnit === null ? null : sel.armed,
+    arm: (armed) => setSelection({ ...sel, armed }),
+    shellable,
+    busy,
+    holdAll: () =>
+      edit((p) => {
+        const orders: Record<number, WorldOrder> = { ...p.orders };
+        for (const u of holdAllUnits(ownUnits, p.orders, standing)) orders[u.id] = { kind: "hold" };
+        return { ...p, orders };
+      }),
     selectUnit: (unitId) => {
       const unit = ownUnits.find((u) => u.id === unitId);
       select(unitId, unit?.coord ?? null);
@@ -591,6 +699,16 @@ function travelBase(
   if (order !== undefined) return null;
   const s = standing.find((t) => t.unit_id === unit.id);
   return s === undefined ? null : { destination: s.destination, via: [], onArrival: s.on_arrival ?? "deployed" };
+}
+
+/** What is selected, and how the next click or tap is read. */
+interface Selection {
+  turn: number;
+  unitId: number | null;
+  hex: Axial | null;
+  mode: PlanMode;
+  /** Auto mode: what the next tap is armed for. */
+  armed: Armed | null;
 }
 
 /** This tab's edits to a turn's plan (see `useWorldPlan`). */

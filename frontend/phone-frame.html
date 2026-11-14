@@ -1,0 +1,57 @@
+<!doctype html>
+<!--
+  Dev-only phone harness: the app in a same-origin 390x844 iframe, so a desktop
+  browser (whose windows can't go that narrow) can show the phone layout. The
+  iframe's own width drives the layout's media query, and it shares the login
+  session. Served by the Vite dev server at /phone-frame.html; not part of the
+  build (Vite builds index.html only).
+
+  /phone-frame.html?path=/world/<id>   the page to load (default /)
+  &w=844&h=390                         another size (e.g. a phone sideways)
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phone frame</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0d0e10;
+        color: #a89880;
+        font: 12px system-ui, sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      iframe {
+        border: 0;
+        border-radius: 6px;
+        box-shadow: 0 0 0 1px #333, 0 10px 40px rgb(0 0 0 / 0.6);
+        background: #1a1d22;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe id="phone" title="App at phone size"></iframe>
+    <div id="caption"></div>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const path = params.get("path") || "/";
+      const w = Number(params.get("w")) || 390;
+      const h = Number(params.get("h")) || 844;
+      const frame = document.getElementById("phone");
+      frame.width = String(w);
+      frame.height = String(h);
+      // Same origin only: a path, never another site.
+      frame.src = path.startsWith("/") && !path.startsWith("//") ? path : "/";
+      document.getElementById("caption").textContent = `${w}×${h} · ${frame.src}`;
+    </script>
+  </body>
+</html>

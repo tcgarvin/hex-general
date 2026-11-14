@@ -129,6 +129,11 @@ stack or configuring Google OAuth.
   works on the deployed stack too, gated by the dev role (below).
 - **Seed:** a seed script creates the dev users (+ optionally a starter game) so a
   fresh `supabase start` is immediately playable.
+- **Phone width:** desktop Chrome windows can't go narrower than about 500 px, so the
+  Vite dev server serves a harness, `/phone-frame.html?path=/world/<id>` (optionally
+  `&w=844&h=390`), that shows the app in a same-origin 390×844 iframe. The iframe's
+  width drives the phone layout's media query and it shares the login session. It is
+  dev-only (`frontend/phone-frame.html`; Vite builds `index.html` only).
 
 ## Deviations from the original roadmap
 

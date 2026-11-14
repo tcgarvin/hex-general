@@ -67,6 +67,7 @@ export function PlaybackBar({
   note,
   onBeat,
   onExit,
+  compact = false,
 }: {
   playback: Playback;
   renderer: WorldRenderer;
@@ -77,6 +78,8 @@ export function PlaybackBar({
   note: string | null;
   onBeat: (beat: number) => void;
   onExit: () => void;
+  /** The phone layout: a full-width two-row bar with 44 px keys, in place of the bottom bar. */
+  compact?: boolean;
 }) {
   const pb = playback;
   const durationMs = useMemo(() => (k: number) => playDurationMs(pb, k), [pb]);
@@ -182,6 +185,54 @@ export function PlaybackBar({
   const atEnd = state.t >= n;
   const title = beat < 0 ? "" : atEnd ? "Turn over" : beatTitle(pb.beats, beat);
   const nextSpeed = SPEEDS[(SPEEDS.indexOf(state.speed) + 1) % SPEEDS.length] as Speed;
+  if (compact) {
+    const big = "fhq-btn size-11 shrink-0 px-0";
+    return (
+      <div className="pointer-events-auto flex flex-col">
+        {note !== null && <div className="fhq-note mx-3 mb-2 px-3 py-1.5 text-xs">{note}</div>}
+        <div
+          role="toolbar"
+          aria-label={`Playback of turn ${pb.turn}`}
+          className="fhq-wood flex flex-col gap-1.5 border-t-2 border-brass-600 px-2 pb-[max(10px,env(safe-area-inset-bottom))] pl-[max(8px,env(safe-area-inset-left))] pr-[max(8px,env(safe-area-inset-right))] pt-1.5 text-sm text-ivory-100"
+        >
+          <div className="flex min-h-11 items-center gap-2">
+            <span className="shrink-0 font-display text-sm uppercase tracking-wide text-brass-400">Turn {pb.turn}</span>
+            <span className="min-w-0 flex-1 truncate font-label text-sm uppercase tracking-wide" aria-live="polite">
+              {title}
+            </span>
+            {followPaused && (
+              <button type="button" className="fhq-btn h-11 shrink-0 px-3 text-xs" onClick={() => setFollowPaused(false)}>
+                Follow
+              </button>
+            )}
+            <button type="button" onClick={onExit} className="fhq-btn h-11 shrink-0 px-4 text-xs">
+              Exit
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button type="button" className={big} onClick={controls.stepBack} disabled={state.t <= 0} aria-label="Step back">
+              <Icon d="M12 3.5v9L6 8zM4 3.5v9" />
+            </button>
+            <button type="button" className={big} onClick={controls.toggle} aria-label={state.playing ? "Pause" : "Play"}>
+              {state.playing ? <Icon d="M5 3.5v9M11 3.5v9" /> : <Icon d="M5 3.5v9l7-4.5z" fill />}
+            </button>
+            <button type="button" className={big} onClick={controls.stepForward} disabled={atEnd} aria-label="Step forward">
+              <Icon d="M4 3.5v9L10 8zM12 3.5v9" />
+            </button>
+            <button
+              type="button"
+              className="fhq-btn h-11 w-12 shrink-0 px-0 font-data text-xs normal-case"
+              onClick={() => controls.setSpeed(nextSpeed)}
+              aria-label={`Speed ${state.speed}x`}
+            >
+              {state.speed}×
+            </button>
+            <Scrubber t={state.t} beats={n} marks={marks} onSeek={controls.seek} onGrab={controls.pause} className="h-11 min-w-0 flex-1" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 flex max-w-[calc(100%-24px)] -translate-x-1/2 flex-col items-center gap-2">
       {note !== null && (
@@ -249,7 +300,10 @@ function Scrubber({
   marks,
   onSeek,
   onGrab,
+  className = "h-8 w-56 min-[1100px]:w-72",
 }: {
+  /** Size classes (the phone's bar lets it fill the row). */
+  className?: string;
   t: number;
   beats: number;
   marks: readonly ("own_fight" | "fight" | null)[];
@@ -257,7 +311,7 @@ function Scrubber({
   onGrab: () => void;
 }) {
   return (
-    <div className="relative mx-1 h-8 w-56 min-[1100px]:w-72">
+    <div className={`relative mx-1 ${className}`}>
       <div className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 bg-[#1a120c] shadow-[inset_0_1px_2px_black] ring-1 ring-brass-600/50" />
       {marks.map((mark, k) => (
         <span

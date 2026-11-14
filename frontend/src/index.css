@@ -411,6 +411,17 @@ body {
     -webkit-mask-position: center;
   }
 
+  /* Phone layout (world/mobile/): a plain parchment face for the bottom sheets and
+     the unit dock's name plate, where the full frame would eat a narrow screen. */
+  .fhq-parchment {
+    background-color: var(--color-parchment-200);
+    background-image:
+      linear-gradient(rgb(228 205 162 / 0.8), rgb(228 205 162 / 0.8)),
+      url("./board/panels/chrome/parchment.png");
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
+    color: var(--color-ink-900);
+  }
+
   /* The hover tooltip: the note's construction, a touch translucent. */
   .fhq-tip {
     border: 1px solid var(--color-wood-700);
