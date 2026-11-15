@@ -724,19 +724,25 @@ and economy, reading the turn, and the key list, with a search box; Esc closes i
 numbers come from the world's economy config and `state.config`, the planner's mirrors
 of the engine (`UNIT_STATS`, `COLUMN_RULES`, `DEPLOY_DISTANCE`), and
 `world/manualRules.ts` for the rest, which `manualRules.test.ts` checks against the
-engine's Python source. Move reach follows the engine's occupancy rules: your own deployed
-units block unless they are leaving this turn, a hostile hex can end a move (an attack)
-but not be passed, and an engaged unit can't step from one hostile-adjacent hex to
-another.
+engine's Python source. Move reach follows the engine's occupancy rules: a path goes round
+your own deployed units unless they are leaving this turn, but where it can't, the hex is
+still offered (since 2026-11-15) and the plan warns that the Move will be blocked; a
+hostile hex can end a move (an attack) but not be passed, and an engaged unit can't step
+from one hostile-adjacent hex to another.
 
-**As built (2026-11-11): relief swaps and the turn report.** A relief in place or
-friendly swap (§4.7) is ordered from the board with Shift+click on a neighbouring unit
-of yours while one of your deployed units is selected, or with the "Swap with" buttons
-the unit panel shows when a deployed friend stands next door. It stages two one-hex
-Move orders, each unit into the other's hex, so both step on pulse 1, where the engine
-resolves the pair as a swap (`_friendly_cycles` in `movement.py`). The swap is refused
-when both hexes touch a visible hostile deployed unit, because ZOC would block both
-steps. The Army list reads "relieve (q,r)" for the unit stepping up into a hex next to
+**As built (2026-11-11, reworked 2026-11-15): relief swaps and the turn report.** A
+relief in place or friendly swap (§4.7) is two ordinary Move orders whose first steps go
+into each other's hex, so both step on pulse 1, where the engine resolves the pair as a
+swap (`_friendly_cycles` in `movement.py`). There is no swap button (removed 2026-11-15):
+your own units never make a hex unreachable for a Move, so either half can be ordered
+first; a long-press (Shift+click on desktop) orders the selected unit onto a hex one of
+your units stands on, and a tap (a Move-mode click on desktop) on the hex of a lone unit
+of yours that is leaving it follows that unit in. A staged Move your own units will block
+under the plan as it stands is warned about on the unit panel, the phone dock and the
+Army lists ("Blocked unless 2nd Infantry moves out of the way first", "Ends where ...",
+"Jams with ..."; `planConflicts` in `frontend/src/world/moveRules.ts`), recomputed as the
+plan changes; a mutual swap or closed rotation is not a conflict, and the plan can still
+be submitted. The Army list reads "relieve (q,r)" for the unit stepping up into a hex next to
 the enemy, "relieved by ..." for the one falling back, and "swap with ..." otherwise.
 Clearing either order clears both. The turn report lists income and upkeep, then the
 build and recruits paid after them, and ends on the stocks the header shows. A column
@@ -826,8 +832,10 @@ shows a dock: previous and next idle unit, its name plate, a readout of its orde
 words (destination and arrival, the stop short of contact, halts and unscouted hexes, the
 expected result of an attack or barrage, the withdrawal warning) or a prompt, and keys for
 Clear, Deploy (columns), Barrage (deployed artillery), Hold, Rest and More (a stop on the
-way, on arrival, swaps, the disband pick). There are no mode chips: a tap picks the order
-(`autoOrder.ts`). Your unit's hex selects it; an armed stop or barrage takes the tap; deployed
+way, on arrival, the disband pick). There are no mode chips: a tap picks the order
+(`autoOrder.ts`). Your unit's hex selects it (unless it is a lone unit of yours leaving
+that hex within reach: the selected unit follows it in, and a second tap selects); a
+long-press orders as if none of your units stood on the hex; an armed stop or barrage takes the tap; deployed
 artillery shells a visible hostile in range; a deployed unit moves (or attacks) within this
 turn's reach; a deployed unit that a Travel would halt where it stands (inside the contact
 zone, or its first step enters it) moves to the reachable hex ending closest to the tap

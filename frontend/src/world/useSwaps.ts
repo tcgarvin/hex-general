@@ -4,7 +4,8 @@
 import { useMemo } from "react";
 
 import type { SwapInfo } from "./labels";
-import { hostileZoc, swapPartner, swapRole } from "./relief";
+import { hostileZoc } from "./moveRules";
+import { swapPartner, swapRole } from "./relief";
 import type { WorldView } from "./useWorld";
 import type { WorldPlanning } from "./useWorldPlan";
 

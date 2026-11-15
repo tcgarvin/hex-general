@@ -73,7 +73,6 @@ import {
   type OrderKind,
   type WorldOrder,
 } from "./plan";
-import { hostileZoc, swapBlocked, swapNeighbours } from "./relief";
 import { siteIconUrl } from "./siteArt";
 import { turnReport, turnTrails, unitBook, type ReportItem } from "./turnReport";
 import { useTurnReport, type ReportLoad } from "./useTurnReport";
@@ -155,8 +154,8 @@ function WorldScreen({
   // One composition for both layouts; the phone's differs only in what it draws
   // and in one-tap orders (`auto`).
   const phone = usePhoneLayout();
-  const planning = useWorldPlan(view, map, refresh, phone);
   const designate = useDesignations(view.game_id, view.your_slot, view.state.units);
+  const planning = useWorldPlan(view, map, refresh, designate, phone);
   useLeaveWarning(planning.dirty);
   const economy = useMemo(() => economyOf(view.state), [view.state]);
   const outlook = useMemo(() => forecast(view.state, map, view.your_slot), [view, map]);
@@ -301,6 +300,7 @@ function WorldScreen({
           overlay={overlay}
           panTo={panTo}
           onHexClick={planning.onHexClick}
+          onHexLongPress={planning.onHexLongPress}
           onRenderer={setRenderer}
         />
         {renderer !== null && watching === null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} designate={designate} />}
@@ -624,7 +624,10 @@ function ArmyPanel({
           {units.map((u) => {
             const route = planning.routes.find((r) => r.unitId === u.id);
             const selected = planning.selectedUnit?.id === u.id;
-            const text = orderText(planning.plan.orders[u.id], route, swaps.get(u.id) ?? null, designate);
+            const blocked = planning.conflicts.get(u.id);
+            const ordered = orderText(planning.plan.orders[u.id], route, swaps.get(u.id) ?? null, designate);
+            // A blocked Move leads with the warning, so the narrow row still shows it.
+            const text = blocked === undefined ? ordered : `blocked: ${ordered}`;
             const name = designate(u.id) ?? UNIT_LABEL[u.type];
             // The glyph gives the type, so the row can use the short designation ("2nd Inf").
             const short = designate(u.id, true) ?? UNIT_LABEL[u.type];
@@ -651,7 +654,10 @@ function ArmyPanel({
                     {u.posture === "column" && <Glyph name="column" size={12} label="Packed column" className="-ml-0.5" />}
                   </span>
                   <HpPips hp={u.hp} onDark={selected} />
-                  <span className="ml-auto truncate text-xs" title={text}>
+                  <span
+                    className={`ml-auto truncate text-xs ${blocked !== undefined && !selected ? "text-invalid" : ""}`}
+                    title={blocked === undefined ? text : `${text}. ${blocked}.`}
+                  >
                     {text}
                   </span>
                 </button>
@@ -827,9 +833,7 @@ function UnitPanel({
   const active: OrderKind | null =
     planning.mode === "move" || planning.mode === "barrage" ? planning.mode : (order?.kind ?? null);
   const swap = useSwaps(view, planning).get(unit.id) ?? null;
-  const own = view.state.units.filter((u) => u.owner === view.your_slot);
-  const zoc = useMemo(() => hostileZoc(view.state.units, view.your_slot), [view.state.units, view.your_slot]);
-  const neighbours = swapNeighbours(unit, own).filter((u) => u.id !== swap?.partner.id);
+  const blocked = planning.conflicts.get(unit.id) ?? null;
   const warning = withdrawalWarning(unit, order, view.state.units, view.your_slot, planning.hostile);
   // A deployed unit already within contact distance (it opens in Move) told to Travel.
   const packIntoContact = order?.kind === "travel" && planning.defaultMode === "move";
@@ -900,6 +904,7 @@ function UnitPanel({
           {expected.note !== null && <p className="text-wood-500">{expected.note}</p>}
         </div>
       )}
+      {blocked !== null && <p className="mt-1 text-xs font-semibold text-invalid">{blocked}.</p>}
       {warning !== null && <p className="mt-1 text-xs font-semibold text-invalid">{warning}.</p>}
       {packIntoContact && (
         <p className="mt-1 text-xs font-semibold text-invalid">
@@ -979,24 +984,6 @@ function UnitPanel({
               : `Swaps hexes with ${unitTag(swap.partner, designate)} on the first pulse.`}
         </p>
       )}
-      {neighbours.length > 0 && (
-        <div className="mt-2 border-t border-wood-500/40 pt-2 text-xs">
-          <p className="text-wood-500">Relief: swap places with a neighbour (or Shift+click it on the map).</p>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {neighbours.map((n) => {
-              const blocked = swapBlocked(unit, n, zoc);
-              return (
-                <Chip key={n.id} disabled={blocked !== null} title={blocked ?? undefined} onClick={() => planning.orderSwap(n.id)}>
-                  Swap with {unitTag(n, designate)}
-                </Chip>
-              );
-            })}
-          </div>
-          {neighbours.every((n) => swapBlocked(unit, n, zoc) !== null) && (
-            <p className="mt-1 text-wood-500">Can't: {swapBlocked(unit, neighbours[0], zoc)}.</p>
-          )}
-        </div>
-      )}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-wood-500/40 pt-2 text-xs">
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={disbandRank >= 0} onChange={() => planning.toggleDisband(unit.id)} />
@@ -1004,11 +991,8 @@ function UnitPanel({
           {disbandRank >= 0 ? `Disband first in a shortage (#${disbandRank + 1})` : "Disband first in a shortage"}
         </label>
         {order !== undefined && (
-          <Chip
-            onClick={() => planning.setOrder(unit.id, null)}
-            title={swap !== null ? "Cancel the swap: both units lose their orders" : "Drop this turn's order"}
-          >
-            {swap !== null ? "Cancel swap" : "Clear"}
+          <Chip onClick={() => planning.setOrder(unit.id, null)} title="Drop this turn's order">
+            Clear
           </Chip>
         )}
       </div>

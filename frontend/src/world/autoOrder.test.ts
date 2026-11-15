@@ -7,13 +7,18 @@ import {
   autoTap,
   closerMove,
   COLUMN_IN_CONTACT,
+  followingNotice,
+  followTap,
   holdAllUnits,
   NO_ROUTE,
   NOTHING_CLOSER,
+  ownOnHex,
   TOWARD_IT,
   type AutoTapInput,
 } from "./autoOrder";
 import { contactZone } from "./contact";
+import type { MoveContext } from "./moveRules";
+import type { WorldOrder } from "./plan";
 
 type Unit = components["schemas"]["Unit"];
 
@@ -44,7 +49,9 @@ const input = (over: Partial<AutoTapInput> = {}): AutoTapInput => {
   return {
     unit: u,
     hex: { q: 5, r: 0 },
-    ownHere: false,
+    own: { count: 0, leaving: null },
+    ignoreOwn: false,
+    name: (x) => `Unit ${x.id}`,
     armed: null,
     reach: new Map(),
     hostile: new Set(),
@@ -59,7 +66,7 @@ const input = (over: Partial<AutoTapInput> = {}): AutoTapInput => {
 
 describe("autoTap", () => {
   it("selects your own unit before anything else, even when armed", () => {
-    expect(autoTap(input({ ownHere: true, armed: "barrage" }))).toEqual({ kind: "select" });
+    expect(autoTap(input({ own: { count: 1, leaving: null }, armed: "barrage" }))).toEqual({ kind: "select" });
   });
 
   it("adds a waypoint when 'add a stop' is armed", () => {
@@ -186,5 +193,95 @@ describe("holdAllUnits", () => {
       [{ unit_id: 3, destination: { q: 9, r: 9 }, route: [], on_arrival: "deployed" }],
     );
     expect(picked.map((u) => u.id)).toEqual([1]);
+  });
+});
+
+describe("tapping a hex one of your units stands on", () => {
+  const friend = unit({ id: 2, coord: { q: 1, r: 0 } });
+  const there = { q: 1, r: 0 };
+  const reach = reachOf([there]);
+  const leaving = { count: 1, leaving: friend };
+
+  it("follows a unit that is leaving its hex, with a notice", () => {
+    expect(autoTap(input({ hex: there, own: leaving, reach }))).toEqual({
+      kind: "order",
+      order: { kind: "move", path: [there] },
+      notice: followingNotice("Unit 2", "Tap"),
+      armed: null,
+    });
+    expect(followingNotice("2nd Infantry", "Tap")).toBe("Following 2nd Infantry into its hex. Tap again to select 2nd Infantry.");
+  });
+
+  it("selects the unit there on the second tap, once the Move ends on its hex", () => {
+    expect(autoTap(input({ hex: there, own: leaving, reach, previous: { kind: "move", path: [there] } }))).toEqual({ kind: "select" });
+  });
+
+  it("selects a unit that is not leaving, or one out of reach, or when a tap is armed", () => {
+    expect(autoTap(input({ hex: there, own: { count: 1, leaving: null }, reach }))).toEqual({ kind: "select" });
+    expect(autoTap(input({ hex: there, own: leaving, reach: new Map() }))).toEqual({ kind: "select" });
+    expect(autoTap(input({ hex: there, own: leaving, reach, armed: "waypoint" }))).toEqual({ kind: "select" });
+  });
+
+  it("selects when the selected unit is a column", () => {
+    expect(followTap({ ...input({ hex: there, own: leaving, reach }), unit: unit({ posture: "column" }) }, "Click")).toEqual({
+      kind: "select",
+    });
+  });
+
+  it("orders the unit there on a long-press, as if none of your units stood on it", () => {
+    const stays = { count: 1, leaving: null };
+    expect(autoTap(input({ hex: there, own: stays, reach, ignoreOwn: true }))).toEqual({
+      kind: "order",
+      order: { kind: "move", path: [there] },
+      notice: null,
+      armed: null,
+    });
+    // Beyond reach: the usual travel rule.
+    const far = { q: 5, r: 0 };
+    expect(autoTap(input({ hex: far, own: stays, ignoreOwn: true }))).toMatchObject({
+      kind: "order",
+      order: { kind: "travel", destination: far },
+    });
+    // On the selected unit's own hex it still selects.
+    expect(autoTap(input({ hex: { q: 0, r: 0 }, own: { count: 1, leaving: null }, ignoreOwn: true }))).toEqual({ kind: "select" });
+  });
+});
+
+describe("ownOnHex", () => {
+  const me = unit({ id: 1 });
+  const friend = unit({ id: 2, coord: { q: 1, r: 0 } });
+  const ctx = (orders: MoveContext["orders"], units: Unit[] = [me, friend]): MoveContext => ({
+    units,
+    viewer: "p1",
+    orders,
+    standing: [],
+  });
+
+  it("names the lone unit there when it is ordered out of its hex", () => {
+    expect(ownOnHex([friend], me.id, ctx({ 2: { kind: "move", path: [{ q: 2, r: 0 }] } }))).toEqual({ count: 1, leaving: friend });
+    const travel: WorldOrder = { kind: "travel", destination: { q: 8, r: 0 }, via: [], onArrival: "deployed" };
+    expect(ownOnHex([friend], me.id, ctx({ 2: travel })).leaving).toBe(friend);
+  });
+
+  it("names nobody for a unit staying put, a column, a stack, or the selected unit itself", () => {
+    expect(ownOnHex([friend], me.id, ctx({})).leaving).toBeNull();
+    expect(ownOnHex([friend], me.id, ctx({ 2: { kind: "hold" } })).leaving).toBeNull();
+    const column = { ...friend, posture: "column" as const };
+    expect(ownOnHex([column], me.id, ctx({}, [me, column])).leaving).toBeNull();
+    const other = unit({ id: 3, coord: { q: 1, r: 0 }, posture: "column" });
+    expect(ownOnHex([friend, other], me.id, ctx({ 2: { kind: "move", path: [{ q: 2, r: 0 }] } }))).toEqual({ count: 2, leaving: null });
+    expect(ownOnHex([me], me.id, ctx({ 1: { kind: "move", path: [{ q: 1, r: 1 }] } })).leaving).toBeNull();
+  });
+
+  it("names nobody for a unit stepping into the selected unit's own hex: that is half a swap, not a follow", () => {
+    // `me` stands at the default coord; the friend's Move steps onto it.
+    expect(ownOnHex([friend], me.id, ctx({ 2: { kind: "move", path: [me.coord] } })).leaving).toBeNull();
+    // Passing through my hex on the way elsewhere counts the same.
+    expect(ownOnHex([friend], me.id, ctx({ 2: { kind: "move", path: [me.coord, { q: -1, r: 0 }] } })).leaving).toBeNull();
+  });
+
+  it("names nobody for a unit attacking from where it stands", () => {
+    const enemy = unit({ id: 9, owner: "p2", coord: { q: 2, r: 0 } });
+    expect(ownOnHex([friend], me.id, ctx({ 2: { kind: "move", path: [{ q: 2, r: 0 }] } }, [me, friend, enemy])).leaving).toBeNull();
   });
 });

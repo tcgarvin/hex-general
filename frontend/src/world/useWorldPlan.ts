@@ -8,15 +8,21 @@
 // replaces the whole plan (WORLD_SPEC §10.1), so the local copy is always sent in
 // full.
 //
-// Board clicks: one of your own units always selects it (a stack cycles), except
-// Shift+click on a neighbouring deployed unit of yours, which orders the two to
-// swap places (relief in place, `relief.ts`). Otherwise, in Travel mode, Shift+click
-// adds a waypoint to the selected unit's travel (`waypoints.ts`); a plain click on
-// a new destination starts a fresh route without waypoints. With a unit selected, Move and Barrage
+// Board clicks: one of your own units selects it (a stack cycles), except a follow:
+// in Move mode, a click on the hex of a lone deployed unit of yours that is ordered
+// out of it this turn, within reach, moves the selected unit in behind it
+// (`followTap`); the next click there selects that unit. Shift+click (or a
+// long-press, `onHexLongPress`) on a hex holding your units orders the selected
+// unit there as if they weren't: two units ordered into each other's hex swap
+// (WORLD_SPEC §4.7). Otherwise, in Travel mode, Shift+click adds a waypoint to the
+// selected unit's travel (`waypoints.ts`); a plain click on a new destination
+// starts a fresh route without waypoints. With a unit selected, Move and Barrage
 // clicks outside the reach keep the selection and leave a `notice` saying why,
-// rather than silently dropping it. Move reach is occupancy-aware
-// (`moveRules.ts`), so a plan doesn't route through your own units or past an
-// enemy.
+// rather than silently dropping it. Move reach follows the engine's occupancy
+// rules where it can (`moveRules.ts`): it doesn't run past an enemy, and it goes
+// round your own units when it can, but your own units never make a hex
+// unreachable. A Move they will block is staged anyway, and `conflicts` says why
+// (`planConflicts`), recomputed whenever the plan changes.
 //
 // A selected unit opens in Travel mode, except a deployed unit already within
 // contact distance (`defaultPlanMode`), which opens in Move: a Travel would pack
@@ -24,7 +30,8 @@
 // to that default.
 //
 // One-tap orders ("auto", the phone layout): `onHexTap` lets the tap pick the
-// order (`autoOrder.ts`) instead of a mode. With `auto` on, a selected deployed
+// order (`autoOrder.ts`) instead of a mode, and a long-press orders the selected
+// unit onto a hex as if none of your units stood on it. With `auto` on, a selected deployed
 // unit always has its move reach worked out (and drawn), deployed artillery marks
 // the visible hostiles it can shell (`shellable`), and the next tap can be armed
 // for a waypoint or a barrage (`arm`). The desktop shell leaves `auto` off and
@@ -40,14 +47,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { axialDistance, axialEqual, axialNeighbors, hexKey, type Axial, type Hex } from "@/board/hex";
 import { api } from "@/lib/api/client";
 import { describeApiError } from "@/lib/api/errors";
-import { reachableContinuations, type HexIndex } from "@/planning/reach";
+import type { HexIndex } from "@/planning/reach";
 import { ARTILLERY_RANGE, isPassable, UNIT_MOVE } from "@/planning/rules";
 import type { components } from "@/lib/api/schema";
 
-import { autoTap, holdAllUnits, type Armed } from "./autoOrder";
+import { autoTap, followTap, holdAllUnits, ownOnHex, type Armed } from "./autoOrder";
 import { contactSources, contactZone, defaultPlanMode, haltHex, inView, routeFog, type RouteFog } from "./contact";
+import type { Designate } from "./designations";
 import type { Building } from "./economy";
-import { hostileHexes, moveStepRules } from "./moveRules";
+import { unitTag } from "./labels";
+import { conflictText, hostileHexes, planConflicts, planMoveReach, type MoveContext } from "./moveRules";
 import {
   inBarrageRange,
   planFromSubmission,
@@ -59,7 +68,6 @@ import {
   type WorldPlan,
 } from "./plan";
 import { clearUnsentPlan, draftOnLoad, loadUnsentPlan, saveUnsentPlan, supersededBy } from "./planStore";
-import { hostileZoc, swapBlocked, swapOrders, swapPartner } from "./relief";
 import { columnCosts, findRoute, RouteSearch, travelEta, type ColumnCosts } from "./routing";
 import { cycleUnit } from "./unitCycle";
 import { addWaypoint, MAX_WAYPOINTS, removeWaypoint } from "./waypoints";
@@ -152,7 +160,7 @@ export interface WorldPlanning {
    */
   defaultMode: PlanMode;
   routes: readonly PlannedRoute[];
-  /** Hexes a click would extend the selected unit's move to (move mode). */
+  /** Hexes a click would extend the selected unit's move to (move mode), own units or not (`planMoveReach`). */
   moveReach: ReadonlyMap<string, Axial[]>;
   /** Hexes holding a visible hostile unit (by `hexKey`): a move there is an attack. */
   hostile: ReadonlySet<string>;
@@ -162,6 +170,17 @@ export interface WorldPlanning {
   contactZone: ReadonlySet<string>;
   notice: Notice | null;
   onHexClick: (hex: Axial, mods?: ClickMods) => void;
+  /**
+   * A long-press: with a unit selected, order it to `hex` as if none of your
+   * units stood there (the phone's tap rule, or the desktop mode's click rule);
+   * with nothing selected, the same as a tap or click.
+   */
+  onHexLongPress: (hex: Axial) => void;
+  /**
+   * The staged Moves your own units will block under the plan as it stands, as
+   * the warning to show, by unit id (`planConflicts`).
+   */
+  conflicts: ReadonlyMap<number, string>;
   /**
    * A tap in auto mode: with a unit selected the tap picks its order
    * (`autoTap`); otherwise it selects your unit there or inspects the hex.
@@ -195,10 +214,8 @@ export interface WorldPlanning {
   /** Drop all of the unit's travel waypoints. */
   clearWaypoints: (unitId: number) => void;
   setMode: (mode: PlanMode) => void;
-  /** Set or clear a unit's order (clearing one half of a swap clears both). */
+  /** Set or clear a unit's order. */
   setOrder: (unitId: number, order: WorldOrder | null) => void;
-  /** Order the selected unit and its neighbour `friendId` to swap hexes (relief in place). */
-  orderSwap: (friendId: number) => void;
   setOnArrival: (unitId: number, posture: Posture) => void;
   setBuild: (building: Building | null) => void;
   setRecruit: (coord: Axial, type: UnitType | null) => void;
@@ -210,8 +227,17 @@ export interface WorldPlanning {
   submitError: string | null;
 }
 
-/** `auto`: one-tap orders for the phone layout (see the header). */
-export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => void, auto = false): WorldPlanning {
+/**
+ * `auto`: one-tap orders for the phone layout (see the header). `designate` names
+ * units in the notices and warnings.
+ */
+export function useWorldPlan(
+  view: WorldView,
+  map: WorldMap,
+  onSubmitted: () => void,
+  designate: Designate,
+  auto = false,
+): WorldPlanning {
   const slot = view.your_slot;
   const state = view.state;
   const server = useMemo(() => planFromSubmission(view.submission), [view.submission]);
@@ -305,16 +331,11 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     (unitId: number, order: WorldOrder | null) =>
       edit((p) => {
         const orders = { ...p.orders };
-        // A swap is two orders that only work together: dropping or replacing
-        // one half would leave the other walking into a hex that stays held.
-        const unit = ownUnits.find((u) => u.id === unitId);
-        const partner = unit === undefined ? null : swapPartner(unit, p.orders, ownUnits);
-        if (partner !== null) delete orders[partner.id];
         if (order === null) delete orders[unitId];
         else orders[unitId] = order;
         return { ...p, orders };
       }),
-    [edit, ownUnits],
+    [edit],
   );
 
   const routes = useMemo(
@@ -322,17 +343,25 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     [ownUnits, plan, standing, costs, hostile, zone, visible],
   );
 
+  const moveCtx = useMemo(
+    (): MoveContext => ({ units: state.units, viewer: slot, orders: plan.orders, standing }),
+    [state.units, slot, plan.orders, standing],
+  );
+  const name = useCallback((u: Unit) => unitTag(u, designate), [designate]);
+  const conflicts = useMemo(() => {
+    const texts = new Map<number, string>();
+    for (const [id, conflict] of planConflicts(moveCtx)) texts.set(id, conflictText(conflict, name));
+    return texts;
+  }, [moveCtx, name]);
+
   const moveReach = useMemo(() => {
     if (selectedUnit === null || (sel.mode !== "move" && !auto) || selectedUnit.posture === "column") return new Map<string, Axial[]>();
     const order = plan.orders[selectedUnit.id];
     // Auto mode works from a fresh move each tap: a tap replaces the move, never extends it.
     const base = order?.kind === "move" && !auto ? order.path : [];
     const index = localIndex(map, selectedUnit.coord, UNIT_MOVE[selectedUnit.type] + 2);
-    const rules = moveStepRules(selectedUnit, { units: state.units, viewer: slot, orders: plan.orders, standing });
-    const reach = reachableContinuations(selectedUnit, [], index, rules);
-    if (base.length > 0) for (const [k, v] of reachableContinuations(selectedUnit, base, index, rules)) reach.set(k, v);
-    return reach;
-  }, [selectedUnit, sel.mode, auto, plan.orders, map, state.units, slot, standing]);
+    return planMoveReach(selectedUnit, base, index, moveCtx);
+  }, [selectedUnit, sel.mode, auto, plan.orders, map, moveCtx]);
 
   const barrageArmed = sel.mode === "barrage" || (auto && sel.armed === "barrage");
   const barrageRange = useMemo(() => {
@@ -392,58 +421,46 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     [sel.unitId, select],
   );
 
-  const zoc = useMemo(() => hostileZoc(state.units, slot), [state.units, slot]);
-  const orderSwap = useCallback(
-    (friendId: number) => {
-      const friend = ownUnits.find((u) => u.id === friendId);
-      if (selectedUnit === null || friend === undefined) return;
-      const blocked = swapBlocked(selectedUnit, friend, zoc);
-      if (blocked !== null) {
-        warn(`Can't swap: ${blocked}`);
+  /**
+   * A click; `ignoreOwn` (Shift+click or a long-press on a hex holding your
+   * units, a unit selected) gives the mode's order as if none of them stood there.
+   */
+  const clickHex = useCallback(
+    (hex: Axial, shift: boolean, ignoreOwn: boolean) => {
+      const key = hexKey(hex.q, hex.r);
+      const onHex = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
+      const ordering = ignoreOwn && onHex.length > 0 && selectedUnit !== null && !axialEqual(hex, selectedUnit.coord);
+      const here = ordering ? [] : onHex;
+      // Shift+click elsewhere in Travel mode: the next waypoint (not on a long-press).
+      if (shift && !ordering && selectedUnit !== null && sel.mode === "travel") {
+        addStop(selectedUnit, hex);
         return;
       }
-      edit((p) => {
-        const orders = { ...p.orders };
-        // Each unit may be half of another swap already; that one is undone.
-        for (const u of [selectedUnit, friend]) {
-          const old = swapPartner(u, p.orders, ownUnits);
-          if (old !== null) delete orders[old.id];
-        }
-        return { ...p, orders: { ...orders, ...swapOrders(selectedUnit, friend) } };
-      });
-    },
-    [ownUnits, selectedUnit, zoc, warn, edit],
-  );
-
-  const onHexClick = useCallback(
-    (hex: Axial, mods: ClickMods = { shift: false }) => {
-      const key = hexKey(hex.q, hex.r);
-      const here = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
-      const friend = here.find((u) => u.posture === "deployed");
-      if (mods.shift && selectedUnit !== null) {
-        // Precedence: a deployed neighbour of yours means a swap; otherwise, in
-        // Travel mode, the hex becomes the next waypoint.
-        const neighbour =
-          friend !== undefined &&
-          friend.id !== selectedUnit.id &&
-          selectedUnit.posture === "deployed" &&
-          axialDistance(friend.coord, selectedUnit.coord) === 1;
-        if (neighbour) {
-          orderSwap(friend.id);
-          return;
-        }
-        if (sel.mode === "travel") {
-          addStop(selectedUnit, hex);
-          return;
-        }
-        if (friend !== undefined && friend.id !== selectedUnit.id) {
-          orderSwap(friend.id); // not a neighbour: says why it can't
+      if (ordering && selectedUnit !== null && selectedUnit.posture === "deployed") {
+        // Onto a hex one of your units stands on: a Move when this turn's reach
+        // covers it, whatever the mode (packing to travel one hex is never meant).
+        const index = localIndex(map, selectedUnit.coord, UNIT_MOVE[selectedUnit.type] + 2);
+        const path = planMoveReach(selectedUnit, [], index, moveCtx).get(key);
+        if (path !== undefined) {
+          setOrder(selectedUnit.id, { kind: "move", path });
           return;
         }
       }
       if (here.length > 0) {
-        // Your own unit always selects, in every mode. Clicking a stack again
-        // steps through its units, then the hex itself.
+        // Your own unit selects, in every mode, but a Move-mode click can follow
+        // a unit out of its hex. Clicking a stack again steps through its units,
+        // then the hex itself.
+        if (selectedUnit !== null && sel.mode === "move") {
+          const follow = followTap(
+            { unit: selectedUnit, hex, own: ownOnHex(here, selectedUnit.id, moveCtx), reach: moveReach, previous: plan.orders[selectedUnit.id], name },
+            "Click",
+          );
+          if (follow.kind === "order") {
+            setOrder(selectedUnit.id, follow.order);
+            warn(follow.notice);
+            return;
+          }
+        }
         selectAt(here, hex);
         return;
       }
@@ -473,11 +490,17 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       }
       select(null, hex);
     },
-    [selectedUnit, sel, moveReach, ownUnits, map, costs, plan.orders, setOrder, select, selectAt, addStop, warn, orderSwap],
+    [selectedUnit, sel, moveReach, moveCtx, name, ownUnits, map, costs, plan.orders, setOrder, select, selectAt, addStop, warn],
+  );
+  const onHexClick = useCallback(
+    // Shift+click on a hex holding your units orders the selected unit there.
+    (hex: Axial, mods: ClickMods = { shift: false }) => clickHex(hex, mods.shift, mods.shift),
+    [clickHex],
   );
 
-  const onHexTap = useCallback(
-    (hex: Axial) => {
+  /** A tap; `ignoreOwn` (a long-press) orders as if none of your units stood on the hex. */
+  const tapHex = useCallback(
+    (hex: Axial, ignoreOwn: boolean) => {
       const here = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
       if (selectedUnit === null) {
         if (here.length > 0) selectAt(here, hex);
@@ -489,7 +512,9 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
       const result = autoTap({
         unit,
         hex,
-        ownHere: here.length > 0,
+        own: ownOnHex(here, unit.id, moveCtx),
+        ignoreOwn,
+        name,
         armed: sel.armed,
         reach: moveReach,
         hostile,
@@ -519,7 +544,12 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
           return;
       }
     },
-    [ownUnits, selectedUnit, map, sel, moveReach, hostile, zone, costs, plan.orders, selectAt, select, addStop, setOrder, warn],
+    [ownUnits, selectedUnit, map, sel, moveReach, moveCtx, name, hostile, zone, costs, plan.orders, selectAt, select, addStop, setOrder, warn],
+  );
+  const onHexTap = useCallback((hex: Axial) => tapHex(hex, false), [tapHex]);
+  const onHexLongPress = useCallback(
+    (hex: Axial) => (auto ? tapHex(hex, true) : clickHex(hex, false, true)),
+    [auto, tapHex, clickHex],
   );
 
   const previewTravel = useCallback(
@@ -629,6 +659,8 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     notice,
     onHexClick,
     onHexTap,
+    onHexLongPress,
+    conflicts,
     armed: selectedUnit === null ? null : sel.armed,
     arm: (armed) => setSelection({ ...sel, armed }),
     shellable,
@@ -657,7 +689,6 @@ export function useWorldPlan(view: WorldView, map: WorldMap, onSubmitted: () => 
     clearWaypoints: (unitId) => editVia(unitId, () => []),
     setMode: (mode) => select(sel.unitId, sel.hex, mode),
     setOrder,
-    orderSwap,
     setOnArrival: (unitId, posture) =>
       edit((p) => {
         const order = p.orders[unitId];

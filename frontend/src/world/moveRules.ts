@@ -32,9 +32,19 @@
 // Step `n` of a path is tried on pulse `n` (a blocked step stops the unit, so a
 // legal path never waits), which is what lets a later step into a friend's hex
 // succeed where an early one wouldn't.
+//
+// Your own units never block planning. These strict rules come first: a hex they
+// reach is offered by the path they give. A hex they don't reach, but that
+// `provisionalStepRules` (own units left out) does, is offered too, so a Move can
+// be staged into a hex a friend has not been ordered out of yet, or into each
+// other's hex for a swap, whatever order the player gives them in. The plan then
+// warns instead: `planConflicts` re-checks every staged Move against the others'
+// orders and says which will be blocked and by whom ("Blocked unless 2nd
+// Infantry moves out of the way first"), so the warning clears itself once the
+// friend is ordered out. A mutual swap or a closed rotation is not a conflict.
 
 import { axialDistance, axialNeighbors, hexKey, type Axial } from "@/board/hex";
-import type { StepRules } from "@/planning/reach";
+import { reachableContinuations, type HexIndex, type StepRules } from "@/planning/reach";
 import type { components } from "@/lib/api/schema";
 
 import { NEUTRAL_OWNER } from "./colors";
@@ -62,62 +72,108 @@ export interface MoveContext {
   standing: readonly StandingTravel[];
 }
 
+/** Why an own deployed unit is still in its hex on a pulse (see `ownTraffic`). */
+export type HoldReason = "stays" | "packs" | "attacks";
+
+/**
+ * The first pulse a step into `u`'s hex can land (`Infinity`: never this turn),
+ * and why it is held until then. A unit with a Move leaves on pulse 1 (assumed to
+ * succeed), unless it attacks from where it stands; one setting off on a Travel or
+ * March order (or carrying on a standing one) packs and leaves on pulse 5, unless
+ * it starts in hostile ZOC and so can't pack; anything else stays put.
+ */
+function departure(
+  u: Unit,
+  order: WorldOrder | undefined,
+  travelling: boolean,
+  hostile: ReadonlySet<string>,
+  zoc: ReadonlySet<string>,
+): { pulse: number; reason: HoldReason } {
+  if (order?.kind === "move" && order.path.length > 0) {
+    const end = order.path[order.path.length - 1];
+    if (order.path.length === 1 && hostile.has(hexKey(end.q, end.r))) return { pulse: Infinity, reason: "attacks" };
+    return { pulse: 1, reason: "stays" };
+  }
+  if (order?.kind === "travel" || order?.kind === "march" || (order === undefined && travelling)) {
+    return zoc.has(hexKey(u.coord.q, u.coord.r)) ? { pulse: Infinity, reason: "stays" } : { pulse: PACKED_FROM_PULSE, reason: "packs" };
+  }
+  return { pulse: Infinity, reason: "stays" };
+}
+
+/** Hexes next to a visible hostile deployed unit (columns exert no ZOC). */
+export function hostileZoc(units: readonly Unit[], viewer: string): Set<string> {
+  const zoc = new Set<string>();
+  for (const u of units) {
+    if (u.owner === viewer || u.posture !== "deployed") continue;
+    for (const n of axialNeighbors(u.coord)) zoc.add(hexKey(n.q, n.r));
+  }
+  return zoc;
+}
+
+/**
+ * Whether one of your deployed units is ordered out of its hex this turn: a Move
+ * that leaves (not an attack from where it stands), or a Travel, March or standing
+ * travel that can pack. The same notion `moveStepRules` uses for a friend's hex.
+ */
+export function leavesThisTurn(u: Unit, ctx: MoveContext): boolean {
+  if (u.owner !== ctx.viewer || u.posture !== "deployed") return false;
+  const travelling = ctx.standing.some((s) => s.unit_id === u.id);
+  const hostile = hostileHexes(ctx.units, ctx.viewer);
+  return departure(u, ctx.orders[u.id], travelling, hostile, hostileZoc(ctx.units, ctx.viewer)).pulse < Infinity;
+}
+
+/** What the other own deployed units do to `unit`'s Move under the plan (see the module comment). */
+interface OwnTraffic {
+  /** Own deployed units' hexes: the first pulse each is free (Infinity: never), who holds it and why. */
+  freeFrom: Map<string, { pulse: number; reason: HoldReason; by: Unit }>;
+  /** Hexes an attacker waits in to strike: the first pulse each is held. */
+  heldFrom: Map<string, { pulse: number; by: Unit }>;
+  /** Hexes other own Moves step into, by pulse (step n on pulse n). */
+  entered: Map<string, Map<number, Unit>>;
+  /** Where other own Moves end (an attacker's waiting hex too), and the pulse each gets there. */
+  moveEnds: Map<string, { pulse: number; by: Unit }>;
+}
+
+function ownTraffic(unit: Unit, ctx: MoveContext, hostile: ReadonlySet<string>, zoc: ReadonlySet<string>): OwnTraffic {
+  const standing = new Set(ctx.standing.map((s) => s.unit_id));
+  const traffic: OwnTraffic = { freeFrom: new Map(), heldFrom: new Map(), entered: new Map(), moveEnds: new Map() };
+  for (const u of ctx.units) {
+    if (u.owner !== ctx.viewer || u.id === unit.id || u.posture !== "deployed") continue;
+    const order = ctx.orders[u.id];
+    const leaves = departure(u, order, standing.has(u.id), hostile, zoc);
+    traffic.freeFrom.set(hexKey(u.coord.q, u.coord.r), { ...leaves, by: u });
+    if (order?.kind !== "move" || order.path.length === 0) continue;
+    const steps = order.path.length;
+    order.path.forEach((hex, i) => {
+      const k = hexKey(hex.q, hex.r);
+      if (!traffic.entered.has(k)) traffic.entered.set(k, new Map());
+      traffic.entered.get(k)!.set(i + 1, u);
+    });
+    const end = order.path[steps - 1];
+    const endKey = hexKey(end.q, end.r);
+    traffic.moveEnds.set(endKey, { pulse: steps, by: u });
+    if (hostile.has(endKey) && steps > 1) {
+      const from = order.path[steps - 2];
+      const fromKey = hexKey(from.q, from.r);
+      traffic.heldFrom.set(fromKey, { pulse: steps - 1, by: u });
+      traffic.moveEnds.set(fromKey, { pulse: steps - 1, by: u });
+    }
+  }
+  return traffic;
+}
+
 /** The step rules for `unit`'s Move this turn (see the module comment). */
 export function moveStepRules(unit: Unit, ctx: MoveContext): StepRules {
   const hostile = hostileHexes(ctx.units, ctx.viewer);
-  const zoc = new Set<string>();
-  for (const u of ctx.units) {
-    if (u.owner === ctx.viewer || u.posture !== "deployed") continue;
-    for (const n of axialNeighbors(u.coord)) zoc.add(hexKey(n.q, n.r));
-  }
+  const zoc = hostileZoc(ctx.units, ctx.viewer);
   const canAttack = unit.type !== "artillery" && !unit.disordered;
-  const standing = new Set(ctx.standing.map((s) => s.unit_id));
-
-  // Own deployed units: the first pulse their hex is free (Infinity: never).
-  const freeFrom = new Map<string, number>();
-  // Hexes an attacker waits in to strike: the first pulse each is held.
-  const heldFrom = new Map<string, number>();
-  // Hexes other own Moves step into, and on which pulses (step n on pulse n).
-  const entered = new Map<string, Set<number>>();
-  const moveEnds = new Set<string>();
-  for (const u of ctx.units) {
-    if (u.owner !== ctx.viewer || u.id === unit.id || u.posture !== "deployed") continue;
-    const key = hexKey(u.coord.q, u.coord.r);
-    const order = ctx.orders[u.id];
-    if (order?.kind === "move" && order.path.length > 0) {
-      const steps = order.path.length;
-      order.path.forEach((hex, i) => {
-        const k = hexKey(hex.q, hex.r);
-        if (!entered.has(k)) entered.set(k, new Set());
-        entered.get(k)!.add(i + 1);
-      });
-      const end = order.path[steps - 1];
-      const endKey = hexKey(end.q, end.r);
-      moveEnds.add(endKey);
-      if (hostile.has(endKey) && steps === 1) {
-        freeFrom.set(key, Infinity);
-        continue;
-      }
-      freeFrom.set(key, 1);
-      if (hostile.has(endKey)) {
-        const from = order.path[steps - 2];
-        const fromKey = hexKey(from.q, from.r);
-        heldFrom.set(fromKey, steps - 1);
-        moveEnds.add(fromKey);
-      }
-    } else if (order?.kind === "travel" || order?.kind === "march" || (order === undefined && standing.has(u.id))) {
-      freeFrom.set(key, zoc.has(key) ? Infinity : PACKED_FROM_PULSE);
-    } else {
-      freeFrom.set(key, Infinity);
-    }
-  }
-
+  const { freeFrom, heldFrom, entered, moveEnds } = ownTraffic(unit, ctx, hostile, zoc);
   return {
     canEnter(head, next, step) {
       const key = hexKey(next.q, next.r);
       if (hostile.has(key)) return canAttack;
-      if (step < (freeFrom.get(key) ?? 0)) return false;
-      if (step >= (heldFrom.get(key) ?? Infinity)) return false;
+      if (step < (freeFrom.get(key)?.pulse ?? 0)) return false;
+      if (step >= (heldFrom.get(key)?.pulse ?? Infinity)) return false;
       if (entered.get(key)?.has(step)) return false;
       return !(zoc.has(hexKey(head.q, head.r)) && zoc.has(key));
     },
@@ -127,6 +183,145 @@ export function moveStepRules(unit: Unit, ctx: MoveContext): StepRules {
       return hostile.has(key) || !moveEnds.has(key);
     },
   };
+}
+
+/**
+ * The step rules for `unit`'s Move with your own units left out: terrain, hostile
+ * units, ZOC and the attack rules still apply, but no own unit's hex, end hex,
+ * same-pulse step or held attack hex blocks it. A hex reachable only this way is
+ * reachable "provisionally": the Move can be staged, and `planConflicts` says
+ * what in the plan would still block it.
+ */
+export function provisionalStepRules(unit: Unit, ctx: MoveContext): StepRules {
+  const units = ctx.units.filter((u) => u.owner !== ctx.viewer || u.id === unit.id);
+  return moveStepRules(unit, { ...ctx, units, orders: {} });
+}
+
+/**
+ * Every hex `unit`'s Move can reach this turn, each with its path: from where it
+ * stands, and (when `base` is non-empty) by continuing `base`, a continuation
+ * winning over a fresh path to the same hex. Under each start, the strict rules'
+ * path comes first; a hex only `provisionalStepRules` reach gets that path.
+ */
+export function planMoveReach(unit: Unit, base: readonly Axial[], index: HexIndex, ctx: MoveContext): Map<string, Axial[]> {
+  const strict = moveStepRules(unit, ctx);
+  const loose = provisionalStepRules(unit, ctx);
+  const from = (start: readonly Axial[]) => {
+    const reach = reachableContinuations(unit, start, index, strict);
+    for (const [key, path] of reachableContinuations(unit, start, index, loose)) if (!reach.has(key)) reach.set(key, path);
+    return reach;
+  };
+  const reach = from([]);
+  if (base.length > 0) for (const [key, path] of from(base)) reach.set(key, path);
+  return reach;
+}
+
+/** Why a staged Move will be blocked under the plan as it stands, and by which of your units. */
+export type MoveConflict =
+  /** `by` stays in a hex the path steps into. */
+  | { kind: "blocked"; by: Unit }
+  /** `by` is still packing for a travel when the path steps into its hex. */
+  | { kind: "packing"; by: Unit }
+  /** `by` stays in that hex to attack from it (it moves on only if it wins). */
+  | { kind: "attacker"; by: Unit }
+  /** `by` steps into the same hex on the same pulse: both stop. */
+  | { kind: "jam"; by: Unit }
+  /** `by` has already stopped in a hex the path passes through. */
+  | { kind: "stopped"; by: Unit }
+  /** `by` stops first on the hex this Move ends on. */
+  | { kind: "sameEnd"; by: Unit };
+
+/**
+ * The first step of `path` that the other own units block, under `traffic`, as
+ * `{ step, conflict }` (step 1-based), or `null`: the path is clear of them. A
+ * step into a friend's hex on the pulse it leaves is fine, so a mutual swap or a
+ * closed rotation (each unit's first step into the next one's hex, all on pulse
+ * 1) is not a conflict: the engine moves them together (`_friendly_cycles`).
+ */
+function firstConflict(
+  path: readonly Axial[],
+  traffic: OwnTraffic,
+  hostile: ReadonlySet<string>,
+): { step: number; conflict: MoveConflict } | null {
+  for (let i = 0; i < path.length; i++) {
+    const step = i + 1;
+    const key = hexKey(path[i].q, path[i].r);
+    if (hostile.has(key)) return null; // an attack: the path ends here
+    const free = traffic.freeFrom.get(key);
+    if (free !== undefined && step < free.pulse) {
+      const kind = free.reason === "packs" ? "packing" : free.reason === "attacks" ? "attacker" : "blocked";
+      return { step, conflict: { kind, by: free.by } };
+    }
+    const held = traffic.heldFrom.get(key);
+    if (held !== undefined && step >= held.pulse) return { step, conflict: { kind: "attacker", by: held.by } };
+    const jam = traffic.entered.get(key)?.get(step);
+    if (jam !== undefined) return { step, conflict: { kind: "jam", by: jam } };
+    const ends = traffic.moveEnds.get(key);
+    if (ends !== undefined && ends.pulse < step) {
+      return { step, conflict: { kind: step === path.length ? "sameEnd" : "stopped", by: ends.by } };
+    }
+  }
+  return null;
+}
+
+/**
+ * Which staged Moves of your deployed units will be blocked by your own units
+ * under the plan as it stands, by unit id. Each path is re-checked step by step
+ * against the strict rules built from every other unit's orders, so the answer
+ * doesn't depend on which order was given first. A unit that is blocked stops
+ * where it is (the engine moves on only with a clear step), so its path is cut
+ * there and the others are checked again: a unit following one that is itself
+ * blocked is blocked too. Two Moves ending on one hex: the one that gets there
+ * second is blocked. Hostile units and ZOC are not checked here (the reach
+ * already obeyed them); only your own units' traffic is.
+ */
+export function planConflicts(ctx: MoveContext): Map<number, MoveConflict> {
+  const hostile = hostileHexes(ctx.units, ctx.viewer);
+  const zoc = hostileZoc(ctx.units, ctx.viewer);
+  const movers: { unit: Unit; path: readonly Axial[] }[] = [];
+  for (const u of ctx.units) {
+    const order = ctx.orders[u.id];
+    if (u.owner !== ctx.viewer || u.posture !== "deployed" || order?.kind !== "move" || order.path.length === 0) continue;
+    movers.push({ unit: u, path: order.path });
+  }
+  const conflicts = new Map<number, MoveConflict>();
+  // The plan with each blocked Move cut short where it stops.
+  const effective: Record<number, WorldOrder> = { ...ctx.orders };
+  // A unit once blocked stays blocked (it only ever gets more company), so this ends.
+  for (let added = true; added; ) {
+    added = false;
+    const found: { unit: Unit; path: readonly Axial[]; step: number; conflict: MoveConflict }[] = [];
+    for (const { unit, path } of movers) {
+      if (conflicts.has(unit.id)) continue;
+      const hit = firstConflict(path, ownTraffic(unit, { ...ctx, orders: effective }, hostile, zoc), hostile);
+      if (hit !== null) found.push({ unit, path, ...hit });
+    }
+    for (const { unit, path, step, conflict } of found) {
+      conflicts.set(unit.id, conflict);
+      effective[unit.id] = { kind: "move", path: path.slice(0, step - 1) };
+      added = true;
+    }
+  }
+  return conflicts;
+}
+
+/** The plan warning for a blocked Move, naming the unit in the way with `name`. */
+export function conflictText(conflict: MoveConflict, name: (u: Unit) => string): string {
+  const other = name(conflict.by);
+  switch (conflict.kind) {
+    case "blocked":
+      return `Blocked unless ${other} moves out of the way first`;
+    case "packing":
+      return `Blocked: ${other} is still packing up in its hex when this unit gets there`;
+    case "attacker":
+      return `Blocked: ${other} stays in that hex to attack from it`;
+    case "jam":
+      return `Jams with ${other}: both step into the same hex at once`;
+    case "stopped":
+      return `Blocked: ${other} has already stopped in a hex on the way`;
+    case "sameEnd":
+      return `Ends where ${other} ends: only one can stop there`;
+  }
 }
 
 export const PINNED_WARNING = "An adjacent enemy that attacks this turn will hit before you move";

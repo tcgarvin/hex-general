@@ -6,9 +6,12 @@ import type { components } from "@/lib/api/schema";
 
 import {
   CANNOT_PACK_WARNING,
+  conflictText,
   hostileHexes,
   moveStepRules,
   PINNED_WARNING,
+  planConflicts,
+  planMoveReach,
   withdrawalWarning,
   type MoveContext,
 } from "./moveRules";
@@ -208,5 +211,139 @@ describe("withdrawal warning", () => {
     const travel: WorldOrder = { kind: "travel", destination: { q: 0, r: 0 }, via: [], onArrival: "deployed" };
     expect(warn(travel, [militiaBeside])).toBe(CANNOT_PACK_WARNING);
     expect(warn(travel, [unit("s2", "infantry", 5, 4, { posture: "column" })])).toBeNull();
+  });
+});
+
+describe("move reach ignoring your own units where it must", () => {
+  const full = (mover: Unit, others: Unit[], orders: Record<number, WorldOrder> = {}) =>
+    planMoveReach(mover, [], index, { units: [mover, ...others], viewer: "me", orders, standing: [] });
+
+  it("offers a stationary friend's hex, and the hexes past it, provisionally", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    const r = full(me, [friend]);
+    expect(r.get("4,3")).toEqual([{ q: 4, r: 3 }]);
+    expect(r.get("4,4")).toEqual([{ q: 4, r: 3 }, { q: 4, r: 4 }]);
+  });
+
+  it("keeps the strict path where there is one, so paths don't run through friends needlessly", () => {
+    const armor = unit("me", "armor", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    const strict = reach(armor, [friend]).get("4,4");
+    expect(full(armor, [friend]).get("4,4")).toEqual(strict);
+    expect(strict!.some((s) => s.q === 4 && s.r === 3)).toBe(false);
+  });
+
+  it("still obeys hostile units and ZOC", () => {
+    const me = unit("me", "armor", 1, 4);
+    const enemy = unit("rival", "infantry", 3, 3);
+    const friend = unit("me", "infantry", 2, 4);
+    const r = full(me, [enemy, friend]);
+    expect(r.has("3,3")).toBe(true); // an attack
+    // Never a hex reached through the enemy's hex.
+    for (const path of r.values()) expect(path.slice(0, -1).some((s) => s.q === 3 && s.r === 3)).toBe(false);
+    // An engaged unit can't slide from one enemy-adjacent hex to another, friends or not.
+    const engaged = unit("me", "infantry", 4, 3);
+    const foe = unit("rival", "infantry", 4, 4);
+    // A friend standing on the way out (5,2): the direct ZOC-to-ZOC step into (5,3)
+    // is still refused, so (5,3) is reached only through the friend, provisionally.
+    const r2 = full(engaged, [foe, unit("me", "infantry", 5, 2)]);
+    expect(r2.get("5,3")).toEqual([{ q: 5, r: 2 }, { q: 5, r: 3 }]);
+  });
+});
+
+describe("plan conflicts", () => {
+  const conflicts = (units: Unit[], orders: Record<number, WorldOrder>, standing: MoveContext["standing"] = []) =>
+    planConflicts({ units, viewer: "me", orders, standing });
+  const move = (...path: [number, number][]): WorldOrder => ({ kind: "move", path: path.map(([q, r]) => ({ q, r })) });
+  const name = (u: Unit) => `Unit ${u.id}`;
+
+  it("blocks a Move into a friend that stays put, and clears once the friend is ordered out", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    const blocked = conflicts([me, friend], { [me.id]: move([4, 3]) });
+    expect(blocked.get(me.id)).toEqual({ kind: "blocked", by: friend });
+    expect(conflictText(blocked.get(me.id)!, name)).toBe(`Blocked unless Unit ${friend.id} moves out of the way first`);
+    expect(conflicts([me, friend], { [me.id]: move([4, 3]), [friend.id]: move([4, 4]) }).size).toBe(0);
+  });
+
+  it("does not depend on which order was given first, and catches an order a later one spoils", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    const a = conflicts([me, friend], { [me.id]: move([4, 3]), [friend.id]: move([4, 4]) });
+    const b = conflicts([friend, me], { [friend.id]: move([4, 4]), [me.id]: move([4, 3]) });
+    expect([...a]).toEqual([...b]);
+    // The friend's Move replaced by Hold: the follower's Move is blocked again.
+    expect(conflicts([me, friend], { [me.id]: move([4, 3]), [friend.id]: { kind: "hold" } }).get(me.id)?.kind).toBe("blocked");
+  });
+
+  it("is clean for a mutual swap, a pass-through swap with longer paths, and a rotation", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    expect(conflicts([me, friend], { [me.id]: move([4, 3]), [friend.id]: move([4, 2]) }).size).toBe(0);
+    expect(conflicts([me, friend], { [me.id]: move([4, 3], [4, 4]), [friend.id]: move([4, 2], [4, 1]) }).size).toBe(0);
+    const third = unit("me", "infantry", 5, 2); // next to both
+    const rotation = { [me.id]: move([5, 2]), [third.id]: move([4, 3]), [friend.id]: move([4, 2]) };
+    expect(conflicts([me, friend, third], rotation).size).toBe(0);
+  });
+
+  it("warns the half of a swap that is left when the other half is cleared", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    expect(conflicts([me, friend], { [friend.id]: move([4, 2]) }).get(friend.id)).toEqual({ kind: "blocked", by: me });
+  });
+
+  it("blocks the second of two Moves ending on one hex", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 5);
+    const c = conflicts([me, friend], { [me.id]: move([4, 3]), [friend.id]: move([4, 4], [4, 3]) });
+    expect(c.has(me.id)).toBe(false);
+    expect(c.get(friend.id)).toEqual({ kind: "sameEnd", by: me });
+    expect(conflictText(c.get(friend.id)!, name)).toBe(`Ends where Unit ${me.id} ends: only one can stop there`);
+  });
+
+  it("jams two Moves stepping into one hex on the same pulse", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 4);
+    const c = conflicts([me, friend], { [me.id]: move([4, 3]), [friend.id]: move([4, 3]) });
+    expect(c.get(me.id)).toEqual({ kind: "jam", by: friend });
+    expect(c.get(friend.id)).toEqual({ kind: "jam", by: me });
+    expect(conflictText(c.get(me.id)!, name)).toBe(`Jams with Unit ${friend.id}: both step into the same hex at once`);
+  });
+
+  it("keeps others out of the hex an attacker strikes from", () => {
+    const enemy = unit("neutral", "infantry", 4, 5);
+    const attacker = unit("me", "infantry", 4, 3);
+    const me = unit("me", "armor", 4, 2);
+    const c = conflicts([me, attacker, enemy], { [attacker.id]: move([4, 4], [4, 5]), [me.id]: move([4, 3], [4, 4]) });
+    expect(c.get(me.id)).toEqual({ kind: "attacker", by: attacker });
+    expect(c.has(attacker.id)).toBe(false);
+  });
+
+  it("blocks a step into a friend still packing for travel", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const friend = unit("me", "infantry", 4, 3);
+    const travel: WorldOrder = { kind: "travel", destination: { q: 8, r: 8 }, via: [], onArrival: "deployed" };
+    expect(conflicts([me, friend], { [me.id]: move([4, 3]), [friend.id]: travel }).get(me.id)?.kind).toBe("packing");
+  });
+
+  it("blocks a unit following one that is itself blocked", () => {
+    const rear = unit("me", "infantry", 4, 1);
+    const front = unit("me", "infantry", 4, 2);
+    const wall = unit("me", "infantry", 4, 3);
+    const c = conflicts([rear, front, wall], { [rear.id]: move([4, 2]), [front.id]: move([4, 3]) });
+    expect(c.get(front.id)).toEqual({ kind: "blocked", by: wall });
+    expect(c.get(rear.id)).toEqual({ kind: "blocked", by: front });
+    // Order the wall out and both clear.
+    expect(conflicts([rear, front, wall], { [rear.id]: move([4, 2]), [front.id]: move([4, 3]), [wall.id]: move([4, 4]) }).size).toBe(0);
+  });
+
+  it("ignores columns and an attack on a hostile hex", () => {
+    const me = unit("me", "infantry", 4, 2);
+    const column = unit("me", "infantry", 4, 3, { posture: "column" });
+    expect(conflicts([me, column], { [me.id]: move([4, 3]) }).size).toBe(0);
+    const enemy = unit("rival", "infantry", 5, 2);
+    const other = unit("me", "infantry", 5, 3);
+    expect(conflicts([me, enemy, other], { [me.id]: move([5, 2]), [other.id]: move([5, 2]) }).size).toBe(0);
   });
 });

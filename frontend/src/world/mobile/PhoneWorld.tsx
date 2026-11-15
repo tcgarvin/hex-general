@@ -10,7 +10,8 @@
 // * a bottom bar with nothing selected (Army, Report, Base, and the Submit plate),
 //   each opening a bottom sheet; the unit dock when one of your units is selected;
 //   the transport bar while a turn plays back;
-// * orders by tap (`useWorldPlan`'s `onHexTap`, rule in `autoOrder.ts`), with
+// * orders by tap (`useWorldPlan`'s `onHexTap`, rule in `autoOrder.ts`) and by
+//   long-press (`onHexLongPress`: onto a hex one of your units stands on), with
 //   notices as a short toast above the dock.
 
 import { useEffect, useState } from "react";
@@ -103,6 +104,10 @@ export function PhoneWorld(props: PhoneWorldProps) {
     setSheet(null);
     planning.onHexTap(hex);
   };
+  const longPress = (hex: Axial) => {
+    setSheet(null);
+    planning.onHexLongPress(hex);
+  };
   const pick = (u: Unit) => {
     setSheet(null);
     planning.selectUnit(u.id);
@@ -125,6 +130,7 @@ export function PhoneWorld(props: PhoneWorldProps) {
           overlay={props.overlay}
           panTo={props.panTo}
           onHexClick={tap}
+          onHexLongPress={longPress}
           onRenderer={props.onRenderer}
         />
         {props.error !== null && (

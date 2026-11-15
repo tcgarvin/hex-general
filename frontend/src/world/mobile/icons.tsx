@@ -22,7 +22,6 @@ const PATHS = {
   clear: { d: "M3 8a5 5 0 1 0 1.6-3.7M3 2.5v3h3", width: 1.8 },
   barrage: { d: "M8 1.5v3.5M8 11v3.5M1.5 8H5M11 8h3.5M11.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z", width: 1.5 },
   waypoint: { d: "M8 2.5 13.5 8 8 13.5 2.5 8z", width: 1.5 },
-  swap: { d: "M3 5.5h9.5L10 3M13 10.5H3.5L6 13", width: 1.6 },
 } as const;
 
 export type IconName = keyof typeof PATHS | "play";

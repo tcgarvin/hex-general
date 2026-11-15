@@ -40,6 +40,7 @@ const input = (over: Partial<ReadoutInput> = {}): ReadoutInput => ({
   swap: null,
   partnerName: null,
   expected: null,
+  blocked: null,
   warning: null,
   zone: new Set(),
   armed: null,
@@ -74,6 +75,13 @@ describe("unitReadout", () => {
     expect(read.kind).toBe("attack");
     expect(read.title).toBe("Attack (1,0)");
     expect(read.lines.map((l) => l.text)).toEqual(["You deal 4, take 2.", "If it stays put."]);
+  });
+
+  it("leads a Move your own units will block with the warning", () => {
+    const order = { kind: "move" as const, path: [{ q: 1, r: 0 }] };
+    const read = unitReadout(input({ order, route: route({ kind: "move" }), blocked: "Blocked unless 2nd Infantry moves out of the way first" }));
+    expect(read.title).toBe("Move to (1,0)");
+    expect(read.lines[0]).toEqual({ text: "Blocked unless 2nd Infantry moves out of the way first.", tone: "bad" });
   });
 
   it("asks for a tap when armed", () => {

@@ -28,9 +28,14 @@ hides the minimap and sets the camera insets), a bottom bar (Army, Report, Base,
 Submit plate) whose keys open bottom sheets, the unit dock when one of your units is
 selected, and the compact `PlaybackBar` while a turn plays. Orders are one tap:
 `useWorldPlan(..., auto = true)` adds `onHexTap`, whose rule is the pure
-`world/autoOrder.ts` (select, armed waypoint or barrage, barrage a visible hostile in
-range, move within reach, move toward a far hex from inside the contact zone, else travel
-with an automatic stop short of contact). The dock's text is `mobile/readout.ts`. Shared
+`world/autoOrder.ts` (select your unit, or follow a lone unit of yours that is leaving its
+hex; armed waypoint or barrage; barrage a visible hostile in range; move within reach;
+move toward a far hex from inside the contact zone; else travel with an automatic stop
+short of contact). A long-press (`WorldRenderer`'s `onHexLongPress`, 450 ms held still;
+Shift+click on desktop) runs the same rule as if none of your units stood on the hex. Your
+own units never make a hex unreachable (`planMoveReach` in `world/moveRules.ts`); a Move
+they will block is staged and warned about (`planConflicts`), and two units ordered into
+each other's hex swap. The dock's text is `mobile/readout.ts`. Shared
 words and small parts live in `world/labels.ts`, `world/parts.tsx` and `world/useSwaps.ts`.
 Line icons with no glyph yet (Hold, Rest, Barrage, Clear, Report, More, menu, close,
 chevrons) are placeholders in `mobile/icons.tsx`. Check it at phone width with the dev

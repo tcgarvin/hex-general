@@ -84,14 +84,16 @@ export function ArmySheet({
       {ordered.length > 0 && <Caption>Ordered · {ordered.length}</Caption>}
       {ordered.map((u) => {
         const route = planning.routes.find((r) => r.unitId === u.id);
-        const text = orderText(planning.plan.orders[u.id], route, swaps.get(u.id) ?? null, designate);
+        const ordered = orderText(planning.plan.orders[u.id], route, swaps.get(u.id) ?? null, designate);
+        const blocked = planning.conflicts.has(u.id);
+        const text = blocked ? `blocked: ${ordered}` : ordered;
         return (
           <Line
             key={u.id}
             icon={<UnitIcon unit={u} />}
             name={designate(u.id) ?? UNIT_LABEL[u.type]}
             sub={text}
-            subTone={text.startsWith("attack") || text.includes("halts") ? "text-invalid" : ""}
+            subTone={blocked || text.startsWith("attack") || text.includes("halts") ? "text-invalid" : ""}
             right={<HpBar hp={u.hp} />}
             onClick={() => onPick(u)}
           />
@@ -208,12 +210,15 @@ export function ReviewSheet({
           <Caption>Ordered · {ordered.length}</Caption>
           {ordered.map((u) => {
             const route = planning.routes.find((r) => r.unitId === u.id);
+            const ordered = orderText(plan.orders[u.id], route, swaps.get(u.id) ?? null, designate);
+            const blocked = planning.conflicts.has(u.id);
             return (
               <Line
                 key={u.id}
                 icon={<UnitIcon unit={u} />}
                 name={designate(u.id) ?? UNIT_LABEL[u.type]}
-                sub={orderText(plan.orders[u.id], route, swaps.get(u.id) ?? null, designate)}
+                sub={blocked ? `blocked: ${ordered}` : ordered}
+                subTone={blocked ? "text-invalid" : ""}
                 right={<Icon name="chevron" size={18} />}
                 onClick={() => onPick(u)}
               />

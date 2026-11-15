@@ -17,7 +17,6 @@ import type { Designate } from "../designations";
 import { orderText, UNIT_LABEL, unitTag } from "../labels";
 import { withdrawalWarning } from "../moveRules";
 import type { OrderKind } from "../plan";
-import { hostileZoc, swapBlocked, swapNeighbours } from "../relief";
 import type { WorldView } from "../useWorld";
 import { useSwaps } from "../useSwaps";
 import type { WorldPlanning } from "../useWorldPlan";
@@ -25,7 +24,7 @@ import { at, MAX_WAYPOINTS } from "../waypoints";
 import type { WorldMap } from "../worldMap";
 import { Icon } from "./icons";
 import { unitReadout } from "./readout";
-import { Caption, HpBar, Line, OrderKey, Sheet } from "./Sheet";
+import { HpBar, Line, OrderKey, Sheet } from "./Sheet";
 
 type Unit = components["schemas"]["Unit"];
 
@@ -72,6 +71,7 @@ export function UnitDock({
     swap,
     partnerName: swap === null ? null : unitTag(swap.partner, designate),
     expected,
+    blocked: planning.conflicts.get(unit.id) ?? null,
     warning: withdrawalWarning(unit, order, view.state.units, view.your_slot, planning.hostile),
     zone: planning.contactZone,
     armed: planning.armed,
@@ -132,12 +132,7 @@ export function UnitDock({
       </div>
       <div className="flex gap-1.5">
         {order !== undefined && (
-          <OrderKey
-            icon="clear"
-            label={swap !== null ? "Cancel" : "Clear"}
-            title={swap !== null ? "Cancel the swap: both units lose their orders" : "Drop this turn's order"}
-            onClick={() => planning.setOrder(unit.id, null)}
-          />
+          <OrderKey icon="clear" label="Clear" title="Drop this turn's order" onClick={() => planning.setOrder(unit.id, null)} />
         )}
         {column && <OrderKey glyph="deploy" label="Deploy" active={kind === "deploy"} onClick={() => stay("deploy")} title="Unpack where it stands, ready to fight next turn" />}
         {guns && (
@@ -151,7 +146,7 @@ export function UnitDock({
         )}
         <OrderKey icon="hold" label="Hold" active={kind === "hold"} onClick={() => stay("hold")} title={column ? "Stop here (a column gets no Hold bonus)" : "Stay put and dig in"} />
         <OrderKey icon="rest" label="Rest" active={kind === "rest"} onClick={() => stay("rest")} title="Stay put and repair" />
-        <OrderKey icon="more" label="More" onClick={onMore} title="Stops on the way, on arrival, swaps, disband" />
+        <OrderKey icon="more" label="More" onClick={onMore} title="Stops on the way, on arrival, disband" />
       </div>
     </section>
   );
@@ -159,7 +154,7 @@ export function UnitDock({
 
 const LINE_TONE = { plain: "text-ivory-100", quiet: "text-ivory-400", warn: "text-warn", bad: "text-[#ff8a78]" } as const;
 
-/** The selected unit's less common orders: stops on the way, on arrival, swaps, the disband pick. */
+/** The selected unit's less common orders: stops on the way, on arrival, the disband pick. */
 export function MoreSheet({
   unit,
   view,
@@ -176,9 +171,6 @@ export function MoreSheet({
   const order = planning.plan.orders[unit.id];
   const route = planning.routes.find((r) => r.unitId === unit.id);
   const swap = useSwaps(view, planning).get(unit.id) ?? null;
-  const own = view.state.units.filter((u) => u.owner === view.your_slot);
-  const zoc = useMemo(() => hostileZoc(view.state.units, view.your_slot), [view.state.units, view.your_slot]);
-  const neighbours = unit.posture === "deployed" ? swapNeighbours(unit, own).filter((u) => u.id !== swap?.partner.id) : [];
   const travel = order?.kind === "travel" ? order : null;
   const canStop = travel !== null || (order === undefined && route?.kind === "standing");
   const used = travel?.via.length ?? 0;
@@ -258,32 +250,6 @@ export function MoreSheet({
             </button>
           </div>
         </div>
-      )}
-      {neighbours.length > 0 && (
-        <>
-          <Caption>Swap places with a neighbour</Caption>
-          {neighbours.map((n) => {
-            const blocked = swapBlocked(unit, n, zoc);
-            return (
-              <Line
-                key={n.id}
-                icon={<Icon name="swap" size={24} />}
-                name={`Swap with ${unitTag(n, designate)}`}
-                sub={blocked !== null ? `can't: ${blocked}` : `at ${at(n.coord)}, both step on the first pulse`}
-                subTone={blocked !== null ? "text-invalid" : ""}
-                right={blocked === null ? <Icon name="chevron" size={18} /> : undefined}
-                onClick={
-                  blocked === null
-                    ? () => {
-                        planning.orderSwap(n.id);
-                        onClose();
-                      }
-                    : undefined
-                }
-              />
-            );
-          })}
-        </>
       )}
       <label className="flex min-h-[60px] items-center gap-3 px-3">
         <Glyph name="disband" size={24} className={disbandRank >= 0 ? "text-invalid" : ""} />

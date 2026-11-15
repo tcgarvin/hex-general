@@ -427,7 +427,7 @@ function OrdersPage() {
           ],
           [
             "Waypoints",
-            "To steer a Travel route (round a militia's site, along a road you prefer), Shift+click hexes after setting the destination: the route passes through them in the order clicked, up to 4, shown as diamonds. Holding Shift while hovering shows the route and arrival time with that hex added. Remove one, or clear them all, on the unit panel. Clicking a new destination starts again without waypoints. Shift+click on a deployed unit of yours next door still means a swap.",
+            "To steer a Travel route (round a militia's site, along a road you prefer), Shift+click hexes after setting the destination: the route passes through them in the order clicked, up to 4, shown as diamonds. Holding Shift while hovering shows the route and arrival time with that hex added. Remove one, or clear them all, on the unit panel. Clicking a new destination starts again without waypoints. Shift+click on a hex one of your units stands on orders the unit there instead.",
           ],
           [
             "Move",
@@ -447,12 +447,27 @@ function OrdersPage() {
           ["Clear", "Drops the unit's order for this turn (X or Delete)."],
         ]}
       />
-      <H>Relief swaps</H>
+      <H>Your own units in the way</H>
       <P>
-        Two of your deployed units next to each other can trade places on the first pulse: Shift+click the neighbour, or
-        use Swap on the unit panel. This is how a fresh unit relieves a worn one on the line. Each still obeys enemy
-        control: an engaged unit cannot step into another hex the enemy controls.
+        Your own units never stop you giving an order; a Move they will block shows a warning on the unit panel and in
+        the Army list until the way is clear. You can still submit it: the blocked step just doesn't happen.
       </P>
+      <Terms
+        items={[
+          [
+            "Follow",
+            "Tap the hex of one of your units that is leaving this turn (on a computer, click it in Move mode): the selected unit moves in behind it. Tap again to select the unit there.",
+          ],
+          [
+            "Onto a friend's hex",
+            "Long-press a hex (or Shift+click it on a computer) to order the selected unit there even when one of your units stands on it.",
+          ],
+          [
+            "Swap",
+            "Two of your deployed units ordered into each other's hex trade places on the first pulse, and both carry on. This is how a fresh unit relieves a worn one on the line. Each still obeys enemy control: an engaged unit cannot step into another hex the enemy controls.",
+          ],
+        ]}
+      />
       <H>Disband list</H>
       <P>
         Tick “Disband first in a shortage” on a unit's panel to choose who goes if you run short (see Your base and

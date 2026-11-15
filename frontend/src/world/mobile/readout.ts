@@ -2,7 +2,8 @@
 // words, or a one-line prompt when it has none. It stands in for the desktop hover
 // tip and the unit panel's text, so it carries the same cues: arrival time, the
 // stop-short and halt notes, unscouted route hexes, the expected result of an
-// attack or barrage, and the withdrawal warning.
+// attack or barrage, the warning for a Move your own units will block, and the
+// withdrawal warning.
 
 import { axialNeighbors, hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
@@ -36,6 +37,8 @@ export interface ReadoutInput {
   partnerName: string | null;
   /** The staged attack's or barrage's expected result (`attackPreview` / `barragePreview`). */
   expected: CombatPreview | null;
+  /** Why your own units will block the staged Move (`planConflicts`), else `null`. */
+  blocked: string | null;
   /** `withdrawalWarning` for the order. */
   warning: string | null;
   /** The known contact zone (`contactZone`). */
@@ -107,16 +110,19 @@ export function unitReadout(input: ReadoutInput): Readout {
             : swap.role === "relieved"
               ? `Relieved by ${partner}`
               : `Swap with ${partner}`;
+        add(input.blocked === null ? null : `${input.blocked}.`, "bad");
         add("Both step on the first pulse.", "quiet");
         return { title, kind: "order", lines };
       }
       const end = order.path[order.path.length - 1];
       if (route?.attack) {
+        add(input.blocked === null ? null : `${input.blocked}.`, "bad");
         for (const line of input.expected?.lines ?? []) add(line);
         add(input.expected?.note ?? null, "quiet");
         add(input.warning === null ? null : `${input.warning}.`, "bad");
         return { title: `Attack ${at(route.attack)}`, kind: "attack", lines };
       }
+      add(input.blocked === null ? null : `${input.blocked}.`, "bad");
       add(`${order.path.length} hex${order.path.length === 1 ? "" : "es"}, this turn.`, "quiet");
       add(input.warning === null ? null : `${input.warning}.`, "bad");
       return { title: `Move to ${at(end)}`, kind: "order", lines };
