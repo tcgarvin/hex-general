@@ -1,5 +1,5 @@
-// Line icons for the phone layout's keys that have no UI glyph yet (Hold, Rest,
-// Barrage, Clear, Report, More, menu, close, chevrons and a few more).
+// Line icons for the phone layout's keys that have no UI glyph yet (Move, Hold,
+// Rest, Barrage, Clear, Report, More, menu, close, chevrons and a few more).
 //
 // PLACEHOLDERS until a proper glyph round (docs/UI-STYLE.md §4 "Icons"): the paths
 // are copied from the approved phone mock-ups (2026-11-12). Where a glyph exists
@@ -16,6 +16,8 @@ const PATHS = {
   home: { d: "M2.5 8 8 3l5.5 5M4.5 6.5V13h7V6.5", width: 1.6 },
   fit: { d: "M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10", width: 1.6 },
   report: { d: "M4 2.5h6l2.5 2.5v8.5h-8.5zM6 7h4.5M6 9.5h4.5M6 12h3", width: 1.3 },
+  // Placeholder drawn here, not from the mock-ups (added 2026-11-15 with the Move key).
+  move: { d: "M2.5 8h10M9 4.5 12.5 8 9 11.5", width: 1.8 },
   hold: { d: "M8 2 3 4v4c0 3 2.2 5 5 6 2.8-1 5-3 5-6V4z", width: 1.5 },
   rest: { d: "M2 12V5M2 9.5h12V12M14 9.5V8a2 2 0 0 0-2-2H7v3.5", width: 1.5 },
   more: { d: "M3.5 8h.01M8 8h.01M12.5 8h.01", width: 2.6 },

@@ -48,10 +48,33 @@ const input = (over: Partial<ReadoutInput> = {}): ReadoutInput => ({
 });
 
 describe("unitReadout", () => {
-  it("prompts a unit with no orders by posture", () => {
-    expect(unitReadout(input()).lines[0].text).toMatch(/lit hex to move/);
-    expect(unitReadout(input({ unit: unit({ posture: "column" }) })).lines[0].text).toMatch(/Deploy to unpack/);
-    expect(unitReadout(input({ unit: unit({ type: "artillery" }) })).lines[0].text).toMatch(/shell it/);
+  it("prompts a unit with no orders to press Move first, by posture", () => {
+    expect(unitReadout(input()).lines[0].text).toBe("Press Move, then tap where it should go.");
+    expect(unitReadout(input({ unit: unit({ posture: "column" }) })).lines[0].text).toBe(
+      "Press Move, then tap where it should go, or Deploy to unpack here.",
+    );
+    expect(unitReadout(input({ unit: unit({ type: "artillery" }) })).lines[0].text).toBe(
+      "Press Move, then tap where it should go, or Barrage to shell a hex in range.",
+    );
+  });
+
+  it("says where to tap while Move is armed", () => {
+    const armed = unitReadout(input({ armed: "move" }));
+    expect(armed.title).toBe("Move");
+    expect(armed.lines[0].text).toBe("Tap where it should go: a lit hex this turn (red: attack), anywhere further to travel there.");
+    expect(unitReadout(input({ armed: "move", unit: unit({ type: "artillery" }) })).lines[0].text).toBe(
+      "Tap where it should go: a lit hex this turn, anywhere further to travel there.",
+    );
+    expect(unitReadout(input({ armed: "move", zone: contactZone([{ q: 1, r: 0 }]) })).lines[0].text).toBe(
+      "Tap a lit hex to move there (red: attack). Close to contact, it moves a step at a time.",
+    );
+    expect(unitReadout(input({ armed: "move", unit: unit({ posture: "column" }) })).lines[0].text).toBe("Tap where it should travel to.");
+  });
+
+  it("no longer describes one-tap orders", () => {
+    for (const over of [{}, { unit: unit({ posture: "column" as const }) }, { unit: unit({ type: "artillery" as const }) }]) {
+      expect(unitReadout(input(over)).lines[0].text).not.toMatch(/lit|red hex|anywhere further/);
+    }
   });
 
   it("names a travel's destination and arrival, and the stop short of contact", () => {

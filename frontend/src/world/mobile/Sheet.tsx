@@ -125,6 +125,7 @@ export function OrderKey({
   glyph,
   label,
   active = false,
+  primary = false,
   onClick,
   title,
 }: {
@@ -132,6 +133,8 @@ export function OrderKey({
   glyph?: GlyphName;
   label: string;
   active?: boolean;
+  /** The row's main key: wider, with a bolder label. */
+  primary?: boolean;
   onClick: () => void;
   title?: string;
 }) {
@@ -142,7 +145,7 @@ export function OrderKey({
       title={title}
       data-active={active}
       aria-pressed={active}
-      className="fhq-btn h-[52px] min-w-0 flex-1 flex-col gap-1 px-1 text-xs"
+      className={`fhq-btn h-[52px] min-w-0 flex-col gap-1 px-1 ${primary ? "flex-[1.4] text-[13px] font-bold" : "flex-1 text-[11px] tracking-normal"}`}
     >
       {glyph !== undefined ? <Glyph name={glyph} size={20} /> : icon !== undefined ? <Icon name={icon} /> : null}
       {label}

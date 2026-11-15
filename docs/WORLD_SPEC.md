@@ -735,9 +735,9 @@ relief in place or friendly swap (§4.7) is two ordinary Move orders whose first
 into each other's hex, so both step on pulse 1, where the engine resolves the pair as a
 swap (`_friendly_cycles` in `movement.py`). There is no swap button (removed 2026-11-15):
 your own units never make a hex unreachable for a Move, so either half can be ordered
-first; a long-press (Shift+click on desktop) orders the selected unit onto a hex one of
-your units stands on, and a tap (a Move-mode click on desktop) on the hex of a lone unit
-of yours that is leaving it follows that unit in. A staged Move your own units will block
+first; on the phone a tap with Move armed (Shift+click on desktop) orders the selected
+unit onto a hex one of your units stands on, which is also how one unit follows another
+out of its hex. A staged Move your own units will block
 under the plan as it stands is warned about on the unit panel, the phone dock and the
 Army lists ("Blocked unless 2nd Infantry moves out of the way first", "Ends where ...",
 "Jams with ..."; `planConflicts` in `frontend/src/world/moveRules.ts`), recomputed as the
@@ -831,16 +831,20 @@ your units opens a hex sheet (site, garrison, recruiting there). Selecting one o
 shows a dock: previous and next idle unit, its name plate, a readout of its order in plain
 words (destination and arrival, the stop short of contact, halts and unscouted hexes, the
 expected result of an attack or barrage, the withdrawal warning) or a prompt, and keys for
-Clear, Deploy (columns), Barrage (deployed artillery), Hold, Rest and More (a stop on the
-way, on arrival, the disband pick). There are no mode chips: a tap picks the order
-(`autoOrder.ts`). Your unit's hex selects it (unless it is a lone unit of yours leaving
-that hex within reach: the selected unit follows it in, and a second tap selects); a
-long-press orders as if none of your units stood on the hex; an armed stop or barrage takes the tap; deployed
-artillery shells a visible hostile in range; a deployed unit moves (or attacks) within this
-turn's reach; a deployed unit that a Travel would halt where it stands (inside the contact
+Move (first and primary), Deploy (columns), Barrage (deployed artillery), Hold, Rest,
+Clear (with a staged order) and More (a stop on the way, on arrival, the disband pick).
+There are no mode chips; an order takes two steps, the Move key and then a tap
+(`autoOrder.ts`; revised 2026-11-15 from one-tap orders, so the player can look around
+before committing). Without anything armed a tap never orders: your unit's hex selects it
+(stepping through a stack), any other hex is inspected. The move reach is lit only while
+Move is armed. An armed stop or barrage takes the tap as before. With Move armed the tap
+orders as if none of your units stood on the hex: the unit's own hex disarms; deployed
+artillery tapping a hostile is told guns can't attack; a deployed unit moves (or attacks)
+within this turn's reach; a deployed unit that a Travel would halt where it stands (inside the contact
 zone, or its first step enters it) moves to the reachable hex ending closest to the tap
 instead, with a notice; anything else travels there, deploying on arrival, and a route that
-runs into known contact stops one hex short and deploys in order. "Hold all" holds deployed
+runs into known contact stops one hex short and deploys in order. An order disarms Move;
+a notice with nothing staged (no route, nothing closer) keeps it armed. "Hold all" holds deployed
 units with nothing to do; columns are left out, since Hold gives a column no bonus. The
 desktop layout is unchanged.
 

@@ -9,9 +9,9 @@ list tracks only outstanding work; completed work lives in git history.
 
 ## Phone layout follow-ups (2026-11-15)
 
-- **Long-press as a radial control (maybe).** A long-press on the map now orders the
-  selected unit onto the hex whatever of yours stands there (`onHexLongPress`); the owner
-  may want it to open a radial control instead. Not built.
+- **Long-press as a radial control (maybe).** The map has no long-press (removed
+  2026-11-15, when phone orders moved behind the dock's Move key); the owner may want a
+  long-press to open a radial control of orders. Not built.
 
 ## Strategic view in the staff-map style (decided 2026-11-11, not started)
 

@@ -419,6 +419,12 @@ function OrdersPage() {
   return (
     <>
       <P>Select a unit (click it, or Tab through your army), pick an order on its panel, then click the map.</P>
+      <P>
+        On a phone: tap a unit to select it, press Move on its dock, then tap where it should go: a lit hex is a Move this
+        turn (a red one an attack), anywhere further a Travel. Guns shell the same way with Barrage. Without Move or
+        Barrage pressed, a tap never gives an order: it selects your unit there or shows what is on the hex, so you can
+        look around first.
+      </P>
       <Terms
         items={[
           [
@@ -455,12 +461,8 @@ function OrdersPage() {
       <Terms
         items={[
           [
-            "Follow",
-            "Tap the hex of one of your units that is leaving this turn (on a computer, click it in Move mode): the selected unit moves in behind it. Tap again to select the unit there.",
-          ],
-          [
             "Onto a friend's hex",
-            "Long-press a hex (or Shift+click it on a computer) to order the selected unit there even when one of your units stands on it.",
+            "To follow one of your units out of its hex, or to swap with it, order the selected unit onto that hex: on a phone, press Move, then tap it; on a computer, Shift+click it. A plain tap or click there selects that unit instead.",
           ],
           [
             "Swap",

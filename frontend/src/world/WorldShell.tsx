@@ -300,7 +300,6 @@ function WorldScreen({
           overlay={overlay}
           panTo={panTo}
           onHexClick={planning.onHexClick}
-          onHexLongPress={planning.onHexLongPress}
           onRenderer={setRenderer}
         />
         {renderer !== null && watching === null && <HoverInfo renderer={renderer} map={map} view={view} planning={planning} designate={designate} />}

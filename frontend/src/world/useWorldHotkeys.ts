@@ -31,7 +31,7 @@ export const SHORTCUTS: readonly { keys: string; does: string }[] = [
   { keys: "B", does: "Barrage mode (artillery)" },
   { keys: "R / H", does: "Rest / Hold" },
   { keys: "X or Delete", does: "Clear the unit's order" },
-  { keys: "Shift+click", does: "On a hex one of your units stands on: order the selected unit there anyway (or long-press)" },
+  { keys: "Shift+click", does: "On a hex one of your units stands on: order the selected unit there anyway" },
   { keys: "Shift+click", does: "Travel mode, anywhere else: add a waypoint to the unit's route (hold Shift to preview it)" },
   { keys: "Esc", does: "Leave the mode, then deselect" },
   { keys: "Ctrl+Enter", does: "Submit the plan" },

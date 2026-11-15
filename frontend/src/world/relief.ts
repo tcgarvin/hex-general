@@ -5,8 +5,9 @@
 // `_friendly_cycles`) lets two friendly deployed units that step into each
 // other's hex in the same pulse swap instead of jamming. So a swap is simply two
 // ordinary Move orders whose first steps go into each other's hex: both step on
-// pulse 1. The player gives them like any Move (a long-press, or Shift+click on
-// desktop, orders a unit onto a hex one of their units stands on, and
+// pulse 1. The player gives them like any Move (on the phone a tap with Move
+// armed, on desktop Shift+click, orders a unit onto a hex one of their units
+// stands on, and
 // `planConflicts` in `moveRules.ts` warns while only one half is ordered). This
 // module only names what two such orders amount to, for the order text.
 

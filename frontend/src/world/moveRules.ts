@@ -110,18 +110,6 @@ export function hostileZoc(units: readonly Unit[], viewer: string): Set<string> 
   return zoc;
 }
 
-/**
- * Whether one of your deployed units is ordered out of its hex this turn: a Move
- * that leaves (not an attack from where it stands), or a Travel, March or standing
- * travel that can pack. The same notion `moveStepRules` uses for a friend's hex.
- */
-export function leavesThisTurn(u: Unit, ctx: MoveContext): boolean {
-  if (u.owner !== ctx.viewer || u.posture !== "deployed") return false;
-  const travelling = ctx.standing.some((s) => s.unit_id === u.id);
-  const hostile = hostileHexes(ctx.units, ctx.viewer);
-  return departure(u, ctx.orders[u.id], travelling, hostile, hostileZoc(ctx.units, ctx.viewer)).pulse < Infinity;
-}
-
 /** What the other own deployed units do to `unit`'s Move under the plan (see the module comment). */
 interface OwnTraffic {
   /** Own deployed units' hexes: the first pulse each is free (Infinity: never), who holds it and why. */

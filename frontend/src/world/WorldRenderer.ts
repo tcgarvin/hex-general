@@ -117,11 +117,6 @@ const PANEL_INSETS: Insets = { left: 312, right: 344, top: 16, bottom: 76 };
  * mouse barely moves, a fingertip wobbles (a tap that drifts this far is a drag).
  */
 const CLICK_SLOP = { mouse: 4, touch: 10 } as const;
-/**
- * How long a press must stay within the click slop to count as a long-press
- * (`onHexLongPress`): it then gives no click on release and no pan on moving.
- */
-const LONG_PRESS_MS = 450;
 const ATTACK_COLOR = 0xe0503a;
 const DISORDER_COLOR = 0xf5b342;
 const IVORY = 0xf2e6c8;
@@ -238,8 +233,6 @@ interface UnitGroup {
 export interface WorldRendererOptions {
   /** A click on a map hex; `shift` was held. */
   onHexClick?: (hex: Axial, mods: { shift: boolean }) => void;
-  /** A press held still on a map hex for `LONG_PRESS_MS` (touch or mouse), instead of a click. */
-  onHexLongPress?: (hex: Axial) => void;
 }
 
 export type { Camera };
@@ -310,8 +303,6 @@ export class WorldRenderer {
   private readonly options: WorldRendererOptions;
   private readonly bounds: ReturnType<typeof worldPixelBounds>;
   private drag: { x: number; y: number; moved: boolean; slop: number } | null = null;
-  /** The pending long-press of the current press (`armLongPress`); `null`: none. */
-  private longPress: ReturnType<typeof setTimeout> | null = null;
   /** Live pointers on the canvas (two of them pinch-zoom). */
   private readonly pointers = new Map<number, { x: number; y: number }>();
   private pinch: { dist: number; midX: number; midY: number } | null = null;
@@ -416,7 +407,6 @@ export class WorldRenderer {
 
   destroy(): void {
     this.destroyed = true;
-    this.cancelLongPress();
     this.app.ticker.remove(this.tick);
     this.app.canvas.removeEventListener("wheel", this.onWheel);
     this.app.canvas.removeEventListener("pointerleave", this.onPointerLeave);
@@ -724,41 +714,11 @@ export class WorldRenderer {
       const [a, b] = [...this.pointers.values()];
       this.pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), midX: (a.x + b.x) / 2, midY: (a.y + b.y) / 2 };
       this.drag = null;
-      this.cancelLongPress();
       this.setHovered(null);
     } else if (this.pointers.size === 1) {
       this.drag = { x, y, moved: false, slop: e.pointerType === "mouse" ? CLICK_SLOP.mouse : CLICK_SLOP.touch };
-      // Only the main button (a touch or pen reports it too): a right-press is no order.
-      if (e.button === 0) this.armLongPress(x, y);
     }
   };
-
-  /**
-   * Fire `onHexLongPress` if the press at screen (`x`, `y`) is still held, alone
-   * and within the slop, after `LONG_PRESS_MS`. The press is then spent: lifting
-   * it is no click and moving it no pan (`drag` is cleared).
-   */
-  private armLongPress(x: number, y: number): void {
-    this.cancelLongPress();
-    this.longPress = setTimeout(() => {
-      this.longPress = null;
-      const drag = this.drag;
-      if (this.destroyed || this.playback !== null || drag === null || drag.moved || this.pointers.size !== 1) return;
-      const local = this.world.toLocal({ x, y });
-      const hex = pixelToAxial(local.x, local.y, HEX_SIZE);
-      if (this.map.hexAt(hex.q, hex.r) === undefined) return;
-      this.drag = null;
-      // A short buzz where the browser can (not Safari).
-      if ("vibrate" in navigator) navigator.vibrate(10);
-      this.options.onHexLongPress?.(hex);
-    }, LONG_PRESS_MS);
-  }
-
-  private cancelLongPress(): void {
-    if (this.longPress === null) return;
-    clearTimeout(this.longPress);
-    this.longPress = null;
-  }
 
   private onPointerMove = (e: FederatedPointerEvent): void => {
     const { x, y } = e.global;
@@ -781,7 +741,6 @@ export class WorldRenderer {
     const dy = y - this.drag.y;
     if (!this.drag.moved && Math.hypot(dx, dy) < this.drag.slop) return;
     if (!this.drag.moved) {
-      this.cancelLongPress();
       this.setHovered(null);
       this.userMovedCamera();
     }
@@ -808,7 +767,6 @@ export class WorldRenderer {
       return;
     }
     this.pointers.delete(e.pointerId);
-    this.cancelLongPress();
     if (this.pinch !== null) {
       // Lifting one finger of a pinch carries on as a drag with the other.
       this.pinch = null;

@@ -2,9 +2,10 @@
 //
 // The dock replaces the bottom bar: previous / next idle unit, the unit's name
 // plate, close; a readout of its order (or a prompt); and the order keys. Orders
-// that need a hex (move, attack, travel, barrage) come from tapping the map
-// (`autoOrder.ts`), so the keys are only the stay-put orders, Deploy, Barrage
-// (arms the next tap) and More.
+// that need a hex come from tapping the map once a key has armed the tap
+// (`autoOrder.ts`): Move (first and primary; move, attack or travel) and, for
+// guns, Barrage. A tap with nothing armed only selects or inspects. The other
+// keys are the stay-put orders, Deploy, Clear (only with a staged order) and More.
 
 import { useMemo } from "react";
 
@@ -80,7 +81,10 @@ export function UnitDock({
   const column = unit.posture === "column";
   const guns = unit.type === "artillery" && !column;
   const kind: OrderKind | null = order?.kind ?? null;
-  const stay = (k: "hold" | "rest" | "deploy") => planning.setOrder(unit.id, kind === k ? null : { kind: k });
+  const stay = (k: "hold" | "rest" | "deploy") => {
+    if (planning.armed !== null) planning.arm(null);
+    planning.setOrder(unit.id, kind === k ? null : { kind: k });
+  };
   const titleTone = readout.kind === "attack" ? "text-[#ffb4a6]" : readout.kind === "order" ? "text-brass-400" : "text-ivory-100";
 
   return (
@@ -131,9 +135,14 @@ export function UnitDock({
         )}
       </div>
       <div className="flex gap-1.5">
-        {order !== undefined && (
-          <OrderKey icon="clear" label="Clear" title="Drop this turn's order" onClick={() => planning.setOrder(unit.id, null)} />
-        )}
+        <OrderKey
+          icon="move"
+          label="Move"
+          primary
+          active={planning.armed === "move"}
+          onClick={() => planning.arm(planning.armed === "move" ? null : "move")}
+          title="Then tap where it should go"
+        />
         {column && <OrderKey glyph="deploy" label="Deploy" active={kind === "deploy"} onClick={() => stay("deploy")} title="Unpack where it stands, ready to fight next turn" />}
         {guns && (
           <OrderKey
@@ -146,6 +155,9 @@ export function UnitDock({
         )}
         <OrderKey icon="hold" label="Hold" active={kind === "hold"} onClick={() => stay("hold")} title={column ? "Stop here (a column gets no Hold bonus)" : "Stay put and dig in"} />
         <OrderKey icon="rest" label="Rest" active={kind === "rest"} onClick={() => stay("rest")} title="Stay put and repair" />
+        {order !== undefined && (
+          <OrderKey icon="clear" label="Clear" title="Drop this turn's order" onClick={() => planning.setOrder(unit.id, null)} />
+        )}
         <OrderKey icon="more" label="More" onClick={onMore} title="Stops on the way, on arrival, disband" />
       </div>
     </section>
@@ -183,7 +195,7 @@ export function MoreSheet({
         name="Add a stop on the way"
         sub={
           !canStop
-            ? "give it a Travel order first: tap a far hex"
+            ? "give it a Travel order first: Move, then a far hex"
             : used >= MAX_WAYPOINTS
               ? `all ${MAX_WAYPOINTS} stops used`
               : `then tap the map · ${used} of ${MAX_WAYPOINTS} used`

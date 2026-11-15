@@ -26,7 +26,6 @@ export function WorldBoard({
   overlay,
   panTo,
   onHexClick,
-  onHexLongPress,
   onRenderer,
 }: {
   map: WorldMap;
@@ -40,8 +39,6 @@ export function WorldBoard({
    */
   panTo: { hex: Axial; seq: number; reveal?: boolean } | null;
   onHexClick: (hex: Axial, mods: { shift: boolean }) => void;
-  /** A press held still on a hex (`WorldRenderer`'s `onHexLongPress`). */
-  onHexLongPress: (hex: Axial) => void;
   onRenderer: (renderer: WorldRenderer | null) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -50,10 +47,6 @@ export function WorldBoard({
   useEffect(() => {
     clickRef.current = onHexClick;
   }, [onHexClick]);
-  const longPressRef = useRef(onHexLongPress);
-  useEffect(() => {
-    longPressRef.current = onHexLongPress;
-  }, [onHexLongPress]);
   const focusRef = useRef(focus);
   const rendererRef = useRef(onRenderer);
   useEffect(() => {
@@ -76,7 +69,6 @@ export function WorldBoard({
         el.appendChild(app.canvas);
         made = new WorldRenderer(app, map, {
           onHexClick: (hex, mods) => clickRef.current(hex, mods),
-          onHexLongPress: (hex) => longPressRef.current(hex),
         });
         if (focusRef.current !== null) made.centerOn(focusRef.current, undefined, false);
         setRenderer(made);
@@ -122,12 +114,5 @@ export function WorldBoard({
     else renderer.panTo(panTo.hex);
   }, [renderer, panTo]);
 
-  // A long-press is an order: no callout, context menu or text selection on the map.
-  return (
-    <div
-      ref={host}
-      className="absolute inset-0 touch-none select-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
-      onContextMenu={(e) => e.preventDefault()}
-    />
-  );
+  return <div ref={host} className="absolute inset-0 touch-none select-none" />;
 }

@@ -10,9 +10,10 @@
 // * a bottom bar with nothing selected (Army, Report, Base, and the Submit plate),
 //   each opening a bottom sheet; the unit dock when one of your units is selected;
 //   the transport bar while a turn plays back;
-// * orders by tap (`useWorldPlan`'s `onHexTap`, rule in `autoOrder.ts`) and by
-//   long-press (`onHexLongPress`: onto a hex one of your units stands on), with
-//   notices as a short toast above the dock.
+// * orders by tap (`useWorldPlan`'s `onHexTap`, rule in `autoOrder.ts`): select a
+//   unit, press Move in the dock, then tap where it should go; without Move armed a
+//   tap only selects your unit or inspects the hex. Notices show as a short toast
+//   above the dock.
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
@@ -104,10 +105,6 @@ export function PhoneWorld(props: PhoneWorldProps) {
     setSheet(null);
     planning.onHexTap(hex);
   };
-  const longPress = (hex: Axial) => {
-    setSheet(null);
-    planning.onHexLongPress(hex);
-  };
   const pick = (u: Unit) => {
     setSheet(null);
     planning.selectUnit(u.id);
@@ -130,7 +127,6 @@ export function PhoneWorld(props: PhoneWorldProps) {
           overlay={props.overlay}
           panTo={props.panTo}
           onHexClick={tap}
-          onHexLongPress={longPress}
           onRenderer={props.onRenderer}
         />
         {props.error !== null && (
@@ -177,7 +173,11 @@ export function PhoneWorld(props: PhoneWorldProps) {
               planning={planning}
               designate={props.designate}
               onCycle={cycle}
-              onMore={() => setSheet("more")}
+              onMore={() => {
+                // Opening a sheet disarms the next tap (the More sheet may arm a stop).
+                planning.arm(null);
+                setSheet("more");
+              }}
             />
           ) : (
             <BottomBar view={view} planning={planning} onOpen={setSheet} hasReport={props.report.status !== "none"} />

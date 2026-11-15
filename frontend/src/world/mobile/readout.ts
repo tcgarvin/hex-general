@@ -72,6 +72,7 @@ export function unitReadout(input: ReadoutInput): Readout {
   if (armed === "barrage") {
     return { title: "Barrage", kind: "prompt", lines: [{ text: "Tap a red hex in range to shell it.", tone: "plain" }] };
   }
+  if (armed === "move") return { title: "Move", kind: "prompt", lines: [{ text: movePrompt(unit, input.zone), tone: "plain" }] };
   const lines: Readout["lines"] = [];
   const add = (text: string | null, tone: ReadoutTone = "plain") => {
     if (text !== null) lines.push({ text, tone });
@@ -84,10 +85,10 @@ export function unitReadout(input: ReadoutInput): Readout {
   if (order === undefined) {
     if (route?.kind === "standing") {
       travelCues();
-      add("Carrying on from an earlier turn. Tap a hex to send it elsewhere.", "quiet");
+      add("Carrying on from an earlier turn. Press Move to send it elsewhere.", "quiet");
       return { title: `Travelling · ${arrivalText(route.eta)}`, kind: "order", lines };
     }
-    return { title: "No orders yet", kind: "prompt", lines: [{ text: promptFor(unit, input.zone), tone: "plain" }] };
+    return { title: "No orders yet", kind: "prompt", lines: [{ text: promptFor(unit), tone: "plain" }] };
   }
   switch (order.kind) {
     case "travel": {
@@ -153,16 +154,18 @@ export function unitReadout(input: ReadoutInput): Readout {
   }
 }
 
-/** The one-line prompt for a unit with no orders. */
-function promptFor(unit: Unit, zone: ReadonlySet<string>): string {
-  if (unit.posture === "column") return "Tap a hex to travel there, or Deploy to unpack here.";
-  const near = zone.has(hexKey(unit.coord.q, unit.coord.r));
-  if (unit.type === "artillery") {
-    return near
-      ? "Tap a red hex to shell it, or a lit one to move. Close to contact, it moves a step at a time."
-      : "Tap a red hex to shell it, a lit one to move, or anywhere further off to travel there.";
-  }
-  return near
-    ? "Tap a lit hex to move, a red one to attack. Close to contact, it moves a step at a time."
-    : "Tap a lit hex to move, a red one to attack, or anywhere further off to travel there.";
+/** The one-line prompt for a unit with no orders and nothing armed (after "No orders yet."). */
+function promptFor(unit: Unit): string {
+  if (unit.posture === "column") return "Press Move, then tap where it should go, or Deploy to unpack here.";
+  if (unit.type === "artillery") return "Press Move, then tap where it should go, or Barrage to shell a hex in range.";
+  return "Press Move, then tap where it should go.";
+}
+
+/** What to tap with Move armed. */
+function movePrompt(unit: Unit, zone: ReadonlySet<string>): string {
+  if (unit.posture === "column") return "Tap where it should travel to.";
+  const attack = unit.type === "artillery" ? "" : " (red: attack)";
+  return zone.has(hexKey(unit.coord.q, unit.coord.r))
+    ? `Tap a lit hex to move there${attack}. Close to contact, it moves a step at a time.`
+    : `Tap where it should go: a lit hex this turn${attack}, anywhere further to travel there.`;
 }
