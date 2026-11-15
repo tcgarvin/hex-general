@@ -1125,6 +1125,63 @@
         "title": "MeView",
         "type": "object"
       },
+      "MilitiaMustered": {
+        "additionalProperties": false,
+        "description": "A neutral site mustered one lost militia unit back (WORLD_SPEC \u00a77.1).\n\n``post`` is the site the unit belongs to; ``coord`` is where it appeared (the\nsite hex, or a free hex of the ring around it); ``hp`` is its starting HP.",
+        "properties": {
+          "coord": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "hp": {
+            "title": "Hp",
+            "type": "integer"
+          },
+          "kind": {
+            "const": "militia_mustered",
+            "default": "militia_mustered",
+            "title": "Kind",
+            "type": "string"
+          },
+          "post": {
+            "$ref": "#/components/schemas/Axial"
+          },
+          "unit_id": {
+            "title": "Unit Id",
+            "type": "integer"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "required": [
+          "unit_id",
+          "unit_type",
+          "coord",
+          "post",
+          "hp"
+        ],
+        "title": "MilitiaMustered",
+        "type": "object"
+      },
+      "MilitiaRules": {
+        "description": "Militia tuning (WORLD_SPEC \u00a77.1, provisional).\n\n``recover`` is the HP a militia unit regains at the end of a turn in which it\nlost none, up to its starting HP. ``muster_turns`` is how many quiet turns a\nneutral site under strength waits before one lost unit returns.",
+        "properties": {
+          "muster_turns": {
+            "default": 4,
+            "minimum": 1.0,
+            "title": "Muster Turns",
+            "type": "integer"
+          },
+          "recover": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Recover",
+            "type": "integer"
+          }
+        },
+        "title": "MilitiaRules",
+        "type": "object"
+      },
       "MoveBlocked": {
         "additionalProperties": false,
         "description": "A unit's attempted step into ``target`` failed; it stops for the turn.",
@@ -1411,7 +1468,7 @@
         "type": "object"
       },
       "Settlement": {
-        "description": "Dynamic ownership of a settlement hex (SPEC \u00a73.2, \u00a714).\n\nThe settlement's *kind* is static map data, not stored here, so there is one\nsource of truth: in a v0.1 game it is the terrain at ``coord``\n(``Terrain.TOWN``/``Terrain.CITY``); in a world it is the `MapSite` at\n``coord`` (every site but a vacant base slot has a settlement, and towns have\nnone). This record carries only the part that changes during play:\n``controlled_by``, where ``None`` means neutral / uncontrolled (a single,\nwell-defined meaning). Control changes only via the capture phase (SPEC \u00a714.1).",
+        "description": "Dynamic ownership of a settlement hex (SPEC \u00a73.2, \u00a714).\n\nThe settlement's *kind* is static map data, not stored here, so there is one\nsource of truth: in a v0.1 game it is the terrain at ``coord``\n(``Terrain.TOWN``/``Terrain.CITY``); in a world it is the `MapSite` at\n``coord`` (every site but a vacant base slot has a settlement, and towns have\nnone). This record carries only the part that changes during play:\n``controlled_by``, where ``None`` means neutral / uncontrolled (a single,\nwell-defined meaning). Control changes via the capture phase (SPEC \u00a714.1), and\nin a world when militia retake their site (WORLD_SPEC \u00a77.1).\n\n``muster_clock`` counts a neutral world site's quiet turns toward mustering a\nlost militia unit back (WORLD_SPEC \u00a77.1); it is 0 whenever the site is\nplayer-held or at full strength, and in every v0.1 game. It defaults so\nstates stored before it existed still decode.",
         "properties": {
           "controlled_by": {
             "anyOf": [
@@ -1426,6 +1483,12 @@
           },
           "coord": {
             "$ref": "#/components/schemas/Axial"
+          },
+          "muster_clock": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Muster Clock",
+            "type": "integer"
           }
         },
         "required": [
@@ -1436,7 +1499,7 @@
       },
       "SettlementCaptured": {
         "additionalProperties": false,
-        "description": "An infantry/armor unit captured a settlement (SPEC \u00a714.1, \u00a711.3 Phase 3).\n\nEmitted only when control actually changes \u2014 a unit sitting on a settlement\nit already controls produces no event. ``previous_owner`` is ``None`` when the\nsettlement was neutral before capture (a single, well-defined meaning).\n``settlement`` is the terrain of the captured hex: in a v0.1 game that is what\nwas taken (town or city). ``site`` is the world site that was taken (farm,\nbase, \u2026), whose hex is usually plains; it is ``None`` exactly when the hex is\nnot a world site, which is every v0.1 capture (and events stored before the\nfield existed).",
+        "description": "An infantry/armor unit captured a settlement (SPEC \u00a714.1, \u00a711.3 Phase 3).\n\nIn a world, militia retaking their own site also logs one, with\n``captured_by`` the `NEUTRAL` owner (``\"neutral\"``) and the site's player as\n``previous_owner`` (WORLD_SPEC \u00a77.1). Emitted only when control actually\nchanges \u2014 a unit sitting on a settlement it already controls produces no\nevent. ``previous_owner`` is ``None`` when the\nsettlement was neutral before capture (a single, well-defined meaning).\n``settlement`` is the terrain of the captured hex: in a v0.1 game that is what\nwas taken (town or city). ``site`` is the world site that was taken (farm,\nbase, \u2026), whose hex is usually plains; it is ``None`` exactly when the hex is\nnot a world site, which is every v0.1 capture (and events stored before the\nfield existed).",
         "properties": {
           "captured_by": {
             "title": "Captured By",
@@ -1838,7 +1901,7 @@
         "type": "object"
       },
       "Unit": {
-        "description": "A single unit instance (SPEC \u00a75).\n\nStatic type stats (move, attack, vision, \u2026) are looked up from\n`app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives\nhere. ``hp`` is clamped to 0..10 (SPEC \u00a75.2); a unit at 0 HP is destroyed.\n\n``facing`` is cosmetic render state (see `Facing`): the left/right direction\nthe sprite faces, set by the unit's last movement. It defaults so state JSONB\npersisted before this field existed still validates (older games load with\nthe default facing).\n\n``posture`` is deployed or column (WORLD_SPEC \u00a74). ``disordered`` marks a unit\nthat auto-deployed on contact: it defends worse and cannot attack until the\nend of the next turn's execution (WORLD_SPEC \u00a74.5). Both default so older\npersisted states load as deployed, ordered units.",
+        "description": "A single unit instance (SPEC \u00a75).\n\nStatic type stats (move, attack, vision, \u2026) are looked up from\n`app.engine.stats.UNIT_STATS` by ``type``; only per-instance state lives\nhere. ``hp`` is clamped to 0..10 (SPEC \u00a75.2); a unit at 0 HP is destroyed.\n\n``facing`` is cosmetic render state (see `Facing`): the left/right direction\nthe sprite faces, set by the unit's last movement. It defaults so state JSONB\npersisted before this field existed still validates (older games load with\nthe default facing).\n\n``posture`` is deployed or column (WORLD_SPEC \u00a74). ``disordered`` marks a unit\nthat auto-deployed on contact: it defends worse and cannot attack until the\nend of the next turn's execution (WORLD_SPEC \u00a74.5). Both default so older\npersisted states load as deployed, ordered units.\n\n``post`` is the site hex a militia (`NEUTRAL`) unit belongs to for life\n(WORLD_SPEC \u00a77.1); ``None`` means exactly \"not a militia unit\", i.e. a\nplayer's unit. Every neutral unit has a post: states stored before posts\nexisted get one at the DB boundary (`app.engine.militia.assign_posts`).",
         "properties": {
           "coord": {
             "$ref": "#/components/schemas/Axial"
@@ -1865,6 +1928,16 @@
           "owner": {
             "title": "Owner",
             "type": "string"
+          },
+          "post": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Axial"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "posture": {
             "$ref": "#/components/schemas/Posture",
@@ -2228,7 +2301,7 @@
         "type": "object"
       },
       "WorldEconomy": {
-        "description": "Every tunable number of the world economy (defaults: draft revision 2).\n\nA site earns ``site_income[kind]`` at level 1 and ``level_income[kind]`` more\nper level above 1 (`income`); cities and bases are always level 1.\n``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is\nthe per-resource stockpile limit at depot level ``k``, so it has one more\nentry than the depot has levels. Artillery needs a workshop and armor a held\nfactory; those unlock rules are fixed in the recruitment phase.",
+        "description": "Every tunable number of the world economy (defaults: draft revision 2).\n\nA site earns ``site_income[kind]`` at level 1 and ``level_income[kind]`` more\nper level above 1 (`income`); cities and bases are always level 1.\n``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is\nthe per-resource stockpile limit at depot level ``k``, so it has one more\nentry than the depot has levels. Artillery needs a workshop and armor a held\nfactory; those unlock rules are fixed in the recruitment phase. ``militia``\ntunes the neutral garrisons (`MilitiaRules`); it defaults so worlds stored\nbefore it existed still decode.",
         "properties": {
           "army": {
             "$ref": "#/components/schemas/ArmySize"
@@ -2255,6 +2328,9 @@
             },
             "title": "Level Income",
             "type": "object"
+          },
+          "militia": {
+            "$ref": "#/components/schemas/MilitiaRules"
           },
           "recruit_cost": {
             "additionalProperties": {
@@ -2315,6 +2391,7 @@
                   "construction_started": "#/components/schemas/ConstructionStarted",
                   "construction_voided": "#/components/schemas/ConstructionVoided",
                   "economy_resolved": "#/components/schemas/EconomyResolved",
+                  "militia_mustered": "#/components/schemas/MilitiaMustered",
                   "move_blocked": "#/components/schemas/MoveBlocked",
                   "order_mooted": "#/components/schemas/OrderMooted",
                   "recruitment_voided": "#/components/schemas/RecruitmentVoided",
@@ -2398,6 +2475,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/WorldUnitRecruitedView"
+                },
+                {
+                  "$ref": "#/components/schemas/MilitiaMustered"
                 }
               ]
             },

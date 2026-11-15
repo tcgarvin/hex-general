@@ -29,11 +29,11 @@ const map = decodeWorldMap({ width: 4, height: 3, terrain: ".t.........c", roads
 
 // The founded base and every garrisoned site have settlements; the vacant slot has none.
 const settlements = [
-  { coord: FARM, controlled_by: null },
-  { coord: OLD_FARM, controlled_by: null },
-  { coord: FACTORY, controlled_by: "p1" },
-  { coord: BASE, controlled_by: "p1" },
-  { coord: CITY, controlled_by: "neutral" },
+  { coord: FARM, controlled_by: null, muster_clock: 0 },
+  { coord: OLD_FARM, controlled_by: null, muster_clock: 0 },
+  { coord: FACTORY, controlled_by: "p1", muster_clock: 0 },
+  { coord: BASE, controlled_by: "p1", muster_clock: 0 },
+  { coord: CITY, controlled_by: "neutral", muster_clock: 0 },
 ];
 
 const staticTiles = staticSiteTiles(map.sites);
@@ -47,7 +47,7 @@ describe("world hex tile choice", () => {
   });
 
   it("draws the stage-1 base tile on a founded base", () => {
-    expect(baseStageOf({ coord: BASE, controlled_by: "p1" })).toBe(1);
+    expect(baseStageOf({ coord: BASE, controlled_by: "p1", muster_clock: 0 })).toBe(1);
     expect(choice(BASE)).toEqual({ kind: "site", key: baseTileKeys(BASE, 1)[0].key });
     expect(baseTiles.size).toBe(1);
   });
@@ -69,11 +69,11 @@ describe("world hex tile choice", () => {
   });
 
   it("throws on a settlement that stands on no map site", () => {
-    expect(() => baseSiteTiles(map, [{ coord: PLAIN, controlled_by: null }])).toThrow(/no map site/);
+    expect(() => baseSiteTiles(map, [{ coord: PLAIN, controlled_by: null, muster_clock: 0 }])).toThrow(/no map site/);
   });
 
   it("reports the hexes whose base tile appears or goes when settlements change", () => {
-    const joined = baseSiteTiles(map, [...settlements, { coord: VACANT, controlled_by: "p2" }]);
+    const joined = baseSiteTiles(map, [...settlements, { coord: VACANT, controlled_by: "p2", muster_clock: 0 }]);
     expect(changedBaseTiles(baseTiles, joined)).toEqual([VACANT]);
     const fallen = baseSiteTiles(map, settlements.filter((s) => hexKey(s.coord.q, s.coord.r) !== hexKey(BASE.q, BASE.r)));
     expect(changedBaseTiles(baseTiles, fallen)).toEqual([BASE]);

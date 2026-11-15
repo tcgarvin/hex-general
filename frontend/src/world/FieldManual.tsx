@@ -27,7 +27,7 @@ const MANUAL_SECTIONS = [
   { id: "army", tab: "Army", title: "Your army" },
   { id: "orders", tab: "Orders", title: "Orders" },
   { id: "columns", tab: "Columns", title: "Columns and contact" },
-  { id: "sites", tab: "Sites", title: "Sites and garrisons" },
+  { id: "sites", tab: "Sites", title: "Sites and militia" },
   { id: "base", tab: "Base", title: "Your base and economy" },
   { id: "report", tab: "Report", title: "Reading the turn" },
   { id: "keys", tab: "Keys", title: "Keys" },
@@ -427,7 +427,7 @@ function OrdersPage() {
           ],
           [
             "Waypoints",
-            "To steer a Travel route (round a garrison, along a road you prefer), Shift+click hexes after setting the destination: the route passes through them in the order clicked, up to 4, shown as diamonds. Holding Shift while hovering shows the route and arrival time with that hex added. Remove one, or clear them all, on the unit panel. Clicking a new destination starts again without waypoints. Shift+click on a deployed unit of yours next door still means a swap.",
+            "To steer a Travel route (round a militia's site, along a road you prefer), Shift+click hexes after setting the destination: the route passes through them in the order clicked, up to 4, shown as diamonds. Holding Shift while hovering shows the route and arrival time with that hex added. Remove one, or clear them all, on the unit panel. Clicking a new destination starts again without waypoints. Shift+click on a deployed unit of yours next door still means a swap.",
           ],
           [
             "Move",
@@ -435,7 +435,7 @@ function OrdersPage() {
           ],
           [
             "Attack",
-            "There is no attack order: infantry and armor attack by moving into an enemy's hex. Several units moving into the same hex all strike. In Move mode, hovering an enemy you can reach shows the expected damage both ways and the defender's bonuses (ground, Hold, disorder, the 1 to 5 limits); the unit panel repeats it once ordered. Another player's unit may or may not Hold, so both numbers are shown; garrisons always Hold.",
+            "There is no attack order: infantry and armor attack by moving into an enemy's hex. Several units moving into the same hex all strike. In Move mode, hovering an enemy you can reach shows the expected damage both ways and the defender's bonuses (ground, Hold, disorder, the 1 to 5 limits); the unit panel repeats it once ordered. Another player's unit or a militia unit may or may not Hold, so both numbers are shown.",
           ],
           [
             "Barrage",
@@ -492,7 +492,7 @@ function ColumnsPage() {
       <P>
         A column halts and deploys when its next step would bring it within <N>{DEPLOY_DISTANCE}</N> hexes of a hostile
         unit (even one hidden in woods), when an enemy comes within <N>{DEPLOY_DISTANCE}</N> of it, or when it is attacked
-        or shelled. Neutral garrisons count.
+        or shelled. Militia count.
       </P>
       <P>
         While you plan a Travel order, and after you give it, the route shows where the column would halt on contact
@@ -516,11 +516,11 @@ function ColumnsPage() {
 }
 
 function SitesPage({ economy }: { economy: Economy }) {
-  // "2 infantry and 1 artillery"; a below-strength unit is militia.
+  // "2 infantry and 1 artillery"; a unit that starts below full HP says so.
   const tiers = Object.entries(GARRISON_FORCES).map(([tier, units]) => {
     const counts = new Map<string, number>();
     for (const [type, hp] of units) {
-      const name = hp < UNIT_STATS[type].maxHp ? `${type} at ${hp} HP (militia)` : type;
+      const name = hp < UNIT_STATS[type].maxHp ? `${type} at ${hp} HP` : type;
       counts.set(name, (counts.get(name) ?? 0) + 1);
     }
     const words = [...counts].map(([name, n]) => `${n} ${name}`);
@@ -543,16 +543,40 @@ function SitesPage({ economy }: { economy: Economy }) {
           ];
         })}
       />
-      <H>Garrisons</H>
+      <H>Militia</H>
       <P>
-        Neutral sites start with a garrison, tougher farther from the bases and one tier tougher on a level 3 site. The
-        first unit stands on the site, the rest beside it. Garrisons always hold, never move, and are not replaced once
-        beaten. A site's panel says what holds it.
+        Every neutral site starts with a militia, tougher farther from the bases and one tier tougher on a level 3 site.
+        A site's panel says what its militia is and which of them you can see. Militia are hidden and seen like any
+        other unit.
       </P>
       <Terms items={tiers} />
+      <P>
+        A militia stays in its <b>zone</b>: the site's hex and the six hexes around it. It reacts only to your units
+        standing in the zone at the start of a turn, so it acts the turn <i>after</i> you step beside the site, never
+        before. It always follows the same plan:
+      </P>
+      <Terms
+        items={[
+          ["Keeper", "The infantry on the site's hex always Holds."],
+          ["Picket", "Any other infantry Holds until one of your units is in the zone, then attacks it: one on the site's hex first, else the nearest. It moves only inside the zone."],
+          ["Gun", "Holds until one of your units in the zone is in range, then shells it. It never moves."],
+          ["Going home", "If no militia stands on the site's hex, the nearest militia infantry walks back onto it, attacking whoever is there."],
+        ]}
+      />
+      <P>
+        A militia unit that loses no HP in a turn heals <N>{economy.militia.recover}</N> HP, up to what it started with,
+        while its site is neutral. A site whose militia is under strength re-forms one lost unit after{" "}
+        <N>{economy.militia.musterTurns}</N> quiet turns (turns that end with none of your units in the zone); the site's
+        panel shows the count when you can see the site.
+      </P>
+      <P>
+        Taking the site does not end its militia: the survivors fight on, but no longer heal. If a militia infantry ends a
+        turn back on the site's hex, the site is neutral again.
+      </P>
       <H>Capturing</H>
       <P>
-        End the turn with deployed infantry or armor on the site's hex, with every defender there destroyed. Artillery and
+        End the turn with deployed infantry or armor on the site's hex, with every defender there destroyed. Militia
+        left in the zone keep attacking it. Artillery and
         columns cannot capture. A site you take pays you that same turn. Enemy sites fall the same way; a base falls when
         its hex is taken. A vacant base site cannot be captured.
       </P>

@@ -26,6 +26,7 @@ const PHASE_TITLE: Record<Exclude<Beat["phase"], "pulse">, string> = {
   repair: "Repairs",
   economy: "Supply and building",
   recruit: "Recruits",
+  muster: "Militia re-form",
   settle: "End of turn",
 };
 
@@ -53,7 +54,8 @@ export function playDurationMs(pb: Playback, k: number): number {
 /**
  * Whether a turn's witnessed events put anything in motion on the board
  * (moves, fights, shelling, captures, recruits). Repairs and bookkeeping alone
- * do not: such a turn has nothing to play.
+ * do not: such a turn has nothing to play. An event of a kind this client
+ * does not know is skipped (`actionOf` gives it no action).
  */
 export function turnHasPlayback(events: readonly ReplayEvent[]): boolean {
   return events.some((e, i) => {

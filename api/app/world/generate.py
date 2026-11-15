@@ -315,8 +315,9 @@ class GeneratedWorld:
         )
 
     def _garrisons(self, taken: set[Axial], first_id: int) -> list[Unit]:
-        """Every neutral site's garrison: its tier's first unit on the site, the
-        rest on the nearest free open hexes."""
+        """Every neutral site's militia (WORLD_SPEC §7.1): its tier's first unit
+        on the site, the rest on the nearest free open hexes (the ring when it has
+        room), each posted to the site."""
         index = self.game_map.index
         reserved = self.game_map.plot_hexes
         taken = set(taken)
@@ -337,6 +338,7 @@ class GeneratedWorld:
                         owner=NEUTRAL,
                         coord=coord,
                         hp=hp,
+                        post=site.coord,
                     )
                 )
         return units

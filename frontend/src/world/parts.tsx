@@ -97,14 +97,17 @@ export function StocksGlyphs({ stocks, className = "" }: { stocks: Stocks; class
  * HP as a number in the data face plus ten pips, amber at 6 and below, red at 3
  * and below, so a glance tells a fresh unit from a spent one.
  */
-export function HpPips({ hp, onDark = false }: { hp: number; onDark?: boolean }) {
-  const tone = hp <= 3 ? "bg-invalid" : hp <= 6 ? "bg-warn" : "bg-valid";
-  const text = hp <= 3 ? "text-invalid" : hp <= 6 && !onDark ? "text-[#9a6510]" : hp <= 6 ? "text-warn" : "";
+/** HP as pips, one per HP the unit starts with (`max`: 10, or a militia unit's starting HP). */
+export function HpPips({ hp, max = 10, onDark = false }: { hp: number; max?: number; onDark?: boolean }) {
+  const low = hp * 10 <= max * 3;
+  const mid = hp * 10 <= max * 6;
+  const tone = low ? "bg-invalid" : mid ? "bg-warn" : "bg-valid";
+  const text = low ? "text-invalid" : mid && !onDark ? "text-[#9a6510]" : mid ? "text-warn" : "";
   return (
-    <span className="flex shrink-0 items-center gap-1" title={`${hp} of 10 HP`}>
+    <span className="flex shrink-0 items-center gap-1" title={`${hp} of ${max} HP`}>
       <span className={`w-4 text-right font-data text-sm tabular-nums ${text}`}>{hp}</span>
       <span className="flex gap-px" aria-hidden>
-        {Array.from({ length: 10 }, (_, i) => (
+        {Array.from({ length: max }, (_, i) => (
           <span
             key={i}
             className={`h-2.5 w-[3px] rounded-[1px] ${i < hp ? tone : onDark ? "bg-parchment-200/25" : "bg-ink-900/15"}`}

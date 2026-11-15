@@ -61,4 +61,19 @@ describe("playback session helpers", () => {
     const quiet = turn11.replay.events.filter((e) => e.kind === "stocks_resolved" || e.kind === "unit_repaired");
     expect(turnHasPlayback(quiet)).toBe(false);
   });
+
+  it("plays a militia muster and skips an event kind it does not know", () => {
+    const muster = {
+      kind: "militia_mustered" as const,
+      unit_id: 7,
+      unit_type: "infantry" as const,
+      coord: { q: 1, r: 1 },
+      post: { q: 1, r: 1 },
+      hp: 5,
+    };
+    expect(turnHasPlayback([muster])).toBe(true);
+    const unknown = [{ kind: "something_new", unit_id: 1 }] as unknown as Parameters<typeof turnHasPlayback>[0];
+    expect(() => turnHasPlayback(unknown)).not.toThrow();
+    expect(turnHasPlayback(unknown)).toBe(false);
+  });
 });

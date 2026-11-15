@@ -77,7 +77,8 @@ import {
   type Insets,
   type PanInput,
 } from "./camera";
-import { NEUTRAL_OWNER, ownerColor } from "./colors";
+import { ownerColor } from "./colors";
+import { startingHp } from "./militia";
 import { dashSegments, type Point } from "./dashes";
 import type { LoadedColumns } from "./columnArt";
 import type { DrawnUnit, Effect } from "./playback/interpolate";
@@ -250,7 +251,7 @@ export class WorldRenderer {
   private readonly siteSprites = new Map<string, Sprite>();
   private siteArt: LoadedSites | null = null;
   private columnArt: LoadedColumns = {};
-  /** Hexes where a player's (not a garrison's) unit stands; refreshed per scene. */
+  /** Hexes where a unit (a player's or the militia's) stands; refreshed per scene. */
   private armyHexes = new Set<string>();
   /** Settlement control by hex key (absent: a vacant base site); refreshed per scene. */
   private control: ReadonlyMap<string, string | null> = new Map();
@@ -258,14 +259,11 @@ export class WorldRenderer {
   /** Unit tokens drawn as shapes (overview tokens, columns without art), under the sprites. */
   private readonly unitTokens = new Graphics();
   private readonly unitSpriteLayer = new Container();
-  /** Badges over the units: HP bars, disorder, garrison shields, stack pips. */
+  /** Badges over the units: HP bars, disorder, stack pips. */
   private readonly unitMarks = new Graphics();
-  private readonly unitLabelLayer = new Container();
-  /** Pooled unit sprites and labels: reused every draw, the spare ones hidden. */
+  /** Pooled unit sprites: reused every draw, the spare ones hidden. */
   private readonly unitSprites: Sprite[] = [];
   private unitSpritesUsed = 0;
-  private readonly unitLabels: Text[] = [];
-  private unitLabelsUsed = 0;
   private readonly overlay = new Graphics();
   private readonly hoverLayer = new Graphics();
   private readonly selection = new Graphics();
@@ -381,7 +379,7 @@ export class WorldRenderer {
       this.effectsLayer,
       this.effectLabelLayer,
     );
-    this.unitLayer.addChild(this.unitTokens, this.unitSpriteLayer, this.unitMarks, this.unitLabelLayer);
+    this.unitLayer.addChild(this.unitTokens, this.unitSpriteLayer, this.unitMarks);
     app.stage.addChild(this.world, this.minimap);
     this.bounds = worldPixelBounds(map, HEX_SIZE);
     this.buildMinimap(overviewTexture);
@@ -443,9 +441,7 @@ export class WorldRenderer {
     const changed = changedBaseTiles(this.baseSiteTiles, bases);
     this.baseSiteTiles = bases;
     this.retileHexes(changed);
-    this.armyHexes = new Set(
-      scene.state.units.filter((u) => u.owner !== NEUTRAL_OWNER).map((u) => hexKey(u.coord.q, u.coord.r)),
-    );
+    this.armyHexes = new Set(scene.state.units.map((u) => hexKey(u.coord.q, u.coord.r)));
     this.liveControl = new Map(scene.state.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
     this.applyControl();
     this.drawMinimapSites();
@@ -1125,9 +1121,9 @@ export class WorldRenderer {
   }
 
   /**
-   * A site's painted icon: across most of the hex when it's empty or only a
-   * garrison holds it, shrunk to a corner badge when a player's unit stands there
-   * so the unit stays readable.
+   * A site's painted icon: across most of the hex when it's empty, shrunk to a
+   * corner badge when a unit (a player's or the militia's) stands there so the
+   * unit stays readable.
    */
   private placeSiteIcon(key: string, texture: Texture, x: number, y: number, underUnit: boolean): void {
     let sprite = this.siteSprites.get(key);
@@ -1147,15 +1143,13 @@ export class WorldRenderer {
     const tokens = this.unitTokens.clear();
     const marks = this.unitMarks.clear();
     this.unitSpritesUsed = 0;
-    this.unitLabelsUsed = 0;
     const scene = this.scene;
     if (scene !== null) {
       const groups = this.playback === null ? liveGroups(scene.state.units, range) : playbackGroups(this.playback.units, range);
       this.drawUnitGroups(groups, scene.viewer, tileMode, tokens, marks);
     }
-    // Pooled sprites and labels not used this draw stay around, hidden.
+    // Pooled sprites not used this draw stay around, hidden.
     for (let i = this.unitSpritesUsed; i < this.unitSprites.length; i++) this.unitSprites[i].visible = false;
-    for (let i = this.unitLabelsUsed; i < this.unitLabels.length; i++) this.unitLabels[i].visible = false;
   }
 
   private drawUnitGroups(groups: Iterable<UnitGroup>, viewer: string, tileMode: boolean, tokens: Graphics, marks: Graphics): void {
@@ -1166,16 +1160,13 @@ export class WorldRenderer {
       const color = ownerColor(lead.owner, viewer);
       const mine = lead.owner === viewer;
       const columns = list.filter((u) => u.posture === "column").length;
-      if (tileMode && lead.posture === "column" && lead.owner !== NEUTRAL_OWNER) {
+      if (tileMode && lead.posture === "column") {
         // A hex of nothing but columns: every column drawn, side by side.
         this.drawConvoy(tokens, marks, list, x, y, color, alpha);
         continue;
       }
-      if (tileMode && lead.owner === NEUTRAL_OWNER && this.siteArt !== null) {
-        this.drawGarrisonBadge(marks, list, x, y, alpha);
-        continue;
-      }
-      if (tileMode && units !== null && lead.posture !== "column" && lead.owner !== NEUTRAL_OWNER) {
+      // Militia are drawn like any unit, in the neutral slate (WORLD_SPEC §7.1).
+      if (tileMode && units !== null && lead.posture !== "column") {
         this.placeUnitSprite(units[lead.type], x, y, 1, lead.facing, color, alpha);
       } else {
         const r = tileMode ? HEX_SIZE * 0.42 : Math.max(HEX_SIZE * 0.6, 4 / scale);
@@ -1202,42 +1193,13 @@ export class WorldRenderer {
       if (tileMode && lead.posture !== "column" && lead.disordered) {
         drawDisorderBadge(marks, x - HEX_SIZE * 0.6, y - HEX_SIZE * 0.1, HEX_SIZE * 0.26, alpha);
       }
-      if (tileMode && lead.hp < 10) {
+      // Measured against the HP it starts with: a tier-1 militia infantry is whole at 5.
+      const start = startingHp(lead, this.map);
+      if (tileMode && lead.hp < start) {
         const w = HEX_SIZE * 1.1;
         marks.rect(x - w / 2, y + HEX_SIZE * 0.62, w, 4).fill({ color: DARK, alpha });
-        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / 10, 4).fill({ color: hpColor(lead.hp), alpha });
+        marks.rect(x - w / 2, y + HEX_SIZE * 0.62, (w * lead.hp) / start, 4).fill({ color: hpColor(lead.hp, start), alpha });
       }
-    }
-  }
-
-  /**
-   * A neutral garrison: a shield in the hex's lower-right corner with the number
-   * of defenders on it, and their combined HP once they've taken damage, so an
-   * attacker can see progress. The site's painted tile stays the main read.
-   */
-  private drawGarrisonBadge(marks: Graphics, list: readonly Unit[], x: number, y: number, alpha: number): void {
-    const bx = x + HEX_SIZE * 0.44;
-    const by = y + HEX_SIZE * 0.24;
-    const w = HEX_SIZE * 0.36;
-    const top = by - HEX_SIZE * 0.4;
-    const shoulder = by + HEX_SIZE * 0.18;
-    marks
-      .poly([bx - w, top, bx + w, top, bx + w, shoulder, bx, by + HEX_SIZE * 0.52, bx - w, shoulder])
-      .fill({ color: 0x2b2f36, alpha: 0.95 * alpha })
-      .stroke({ color: 0xe8dcc0, width: 1.8, join: "round", alpha });
-    const label = this.nextLabel();
-    const count = String(list.length);
-    if (label.text !== count) label.text = count;
-    label.alpha = alpha;
-    label.position.set(bx, by - HEX_SIZE * 0.17);
-    const hp = list.reduce((sum, u) => sum + u.hp, 0);
-    const max = list.length * 10;
-    if (hp < max) {
-      // Inside the shield, under the count: it never hangs over the next hex.
-      const bw = w * 1.5;
-      const bar = by + HEX_SIZE * 0.13;
-      marks.rect(bx - bw / 2, bar, bw, 4).fill({ color: DARK, alpha });
-      marks.rect(bx - bw / 2, bar, (bw * hp) / max, 4).fill({ color: hp > max / 2 ? 0x7bd389 : 0xe0a040, alpha });
     }
   }
 
@@ -1252,24 +1214,6 @@ export class WorldRenderer {
     this.unitSpritesUsed += 1;
     sprite.visible = true;
     return sprite;
-  }
-
-  private nextLabel(): Text {
-    let label = this.unitLabels[this.unitLabelsUsed];
-    if (label === undefined) {
-      label = new Text({
-        text: "",
-        style: { fontFamily: "Archivo Narrow, Arial Narrow, sans-serif", fontSize: 16, fontWeight: "700", fill: 0xf2e6c8 },
-        // Sharp when zoomed in to the maximum.
-        resolution: 3,
-      });
-      label.anchor.set(0.5);
-      this.unitLabelLayer.addChild(label);
-      this.unitLabels.push(label);
-    }
-    this.unitLabelsUsed += 1;
-    label.visible = true;
-    return label;
   }
 
   /** One unit's base + tinted mask, `scale` × the standard unit size. */
@@ -1326,11 +1270,12 @@ export class WorldRenderer {
           .fill({ color, alpha })
           .stroke({ color: DARK, width: r * 0.15, alpha });
       }
-      if (unit.hp < 10) {
+      const start = startingHp(unit, this.map);
+      if (unit.hp < start) {
         const w = HEX_SIZE * 0.9 * scale;
         const by = cy + HEX_SIZE * 0.5 * scale;
         marks.rect(cx - w / 2, by, w, 3).fill({ color: DARK, alpha });
-        marks.rect(cx - w / 2, by, (w * unit.hp) / 10, 3).fill({ color: hpColor(unit.hp), alpha });
+        marks.rect(cx - w / 2, by, (w * unit.hp) / start, 3).fill({ color: hpColor(unit.hp, start), alpha });
       }
     });
   }
@@ -1524,7 +1469,7 @@ export class WorldRenderer {
       if (route.halt !== null && strong) drawHaltMark(g, route.from, route.path, route.halt, px, 1);
       const end = pts[pts.length - 1];
       if (route.attack !== null) {
-        // Up and left of centre: a garrison's shield sits in the lower right.
+        // Up and left of centre, off the defender's HP bar.
         const r = Math.max(px(11), HEX_SIZE * 0.4);
         drawAttackMark(g, end.x - HEX_SIZE * 0.32, end.y - HEX_SIZE * 0.2, r, px, strong ? 1 : 0.75);
       } else {
@@ -1714,8 +1659,9 @@ function drawDisorderBadge(g: Graphics, x: number, y: number, r: number, alpha =
   g.circle(x, y + r * 0.42, 1).fill({ color: DARK, alpha });
 }
 
-function hpColor(hp: number): number {
-  return hp > 5 ? 0x7bd389 : 0xe0a040;
+/** Green above half the HP a unit starts with, amber at or below it. */
+function hpColor(hp: number, start: number): number {
+  return hp * 2 > start ? 0x7bd389 : 0xe0a040;
 }
 
 /** A star path (`points` tips) centred on `(x, y)`; the caller fills it. */

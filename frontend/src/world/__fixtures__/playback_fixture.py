@@ -25,8 +25,8 @@ travel columns packing, marching and auto-deploying on contact, combat with
 damage, a unit destroyed, an entrant taking a hex, barrages (one by a gun the
 viewer cannot see, served without its ``artillery_id``), a capture, the
 viewer's own recruits and another player's recruit (served without its cost),
-and other players' units coming into and out of the viewer's sight mid-turn;
-the script fails if the chosen cases stop covering those (`REQUIRED`).
+militia healing and a militia unit mustering back, and other players' units
+coming into and out of the viewer's sight mid-turn; the script fails if the chosen cases stop covering those (`REQUIRED`).
 ``api/tests/test_frontend_fixtures.py`` reruns it and fails when the
 committed JSON is stale. Regenerate after an engine, bot, fog or
 world-generator change.
@@ -73,8 +73,10 @@ CASES: list[tuple[str, int]] = [
     ("b000", 20),
     ("b003", 20),
     # Another player's recruit, seen without its cost.
-    ("b001", 32),
-    ("b003", 30),
+    ("b002", 107),
+    # Militia (WORLD_SPEC §7.1): a militia gun's barrage, militia healing and a
+    # lost militia unit mustering back at its site.
+    ("b001", 97),
 ]
 TURNS = max(turn for _, turn in CASES) + 1
 REQUIRED = {
@@ -89,6 +91,8 @@ REQUIRED = {
     "settlement_captured",
     "world_unit_recruited",
     "recruit:foreign",
+    "unit_repaired",
+    "militia_mustered",
     "sight:enter",
     "sight:leave",
 }

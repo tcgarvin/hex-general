@@ -1,6 +1,6 @@
 // Owner colours for a world with up to ~200 players.
 //
-// The viewer is always the same strong blue, the neutral garrisons a dark slate.
+// The viewer is always the same strong blue, the neutral militia a dark slate.
 // Every other player's colour comes from their slot number (`s001`…`s200`, the
 // fill order) stepped through the R2 low-discrepancy sequence over hue and
 // lightness, so any run of slots is spread evenly over the colour space instead
@@ -13,7 +13,7 @@ const VIEWER = 0x3d7eff;
 const NEUTRAL = 0x4a4f57;
 const VACANT = 0xb8b2a2;
 
-/** The `neutral` garrison owner id (api/app/engine/models.py `NEUTRAL`). */
+/** The `neutral` militia owner id (api/app/engine/models.py `NEUTRAL`). */
 export const NEUTRAL_OWNER = "neutral";
 
 function hash(id: string): number {
@@ -54,7 +54,7 @@ function colourPoint(owner: string): [number, number] {
 
 /**
  * The colour for `owner` as seen by `viewer`. `null` is an unowned site; the
- * neutral garrisons are their own colour.
+ * neutral militia are their own colour.
  */
 export function ownerColor(owner: string | null, viewer: string): number {
   if (owner === null) return VACANT;

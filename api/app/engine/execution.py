@@ -4,16 +4,21 @@
 threads the game state through each phase, concatenating their event logs into the
 single replay for the turn:
 
+  0. **Militia** (WORLD_SPEC §7.1) — the neutral garrisons' scripted orders
+     (`app.engine.militia.militia_orders`) join the players' orders.
   1. **Barrage** (§11.3 Phase 1) — pre-movement artillery fire.
   2. **Movement + combat** (§11.3 Phase 2) — movement pulses with interleaved
      combat. Standing travel orders (WORLD_SPEC §5) march as part of it: they
      are expanded into March orders first and settled (trimmed or ended) after.
   3. **Capture** (§11.3 Phase 3, §14) — settlements flip to occupying infantry/armor.
+     Then militia standing on their own player-held site retake it (§7.1).
   4. **Repair** (§11.3 Phase 4, §7.3) — undamaged resting units recover HP.
+     Then undamaged militia recover (§7.1).
   5. **Economy** (§11.3 Phase 5, §6.2–6.4) — income and upkeep update each bank.
      A world game runs `resolve_world_economy` instead: three resources,
      shortages that disband units, and base construction.
   6. **Recruitment** (§11.3 Phase 6, §6.5) — banked muster deploys new units.
+     Then neutral sites count quiet turns and muster lost militia back (§7.1).
 
 It then advances ``turn`` by one: the returned state is the *next* turn's planning
 state, so a driver can loop ``state, _ = resolve_execution(state, …)`` and reach
@@ -30,12 +35,12 @@ from app.engine.barrage import resolve_barrage
 from app.engine.capture import resolve_capture
 from app.engine.economy import resolve_economy
 from app.engine.events import BarrageResolved, Event, OrderMooted, OrderMootedReason
+from app.engine.militia import militia_orders, muster, recover, retake
 from app.engine.models import (
     NEUTRAL,
     BarrageOrder,
     EconomyOrders,
     GameState,
-    HoldOrder,
     Order,
     Recruitment,
 )
@@ -76,7 +81,7 @@ def resolve_execution(
     economy_orders = economy_orders if economy_orders is not None else []
     if economy_orders and state.config.economy is None:
         raise EngineError("economy orders need a world economy")
-    orders = orders + _garrison_holds(state, orders)
+    orders = orders + _militia_orders(state, orders)
     # Travel (WORLD_SPEC §5): fresh Travel orders become standing ones, and every
     # standing order with no fresh order to replace it marches this turn.
     travel = begin_travel(state, orders)
@@ -131,7 +136,9 @@ def resolve_execution(
     damaged = {u.id for u in after_movement.units if u.hp < pre_hp[u.id]}
 
     after_capture, capture_events = resolve_capture(after_movement)
+    after_capture, retake_events = retake(after_capture)
     after_repair, repair_events = resolve_repair(after_capture, live_orders, damaged)
+    after_repair, recovery_events = recover(after_repair, damaged)
     if after_repair.config.economy is None:
         after_economy, economy_events = resolve_economy(after_repair)
     else:
@@ -139,6 +146,7 @@ def resolve_execution(
             after_repair, economy_orders
         )
     after_recruit, recruit_events = resolve_recruitment(after_economy, recruitments)
+    after_recruit, muster_events = muster(after_recruit)
 
     next_state = after_recruit.model_copy(update={"turn": after_recruit.turn + 1})
     for unit in next_state.units:
@@ -151,25 +159,28 @@ def resolve_execution(
         + travel.events
         + travel_events
         + capture_events
+        + retake_events
         + repair_events
+        + recovery_events
         + economy_events
         + recruit_events
+        + muster_events
     )
     return next_state, events
 
 
-def _garrison_holds(state: GameState, orders: list[Order]) -> list[Order]:
-    """Hold orders for every neutral garrison unit: garrisons always hold.
+def _militia_orders(state: GameState, orders: list[Order]) -> list[Order]:
+    """The militia's scripted orders for this turn (WORLD_SPEC §7.1).
 
-    Raises `EngineError` if a submitted order names a garrison unit, since no
+    Raises `EngineError` if a submitted order names a militia unit, since no
     player commands the neutral side.
     """
-    garrison = {u.id for u in state.units if u.owner == NEUTRAL}
-    if not garrison:
+    militia = {u.id for u in state.units if u.owner == NEUTRAL}
+    if not militia:
         return []
     ordered = {o.unit_id for o in orders}
-    if ordered & garrison:
+    if ordered & militia:
         raise EngineError(
-            f"orders name neutral garrison units {sorted(ordered & garrison)}"
+            f"orders name neutral garrison units {sorted(ordered & militia)}"
         )
-    return [HoldOrder(unit_id=uid) for uid in sorted(garrison)]
+    return militia_orders(state)

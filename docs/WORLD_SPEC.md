@@ -371,11 +371,11 @@ revision 2; decisions in VISION §6) replaces v0.1 muster in world games.
   level above 1 adds +1 of what the site makes (`WorldEconomy.level_income`): farm
   manpower 2/3/4, oil fuel 3/4/5, steel mill steel 2/3/4, factory steel 1/2/3
   [provisional tuning, 2026-11-10].
-- **Garrisons:** every neutral site starts with a neutral garrison (owner `neutral`,
-  hostile to all, always holds, never captures). Tier by distance to the nearest base
-  and value: T1 militia (infantry at 5 HP), T2 infantry, T3 infantry + gun, T4 two
-  infantry + gun; a level-3 site is one tier tougher, up to T4 [provisional]. No
-  respawn and no regeneration yet.
+- **Militia (garrisons):** every neutral site starts with a militia (owner `neutral`,
+  hostile to all). Tier by distance to the nearest base and value: T1 one infantry at
+  5 HP, T2 infantry, T3 infantry + gun, T4 two infantry + gun; a level-3 site is one
+  tier tougher, up to T4 [provisional]. How a militia behaves, heals and re-forms is
+  §7.1.
 - **Buildings** at the base, one under construction at a time: barracks (5 levels),
   depot (2), workshop (1, unlocks guns). Tanks recruit only at a held factory;
   infantry and guns at the base or a held city.
@@ -396,6 +396,77 @@ revision 2; decisions in VISION §6) replaces v0.1 muster in world games.
   path remains in the engine, selected when `GameConfig.economy` is unset (engine
   tests use it); the 2-player flow that used it was retired on 2026-11-10, so
   removing it is now an open cleanup.
+
+### 7.1 Militia
+
+*Decided 2026-11-15 (user): militia follow a fixed script a player can learn, heal
+slowly and re-form. Numbers are provisional.*
+
+The neutral units at a site are its **militia**. Each militia unit belongs to one site
+(`Unit.post`, the site's hex) for life.
+
+- **Fog is unchanged.** Militia are seen and hidden like any other unit: no special
+  rule (user, 2026-11-15). In sight they are drawn as units, so a hex with no unit on
+  it can be walked into and a unit you see is what you fight. A site's quiet-turn
+  count is hidden with them: a player sees it only for a site hex in sight.
+- **The zone** is the site hex and the six hexes around it. Militia never leave it.
+  An **intruder** is a deployed player unit standing in the zone at the start of a turn.
+  Militia react only to intruders, so they act the turn *after* you step beside the
+  site, never before.
+- **The script** runs on start-of-turn positions, with no randomness and no knowledge
+  of the players' orders:
+  1. **Keeper:** the militia infantry on the site hex Holds, always.
+  2. **Going home:** if no militia unit is on the site hex, the militia infantry nearest
+     to it walks onto it (attacking whatever player unit stands there).
+  3. **Picket:** every other militia infantry Holds until there is an intruder, then
+     attacks one: an intruder on the site hex first, else the one it can reach in the
+     fewest steps (ties: lowest HP, then lowest unit id). It moves only through free
+     hexes of the ring, at most its 2 steps, obeying ZOC; out of reach this turn, it
+     closes in.
+  4. **Gun:** Holds until there is an intruder in range, then Barrages one: on the site
+     hex first, else lowest HP, then lowest unit id. It never moves.
+  A militia unit that generation had to place outside the zone only Holds (a gun there
+  still fires at intruders in range).
+- **Recovery:** at the end of a turn, a militia unit that lost no HP that turn regains
+  **1 HP**, up to its starting HP (5 for a T1 militia), while its site is neutral. No
+  Rest order is needed, so the keeper heals while it Holds. Once a player holds the
+  site its militia have lost their base and no longer heal (until they retake it).
+- **Muster:** a neutral site whose militia is under its tier's strength counts **quiet
+  turns**: turns that end with no player unit in the zone. After **4** quiet turns one
+  lost unit returns at its starting HP (the tier's units in order, so the keeper first)
+  on the site hex if no unit is there, else on the nearest free ring hex, and the count
+  restarts. A turn that is not quiet pauses the count. A site held by a player musters
+  nothing; one that reverts to neutral (its owner left the world) musters its militia
+  back the same way.
+- **After the site falls:** capture is unchanged (a player's infantry or armor ending
+  the turn on the site hex takes it). Surviving militia stay hostile and keep following
+  the script, so they attack the unit on the site until they are destroyed. If a
+  militia infantry ends a turn on its own site while a player controls it, the site
+  returns to neutral.
+- **The coming turn is not shown.** The view carries no militia orders and the UI
+  draws none (user, 2026-11-15: showing them would oblige the planner to show how the
+  player's own moves interact with them, and the script will change). Players learn
+  the script from the field manual and from watching it; the combat preview treats a
+  militia unit like another player's unit, which may or may not Hold.
+- *Tuning:* `WorldEconomy.militia` (`recover`, `muster_turns`); the script is
+  `app/engine/militia.py`.
+- *As built (2026-11-15):* `app/engine/militia.py` (`militia_orders`, then `retake`
+  after capture, `recover` after repair, `muster` after recruitment), tuning
+  `MilitiaRules` in `WorldEconomy.militia`, the quiet-turn count in
+  `Settlement.muster_clock`. Readings the rule left open: a militia unit's ZOC is
+  every deployed player unit (one outside the zone too); a picket targets only
+  intruders it can reach through free ring hexes (none: it Holds) and closes in
+  along the shortest such path; pickets plan in id order and no two use the same
+  empty hex; a unit going home whose step is not legal (ZOC, or packed player
+  columns on the site) acts as a picket instead. A quiet turn has no player unit,
+  deployed or packed, in the zone; with no room for the returning unit the count
+  stays full and it waits. A returning infantry takes the site hex if it is empty,
+  a returning gun always a ring hex: the free ring hex of open ground (plains,
+  woods, hills, off every plot) lowest in axial order. A retake logs
+  `settlement_captured` with `captured_by: "neutral"`; recovery logs
+  `unit_repaired`; a muster logs `militia_mustered` (witnessed by sight of its
+  hex). Stored states from before posts existed get each neutral unit's nearest
+  garrisoned site at load (`assign_posts`, in `app/games/repo.py` `join_state`).
 
 ## 8. Bots
 

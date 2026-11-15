@@ -50,7 +50,7 @@ export function unit(
 }
 
 export function settlement(c: Axial, controlledBy: string | null = null): Settlement {
-  return { coord: c, controlled_by: controlledBy };
+  return { coord: c, controlled_by: controlledBy, muster_clock: 0 };
 }
 
 export function hex(c: Axial, terrain: Terrain = "plains", road = false): Hex {

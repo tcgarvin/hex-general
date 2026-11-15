@@ -39,10 +39,10 @@ export function settlementGroundAt(map: WorldMap, state: WorldState, hex: Axial)
   );
 }
 
-/** "s004 infantry", "Garrison infantry", "2nd Infantry". */
+/** "s004 infantry", "Militia infantry", "2nd Infantry". */
 function unitName(u: Unit, viewer: string, designate: Designate): string {
   if (u.owner === viewer) return designate(u.id) ?? `Your ${u.type}`;
-  return u.owner === NEUTRAL_OWNER ? `Garrison ${u.type}` : `${u.owner} ${u.type}`;
+  return u.owner === NEUTRAL_OWNER ? `Militia ${u.type}` : `${u.owner} ${u.type}`;
 }
 
 /** How a unit seen at `hex` would take a blow: its ground, posture, and whether it holds. */
@@ -55,8 +55,10 @@ function seen(
 ): Omit<SeenDefender, "hold"> & { hold: "yes" | "maybe" | "no" } {
   const cell = map.hexAt(u.coord.q, u.coord.r);
   if (cell === undefined) throw new Error(`unit ${u.id} stands off the map`);
-  // Garrisons always hold; your own units hold if you order it; anyone else might.
-  const hold = u.owner === NEUTRAL_OWNER ? "yes" : u.owner === viewer ? (orders[u.id]?.kind === "hold" ? "yes" : "no") : "maybe";
+  // Your own units hold if you order it. Anyone else, militia included, might:
+  // the view carries no militia orders (WORLD_SPEC §7.1), so the preview never
+  // guesses their script.
+  const hold = u.owner === viewer ? (orders[u.id]?.kind === "hold" ? "yes" : "no") : "maybe";
   return {
     type: u.type,
     hp: u.hp,
@@ -109,7 +111,7 @@ export function attackPreview(
   if (f.kills) lines.push(`That destroys it (${defender.hp} HP).`);
   if (f.dies) lines.push(`${unitName(attacker, viewer, designate)} would be destroyed (${attacker.hp} HP).`);
   return {
-    title: `Attack ${unitName(defender, viewer, designate).replace(/^Garrison/, "garrison")}, ${defender.hp} HP`,
+    title: `Attack ${unitName(defender, viewer, designate).replace(/^Militia/, "militia")}, ${defender.hp} HP`,
     lines,
     note: "If it stays put and nothing else joins: more attackers each strike, and it strikes each of them.",
   };

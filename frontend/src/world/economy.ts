@@ -22,6 +22,8 @@ export interface Economy {
   buildings: Record<Building, { cost: Stocks; turns: number }[]>;
   storage: number[];
   army: { base: number; per_barracks: number; sites_per_point: number; ceiling: number };
+  /** `MilitiaRules` (WORLD_SPEC §7.1): HP a militia unit regains a quiet turn, and the quiet turns before one re-forms. */
+  militia: { recover: number; musterTurns: number };
 }
 
 export const NO_STOCKS: Stocks = { manpower: 0, fuel: 0, steel: 0 };
@@ -61,6 +63,8 @@ export function economyOf(state: WorldState): Economy {
       sites_per_point: army.sites_per_point ?? 4,
       ceiling: army.ceiling ?? 15,
     },
+    // `MilitiaRules` defaults, for a config stored before the militia rules existed.
+    militia: { recover: e.militia?.recover ?? 1, musterTurns: e.militia?.muster_turns ?? 4 },
   };
 }
 

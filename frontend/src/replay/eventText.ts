@@ -5,6 +5,7 @@
 
 import type { components } from "@/lib/api/schema";
 import type { ReplayEvent } from "@/lib/api/types";
+import { NEUTRAL_OWNER as NEUTRAL } from "@/world/colors";
 
 type Axial = components["schemas"]["Axial"];
 type UnitType = components["schemas"]["UnitType"];
@@ -92,12 +93,13 @@ const stocksText = (s: Stocks): string => {
   return parts.length === 0 ? "nothing" : parts.join(", ");
 };
 
-/** "Your infantry" reads "your infantry" inside a sentence. */
-const mid = (name: string): string => name.replace(/^Your /, "your ");
+/** "Your infantry" reads "your infantry" inside a sentence, "Militia infantry" "militia infantry". */
+const mid = (name: string): string => name.replace(/^(Your|Militia) /, (m) => m.toLowerCase());
 
 /**
  * Render a single resolved event as one or more log lines (SPEC §16.3). `nameOf`
- * resolves the display name of units the event references only by id.
+ * resolves the display name of units the event references only by id. An
+ * event of a kind this client does not know renders as no lines.
  */
 export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = DEFAULT_NAMING): LogLine[] {
   switch (event.kind) {
@@ -170,6 +172,12 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
     }
 
     case "settlement_captured": {
+      const site = (event.site ?? event.settlement).replace("_", " ");
+      if (event.captured_by === NEUTRAL) {
+        // Militia retaking their own site (WORLD_SPEC §7.1): it is neutral again.
+        const from = event.previous_owner === null ? "" : ` from ${naming.player(event.previous_owner)}`;
+        return [{ indent: 0, text: `The militia retook the ${site} at ${coord(event.coord)}${from}.` }];
+      }
       const who = nameOf(event.unit_id);
       const from =
         event.previous_owner === null
@@ -179,7 +187,7 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
         {
           indent: 0,
           // A world capture names its site (farm, oil field…); its hex is plains.
-          text: `${who} captured the ${(event.site ?? event.settlement).replace("_", " ")} at ${coord(event.coord)}${from}.`,
+          text: `${who} captured the ${site} at ${coord(event.coord)}${from}.`,
         },
       ];
     }
@@ -348,6 +356,18 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
           text: `${naming.unit(event.owner, event.unit_type)} recruit at ${coord(event.coord)} was voided — ${RECRUIT_VOIDED_REASON[event.reason]}.`,
         },
       ];
+
+    case "militia_mustered":
+      return [
+        {
+          indent: 0,
+          text: `${naming.unit(NEUTRAL, event.unit_type, event.unit_id)} re-formed at ${coord(event.coord)} (${event.hp} HP).`,
+        },
+      ];
+
+    default:
+      // A kind this client does not know yet (a newer API): nothing to say.
+      return [];
   }
 }
 

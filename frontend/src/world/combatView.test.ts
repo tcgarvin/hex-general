@@ -36,12 +36,12 @@ describe("combat preview text", () => {
     expect(settlementGroundAt(map, s, at(2))).toBe(false);
   });
 
-  it("previews an assault on a garrison with its site and Hold bonus", () => {
+  it("previews an assault on a militia unit with its site bonus and a Hold it may not take", () => {
     const me = unit(1, "me", 0, { type: "armor" });
-    const p = attackPreview(me, at(1), map, state([me, unit(5, "neutral", 1)]), "me", designate);
+    const p = attackPreview(me, at(1), map, state([me, unit(5, "neutral", 1, { post: at(1) })]), "me", designate);
     expect(p).toEqual({
-      title: "Attack garrison infantry, 10 HP",
-      lines: ["You deal 1 (floor 1), take 1 (floor 1).", "Defender: +2 site, +1 hold."],
+      title: "Attack militia infantry, 10 HP",
+      lines: ["You deal 1 (floor 1), take 1 (floor 1).", "Defender: +2 site, +1 if it holds."],
       note: "If it stays put and nothing else joins: more attackers each strike, and it strikes each of them.",
     });
   });
@@ -55,6 +55,14 @@ describe("combat preview text", () => {
     ]);
     expect(barragePreview(at(3), map, s, "me", visible, {}, designate).lines).toEqual([
       "Not in sight: it hits whatever stands there.",
+    ]);
+  });
+
+  it("shows a militia unit's barrage damage both with and without a Hold", () => {
+    const s = state([unit(9, "neutral", 0, { post: at(1), hp: 5 })]);
+    const visible = new Set([hexKey(at(0).q, at(0).r)]);
+    expect(barragePreview(at(0), map, s, "me", visible, {}, designate).lines).toEqual([
+      "Militia infantry, 5 HP: 1 (floor 1) · +1 if it holds",
     ]);
   });
 });

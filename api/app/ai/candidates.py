@@ -22,6 +22,7 @@ from app.ai.board import BoardIndex
 from app.ai.objectives import Objective, ObjectiveKind
 from app.engine.combat import compute_damage
 from app.engine.hex_coords import Axial, distance, neighbors
+from app.engine.militia import ZONE_RADIUS, post_of
 from app.engine.models import (
     NEUTRAL,
     BarrageOrder,
@@ -175,8 +176,8 @@ def _attack_orders(
 ) -> list[tuple[float, MoveOrder]]:
     """Attack-by-move candidates onto the highest-value reachable enemies (§4.5).
 
-    A neutral garrison never moves or strikes first, so one is attacked only
-    when it guards the unit's objective: anywhere else it is harmless. Another
+    Militia never leave their site's zone, so one is attacked only when it
+    guards the unit's objective: anywhere else it is harmless. Another
     player's unit is attacked only if ``attackable`` (when given) lists its hex.
     """
     move = UNIT_STATS[unit.type].move
@@ -232,10 +233,13 @@ def _withdraw_order(board: BoardIndex, unit: Unit, reach: _Reach) -> MoveOrder |
 def _threatened(board: BoardIndex, unit: Unit) -> bool:
     """Whether any visible enemy could strike ``unit``'s hex next turn (§4.5 rest).
 
-    Neutral garrisons always hold, so they never strike a resting unit.
+    Militia strike only units standing in their site's zone (WORLD_SPEC §7.1).
     """
     for enemy in board.enemy_units:
-        if enemy.owner == NEUTRAL:
+        if (
+            enemy.owner == NEUTRAL
+            and distance(post_of(enemy), unit.coord) > ZONE_RADIUS
+        ):
             continue
         reach = UNIT_STATS[enemy.type].attack_range
         if enemy.type is UnitType.ARTILLERY:
@@ -267,7 +271,7 @@ def _barrage_orders(
     """Barrage candidates for each visible enemy in range (SPEC §7.2, range 3).
 
     Fire goes where the unit's objective is (the site the group attacks), and
-    a neutral garrison elsewhere is left alone: it never moves or strikes.
+    militia elsewhere are left alone: they never leave their site's zone.
     """
     reach = UNIT_STATS[UnitType.ARTILLERY].attack_range
     scored: list[tuple[float, BarrageOrder]] = []

@@ -242,3 +242,29 @@ describe("eventLines", () => {
     ).toEqual(["Traffic jam at (4,4): 3 friendly units collided and stopped."]);
   });
 });
+
+describe("eventLines: militia", () => {
+  it("tells a militia muster with its HP", () => {
+    expect(
+      linesFor({ kind: "militia_mustered", unit_id: 7, unit_type: "infantry", coord: { q: 4, r: 2 }, post: { q: 4, r: 2 }, hp: 5 }),
+    ).toEqual(["Neutral Infantry re-formed at (4,2) (5 HP)."]);
+  });
+
+  it("tells a militia retake as the militia retaking the site", () => {
+    expect(
+      linesFor({
+        kind: "settlement_captured",
+        coord: { q: 3, r: 0 },
+        settlement: "plains",
+        site: "oil_field",
+        captured_by: "neutral",
+        previous_owner: "red",
+        unit_id: 2,
+      }),
+    ).toEqual(["The militia retook the oil field at (3,0) from Red."]);
+  });
+
+  it("renders an event kind it does not know as no lines", () => {
+    expect(linesFor({ kind: "something_new", unit_id: 1 })).toEqual([]);
+  });
+});

@@ -17,9 +17,9 @@ import { ButtonLink, Card, Centered, ErrorBanner, Loading } from "@/components/u
 import type { components } from "@/lib/api/schema";
 import type { GlyphName } from "@/ui-art/glyphs";
 
-import { NEUTRAL_OWNER } from "./colors";
 import { DEPLOY_DISTANCE, fogText, haltText, stopShort } from "./contact";
 import type { Designate } from "./designations";
+import { neutralStatus } from "./hexInfo";
 import {
   economyOf,
   forecast,
@@ -38,7 +38,6 @@ import {
   BUILDING_LABEL,
   etaText,
   FIGHT_RESULT,
-  GARRISON_TEXT,
   orderText,
   RESOURCE_LABEL,
   SECTION_LABEL,
@@ -49,6 +48,7 @@ import {
   UNIT_LABEL,
   unitTag,
 } from "./labels";
+import { isMilitia, militiaName, startingHp } from "./militia";
 import { Countdown, HpPips, PlayButton, ReportLine, Stat, StocksGlyphs, type ReportPlay } from "./parts";
 import { useSwaps } from "./useSwaps";
 import { attackPreview, barragePreview } from "./combatView";
@@ -238,7 +238,7 @@ function WorldScreen({
     planProblems(planning.plan, view.state, economy, view.your_slot, outlook.armySize).length === 0 &&
     (planning.dirty || !planning.submitted);
   useWorldHotkeys({ renderer, planning, home: base, canSubmit, helpOpen: manualOpen, setHelpOpen: setManualOpen, playback: watching !== null });
-  // A unit standing on a site also shows that hex's panel (recruiting, garrison).
+  // A unit standing on a site also shows that hex's panel (recruiting, militia).
   const unitHex = planning.selectedUnit?.coord ?? null;
   const panelHex =
     unitHex === null ? planning.selectedHex : map.siteAt(unitHex.q, unitHex.r) !== undefined ? unitHex : null;
@@ -1128,11 +1128,9 @@ function HexPanel({
   const site = map.siteAt(hex.q, hex.r);
   const settlement = state.settlements.find((s) => s.coord.q === hex.q && s.coord.r === hex.r);
   const units = state.units.filter((u) => axialEqual(u.coord, hex));
-  const garrison = units.filter((u) => u.owner === NEUTRAL_OWNER);
   const owner = settlement?.controlled_by ?? null;
   const staged = planning.plan.recruits[hexKey(hex.q, hex.r)];
   const options = recruitOptions(state, map, economy, slot, hex, planning.plan, armySize);
-  const neutral = settlement !== undefined && owner === null;
   return (
     <Panel
       title={site !== undefined ? siteTitle(site, settlement === undefined ? undefined : owner, slot) : (cell?.terrain ?? "Hex")}
@@ -1155,24 +1153,11 @@ function HexPanel({
               Produces <StocksGlyphs stocks={siteIncome(economy, site)} className="font-data" /> a turn.
             </span>
           )}
-          {neutral && site.garrison > 0 && (
-            <span>
-              <Glyph name="garrison" size={14} className="mr-1" />
-              Garrison: {GARRISON_TEXT[site.garrison]}.
-              {garrison.length > 0 ? (
-                <span className="block font-data text-xs">
-                  In sight: {garrison.map((u) => `${u.type} ${u.hp} HP`).join(", ")}
-                </span>
-              ) : (
-                <span className="block text-xs text-wood-500">Out of sight: losses from past attacks don't show.</span>
-              )}
-            </span>
-          )}
           <span>
             {settlement === undefined
               ? "Vacant base site."
               : owner === null
-                ? "Neutral."
+                ? `${neutralStatus(site.garrison)}.`
                 : owner === slot
                   ? "Held by you."
                   : `Held by ${owner}.`}
@@ -1209,28 +1194,26 @@ function HexPanel({
           </ul>
         </div>
       )}
-      {units.length > garrison.length && (
+      {units.length > 0 && (
         <ul className="mt-2 flex flex-col gap-0.5">
-          {units
-            .filter((u) => u.owner !== NEUTRAL_OWNER)
-            .map((u) => (
-              <li key={u.id} className="flex items-center justify-between gap-2">
-                {u.owner === slot ? (
-                  <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => planning.selectUnit(u.id)}>
-                    <Glyph name={u.type} size={15} className="mr-1.5" />
-                    {designate(u.id) ?? `Your ${u.type}`}
-                    {u.posture === "column" ? " (column)" : ""}
-                  </button>
-                ) : (
-                  <span>
-                    <Glyph name={u.type} size={15} className="mr-1.5" />
-                    {u.owner} {u.type}
-                    {u.posture === "column" ? " (column)" : ""}
-                  </span>
-                )}
-                <HpPips hp={u.hp} />
-              </li>
-            ))}
+          {units.map((u) => (
+            <li key={u.id} className="flex items-center justify-between gap-2">
+              {u.owner === slot ? (
+                <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => planning.selectUnit(u.id)}>
+                  <Glyph name={u.type} size={15} className="mr-1.5" />
+                  {designate(u.id) ?? `Your ${u.type}`}
+                  {u.posture === "column" ? " (column)" : ""}
+                </button>
+              ) : (
+                <span>
+                  <Glyph name={u.type} size={15} className="mr-1.5" />
+                  {isMilitia(u) ? militiaName(u.type) : `${u.owner} ${u.type}`}
+                  {u.posture === "column" ? " (column)" : ""}
+                </span>
+              )}
+              <HpPips hp={u.hp} max={startingHp(u, map)} />
+            </li>
+          ))}
         </ul>
       )}
     </Panel>

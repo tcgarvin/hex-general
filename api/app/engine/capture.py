@@ -6,7 +6,8 @@ infantry or armor unit flips to that unit's owner (SPEC §14.1).
 Artillery cannot capture (SPEC §5.4), and an empty settlement is never neutralised
 — control changes only by an eligible unit *taking* it, never by abandonment
 (SPEC §14.2). A unit already standing on a settlement it controls produces no
-change and no event.
+change and no event. A neutral (militia) occupant never changes control here;
+the militia's own retake step runs after this phase (WORLD_SPEC §7.1).
 
 ``resolve_capture`` is pure: it copies the input state, mutates nothing, and
 performs no I/O. It runs before the economy phase so a settlement captured this
@@ -39,7 +40,8 @@ def resolve_capture(state: GameState) -> tuple[GameState, list[Event]]:
         occupant = occupant_at.get(settlement.coord)
         if occupant is None or not UNIT_STATS[occupant.type].can_capture:
             continue
-        # A garrison guards its site; it never takes control (economy draft §04).
+        # Militia never take control here; standing on their own player-held
+        # site they return it to neutral, in `app.engine.militia.retake`.
         if occupant.owner == NEUTRAL:
             continue
         if settlement.controlled_by == occupant.owner:

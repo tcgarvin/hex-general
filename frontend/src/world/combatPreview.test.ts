@@ -52,7 +52,7 @@ describe("damage parity with the engine", () => {
 });
 
 describe("attack forecast", () => {
-  const garrison = {
+  const holding = {
     type: "infantry" as const,
     hp: 10,
     terrain: "plains" as const,
@@ -62,28 +62,28 @@ describe("attack forecast", () => {
     hold: "yes" as const,
   };
 
-  it("reads a garrison assault at the 1-damage floor with its modifiers", () => {
-    const f = forecastAttack({ type: "infantry", hp: 10 }, garrison);
+  it("reads an assault on a defender that surely holds at the 1-damage floor with its modifiers", () => {
+    const f = forecastAttack({ type: "infantry", hp: 10 }, holding);
     expect(f.modifiers).toEqual(["+2 site", "+1 hold"]);
     expect(attackPhrase(f)).toBe("You deal 1 (floor 1), take 1 (floor 1)");
     expect(f.kills).toBe(false);
   });
 
-  it("gives both numbers when another player's unit may or may not hold", () => {
-    const f = forecastAttack({ type: "armor", hp: 3 }, { ...garrison, hold: "maybe", settlementGround: false });
+  it("gives both numbers when another player's or a militia unit may or may not hold", () => {
+    const f = forecastAttack({ type: "armor", hp: 3 }, { ...holding, hold: "maybe", settlementGround: false });
     expect(f.modifiers).toEqual(["+1 if it holds"]);
     expect(attackPhrase(f)).toBe("You deal 2 (1 if it holds), take 1 (floor 1)");
   });
 
   it("treats a column as deploying disordered before the blow", () => {
-    const f = forecastAttack({ type: "armor", hp: 10 }, { ...garrison, column: true, settlementGround: false, hp: 2 });
+    const f = forecastAttack({ type: "armor", hp: 10 }, { ...holding, column: true, settlementGround: false, hp: 2 });
     expect(f.modifiers).toEqual(["+1 hold", "−2 disordered"]);
     expect(f.dealt.damage).toBe(3);
     expect(f.kills).toBe(true);
   });
 
   it("flags an attacker the return blow would destroy", () => {
-    expect(forecastAttack({ type: "artillery", hp: 2 }, garrison).dies).toBe(true);
+    expect(forecastAttack({ type: "artillery", hp: 2 }, holding).dies).toBe(true);
   });
 });
 

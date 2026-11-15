@@ -3,8 +3,9 @@
 import { hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
-import { NEUTRAL_OWNER } from "./colors";
 import type { Designate } from "./designations";
+import { GARRISON_TEXT } from "./labels";
+import { isMilitia, militiaName, startingHp } from "./militia";
 import type { WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -30,6 +31,18 @@ const SITE_LABEL: Record<string, string> = {
 };
 
 const LEVELED = new Set(["farm", "oil_field", "steel_mill", "factory"]);
+
+/** "of the farm (3,4)" for a militia unit standing off its site hex (on its ring); else `null`. */
+function postNote(map: WorldMap, post: Axial | null, hex: Axial): string | null {
+  if (post === null || (post.q === hex.q && post.r === hex.r)) return null;
+  const site = map.siteAt(post.q, post.r);
+  if (site === undefined) throw new Error(`militia post (${post.q}, ${post.r}) is not a site`);
+  return `of the ${SITE_LABEL[site.kind].toLowerCase()} (${post.q},${post.r})`;
+}
+
+/** A neutral site's status clause, shared with the hex and site panels: "Neutral; militia: one infantry". */
+export const neutralStatus = (garrison: number): string =>
+  garrison > 0 ? `Neutral; militia: ${GARRISON_TEXT[garrison]}` : "Neutral";
 
 export interface HexInfo {
   title: string;
@@ -60,9 +73,7 @@ export function hexInfo(
       settlement === undefined
         ? "Vacant base site"
         : owner === null
-          ? site.garrison > 0
-            ? `Neutral, garrison tier ${site.garrison}`
-            : "Neutral"
+          ? neutralStatus(site.garrison)
           : owner === viewer
             ? "Held by you"
             : `Held by ${owner}`,
@@ -74,10 +85,18 @@ export function hexInfo(
   }
   const units = state.units.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r).sort((a, b) => a.id - b.id);
   for (const u of units) {
-    const who = u.owner === viewer ? "Your" : u.owner === NEUTRAL_OWNER ? "Garrison" : `${u.owner}'s`;
-    const name = (u.owner === viewer ? designate(u.id) : null) ?? `${who} ${u.type}`;
-    const notes = [u.posture === "column" ? "column" : null, u.disordered ? "disordered" : null].filter((n) => n !== null);
-    lines.push(`${name}, ${u.hp}/10 HP${notes.length > 0 ? ` (${notes.join(", ")})` : ""}`);
+    const name =
+      u.owner === viewer
+        ? (designate(u.id) ?? `Your ${u.type}`)
+        : isMilitia(u)
+          ? militiaName(u.type)
+          : `${u.owner}'s ${u.type}`;
+    const notes = [
+      u.posture === "column" ? "column" : null,
+      u.disordered ? "disordered" : null,
+      postNote(map, u.post ?? null, hex),
+    ].filter((n) => n !== null);
+    lines.push(`${name}, ${u.hp}/${startingHp(u, map)} HP${notes.length > 0 ? ` (${notes.join(", ")})` : ""}`);
   }
   return { title, lines };
 }

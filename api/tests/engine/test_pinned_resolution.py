@@ -5,7 +5,9 @@ drift between versions. This one replays a recorded 6-slot, 6-bot world (seed 3,
 24 turns: combat, barrage, capture, travel, columns, repair, recruitment and
 construction) from its starting state with the orders the bots gave, and checks
 each turn's resolved state and event log against the SHA-256 recorded when the
-fixture was made (2026-11-11, before the engine performance pass).
+fixture was made (2026-11-11, before the engine performance pass). Re-recorded
+2026-11-15 for the militia rules (WORLD_SPEC §7.1): the same starting state with
+posts assigned (`assign_posts`), and fresh bot orders for its 24 turns.
 
 The orders are stored, not planned, so bot and world-generator changes never
 touch this test. A deliberate rule change will: regenerate the fixture then

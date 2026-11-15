@@ -3,19 +3,20 @@ import { describe, expect, it } from "vitest";
 import { hexKey } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
-import { hexInfo } from "./hexInfo";
+import { hexInfo, neutralStatus } from "./hexInfo";
 import { decodeWorldMap, offsetToAxial } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
 
 const map = decodeWorldMap({
-  width: 3,
+  width: 5,
   height: 1,
-  terrain: "w.c",
-  roads: ".##",
+  terrain: "w.c..",
+  roads: ".##..",
   sites: [
     { coord: offsetToAxial(1, 0), kind: "farm", garrison: 2, level: 3 },
     { coord: offsetToAxial(2, 0), kind: "city", garrison: 0, level: 1 },
+    { coord: offsetToAxial(4, 0), kind: "oil_field", garrison: 1, level: 1 },
   ],
 });
 const at = (col: number) => offsetToAxial(col, 0);
@@ -31,23 +32,37 @@ const unit = (id: number, owner: string, col: number, extra = {}) => ({
   ...extra,
 });
 const state = {
-  units: [unit(2, "neutral", 1), unit(1, "me", 0, { posture: "column" }), unit(3, "p7", 2, { disordered: true })],
+  units: [
+    unit(2, "neutral", 1, { post: at(1) }),
+    unit(1, "me", 0, { posture: "column" }),
+    unit(3, "p7", 2, { disordered: true }),
+    // A tier-1 militia infantry (starts at 5 HP) standing on its oil field's ring.
+    unit(4, "neutral", 3, { post: at(4), hp: 4 }),
+  ],
   settlements: [
-    { coord: at(1), controlled_by: null },
-    { coord: at(2), controlled_by: "p7" },
+    { coord: at(1), controlled_by: null, muster_clock: 0 },
+    { coord: at(2), controlled_by: "p7", muster_clock: 0 },
+    { coord: at(4), controlled_by: null, muster_clock: 0 },
   ],
 } as unknown as WorldState;
-const all = new Set([0, 1, 2].map((c) => hexKey(at(c).q, at(c).r)));
+const all = new Set([0, 1, 2, 3, 4].map((c) => hexKey(at(c).q, at(c).r)));
 
 describe("hexInfo", () => {
   it("describes plain terrain and your units", () => {
     expect(hexInfo(map, state, all, "me", at(0))).toEqual({ title: "Woods", lines: ["Your infantry, 7/10 HP (column)"] });
   });
 
-  it("names a leveled site, its garrison and defenders", () => {
+  it("names a leveled site, its militia and defenders", () => {
     expect(hexInfo(map, state, all, "me", at(1))).toEqual({
       title: "Farm, level 3",
-      lines: ["Neutral, garrison tier 2", "Garrison infantry, 7/10 HP"],
+      lines: ["Neutral; militia: one infantry", "Militia infantry, 7/10 HP"],
+    });
+  });
+
+  it("lists a militia unit on its site's ring, with HP of its starting HP and its site", () => {
+    expect(hexInfo(map, state, all, "me", at(3))).toEqual({
+      title: "Plains",
+      lines: ["Militia infantry, 4/5 HP (of the oil field (4,-2))"],
     });
   });
 
@@ -59,6 +74,13 @@ describe("hexInfo", () => {
   });
 
   it("hides units out of sight", () => {
-    expect(hexInfo(map, state, new Set(), "me", at(1)).lines).toEqual(["Neutral, garrison tier 2", "Not in sight"]);
+    expect(hexInfo(map, state, new Set(), "me", at(1)).lines).toEqual(["Neutral; militia: one infantry", "Not in sight"]);
+  });
+});
+
+describe("neutralStatus", () => {
+  it("names the force that holds a neutral site, or just Neutral without one", () => {
+    expect(neutralStatus(2)).toBe("Neutral; militia: one infantry");
+    expect(neutralStatus(0)).toBe("Neutral");
   });
 });

@@ -9,8 +9,11 @@ import { casePlayback, FIXTURE_CASES, fixtureTerrain } from "./testFixtures";
 import type { PlaybackUnit } from "./timeline";
 import { visibleHexKeys } from "./visibility";
 
-const view = (u: PlaybackUnit) => ({ id: u.id, coord: u.coord, hp: u.hp, posture: u.posture });
+const view = (u: Pick<PlaybackUnit, "id" | "coord" | "hp" | "posture">) => ({ id: u.id, coord: u.coord, hp: u.hp, posture: u.posture });
 const byId = (a: { id: number }, b: { id: number }) => a.id - b.id;
+
+// b001's armor before the turn-16 shelling (two hits of 1 land on it).
+const HP_BEFORE_SHELLING = 4;
 
 describe("reconstruction on recorded turns", () => {
   for (const c of FIXTURE_CASES) {
@@ -52,7 +55,7 @@ describe("reconstruction on recorded turns", () => {
     it(`${c.viewer} turn ${c.turn}: beats run barrage, pulses in order, then end-of-turn phases`, () => {
       const pb = casePlayback(c);
       const rank = (b: (typeof pb.beats)[number]) =>
-        b.phase === "barrage" ? 0 : b.phase === "pulse" ? 1 + b.pulse! / 100 : 10 + ["capture", "repair", "economy", "recruit", "settle"].indexOf(b.phase);
+        b.phase === "barrage" ? 0 : b.phase === "pulse" ? 1 + b.pulse! / 100 : 10 + ["capture", "repair", "economy", "recruit", "muster", "settle"].indexOf(b.phase);
       const ranks = pb.beats.map(rank);
       expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
       expect(new Set(ranks).size).toBe(ranks.length);
@@ -125,18 +128,43 @@ describe("reconstruction on recorded turns", () => {
     const pb = casePlayback(c);
     const k = pb.beats.findIndex((b) => b.phase === "barrage" && b.actions.some((a) => a.kind === "barrage" && a.gunId === null));
     const unseen = pb.beats[k].actions.find((a) => a.kind === "barrage" && a.gunId === null)!;
-    expect(unseen).toMatchObject({ from: null, target: { q: 21, r: 18 }, strikes: [{ unitId: 7, owner: "b001", hpAfter: 3 }] });
-    expect(pb.snapshots[k].get(7)!.hp).toBe(4);
-    expect(pb.snapshots[k + 1].get(7)!.hp).toBe(3);
+    expect(unseen).toMatchObject({ from: null, target: { q: 21, r: 17 }, strikes: [{ unitId: 7, owner: "b001", hpAfter: 2 }] });
+    expect(pb.snapshots[k].get(7)!.hp).toBe(HP_BEFORE_SHELLING);
+    expect(pb.snapshots[k + 1].get(7)!.hp).toBe(2);
   });
 
   it("draws another player's recruit, served without its cost", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 30 && x.viewer === "b003")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 107 && x.viewer === "b002")!;
     const pb = casePlayback(c);
-    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 92));
+    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 121));
     expect(pb.beats[k].phase).toBe("recruit");
-    expect(pb.snapshots[k].has(92)).toBe(false);
-    expect(pb.snapshots[k + 1].get(92)).toMatchObject({ owner: "b000", type: "infantry", coord: { q: 22, r: 0 } });
+    expect(pb.snapshots[k].has(121)).toBe(false);
+    expect(pb.snapshots[k + 1].get(121)).toMatchObject({ owner: "b001", type: "artillery", coord: { q: 28, r: 3 }, post: null });
+  });
+
+  it("musters a militia unit back at its starting HP in the last beat", () => {
+    const c = FIXTURE_CASES.find((x) => x.turn === 97 && x.viewer === "b001")!;
+    const pb = casePlayback(c);
+    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 119));
+    expect(k).toBe(pb.beats.length - 1);
+    expect(pb.beats[k].phase).toBe("muster");
+    expect(pb.snapshots[k].has(119)).toBe(false);
+    expect(pb.snapshots[k + 1].get(119)).toMatchObject({
+      owner: "neutral",
+      type: "artillery",
+      coord: { q: 47, r: 17 },
+      hp: 10,
+      post: { q: 47, r: 16 },
+    });
+  });
+
+  it("heals a militia unit in the repair beat", () => {
+    const c = FIXTURE_CASES.find((x) => x.turn === 97 && x.viewer === "b001")!;
+    const pb = casePlayback(c);
+    const k = pb.beats.findIndex((b) => b.phase === "repair");
+    expect(pb.beats[k].actions).toContainEqual(expect.objectContaining({ kind: "repair", unitId: 23, hpBefore: 3, hpAfter: 4 }));
+    expect(pb.snapshots[k].get(23)!.hp).toBe(3);
+    expect(pb.snapshots[k + 1].get(23)).toMatchObject({ hp: 4, post: { q: 47, r: 16 } });
   });
 
   it("resolves barrage guns and recruits from the board", () => {
@@ -177,11 +205,13 @@ const unit = (id: number, owner: string, q: number, r: number, extra: Partial<Pl
   ...extra,
 });
 
-function state(units: ReturnType<typeof unit>[]) {
+type Settlements = WorldReplay["state_after"]["settlements"];
+
+function state(units: ReturnType<typeof unit>[], settlements: Settlements = []) {
   return {
     turn: 5,
     units,
-    settlements: [],
+    settlements,
     players: [],
     resigned: [],
     standing_orders: [],
@@ -191,12 +221,17 @@ function state(units: ReturnType<typeof unit>[]) {
 
 const plains = () => "plains" as const;
 
-function build(events: WorldReplay["events"], before: ReturnType<typeof unit>[] | null, after: ReturnType<typeof unit>[]) {
-  const replay: WorldReplay = { turn: 4, events, state_after: state(after) };
+function build(
+  events: WorldReplay["events"],
+  before: ReturnType<typeof unit>[] | null,
+  after: ReturnType<typeof unit>[],
+  sites: { before: Settlements; after: Settlements } = { before: [], after: [] },
+) {
+  const replay: WorldReplay = { turn: 4, events, state_after: state(after, sites.after) };
   return buildPlayback({
     replay,
     viewer: "me",
-    before: before === null ? null : state(before),
+    before: before === null ? null : state(before, sites.before),
     terrainAt: plains,
     book: unitBook(events, replay.state_after.units, "me"),
   });
@@ -262,5 +297,46 @@ describe("fog: units entering and leaving sight", () => {
     expect(pb.beats).toHaveLength(1);
     expect(pb.beats[0].actions).toEqual([{ kind: "steady", unitId: 1 }]);
     expect(pb.snapshots[1].get(1)!.disordered).toBe(false);
+  });
+});
+
+describe("militia", () => {
+  const FARM = { q: 3, r: 0 };
+  const farm = (owner: string | null) => [{ coord: FARM, controlled_by: owner, muster_clock: 0 }];
+
+  it("a militia retake leaves the site neutral, not owned by 'neutral'", () => {
+    // My farm at (3,0) stands empty; its militia picket walks back onto it.
+    const events = [
+      { kind: "unit_moved" as const, pulse: 1, unit_id: 50, origin: { q: 4, r: 0 }, dest: FARM },
+      {
+        kind: "settlement_captured" as const,
+        coord: FARM,
+        settlement: "plains" as const,
+        site: "farm" as const,
+        captured_by: "neutral",
+        previous_owner: "me",
+        unit_id: 50,
+      },
+    ];
+    const militia = (q: number) => unit(50, "neutral", q, 0, { hp: 4, post: FARM });
+    const pb = build(events, [unit(1, "me", 1, 0), militia(4)], [unit(1, "me", 1, 0), militia(3)], {
+      before: farm("me"),
+      after: farm(null),
+    });
+    const key = hexKey(FARM.q, FARM.r);
+    const capture = pb.beats.findIndex((b) => b.phase === "capture");
+    expect(pb.control[capture].get(key)).toBe("me");
+    for (let b = capture + 1; b < pb.control.length; b++) expect(pb.control[b].get(key)).toBeNull();
+    expect(pb.snapshots.at(-1)!.get(50)).toMatchObject({ coord: FARM, post: FARM });
+  });
+
+  it("skips an event kind this client does not know", () => {
+    const events = [
+      { kind: "unit_moved" as const, pulse: 1, unit_id: 1, origin: { q: 0, r: 0 }, dest: { q: 1, r: 0 } },
+      { kind: "something_new", unit_id: 1 },
+    ] as unknown as WorldReplay["events"];
+    const pb = build(events, [unit(1, "me", 0, 0)], [unit(1, "me", 1, 0)]);
+    expect(pb.beats.flatMap((b) => b.eventIndices)).toEqual([0]);
+    expect(pb.snapshots.at(-1)!.get(1)!.coord).toEqual({ q: 1, r: 0 });
   });
 });

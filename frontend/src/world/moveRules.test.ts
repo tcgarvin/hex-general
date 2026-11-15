@@ -174,7 +174,8 @@ describe("move reach with hostile units", () => {
 describe("withdrawal warning", () => {
   const me = unit("me", "armor", 4, 4);
   const enemy = unit("s2", "infantry", 5, 4); // adjacent (east)
-  const garrison = unit("neutral", "infantry", 5, 4);
+  // A militia picket beside me whose site is two hexes east: I stand outside its zone.
+  const militiaBeside = unit("neutral", "infantry", 5, 4, { post: { q: 6, r: 4 } });
   const away: WorldOrder = { kind: "move", path: [{ q: 3, r: 4 }] };
   const warn = (order: WorldOrder | undefined, others: Unit[]) =>
     withdrawalWarning(me, order, [me, ...others], "me", hostileHexes([me, ...others], "me"));
@@ -183,17 +184,29 @@ describe("withdrawal warning", () => {
     expect(warn(away, [enemy])).toBe(PINNED_WARNING);
   });
 
-  it("does not warn an attack, a unit with no enemy beside it, or one beside a garrison", () => {
+  it("does not warn an attack, a unit with no enemy beside it, or one beside militia whose zone it is outside", () => {
     expect(warn({ kind: "move", path: [enemy.coord] }, [enemy])).toBeNull();
     expect(warn(away, [unit("s2", "infantry", 7, 4)])).toBeNull();
-    expect(warn(away, [garrison])).toBeNull(); // garrisons always hold
+    expect(warn(away, [militiaBeside])).toBeNull(); // militia strike only inside their zone
     expect(warn(undefined, [enemy])).toBeNull();
     expect(warn({ kind: "hold" }, [enemy])).toBeNull();
   });
 
+  it("warns a unit standing in a militia zone that the militia beside it may strike", () => {
+    // Its site is the hex south of me, so I stand on the ring of its zone.
+    const picket = unit("neutral", "infantry", 5, 4, { post: { q: 4, r: 5 } });
+    expect(warn(away, [picket])).toBe(PINNED_WARNING);
+    // On the site hex itself too.
+    expect(warn(away, [unit("neutral", "infantry", 5, 4, { post: { q: 4, r: 4 } })])).toBe(PINNED_WARNING);
+    // The keeper on its own site hex always Holds, so it never pins.
+    expect(warn(away, [unit("neutral", "infantry", 5, 4, { post: { q: 5, r: 4 } })])).toBeNull();
+    // A militia gun never moves, so it never pins.
+    expect(warn(away, [unit("neutral", "artillery", 5, 4, { post: { q: 4, r: 5 } })])).toBeNull();
+  });
+
   it("tells a Travel from next to any hostile that it can't pack", () => {
     const travel: WorldOrder = { kind: "travel", destination: { q: 0, r: 0 }, via: [], onArrival: "deployed" };
-    expect(warn(travel, [garrison])).toBe(CANNOT_PACK_WARNING);
+    expect(warn(travel, [militiaBeside])).toBe(CANNOT_PACK_WARNING);
     expect(warn(travel, [unit("s2", "infantry", 5, 4, { posture: "column" })])).toBeNull();
   });
 });

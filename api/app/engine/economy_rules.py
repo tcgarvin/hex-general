@@ -130,7 +130,23 @@ GARRISON_FORCES: dict[int, tuple[tuple[UnitType, int], ...]] = {
 }
 """Each garrison tier's units and HP, the first on the site (economy draft §04).
 
-A generator places these at world creation; bots read them to size attacks."""
+A generator places these at world creation; the militia script reads them for
+each unit's starting HP and for which lost units a site musters back
+(`app.engine.militia`); bots read them to size attacks."""
+
+
+class MilitiaRules(BaseModel):
+    """Militia tuning (WORLD_SPEC §7.1, provisional).
+
+    ``recover`` is the HP a militia unit regains at the end of a turn in which it
+    lost none, up to its starting HP. ``muster_turns`` is how many quiet turns a
+    neutral site under strength waits before one lost unit returns.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    recover: int = Field(default=1, ge=0)
+    muster_turns: int = Field(default=4, ge=1)
 
 
 def _levels(*levels: tuple[Stocks, int]) -> list[BuildingLevel]:
@@ -145,7 +161,9 @@ class WorldEconomy(BaseModel):
     ``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is
     the per-resource stockpile limit at depot level ``k``, so it has one more
     entry than the depot has levels. Artillery needs a workshop and armor a held
-    factory; those unlock rules are fixed in the recruitment phase.
+    factory; those unlock rules are fixed in the recruitment phase. ``militia``
+    tunes the neutral garrisons (`MilitiaRules`); it defaults so worlds stored
+    before it existed still decode.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -204,6 +222,7 @@ class WorldEconomy(BaseModel):
     starting_stocks: Stocks = Field(
         default_factory=lambda: Stocks(manpower=10, fuel=20, steel=10)
     )
+    militia: MilitiaRules = Field(default_factory=MilitiaRules)
 
     @model_validator(mode="after")
     def _complete(self) -> WorldEconomy:

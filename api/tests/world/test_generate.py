@@ -460,6 +460,22 @@ def test_every_neutral_site_starts_garrisoned_by_tier(world: GeneratedWorld) -> 
     assert len(garrison) == expected
 
 
+def test_every_militia_unit_is_posted_to_the_site_it_was_placed_for(
+    world: GeneratedWorld,
+) -> None:
+    state = world.to_state(["p0"])
+    garrisoned = {s.coord: s for s in world.game_map.sites if s.garrison > 0}
+    posted = Counter(u.post for u in state.units if u.owner == NEUTRAL)
+    assert posted == {
+        c: len(GARRISON_FORCES[s.garrison]) for c, s in garrisoned.items()
+    }
+    for unit in state.units:
+        if unit.owner == NEUTRAL:
+            assert unit.post is not None and distance(unit.post, unit.coord) <= 3
+        else:
+            assert unit.post is None
+
+
 def test_cities_are_sites_and_each_other_town_has_one_beside_it(
     world: GeneratedWorld,
 ) -> None:

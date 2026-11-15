@@ -1036,6 +1036,47 @@ export interface components {
             user_id: string;
         };
         /**
+         * MilitiaMustered
+         * @description A neutral site mustered one lost militia unit back (WORLD_SPEC §7.1).
+         *
+         *     ``post`` is the site the unit belongs to; ``coord`` is where it appeared (the
+         *     site hex, or a free hex of the ring around it); ``hp`` is its starting HP.
+         */
+        MilitiaMustered: {
+            coord: components["schemas"]["Axial"];
+            /** Hp */
+            hp: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "militia_mustered";
+            post: components["schemas"]["Axial"];
+            /** Unit Id */
+            unit_id: number;
+            unit_type: components["schemas"]["UnitType"];
+        };
+        /**
+         * MilitiaRules
+         * @description Militia tuning (WORLD_SPEC §7.1, provisional).
+         *
+         *     ``recover`` is the HP a militia unit regains at the end of a turn in which it
+         *     lost none, up to its starting HP. ``muster_turns`` is how many quiet turns a
+         *     neutral site under strength waits before one lost unit returns.
+         */
+        MilitiaRules: {
+            /**
+             * Muster Turns
+             * @default 4
+             */
+            muster_turns: number;
+            /**
+             * Recover
+             * @default 1
+             */
+            recover: number;
+        };
+        /**
          * MoveBlocked
          * @description A unit's attempted step into ``target`` failed; it stops for the turn.
          */
@@ -1231,19 +1272,33 @@ export interface components {
          *     ``coord`` (every site but a vacant base slot has a settlement, and towns have
          *     none). This record carries only the part that changes during play:
          *     ``controlled_by``, where ``None`` means neutral / uncontrolled (a single,
-         *     well-defined meaning). Control changes only via the capture phase (SPEC §14.1).
+         *     well-defined meaning). Control changes via the capture phase (SPEC §14.1), and
+         *     in a world when militia retake their site (WORLD_SPEC §7.1).
+         *
+         *     ``muster_clock`` counts a neutral world site's quiet turns toward mustering a
+         *     lost militia unit back (WORLD_SPEC §7.1); it is 0 whenever the site is
+         *     player-held or at full strength, and in every v0.1 game. It defaults so
+         *     states stored before it existed still decode.
          */
         Settlement: {
             /** Controlled By */
             controlled_by?: string | null;
             coord: components["schemas"]["Axial"];
+            /**
+             * Muster Clock
+             * @default 0
+             */
+            muster_clock: number;
         };
         /**
          * SettlementCaptured
          * @description An infantry/armor unit captured a settlement (SPEC §14.1, §11.3 Phase 3).
          *
-         *     Emitted only when control actually changes — a unit sitting on a settlement
-         *     it already controls produces no event. ``previous_owner`` is ``None`` when the
+         *     In a world, militia retaking their own site also logs one, with
+         *     ``captured_by`` the `NEUTRAL` owner (``"neutral"``) and the site's player as
+         *     ``previous_owner`` (WORLD_SPEC §7.1). Emitted only when control actually
+         *     changes — a unit sitting on a settlement it already controls produces no
+         *     event. ``previous_owner`` is ``None`` when the
          *     settlement was neutral before capture (a single, well-defined meaning).
          *     ``settlement`` is the terrain of the captured hex: in a v0.1 game that is what
          *     was taken (town or city). ``site`` is the world site that was taken (farm,
@@ -1483,6 +1538,11 @@ export interface components {
          *     that auto-deployed on contact: it defends worse and cannot attack until the
          *     end of the next turn's execution (WORLD_SPEC §4.5). Both default so older
          *     persisted states load as deployed, ordered units.
+         *
+         *     ``post`` is the site hex a militia (`NEUTRAL`) unit belongs to for life
+         *     (WORLD_SPEC §7.1); ``None`` means exactly "not a militia unit", i.e. a
+         *     player's unit. Every neutral unit has a post: states stored before posts
+         *     existed get one at the DB boundary (`app.engine.militia.assign_posts`).
          */
         Unit: {
             coord: components["schemas"]["Axial"];
@@ -1499,6 +1559,7 @@ export interface components {
             id: number;
             /** Owner */
             owner: string;
+            post?: components["schemas"]["Axial"] | null;
             /** @default deployed */
             posture: components["schemas"]["Posture"];
             type: components["schemas"]["UnitType"];
@@ -1692,7 +1753,9 @@ export interface components {
          *     ``buildings[b][k]`` is level ``k + 1`` of building ``b``. ``storage[k]`` is
          *     the per-resource stockpile limit at depot level ``k``, so it has one more
          *     entry than the depot has levels. Artillery needs a workshop and armor a held
-         *     factory; those unlock rules are fixed in the recruitment phase.
+         *     factory; those unlock rules are fixed in the recruitment phase. ``militia``
+         *     tunes the neutral garrisons (`MilitiaRules`); it defaults so worlds stored
+         *     before it existed still decode.
          */
         WorldEconomy: {
             army?: components["schemas"]["ArmySize"];
@@ -1704,6 +1767,7 @@ export interface components {
             level_income?: {
                 [key: string]: components["schemas"]["Stocks"];
             };
+            militia?: components["schemas"]["MilitiaRules"];
             /** Recruit Cost */
             recruit_cost?: {
                 [key: string]: components["schemas"]["Stocks"];
@@ -1729,7 +1793,7 @@ export interface components {
          */
         WorldReplay: {
             /** Events */
-            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolvedView"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"] | components["schemas"]["StocksResolved"] | components["schemas"]["UnitDisbandedView"] | components["schemas"]["ConstructionStarted"] | components["schemas"]["ConstructionCompleted"] | components["schemas"]["ConstructionVoided"] | components["schemas"]["WorldUnitRecruitedView"])[];
+            events: (components["schemas"]["UnitMoved"] | components["schemas"]["MoveBlocked"] | components["schemas"]["TrafficJam"] | components["schemas"]["CombatResolved"] | components["schemas"]["BarrageResolvedView"] | components["schemas"]["OrderMooted"] | components["schemas"]["SettlementCaptured"] | components["schemas"]["UnitRepaired"] | components["schemas"]["EconomyResolved"] | components["schemas"]["UnitRecruited"] | components["schemas"]["RecruitmentVoided"] | components["schemas"]["UnitPacked"] | components["schemas"]["UnitDeployed"] | components["schemas"]["ColumnStuck"] | components["schemas"]["ColumnHeld"] | components["schemas"]["TravelEnded"] | components["schemas"]["StocksResolved"] | components["schemas"]["UnitDisbandedView"] | components["schemas"]["ConstructionStarted"] | components["schemas"]["ConstructionCompleted"] | components["schemas"]["ConstructionVoided"] | components["schemas"]["WorldUnitRecruitedView"] | components["schemas"]["MilitiaMustered"])[];
             state_after: components["schemas"]["WorldState"];
             /** Turn */
             turn: number;

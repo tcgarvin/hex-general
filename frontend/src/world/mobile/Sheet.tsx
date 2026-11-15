@@ -151,13 +151,14 @@ export function OrderKey({
 }
 
 /** HP as a number and a bar, amber at 6 and below, red at 3 and below. */
-export function HpBar({ hp }: { hp: number }) {
-  const tone = hp <= 3 ? "bg-invalid" : hp <= 6 ? "bg-warn" : "bg-[#5d7f3a]";
+/** HP as a bar of the HP the unit starts with (`max`: 10, or a militia unit's starting HP). */
+export function HpBar({ hp, max = 10 }: { hp: number; max?: number }) {
+  const tone = hp * 10 <= max * 3 ? "bg-invalid" : hp * 10 <= max * 6 ? "bg-warn" : "bg-[#5d7f3a]";
   return (
-    <span className="flex shrink-0 items-center gap-1.5" title={`${hp} of 10 HP`}>
+    <span className="flex shrink-0 items-center gap-1.5" title={`${hp} of ${max} HP`}>
       <span className="font-data text-[15px] tabular-nums">{hp}</span>
       <span className="block h-2 w-9 bg-ink-900/20" aria-hidden>
-        <span className={`block h-2 ${tone}`} style={{ width: `${hp * 10}%` }} />
+        <span className={`block h-2 ${tone}`} style={{ width: `${(hp * 100) / max}%` }} />
       </span>
     </span>
   );

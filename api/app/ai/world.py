@@ -208,8 +208,8 @@ class ScriptedStrategist:
     and turns on its neighbours sooner, a cautious one keeps taking strongpoints.
     A bot attacks only with a field army of `_ATTACK_ARMY` combat units; short
     of one it keeps expanding. Aggression also tilts the tactical layer's
-    scoring toward hostile targets (`_targets`). Neutral garrisons never
-    threaten anything: they hold their sites and never move.
+    scoring toward hostile targets (`_targets`). Militia never make a bot
+    defend: they never leave their own site's zone (WORLD_SPEC §7.1).
     """
 
     def __init__(self, personality: Personality) -> None:
@@ -879,8 +879,8 @@ def _recover(ctx: _UnitContext, unit: Unit, threat: int) -> Order:
     """Rest a worn unit on the nearest settlement ground it can reach.
 
     Town hexes heal any unit resting on them, as does an own site, 3 HP a turn
-    (WORLD_SPEC §7). Neutral garrisons never strike, so only another player's
-    unit in reach makes a hex unsafe to rest on. With no ground nearby the unit
+    (WORLD_SPEC §7). Militia strike only inside their own site's zone (§7.1),
+    so only another player's unit in reach makes a hex unsafe to rest on. With no ground nearby the unit
     rests where it stands (1 HP a turn up to 7) or, if a player threatens it,
     heads for the nearest own settlement.
     """

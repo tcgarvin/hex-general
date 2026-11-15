@@ -1,15 +1,16 @@
 // The phone's Base sheet (stocks in words with storage and net, buildings, and
 // recruiting at the base) and the hex sheet: what the desktop hex panel shows for
-// a tapped hex without one of your units (site, garrison, owner, recruiting there).
+// a tapped hex without one of your units (site, militia, owner, recruiting there).
 
 import { axialEqual, hexKey, type Axial } from "@/board/hex";
 import { Glyph } from "@/components/Glyph";
 import type { components } from "@/lib/api/schema";
 
-import { NEUTRAL_OWNER } from "../colors";
 import type { Designate } from "../designations";
 import { levelOf, RESOURCES, siteIncome, stocksOf, type Building, type Economy, type Forecast } from "../economy";
-import { BUILDING_LABEL, GARRISON_TEXT, RESOURCE_LABEL, siteTitle, stocksText, UNIT_LABEL } from "../labels";
+import { BUILDING_LABEL, RESOURCE_LABEL, siteTitle, stocksText, UNIT_LABEL } from "../labels";
+import { neutralStatus } from "../hexInfo";
+import { isMilitia, militiaName, startingHp } from "../militia";
 import { StocksGlyphs } from "../parts";
 import { buildOption, recruitOptions } from "../plan";
 import { siteIconUrl } from "../siteArt";
@@ -215,11 +216,8 @@ export function HexSheet({
   const cell = map.hexAt(hex.q, hex.r);
   const site = map.siteAt(hex.q, hex.r);
   const settlement = state.settlements.find((s) => axialEqual(s.coord, hex));
-  const units = state.units.filter((u) => axialEqual(u.coord, hex));
-  const garrison = units.filter((u) => u.owner === NEUTRAL_OWNER);
-  const others = units.filter((u) => u.owner !== NEUTRAL_OWNER);
+  const others = state.units.filter((u) => axialEqual(u.coord, hex));
   const owner = settlement?.controlled_by ?? null;
-  const neutral = settlement !== undefined && owner === null;
   const recruits = recruitOptions(state, map, economy, slot, hex, planning.plan, armySize).length > 0;
   const title = site !== undefined ? siteTitle(site, settlement === undefined ? undefined : owner, slot) : (cell?.terrain ?? "Hex");
   const where = `(${hex.q}, ${hex.r})${site === undefined || site.kind === "city" ? ` · ${cell?.terrain}` : ""}${cell?.road ? " · road" : ""}`;
@@ -234,19 +232,8 @@ export function HexSheet({
                 Produces <StocksGlyphs stocks={siteIncome(economy, site)} className="font-data" /> a turn.
               </span>
             )}
-            {neutral && site.garrison > 0 && (
-              <span>
-                <Glyph name="garrison" size={15} className="mr-1" />
-                Garrison: {GARRISON_TEXT[site.garrison]}.
-                {garrison.length > 0 ? (
-                  <span className="block font-data text-xs">In sight: {garrison.map((u) => `${u.type} ${u.hp} HP`).join(", ")}</span>
-                ) : (
-                  <span className="block text-xs text-wood-500">Out of sight: losses from past attacks don't show.</span>
-                )}
-              </span>
-            )}
             <span>
-              {settlement === undefined ? "Vacant base site." : owner === null ? "Neutral." : owner === slot ? "Held by you." : `Held by ${owner}.`}
+              {settlement === undefined ? "Vacant base site." : owner === null ? `${neutralStatus(site.garrison)}.` : owner === slot ? "Held by you." : `Held by ${owner}.`}
             </span>
           </div>
         </div>
@@ -265,9 +252,9 @@ export function HexSheet({
             <Line
               key={u.id}
               icon={<Glyph name={u.type} size={22} />}
-              name={u.owner === slot ? (designate(u.id) ?? `Your ${u.type}`) : `${u.owner} ${u.type}`}
+              name={u.owner === slot ? (designate(u.id) ?? `Your ${u.type}`) : isMilitia(u) ? militiaName(u.type) : `${u.owner} ${u.type}`}
               sub={u.posture === "column" ? "packed column" : "deployed"}
-              right={<HpBar hp={u.hp} />}
+              right={<HpBar hp={u.hp} max={startingHp(u, map)} />}
               onClick={u.owner === slot ? () => planning.selectUnit(u.id) : undefined}
             />
           ))}

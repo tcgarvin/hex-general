@@ -68,6 +68,7 @@ describe("frameAt with fog actions", () => {
     posture: "deployed",
     facing: "right",
     disordered: false,
+    post: null,
   });
   const pb = {
     turn: 1,

@@ -3,7 +3,7 @@
 // the engine's pulse loop (`api/app/engine/movement.py`) that a planner can
 // predict:
 //
-// * **Hostile units** (any other owner, neutral garrisons included): stepping
+// * **Hostile units** (any other owner, militia included): stepping
 //   into their hex is an attack (`_classify`). It ends the planned path, though
 //   the engine lets a winner carry on: a plan can't count on winning. Artillery
 //   and disordered units can't attack at all (`ATTACK_FORBIDDEN`, `DISORDERED`).
@@ -33,7 +33,7 @@
 // legal path never waits), which is what lets a later step into a friend's hex
 // succeed where an early one wouldn't.
 
-import { axialNeighbors, hexKey } from "@/board/hex";
+import { axialDistance, axialNeighbors, hexKey, type Axial } from "@/board/hex";
 import type { StepRules } from "@/planning/reach";
 import type { components } from "@/lib/api/schema";
 
@@ -47,7 +47,7 @@ type StandingTravel = components["schemas"]["StandingTravel"];
 /** The pulse a deployed unit setting off on a Travel/March order stops holding its hex. */
 const PACKED_FROM_PULSE = COLUMN_RULES.packPulses + 1;
 
-/** Hexes holding a unit hostile to `viewer` (every other owner, garrisons included). */
+/** Hexes holding a unit hostile to `viewer` (every other owner, militia included). */
 export function hostileHexes(units: readonly Unit[], viewer: string): Set<string> {
   return new Set(units.filter((u) => u.owner !== viewer).map((u) => hexKey(u.coord.q, u.coord.r)));
 }
@@ -139,8 +139,11 @@ export const CANNOT_PACK_WARNING = "It starts next to the enemy, so it can't pac
  * Everyone steps on pulse 1 at once, and a unit whose hex is attacked that pulse
  * is pinned (`_resolve_attacks` in movement.py): it defends, and its own move is
  * cancelled. So a Move away from an adjacent enemy that may attack is a gamble.
- * Neutral garrisons always hold, so they never strike first. A Travel from next
- * to any hostile deployed unit (garrisons included) never even packs (§4.4).
+ * Militia strike only a unit standing in their site's zone (the site hex and the
+ * ring around it, WORLD_SPEC §7.1), a militia gun never moves and the keeper on
+ * the site hex always Holds, so an adjacent militia infantry counts only when it is
+ * off its post and `unit` stands within 1 of that post. A Travel
+ * from next to any hostile deployed unit (militia included) never even packs (§4.4).
  * `hostile` is `hostileHexes`: a Move that ends on one is an attack, not a withdrawal.
  */
 export function withdrawalWarning(
@@ -160,5 +163,15 @@ export function withdrawalWarning(
   if (order.kind !== "move") return null;
   const end = order.path[order.path.length - 1];
   if (end !== undefined && hostile.has(hexKey(end.q, end.r))) return null;
-  return adjacent.some((u) => u.owner !== NEUTRAL_OWNER) ? PINNED_WARNING : null;
+  return adjacent.some((u) => mayStrike(u, unit.coord)) ? PINNED_WARNING : null;
+}
+
+/** Whether the adjacent hostile `u` may attack a unit standing at `at` this turn. */
+function mayStrike(u: Unit, at: Axial): boolean {
+  if (u.owner !== NEUTRAL_OWNER) return true;
+  if (u.type === "artillery" || u.post === null || u.post === undefined) return false;
+  // The keeper (militia infantry on its own site hex) always Holds.
+  if (u.coord.q === u.post.q && u.coord.r === u.post.r) return false;
+  // A militia picket or a unit going home: only into its own zone.
+  return axialDistance(u.post, at) <= 1;
 }

@@ -105,7 +105,7 @@ export interface TravelPreview {
   eta: number;
   /**
    * Where the column would halt, disordered, on coming within auto-deploy distance
-   * of a hostile or a garrisoned site (`haltHex`); `null`: the route stays clear.
+   * of a hostile or a neutral site with militia (`haltHex`); `null`: the route stays clear.
    */
   halt: Axial | null;
   /** The route hexes out of sight this turn. */

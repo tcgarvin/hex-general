@@ -131,7 +131,7 @@ def test_a_column_stops_short_of_a_garrison_and_deploys_clean() -> None:
     farm = at(9, 11)
     state = small_world(
         {far: (SiteKind.BASE, 0), farm: (SiteKind.FARM, 1)},
-        [make_unit(1, INF, far), garrison(100, farm)],
+        [make_unit(1, INF, far), garrison(100, farm, hp=5)],  # tier 1: 5 HP
         held={far: "p"},
         stocks=Stocks(fuel=20, steel=20),  # nothing to recruit with
     )
@@ -250,6 +250,25 @@ def test_intel_assumes_an_unseen_garrison_and_reads_a_seen_one() -> None:
     assert not intel.garrisons[FARM].seen and intel.garrisons[FARM].hp == 20
     assert not intel.column_safe(FARM)
     assert intel.column_safe(at(15, 0))
+
+
+def test_intel_reads_a_seen_militia_unit_by_its_post_not_by_distance() -> None:
+    near = at(3, 2)
+    other = at(5, 2)  # two hexes off: the unit beside it belongs to ``near``
+    state = small_world(
+        {BASE: (SiteKind.BASE, 0), near: (SiteKind.FARM, 3), other: (SiteKind.FARM, 1)},
+        [
+            make_unit(1, INF, at(3, 1)),
+            garrison(100, near, hp=6),
+            garrison(101, at(4, 2), hp=7, post=near),
+            garrison(102, other, hp=5),
+        ],
+        held={BASE: "p"},
+    )
+    intel = Intel(redact_state(state, "p"), "p", Box.around([at(3, 1)], 30))
+    assert [u.id for u in intel.garrisons[near].units] == [100, 101]
+    assert intel.garrisons[near].hp == 13
+    assert [u.id for u in intel.garrisons[other].units] == [102]
 
 
 # --- Against other players --------------------------------------------------------

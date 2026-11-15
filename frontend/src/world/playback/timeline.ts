@@ -5,7 +5,8 @@
 // *beats*, the steps playback walks through:
 //
 //   barrage (SPEC §11.3 phase 1) → one beat per movement pulse with anything
-//   the viewer witnessed (phase 2) → capture → repair → economy → recruit.
+//   the viewer witnessed (phase 2) → capture → repair → economy → recruit →
+//   muster (militia re-forming at their sites, WORLD_SPEC §7.1).
 //
 // Each beat carries renderer-ready *actions* (who, from where to where, combat
 // participants and their damage, barrage target and hits, captures) and the
@@ -17,8 +18,10 @@
 import type { Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 import type { ReplayEvent } from "@/lib/api/types";
+import { UNIT_STATS } from "@/planning/rules";
 import { eventLines } from "@/replay/eventText";
 
+import { NEUTRAL_OWNER } from "../colors";
 import type { UnitBook } from "../turnReport";
 
 type UnitType = components["schemas"]["UnitType"];
@@ -38,6 +41,8 @@ export interface PlaybackUnit {
   posture: Posture;
   facing: Facing;
   disordered: boolean;
+  /** A militia unit's site hex (`Unit.post`, WORLD_SPEC §7.1); `null` for a player's unit or one whose post is unknown. */
+  post: Axial | null;
 }
 
 /** One unit's part in a combat (SPEC §12, `CombatParticipant`). */
@@ -120,6 +125,7 @@ export type BeatAction =
     }
   | { kind: "repair"; eventIndex: number; unitId: number; hpBefore: number; hpAfter: number }
   | {
+      /** A player's recruit, or a militia unit mustering back at its site (`militia_mustered`). */
       kind: "recruit";
       eventIndex: number;
       unitId: number;
@@ -128,6 +134,10 @@ export type BeatAction =
       at: Axial;
       /** The new unit's facing (the engine faces the nearest enemy); set by `reconstruct.ts`. */
       facing: Facing;
+      /** Its HP on arrival: a recruit's full HP, a mustered militia unit's starting HP. */
+      hp: number;
+      /** A mustered militia unit's site hex; `null` for a player's recruit. */
+      post: Axial | null;
     }
   | { kind: "disband"; eventIndex: number; unitId: number; owner: string; type: UnitType; at: Axial }
   /** A unit comes into sight: fades in where it stands. */
@@ -147,10 +157,45 @@ export type BeatAction =
   /** Disorder earned last turn expires at the end of this one (WORLD_SPEC §4.5). */
   | { kind: "steady"; unitId: number };
 
-export type BeatPhase = "barrage" | "pulse" | "capture" | "repair" | "economy" | "recruit" | "settle";
+export type BeatPhase = "barrage" | "pulse" | "capture" | "repair" | "economy" | "recruit" | "muster" | "settle";
 
-/** End-of-turn phases, in engine order (SPEC §11.3 phases 3-6). */
-export const END_PHASES: readonly BeatPhase[] = ["capture", "repair", "economy", "recruit"];
+/** End-of-turn phases, in engine order (SPEC §11.3 phases 3-6, then the militia muster). */
+export const END_PHASES: readonly BeatPhase[] = ["capture", "repair", "economy", "recruit", "muster"];
+
+/**
+ * Every event kind this client knows. A newer API may send kinds that are not
+ * here yet; playback and the report skip those instead of failing.
+ */
+const KNOWN_KINDS: Record<ReplayEvent["kind"], true> = {
+  unit_moved: true,
+  move_blocked: true,
+  traffic_jam: true,
+  combat_resolved: true,
+  barrage_resolved: true,
+  order_mooted: true,
+  settlement_captured: true,
+  unit_repaired: true,
+  economy_resolved: true,
+  unit_recruited: true,
+  recruitment_voided: true,
+  unit_packed: true,
+  unit_deployed: true,
+  column_stuck: true,
+  column_held: true,
+  travel_ended: true,
+  stocks_resolved: true,
+  unit_disbanded: true,
+  construction_started: true,
+  construction_completed: true,
+  construction_voided: true,
+  world_unit_recruited: true,
+  militia_mustered: true,
+};
+
+/** Whether this client knows `e`'s kind (see `KNOWN_KINDS`). */
+export function isKnownEvent(e: { kind: string }): boolean {
+  return Object.hasOwn(KNOWN_KINDS, e.kind);
+}
 
 export interface ReportLine {
   eventIndex: number;
@@ -222,6 +267,8 @@ function phaseOf(e: Exclude<ReplayEvent, PulseEvent>): BeatPhase | null {
     case "world_unit_recruited":
     case "recruitment_voided":
       return "recruit";
+    case "militia_mustered":
+      return "muster";
     case "travel_ended":
       return null;
   }
@@ -234,11 +281,16 @@ const PHASE_LABEL: Record<BeatPhase, string> = {
   repair: "Repair",
   economy: "Economy",
   recruit: "Recruitment",
+  muster: "Muster",
   settle: "End of turn",
 };
 
-/** The board action an event becomes; `null` for report-only events (economy, notes). */
+/**
+ * The board action an event becomes; `null` for report-only events (economy,
+ * notes) and for a kind this client does not know.
+ */
 export function actionOf(e: ReplayEvent, eventIndex: number): BeatAction | null {
+  if (!isKnownEvent(e)) return null;
   switch (e.kind) {
     case "unit_moved":
       return { kind: "move", eventIndex, unitId: e.unit_id, from: e.origin, to: e.dest };
@@ -320,6 +372,20 @@ export function actionOf(e: ReplayEvent, eventIndex: number): BeatAction | null 
         type: e.unit_type,
         at: e.coord,
         facing: "right",
+        hp: UNIT_STATS[e.unit_type].maxHp,
+        post: null,
+      };
+    case "militia_mustered":
+      return {
+        kind: "recruit",
+        eventIndex,
+        unitId: e.unit_id,
+        owner: NEUTRAL_OWNER,
+        type: e.unit_type,
+        at: e.coord,
+        facing: "right",
+        hp: e.hp,
+        post: e.post,
       };
     case "unit_disbanded":
       return { kind: "disband", eventIndex, unitId: e.unit_id, owner: e.owner, type: e.unit_type, at: e.coord };
@@ -365,6 +431,7 @@ function beatLabel(phase: BeatPhase, pulse: number | null): string {
  * Report-only notes without a phase (`travel_ended`) are placed in the beat of
  * the unit's last witnessed pulse event, else the last pulse beat, else the
  * first beat. Empty beats are omitted. `book` names units for the report lines.
+ * An event of a kind this client does not know is left out of every beat.
  */
 export function buildTimeline(events: readonly ReplayEvent[], book: UnitBook): Beat[] {
   const pulses = new Map<number, number[]>();
@@ -372,6 +439,7 @@ export function buildTimeline(events: readonly ReplayEvent[], book: UnitBook): B
   const notes: number[] = [];
   const lastPulseOf = new Map<number, number>();
   events.forEach((e, i) => {
+    if (!isKnownEvent(e)) return;
     if (isPulseEvent(e)) {
       const list = pulses.get(e.pulse) ?? [];
       list.push(i);

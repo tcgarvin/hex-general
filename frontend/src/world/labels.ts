@@ -118,12 +118,12 @@ export const SITE_LABEL = {
   factory: "Factory",
 } as const;
 
-/** What defends a neutral site at each garrison tier (WORLD_SPEC §7). */
+/** The militia a neutral site starts with at each tier (WORLD_SPEC §7, §7.1). */
 export const GARRISON_TEXT = [
   "",
-  "militia, one infantry at 5 HP",
+  "one infantry at 5 HP",
   "one infantry",
-  "an infantry and a gun",
+  "infantry and a gun",
   "two infantry and a gun",
 ];
 

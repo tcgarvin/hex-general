@@ -39,11 +39,13 @@ PlayerId = str
 UnitId = int
 
 NEUTRAL: PlayerId = "neutral"
-"""Owner of world garrisons: hostile to every player, never a `Player` itself.
+"""Owner of world militia (garrisons): hostile to every player, never a `Player`.
 
-Garrison units hold the neutral sites of a world (economy draft §04). They always
-hold, never capture, and have no economy; settlement control stays ``None``
-(neutral) while they stand on it."""
+Militia units guard the neutral sites of a world (WORLD_SPEC §7.1). Each belongs
+to one site (`Unit.post`) and follows a fixed script inside that site's zone
+(`app.engine.militia`); they never capture a site, but a militia infantry
+standing on its own post returns a player-held site to neutral. They have no
+economy; fog hides them like any other player's units."""
 
 
 class Facing(StrEnum):
@@ -242,11 +244,18 @@ class Settlement(BaseModel):
     ``coord`` (every site but a vacant base slot has a settlement, and towns have
     none). This record carries only the part that changes during play:
     ``controlled_by``, where ``None`` means neutral / uncontrolled (a single,
-    well-defined meaning). Control changes only via the capture phase (SPEC §14.1).
+    well-defined meaning). Control changes via the capture phase (SPEC §14.1), and
+    in a world when militia retake their site (WORLD_SPEC §7.1).
+
+    ``muster_clock`` counts a neutral world site's quiet turns toward mustering a
+    lost militia unit back (WORLD_SPEC §7.1); it is 0 whenever the site is
+    player-held or at full strength, and in every v0.1 game. It defaults so
+    states stored before it existed still decode.
     """
 
     coord: Axial
     controlled_by: PlayerId | None = None
+    muster_clock: int = Field(default=0, ge=0)
 
 
 class Unit(BaseModel):
@@ -265,6 +274,11 @@ class Unit(BaseModel):
     that auto-deployed on contact: it defends worse and cannot attack until the
     end of the next turn's execution (WORLD_SPEC §4.5). Both default so older
     persisted states load as deployed, ordered units.
+
+    ``post`` is the site hex a militia (`NEUTRAL`) unit belongs to for life
+    (WORLD_SPEC §7.1); ``None`` means exactly "not a militia unit", i.e. a
+    player's unit. Every neutral unit has a post: states stored before posts
+    existed get one at the DB boundary (`app.engine.militia.assign_posts`).
     """
 
     id: UnitId
@@ -275,6 +289,7 @@ class Unit(BaseModel):
     facing: Facing = DEFAULT_FACING
     posture: Posture = Posture.DEPLOYED
     disordered: bool = False
+    post: Axial | None = None
 
 
 def default_facing(coord: Axial, owner: PlayerId, units: Iterable[Unit]) -> Facing:

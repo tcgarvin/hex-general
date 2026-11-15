@@ -101,7 +101,7 @@ export function beatDurationMs(beat: Beat): number {
   if (has("combat")) return 1400;
   if (beat.phase === "pulse") return beat.actions.some((a) => a.kind !== "steady") ? 700 : 400;
   if (beat.phase === "capture") return 900;
-  if (beat.phase === "recruit") return 900;
+  if (beat.phase === "recruit" || beat.phase === "muster") return 900;
   const visual = beat.actions.some((a) => a.kind !== "steady" && a.kind !== "correct");
   return visual ? 800 : 450;
 }

@@ -28,6 +28,7 @@ from app.ai.policy import Policy
 from app.ai.world import WorldPolicy
 from app.engine.events import (
     BarrageResolved,
+    MilitiaMustered,
     ColumnHeld,
     ColumnStuck,
     CombatResolved,
@@ -123,6 +124,10 @@ class SimReport(BaseModel):
     player_captures: int = 0
     siege_turns: list[int] = Field(default_factory=list)
     losses_to_garrisons: int = 0
+    # Player-held sites the militia took back, and militia units mustered back
+    # (WORLD_SPEC §7.1, added 2026-11-15).
+    militia_retakes: int = 0
+    militia_musters: int = 0
     siege_attackers: list[int] = Field(default_factory=list)
     # Melee attacks on another player's unit, and how many went in with more own
     # deployed units than the defender's within two hexes of the fight.
@@ -184,7 +189,7 @@ def run_sim(
     issued_at: dict[int, int] = {}
     travel_turns: list[int] = []
     think_all: list[float] = []
-    sieges = _Sieges(state)
+    sieges = _Sieges()
     war = _War()
 
     for _ in range(turns):
@@ -341,19 +346,13 @@ _LOCAL_RADIUS = 3  # "local superiority" counts deployed units this close to a f
 class _Sieges:
     """Folds each turn's fights against neutral garrisons and other players.
 
-    Each garrison unit belongs to the site it was placed around (the nearest
-    site at turn 0). A site is under attack in a turn when a player's unit fights
-    one of its garrison units in melee or barrages one; its siege runs from the
-    first such turn to the turn it is captured.
+    Each militia unit belongs to its post (`Unit.post`). A site is under attack
+    in a turn when a player's unit fights one of its militia units in melee or
+    barrages one; its siege runs from the first such turn to the turn it is
+    captured. Militia retaking a site and mustering a unit back are counted too.
     """
 
-    def __init__(self, state: GameState) -> None:
-        sites = [s.coord for s in state.map.sites]
-        self.site_of: dict[int, Axial] = {
-            u.id: min(sites, key=lambda c: (distance(c, u.coord), c.q, c.r))
-            for u in state.units
-            if u.owner == NEUTRAL
-        }
+    def __init__(self) -> None:
         self.first_attack: dict[Axial, int] = {}
 
     def fold(
@@ -361,12 +360,13 @@ class _Sieges:
     ) -> None:
         """Add one resolved turn's sieges, captures and attacks to ``report``."""
         owner_of = {u.id: u.owner for u in before.units}
+        post_of = {u.id: u.post for u in before.units if u.post is not None}
         attackers: dict[Axial, set[int]] = {}
         for event in events:
             if isinstance(event, CombatResolved):
                 garrison = [p for p in event.participants if p.owner == NEUTRAL]
                 if garrison:
-                    site = self.site_of[garrison[0].unit_id]
+                    site = post_of[garrison[0].unit_id]
                     for p in event.participants:
                         if p.owner != NEUTRAL:
                             attackers.setdefault(site, set()).add(p.unit_id)
@@ -377,10 +377,14 @@ class _Sieges:
                 hits = ([event.hit] if event.hit is not None else []) + event.extra_hits
                 struck = [h for h in hits if h.owner == NEUTRAL]
                 if struck and owner_of[event.artillery_id] != NEUTRAL:
-                    site = self.site_of[struck[0].unit_id]
+                    site = post_of[struck[0].unit_id]
                     attackers.setdefault(site, set()).add(event.artillery_id)
+            elif isinstance(event, MilitiaMustered):
+                report.militia_musters += 1
             elif isinstance(event, SettlementCaptured):
-                if event.previous_owner is None:
+                if event.captured_by == NEUTRAL:
+                    report.militia_retakes += 1
+                elif event.previous_owner is None:
                     report.neutral_captures += 1
                     if event.coord in self.first_attack:
                         report.siege_turns.append(
@@ -759,7 +763,8 @@ def main() -> None:
         f"captures: neutral {report.neutral_captures}, player {report.player_captures}; "
         f"siege turns median {_median(report.siege_turns)}, attackers per besieged "
         f"site median {_median(report.siege_attackers)}; losses to garrisons "
-        f"{report.losses_to_garrisons}"
+        f"{report.losses_to_garrisons}; militia retakes {report.militia_retakes}, "
+        f"musters {report.militia_musters}"
     )
     print(
         f"attacks on players {report.player_attacks}, with local superiority "

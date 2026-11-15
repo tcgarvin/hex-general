@@ -16,17 +16,18 @@ type Unit = components["schemas"]["Unit"];
 export const DEPLOY_DISTANCE = 3;
 
 /**
- * The lowest garrison tier with more than one unit (WORLD_SPEC §7: tier 3 is an
- * infantry and a gun). The first unit stands on the site and the rest beside it,
- * so such a garrison can be met from a hex one step further out.
+ * The lowest militia tier with more than one unit (WORLD_SPEC §7: tier 3 is an
+ * infantry and a gun). The keeper stands on the site and the rest in the ring
+ * beside it (§7.1: they never leave that zone), so such a militia can be met from
+ * a hex one step further out.
  */
 export const SPREAD_GARRISON_TIER = 3;
 
 /**
- * The hexes a column could bump into: every visible hostile unit, and every
- * neutral site still garrisoned (garrison tiers are on the public map, so they
- * count even out of sight), with the hexes beside it for a garrison of several
- * units.
+ * The hexes a column could bump into: every visible hostile unit (militia
+ * included), and every neutral site with a militia tier (the tiers are on the
+ * public map, so they count even out of sight, where fog hides the militia as it
+ * hides any unit), with the hexes beside it for a militia of several units.
  */
 export function contactSources(state: WorldState, map: WorldMap, viewer: string): Axial[] {
   const held = new Map(state.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));

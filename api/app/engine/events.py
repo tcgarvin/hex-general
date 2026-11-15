@@ -307,8 +307,11 @@ class TravelEnded(BaseModel):
 class SettlementCaptured(BaseModel):
     """An infantry/armor unit captured a settlement (SPEC §14.1, §11.3 Phase 3).
 
-    Emitted only when control actually changes — a unit sitting on a settlement
-    it already controls produces no event. ``previous_owner`` is ``None`` when the
+    In a world, militia retaking their own site also logs one, with
+    ``captured_by`` the `NEUTRAL` owner (``"neutral"``) and the site's player as
+    ``previous_owner`` (WORLD_SPEC §7.1). Emitted only when control actually
+    changes — a unit sitting on a settlement it already controls produces no
+    event. ``previous_owner`` is ``None`` when the
     settlement was neutral before capture (a single, well-defined meaning).
     ``settlement`` is the terrain of the captured hex: in a v0.1 game that is what
     was taken (town or city). ``site`` is the world site that was taken (farm,
@@ -504,6 +507,23 @@ class WorldUnitRecruited(BaseModel):
     stocks_after: Stocks
 
 
+class MilitiaMustered(BaseModel):
+    """A neutral site mustered one lost militia unit back (WORLD_SPEC §7.1).
+
+    ``post`` is the site the unit belongs to; ``coord`` is where it appeared (the
+    site hex, or a free hex of the ring around it); ``hp`` is its starting HP.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["militia_mustered"] = "militia_mustered"
+    unit_id: UnitId
+    unit_type: UnitType
+    coord: Axial
+    post: Axial
+    hp: int
+
+
 Event = Annotated[
     UnitMoved
     | MoveBlocked
@@ -526,7 +546,8 @@ Event = Annotated[
     | ConstructionStarted
     | ConstructionCompleted
     | ConstructionVoided
-    | WorldUnitRecruited,
+    | WorldUnitRecruited
+    | MilitiaMustered,
     Field(discriminator="kind"),
 ]
 """Tagged union of all execution events, discriminated on ``kind``."""

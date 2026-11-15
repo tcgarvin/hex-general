@@ -28,6 +28,7 @@ function state(held: number[], units: ("infantry" | "armor")[], stocks = S()): W
     settlements: [0, 1, 2].map((col) => ({
       coord: offsetToAxial(col, 0),
       controlled_by: held.includes(col) ? "p" : null,
+      muster_clock: 0,
     })),
     units: units.map((type, k) => ({
       id: k + 1,

@@ -10,8 +10,10 @@ opening force on the same terms.
 
 A slot is open when nobody has held its id, its base site is still vacant (no
 settlement there yet), and no player's unit stands within `START_CLEARANCE` hexes
-of it, so a newcomer never lands beside, or on top of, someone's army. Neutral
-garrisons don't count: they hold their own sites and never move.
+of it, so a newcomer never lands beside, or on top of, someone's army. Militia
+(neutral garrisons) don't count: they never leave their own site's zone
+(WORLD_SPEC §7.1), and sites are kept off the base plots. A site that reverts to
+neutral when its player leaves needs nothing here: its militia muster back.
 """
 
 from __future__ import annotations

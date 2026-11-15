@@ -500,8 +500,8 @@ A world bot's turn is split where the later LLM commander plugs in (VISION §9):
   `reserve_share` kept home as garrisons, an `aggression` weight, and an optional
   `operation` (below). `ScriptedStrategist` is the slice-1 stand-in. When it runs an
   operation, the stance steers the units outside it. Without one it defends when
-  another player's unit is within 8 of a holding and the bot is cautious (neutral
-  garrisons never move, so they never threaten). It expands while a *cheap* neutral
+  another player's unit is within 8 of a holding and the bot is cautious (militia
+  never leave their own site's zone, WORLD_SPEC §7.1, so they never threaten). It expands while a *cheap* neutral
   site lies within its `reach`: one whose garrison tier HP is at most 30 for the most
   cautious bot and 5 for the boldest, so bold bots turn on their neighbours sooner. It
   also keeps expanding until it has a field army of five combat units. Otherwise it

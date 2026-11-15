@@ -5,13 +5,15 @@ units inside its vision, and everything public: the map, site kinds and garrison
 tiers (`MapSite.garrison`), and who controls each settlement. `Intel` turns that
 into the facts the tactical layer keeps asking for:
 
-* **Threats** are visible units of other *players*. Neutral garrisons always hold
-  and never move, so they strike only a unit that attacks them; they make no hex
-  dangerous to stand in.
+* **Threats** are visible units of other *players*. Militia (neutral garrisons)
+  never leave their site's zone and strike only units standing in it (WORLD_SPEC
+  §7.1), so they are left out; the tactical layer treats them as holding, like
+  every visible hostile.
 * **Garrisons** are what the bot expects to fight at each neutral site. A site in
-  view shows its garrison exactly (the visible neutral units around it). A site
-  out of view is assumed to keep its whole tier (`GARRISON_FORCES`): garrisons
-  never respawn or move, and the bot can't know what others did to it.
+  view shows its militia exactly: the visible neutral units posted to it
+  (`Unit.post`). A site out of view is assumed to hold its whole tier
+  (`GARRISON_FORCES`): militia heal and muster back while left alone, and the
+  bot can't know what others did to it.
 * **Danger spots** are where a packed column would run into a garrison and
   auto-deploy disordered (WORLD_SPEC §4.5): every visible neutral unit, and every
   unseen neutral site still garrisoned. Travel planning stops short of them.
@@ -25,13 +27,11 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from app.engine.economy_rules import GARRISON_FORCES
-from app.engine.hex_coords import Axial, distance, within
+from app.engine.hex_coords import Axial, distance
 from app.engine.models import NEUTRAL, GameState, PlayerId, Unit
 from app.engine.stats import COLUMN_RULES
 from app.engine.visibility import visible_hexes
 
-# A garrison's units stand on its site and the nearest open hexes (up to 3 out).
-_GARRISON_SPREAD = 3
 # Coarse buckets for the danger-spot lookup: a spot's radius never exceeds this.
 _BUCKET = 8
 _NO_THREAT = 10**6
@@ -120,14 +120,8 @@ class Intel:
         }
         seen_units: dict[Axial, list[Unit]] = {}
         for unit in self.view.units:
-            if unit.owner != NEUTRAL:
-                continue
-            near = [
-                c for c in within(unit.coord, _GARRISON_SPREAD) if c in neutral_sites
-            ]
-            if near:
-                home = min(near, key=lambda c: (distance(c, unit.coord), c.q, c.r))
-                seen_units.setdefault(home, []).append(unit)
+            if unit.post is not None and unit.post in neutral_sites:
+                seen_units.setdefault(unit.post, []).append(unit)
         garrisons: dict[Axial, Garrison] = {}
         for coord in neutral_sites:
             if coord in self.visible:
@@ -153,9 +147,10 @@ class Intel:
         """Danger spots (coord, radius) bucketed by coarse position.
 
         A column halts when its next step would come within the deploy distance
-        of a hostile unit, so a hex is unsafe within that distance of a garrison
-        unit. An unseen site's extra units may stand a hex or two off the site, so
-        tier 3–4 sites get one more hex.
+        of a hostile unit, so a hex is unsafe within that distance of a militia
+        unit. An unseen site's other units stand in the ring around it (or, as
+        generation placed a few, a hex or two farther), so tier 3–4 sites get one
+        more hex.
         """
         reach = COLUMN_RULES.deploy_distance
         spots: list[tuple[Axial, int]] = [

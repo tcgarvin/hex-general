@@ -11,8 +11,8 @@
 // every row here.
 //
 // What the planner can't know is left to the caller to say: whether another
-// player's unit Holds (garrisons always do), whether it moves first, and who else
-// joins the fight.
+// player's or a militia unit Holds (the view carries no orders for either),
+// whether it moves first, and who else joins the fight.
 
 import type { components } from "@/lib/api/schema";
 import { UNIT_STATS } from "@/planning/rules";
@@ -109,7 +109,7 @@ export interface SeenDefender {
   disordered: boolean;
   /** A packed column deploys, disordered, before melee reaches it (WORLD_SPEC §4.6). */
   column: boolean;
-  /** Garrisons always hold; another player's unit may or may not. */
+  /** `yes`: it surely holds; `maybe`: another player's or a militia unit, which may or may not. */
   hold: "yes" | "maybe";
 }
 

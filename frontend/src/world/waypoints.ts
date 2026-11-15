@@ -1,5 +1,5 @@
 // Waypoints on a Travel order: hexes the route must pass through, in order, so a
-// column can be steered around a garrison or along a chosen road (WORLD_SPEC §5).
+// column can be steered around a militia's site or along a chosen road (WORLD_SPEC §5).
 // Shift+click adds one to the selected unit's travel; the engine plans each leg
 // between stops separately (`findRoute`). These checks mirror the server's
 // (`_validate_travel` and `TravelOrder.via` in the API) so a bad waypoint is

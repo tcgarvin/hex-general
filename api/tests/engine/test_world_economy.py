@@ -134,7 +134,15 @@ def world(
 def unit(
     uid: int, kind: UnitType, col: int, row: int, hp: int = 10, owner: str = "p"
 ) -> Unit:
-    return Unit(id=uid, type=kind, owner=owner, coord=offset_to_axial(col, row), hp=hp)
+    """A unit at offset ``(col, row)``; a neutral one is the farm's militia."""
+    return Unit(
+        id=uid,
+        type=kind,
+        owner=owner,
+        coord=offset_to_axial(col, row),
+        hp=hp,
+        post=FARM if owner == NEUTRAL else None,
+    )
 
 
 def stocks_event(events: list[Event]) -> StocksResolved:
@@ -408,7 +416,7 @@ def test_recruit_short_of_stocks_or_army_size_is_voided() -> None:
 # --- garrisons ----------------------------------------------------------------
 
 
-def test_garrisons_hold_and_never_take_control() -> None:
+def test_a_lone_keeper_holds_and_never_takes_control() -> None:
     guard = unit(9, INF, 4, 1, owner=NEUTRAL)  # on the farm
     after, events = resolve_execution(
         world(units=[guard], stocks=Stocks(manpower=5)), []

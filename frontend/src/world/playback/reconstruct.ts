@@ -45,6 +45,7 @@ import { hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 import { UNIT_STATS } from "@/planning/rules";
 
+import { NEUTRAL_OWNER } from "../colors";
 import type { WorldReplay } from "../useTurnReport";
 import type { UnitBook } from "../turnReport";
 import { buildTimeline, type Beat, type BeatAction, type PlaybackUnit } from "./timeline";
@@ -148,10 +149,11 @@ export function applyAction(snap: Snapshot, a: BeatAction): void {
         owner: a.owner,
         type: a.type,
         coord: a.at,
-        hp: UNIT_STATS[a.type].maxHp,
+        hp: a.hp,
         posture: "deployed",
         facing: a.facing,
         disordered: false,
+        post: a.post,
       });
       break;
     case "disband":
@@ -278,6 +280,8 @@ function touchesOf(a: BeatAction): Touch[] {
 interface Identity {
   owner: string;
   type: UnitType;
+  /** A militia unit's site hex, when a state or a muster names it (`null`: unknown or a player's unit). */
+  post: Axial | null;
 }
 
 function toPlaybackUnit(u: Unit): PlaybackUnit {
@@ -290,17 +294,22 @@ function toPlaybackUnit(u: Unit): PlaybackUnit {
     posture: u.posture,
     facing: u.facing,
     disordered: u.disordered,
+    post: u.post ?? null,
   };
 }
 
 function identities(beats: readonly Beat[], states: readonly WorldState[]): Map<number, Identity> {
   const known = new Map<number, Identity>();
-  for (const s of states) for (const u of s.units) known.set(u.id, { owner: u.owner, type: u.type });
+  // Events name owner and type only; a post learned from a state is kept.
+  const learn = (id: number, owner: string, type: UnitType, post: Axial | null = null) =>
+    known.set(id, { owner, type, post: post ?? known.get(id)?.post ?? null });
+  for (const s of states) for (const u of s.units) learn(u.id, u.owner, u.type, u.post ?? null);
   for (const b of beats) {
     for (const a of b.actions) {
-      if (a.kind === "combat") for (const s of a.sides) known.set(s.unitId, { owner: s.owner, type: s.type });
-      if (a.kind === "barrage") for (const s of a.strikes) known.set(s.unitId, { owner: s.owner, type: s.type });
-      if (a.kind === "recruit" || a.kind === "disband") known.set(a.unitId, { owner: a.owner, type: a.type });
+      if (a.kind === "combat") for (const s of a.sides) learn(s.unitId, s.owner, s.type);
+      if (a.kind === "barrage") for (const s of a.strikes) learn(s.unitId, s.owner, s.type);
+      if (a.kind === "recruit") learn(a.unitId, a.owner, a.type, a.post);
+      if (a.kind === "disband") learn(a.unitId, a.owner, a.type);
     }
   }
   return known;
@@ -359,7 +368,17 @@ function deriveState(
     : rest.some((t) => t.deploys)
       ? false
       : (end?.disordered ?? false);
-  return { id, owner: identity.owner, type: identity.type, coord, hp, posture, facing: end?.facing ?? "right", disordered };
+  return {
+    id,
+    owner: identity.owner,
+    type: identity.type,
+    coord,
+    hp,
+    posture,
+    facing: end?.facing ?? "right",
+    disordered,
+    post: end?.post ?? identity.post,
+  };
 }
 
 interface Insertions {
@@ -459,7 +478,8 @@ function resolve(a: BeatAction, snap: ReadonlyMap<number, PlaybackUnit>, ctx: Co
 
 /**
  * Owners at each boundary of the settlements whose owner changes this turn
- * (hex key → owner, `null`: neutral). A witnessed capture flips at its beat; a
+ * (hex key → owner, `null`: neutral). A witnessed capture flips at its beat (a
+ * militia retake, `captured_by: "neutral"`, makes the site neutral again); a
  * change the viewer did not witness (a site of theirs taken out of their
  * sight) shows only at the end, where `state_after` is authoritative.
  */
@@ -486,11 +506,15 @@ function controlTimeline(
         continue;
       }
       const taken = captures.filter((c) => c.key === key && c.k < boundary).at(-1);
-      owners.set(key, taken === undefined ? owner : taken.a.owner);
+      owners.set(key, taken === undefined ? owner : controllerAfter(taken.a));
     }
     return owners;
   });
 }
+
+/** Who controls a site after a capture: the militia retaking it leave it neutral (`null`). */
+const controllerAfter = (a: Extract<BeatAction, { kind: "capture" }>): string | null =>
+  a.owner === NEUTRAL_OWNER ? null : a.owner;
 
 function settlementsAt(
   endSettlements: WorldState["settlements"],

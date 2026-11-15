@@ -67,7 +67,7 @@ function state({
 } = {}): WorldState {
   return {
     turn: 5,
-    settlements: [0, 1, 2, 3].map((col) => ({ coord: at(col), controlled_by: "p" })),
+    settlements: [0, 1, 2, 3].map((col) => ({ coord: at(col), controlled_by: "p", muster_clock: 0 })),
     units,
     players: [{ id: "p", bank: 0, stocks, buildings, construction }],
     resigned: [],

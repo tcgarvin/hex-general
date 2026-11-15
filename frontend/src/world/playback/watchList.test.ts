@@ -19,7 +19,7 @@ describe("your fights", () => {
     expect(fight.at).toEqual({ q: 38, r: 20 });
     expect(fight.ours.map((u) => u.unitId)).toEqual([6]);
     expect(fight.theirs).toMatchObject([{ unitId: 52, destroyed: true }]);
-    expect(fight.summary).toBe("Your infantry took (38,20) from Garrison infantry.");
+    expect(fight.summary).toBe("Your infantry took (38,20) from Militia infantry.");
     expect(list.map((e) => e.beat)).toEqual([...list.map((e) => e.beat)].sort((a, b) => a - b));
   });
 
@@ -31,9 +31,9 @@ describe("your fights", () => {
     expect(list.find((e) => e.eventIndex === unseen)).toMatchObject({
       kind: "barrage",
       result: "under_fire",
-      at: { q: 21, r: 18 },
+      at: { q: 21, r: 17 },
       ours: [{ unitId: 7 }],
-      summary: "Your armor came under fire at (21,18).",
+      summary: "Your armor came under fire at (21,17).",
     });
   });
 
@@ -49,8 +49,25 @@ describe("your fights", () => {
   it("names a side's owner once", () => {
     expect(joinNames(["Your infantry", "Your armor"])).toBe("Your infantry and armor");
     expect(joinNames(["Your infantry", "Your armor", "Your infantry"])).toBe("Your infantry, armor and infantry");
-    expect(joinNames(["Garrison infantry", "s004 armor"])).toBe("Garrison infantry and s004 armor");
+    expect(joinNames(["Militia infantry", "s004 armor"])).toBe("Militia infantry and s004 armor");
     expect(joinNames(["Your armor"])).toBe("Your armor");
     expect(joinNames(["1st Infantry", "1st Armor"])).toBe("1st Infantry and 1st Armor");
+  });
+
+  it("tells the militia retaking the viewer's site", () => {
+    const pb = {
+      viewer: "me",
+      beats: [
+        {
+          phase: "capture",
+          actions: [
+            { kind: "capture", eventIndex: 0, at: { q: 3, r: 0 }, unitId: 50, owner: "neutral", previousOwner: "me", site: "farm" },
+          ],
+        },
+      ],
+      snapshots: [new Map(), new Map()],
+    } as unknown as Parameters<typeof engagements>[0];
+    const [retake] = engagements(pb, unitBook([], [], "me"));
+    expect(retake).toMatchObject({ kind: "capture", result: "lost_site", summary: "The militia retook your farm at (3,0)." });
   });
 });

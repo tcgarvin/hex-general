@@ -5,10 +5,12 @@ that answer to build the redacted payload the API actually returns, so the brows
 never receives information the player should not have (CLAUDE.md, roadmap decision
 4). Two pure transforms:
 
-  * `redact_state` drops enemy units standing on hexes the viewer cannot see, and
-    other players' standing orders. The static map and settlement control are
-    public; in a world game other players' stocks, buildings and construction are
-    private and come back blank (in v0.1 the banks were public).
+  * `redact_state` drops enemy units (militia included) standing on hexes the
+    viewer cannot see, and other players' standing orders. A settlement's militia
+    quiet-turn count (`Settlement.muster_clock`) shows only on a hex in sight.
+    The static map and settlement control are public; in a world game other
+    players' stocks, buildings and construction are private and come back blank
+    (in v0.1 the banks were public).
   * `filter_events` turns the engine's replay log into what one viewer witnessed:
     each event is dropped, passed through, or passed through with its private
     fields withheld, per the table in `_witness`.
@@ -40,6 +42,7 @@ from app.engine.events import (
     ConstructionVoided,
     EconomyResolved,
     Event,
+    MilitiaMustered,
     MoveBlocked,
     OrderMooted,
     RecruitmentVoided,
@@ -56,7 +59,7 @@ from app.engine.events import (
     WorldUnitRecruited,
 )
 from app.engine.hex_coords import Axial
-from app.engine.models import GameState, Player, PlayerId, UnitId
+from app.engine.models import NEUTRAL, GameState, Player, PlayerId, UnitId
 from app.engine.stats import UnitType
 from app.engine.visibility import visible_hexes
 
@@ -144,7 +147,8 @@ ReplayEvent = Annotated[
     | ConstructionStarted
     | ConstructionCompleted
     | ConstructionVoided
-    | WorldUnitRecruitedView,
+    | WorldUnitRecruitedView
+    | MilitiaMustered,
     Field(discriminator="kind"),
 ]
 """One witnessed replay event: the engine's `Event` with the view models above
@@ -154,17 +158,32 @@ standing in for the three events that carry private fields."""
 def redact_state(state: GameState, viewer: PlayerId) -> GameState:
     """Return ``state`` with enemy units the ``viewer`` cannot see removed (SPEC §9).
 
-    Keeps every unit the viewer owns plus every other unit standing on a hex the
-    viewer can see, and only the viewer's own standing orders (a travel order is
-    private intent, WORLD_SPEC §5). The map and settlement control pass through
-    unchanged. In a world game, other players' stocks, buildings and construction
+    Keeps every unit the viewer owns plus every other unit (militia included)
+    standing on a hex the viewer can see, and only the viewer's own standing
+    orders (a travel order is private intent, WORLD_SPEC §5). The map and
+    settlement control pass through unchanged, but a settlement's militia
+    quiet-turn count (`Settlement.muster_clock`, WORLD_SPEC §7.1) comes back as 0
+    on a hex the viewer cannot see: there 0 means "none counted, or not in
+    sight". In a world game, other players' stocks, buildings and construction
     are private and come back blank; in v0.1 the banks were public.
     """
     visible = visible_hexes(state, viewer)
     units = [u for u in state.units if u.owner == viewer or u.coord in visible]
     own = {u.id for u in state.units if u.owner == viewer}
     standing = [o for o in state.standing_orders if o.unit_id in own]
-    update: dict[str, object] = {"units": units, "standing_orders": standing}
+    settlements = [
+        (
+            s
+            if s.muster_clock == 0 or s.coord in visible
+            else s.model_copy(update={"muster_clock": 0})
+        )
+        for s in state.settlements
+    ]
+    update: dict[str, object] = {
+        "units": units,
+        "standing_orders": standing,
+        "settlements": settlements,
+    }
     if state.config.economy is not None:
         # A world player's stocks and base are private: other players appear with
         # an empty economy, which the view documents as unknown, not as zero.
@@ -250,6 +269,8 @@ def _named_owners(event: Event) -> list[tuple[UnitId, PlayerId]]:
         return [(event.unit_id, event.owner)]
     if isinstance(event, SettlementCaptured):
         return [(event.unit_id, event.captured_by)]
+    if isinstance(event, MilitiaMustered):
+        return [(event.unit_id, NEUTRAL)]
     return []
 
 
@@ -272,6 +293,7 @@ def _witness(event: Event, sight: _Sight) -> ReplayEvent | None:
     | world_unit_recruited | unit, type and hex, if the hex is visible; never the cost or the stocks left |
     | unit_disbanded | unit, type and hex, if the hex is visible; never the shortage or whether it was picked |
     | unit_recruited | all of it, if the hex is visible (v0.1 only: banks were public there) |
+    | militia_mustered | all of it, if the hex is visible |
     | stocks_resolved, economy_resolved, construction_* | nothing: private bookkeeping |
     | recruitment_voided, order_mooted, travel_ended | nothing: private intent |
     """
@@ -333,6 +355,8 @@ def _witness(event: Event, sight: _Sight) -> ReplayEvent | None:
         )
     if isinstance(event, UnitRecruited):
         return event if event.owner == viewer or sight.sees(event.coord) else None
+    if isinstance(event, MilitiaMustered):
+        return event if sight.sees(event.coord) else None
     if isinstance(
         event,
         EconomyResolved

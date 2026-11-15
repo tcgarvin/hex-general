@@ -88,14 +88,14 @@ describe("turnReport", () => {
   });
 
   it("writes a fight as one line with both sides' losses and HP", () => {
-    expect(items[0].text).toBe("Attack at (3,0): your infantry −3 → 7 HP vs garrison infantry destroyed.");
+    expect(items[0].text).toBe("Attack at (3,0): your infantry −3 → 7 HP vs militia infantry destroyed.");
     expect(items[0].detail).toEqual(["Your infantry took the hex and moved on."]);
   });
 
   it("names the viewer's units by designation when it has them", () => {
     const named = unitBook(log, units, ME, (id) => ({ 1: "2nd Infantry", 3: "1st Armor" })[id] ?? null);
     const lines = turnReport(log, ME, named);
-    expect(lines[0].text).toBe("Attack at (3,0): 2nd Infantry −3 → 7 HP vs garrison infantry destroyed.");
+    expect(lines[0].text).toBe("Attack at (3,0): 2nd Infantry −3 → 7 HP vs militia infantry destroyed.");
     expect(lines[0].detail).toEqual(["2nd Infantry took the hex and moved on."]);
     expect(lines.some((i) => i.text.startsWith("1st Armor at (0,0) disbanded"))).toBe(true);
     // A unit it doesn't know keeps the generic name.
@@ -157,7 +157,7 @@ describe("turnReport: units out of sight", () => {
     expect(book.nameOf(16)).toBe("An unseen gun");
     expect(book.nameOf(77)).toBe("An unseen unit");
     const text = turnReport(shot, ME, book).map((i) => i.text).join(" ");
-    expect(text).toContain("An unseen gun barraged Garrison infantry");
+    expect(text).toContain("An unseen gun barraged militia infantry");
     expect(text).not.toContain("16");
   });
 });
@@ -190,19 +190,19 @@ describe("turnReport: spending and contact", () => {
   });
 
   const steelMill = { coord: coord(10, 0), kind: "steel_mill" as const, garrison: 2, level: 1 };
-  const context: ReportContext = { sites: [steelMill], settlements: [{ coord: coord(10, 0), controlled_by: null }], units: [] };
+  const context: ReportContext = { sites: [steelMill], settlements: [{ coord: coord(10, 0), controlled_by: null, muster_clock: 0 }], units: [] };
   const contactLog = events([
     { kind: "unit_deployed", pulse: 6, unit_id: 4, origin: coord(7, 0), dest: coord(6, 0), cause: "contact", disordered: true },
     { kind: "travel_ended", unit_id: 4, owner: ME, coord: coord(6, 0), destination: coord(12, 0), reason: "contact" },
   ]);
 
-  it("folds a contact halt into one line naming the fogged garrison it met", () => {
+  it("folds a contact halt into one line naming the fogged militia it met", () => {
     const book = unitBook(contactLog, [unit(4, ME, coord(6, 0))], ME);
     const items = turnReport(contactLog, ME, book, context);
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ section: "movement", at: coord(6, 0), eventIndex: 0 });
     expect(items[0].text).toBe(
-      "Your infantry halted and deployed at (6,0) on contact with the garrison at the steel mill (10,0).",
+      "Your infantry halted and deployed at (6,0) on contact with the militia at the steel mill (10,0).",
     );
     expect(items[0].detail).toEqual([
       "No room at (7,0).",
@@ -211,7 +211,7 @@ describe("turnReport: spending and contact", () => {
     ]);
   });
 
-  it("folds a travel that never set off into one line naming the garrison", () => {
+  it("folds a travel that never set off into one line naming the militia", () => {
     const stuckLog = events([
       { kind: "move_blocked", pulse: 5, unit_id: 4, origin: coord(7, 0), target: coord(8, 0), reason: "pack_interrupted" },
       { kind: "travel_ended", unit_id: 4, owner: ME, coord: coord(7, 0), destination: coord(12, 0), reason: "contact" },
@@ -220,24 +220,24 @@ describe("turnReport: spending and contact", () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ eventIndex: 0, at: coord(7, 0), detail: ["It was bound for (12,0)."] });
     expect(items[0].text).toBe(
-      "Your infantry could not set off: contact with the garrison at the steel mill (10,0). It stayed deployed at (7,0).",
+      "Your infantry could not set off: contact with the militia at the steel mill (10,0). It stayed deployed at (7,0).",
     );
   });
 
-  it("names a several-unit garrison met one hex further out, by the unit beside its site", () => {
+  it("names a several-unit militia met one hex further out, by the unit beside its site", () => {
     const spread: ReportContext = {
       sites: [{ coord: coord(10, 0), kind: "steel_mill", garrison: 3, level: 2 }],
-      settlements: [{ coord: coord(10, 0), controlled_by: null }],
+      settlements: [{ coord: coord(10, 0), controlled_by: null, muster_clock: 0 }],
       units: [],
     };
-    expect(contactCause(coord(5, 0), ME, spread)).toBe("the garrison at the steel mill (10,0)");
+    expect(contactCause(coord(5, 0), ME, spread)).toBe("the militia at the steel mill (10,0)");
     expect(contactCause(coord(4, 0), ME, spread)).toBe("the enemy");
   });
 
   it("says the enemy when a player's unit is in sight, or nothing on the map explains it", () => {
     expect(contactCause(coord(6, 0), ME, { ...context, units: [unit(9, "s2", coord(8, 0))] })).toBe("the enemy");
     expect(contactCause(coord(0, 0), ME, context)).toBe("the enemy"); // the mill is out of reach
-    expect(contactCause(coord(6, 0), ME, { ...context, settlements: [{ coord: coord(10, 0), controlled_by: "s2" }] })).toBe(
+    expect(contactCause(coord(6, 0), ME, { ...context, settlements: [{ coord: coord(10, 0), controlled_by: "s2", muster_clock: 0 }] })).toBe(
       "the enemy",
     );
   });
@@ -252,5 +252,36 @@ describe("turnTrails", () => {
     ]);
     expect(trails.fights).toEqual([coord(3, 0), coord(8, 8)]);
     expect(trails.captures).toEqual([{ coord: coord(3, 0), owner: ME }]);
+  });
+});
+
+describe("turnReport: militia", () => {
+  const FARM = coord(3, 0);
+  const context: ReportContext = {
+    sites: [{ coord: FARM, kind: "farm", garrison: 2, level: 1 }],
+    settlements: [{ coord: FARM, controlled_by: null, muster_clock: 0 }],
+    units: [unit(50, "neutral", FARM)],
+  };
+
+  it("reports the militia retaking the viewer's site as a loss", () => {
+    const log = events([
+      { kind: "settlement_captured", coord: FARM, settlement: "plains", site: "farm", captured_by: "neutral", previous_owner: ME, unit_id: 50 },
+    ]);
+    const items = turnReport(log, ME, unitBook(log, context.units, ME), context);
+    expect(items).toEqual([
+      { section: "fighting", tone: "bad", text: "The militia retook your farm at (3,0).", detail: [], at: FARM, eventIndex: 0 },
+    ]);
+  });
+
+  it("tells a militia unit re-forming and healing in sight under 'seen'", () => {
+    const log = events([
+      { kind: "unit_repaired", unit_id: 50, hp_before: 3, hp_after: 4, in_settlement: true },
+      { kind: "militia_mustered", unit_id: 51, unit_type: "artillery", coord: coord(4, 0), post: FARM, hp: 10 },
+    ]);
+    const items = turnReport(log, ME, unitBook(log, context.units, ME), context);
+    expect(items.map((i) => [i.section, i.text])).toEqual([
+      ["seen", "Militia infantry recovered 3→4 HP."],
+      ["seen", "Militia artillery re-formed at the farm (3,0)."],
+    ]);
   });
 });

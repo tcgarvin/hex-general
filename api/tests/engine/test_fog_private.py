@@ -470,5 +470,7 @@ def test_a_visible_enemy_unit_shows_only_what_is_on_the_board() -> None:
         "facing",
         "posture",
         "disordered",
+        "post",  # public: a militia unit's site, None for every player's unit
     }
+    assert red.post is None
     assert red.posture is Posture.DEPLOYED

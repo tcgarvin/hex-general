@@ -102,13 +102,16 @@ export function unitBook(
       case "world_unit_recruited":
         known.set(e.unit_id, { owner: e.owner, type: e.unit_type });
         break;
+      case "militia_mustered":
+        known.set(e.unit_id, { owner: NEUTRAL_OWNER, type: e.unit_type });
+        break;
       default:
         break;
     }
   }
   const unit = (owner: string, type: UnitType, unitId?: number) => {
     if (owner === viewer) return (unitId === undefined ? null : designate(unitId)) ?? `Your ${type}`;
-    return owner === NEUTRAL_OWNER ? `Garrison ${type}` : `${owner} ${type}`;
+    return owner === NEUTRAL_OWNER ? `Militia ${type}` : `${owner} ${type}`;
   };
   const nameOf: NameOf = (id) => {
     const u = known.get(id);
@@ -116,7 +119,7 @@ export function unitBook(
     // Out of sight, the replay gives an id but no owner: don't print the id.
     return guns.has(id) ? "An unseen gun" : "An unseen unit";
   };
-  const player = (id: string) => (id === viewer ? "You" : id === NEUTRAL_OWNER ? "The garrison" : id);
+  const player = (id: string) => (id === viewer ? "You" : id === NEUTRAL_OWNER ? "The militia" : id);
   return { owner: (id) => known.get(id)?.owner ?? null, nameOf, naming: { player, unit } };
 }
 
@@ -130,6 +133,9 @@ const SITE_NAME: Record<MapSite["kind"], string> = {
 };
 
 const coordText = (a: Axial): string => `(${a.q},${a.r})`;
+
+/** "oil field" from a site kind or settlement terrain. */
+const siteName = (kind: string): string => kind.replace("_", " ");
 
 /** "5 manpower, 2 steel": the non-zero parts of an amount (`nothing` if none). */
 export function stocksPhrase(s: Stocks): string {
@@ -260,7 +266,16 @@ export function turnReport(
         break;
       }
       case "settlement_captured":
-        if (e.captured_by === viewer) push("fighting", "good", e, e.coord, i);
+        if (e.captured_by === NEUTRAL_OWNER && e.previous_owner === viewer) {
+          items.push({
+            section: "fighting",
+            tone: "bad",
+            text: `The militia retook your ${siteName(e.site ?? e.settlement)} at ${coordText(e.coord)}.`,
+            detail: [],
+            at: e.coord,
+            eventIndex: i,
+          });
+        } else if (e.captured_by === viewer) push("fighting", "good", e, e.coord, i);
         else if (e.previous_owner === viewer) push("fighting", "bad", e, e.coord, i);
         else push("seen", "neutral", e, e.coord, i);
         break;
@@ -320,8 +335,30 @@ export function turnReport(
         if (mine(e.unit_id)) {
           if (repaired.count === 0) repaired.first = i;
           repaired.count += 1;
+        } else if (book.owner(e.unit_id) === NEUTRAL_OWNER) {
+          items.push({
+            section: "seen",
+            tone: "neutral",
+            text: `${book.nameOf(e.unit_id)} recovered ${e.hp_before}→${e.hp_after} HP.`,
+            detail: [],
+            at: null,
+            eventIndex: i,
+          });
         }
         break;
+      case "militia_mustered": {
+        const site = context?.sites.find((s) => s.coord.q === e.post.q && s.coord.r === e.post.r);
+        const where = site === undefined ? coordText(e.coord) : `the ${SITE_NAME[site.kind]} ${coordText(e.post)}`;
+        items.push({
+          section: "seen",
+          tone: "neutral",
+          text: `${book.naming.unit(NEUTRAL_OWNER, e.unit_type, e.unit_id)} re-formed at ${where}.`,
+          detail: [],
+          at: e.coord,
+          eventIndex: i,
+        });
+        break;
+      }
       case "unit_moved":
       case "unit_packed":
       case "economy_resolved":
@@ -354,14 +391,14 @@ export function turnReport(
 
 const cap = (s: string): string => (s.length === 0 ? s : s[0].toUpperCase() + s.slice(1));
 
-/** A unit name for the middle of a sentence ("your armor", "garrison infantry"). */
+/** A unit name for the middle of a sentence ("your armor", "militia infantry"). */
 function mid(name: string): string {
-  return name.replace(/^(Your|Garrison|An unseen) /, (m) => m.toLowerCase());
+  return name.replace(/^(Your|Militia|An unseen) /, (m) => m.toLowerCase());
 }
 
 /**
  * One line per fight: who fought whom where, and each side's loss and what is
- * left, e.g. "Attack at (75,4): your armor −1 → 7 HP vs garrison infantry
+ * left, e.g. "Attack at (75,4): your armor −1 → 7 HP vs militia infantry
  * (dug in +3) −1 → 4 HP." Details only for what the line can't carry (who took
  * the hex).
  */
@@ -399,7 +436,7 @@ type DeployEvent = Extract<ReplayEvent, { kind: "unit_deployed" }>;
 /**
  * A column that halted and deployed on contact, folded with its ended travel.
  * When no enemy is in sight near it, the cause is named from the static map:
- * the nearest neutral garrison it came within reach of.
+ * the nearest neutral site with a militia it came within reach of.
  */
 function contactLine(
   e: DeployEvent,
@@ -419,7 +456,11 @@ function contactLine(
   return { text: `${book.nameOf(e.unit_id)} ${verb} at ${where} on contact with ${cause}.`, detail };
 }
 
-/** What a column at `at` most likely met: "the enemy", or a named garrisoned site. */
+/**
+ * What a column at `at` most likely met: "the enemy", or the militia of a named
+ * neutral site. A guess from the map's militia tiers: the militia themselves may
+ * stand out of sight (fog treats them like any unit).
+ */
 export function contactCause(at: Axial, viewer: string, context: ReportContext | null): string {
   if (context === null) return "the enemy";
   // A column checks contact one step ahead, so the source can be one hex past X.
@@ -434,12 +475,12 @@ export function contactCause(at: Axial, viewer: string, context: ReportContext |
   let best: { site: MapSite; d: number } | null = null;
   for (const site of context.sites) {
     if (site.garrison <= 0 || !neutral.has(coordText(site.coord))) continue;
-    // A garrison of several units stands on the site and beside it.
+    // A militia of several units stands on the site and beside it.
     const d = axialDistance(site.coord, at) - (site.garrison >= SPREAD_GARRISON_TIER ? 1 : 0);
     if (d <= reach && (best === null || d < best.d)) best = { site, d };
   }
   if (best === null) return "the enemy";
-  return `the garrison at the ${SITE_NAME[best.site.kind]} ${coordText(best.site.coord)}`;
+  return `the militia at the ${SITE_NAME[best.site.kind]} ${coordText(best.site.coord)}`;
 }
 
 /** Movement trails, fights, captures and barrage targets to draw on the board. */

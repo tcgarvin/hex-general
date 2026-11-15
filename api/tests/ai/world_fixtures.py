@@ -44,9 +44,11 @@ def make_unit(
     return Unit(id=uid, type=kind, owner=owner, coord=coord, hp=hp)
 
 
-def garrison(uid: int, coord: Axial, hp: int = 10) -> Unit:
-    """A neutral garrison infantry unit."""
-    return make_unit(uid, INF, coord, owner=NEUTRAL, hp=hp)
+def garrison(uid: int, coord: Axial, hp: int = 10, post: Axial | None = None) -> Unit:
+    """A militia infantry unit posted to ``post`` (default: the hex it stands on)."""
+    unit = make_unit(uid, INF, coord, owner=NEUTRAL, hp=hp)
+    unit.post = post if post is not None else coord
+    return unit
 
 
 def small_world(

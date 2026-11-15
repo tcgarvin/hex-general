@@ -8,6 +8,7 @@
 import type { Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
+import { NEUTRAL_OWNER } from "../colors";
 import type { UnitBook } from "../turnReport";
 import type { Playback } from "./reconstruct";
 
@@ -49,14 +50,14 @@ export interface Engagement {
   result: EngagementResult;
   ours: EngagementUnit[];
   theirs: EngagementUnit[];
-  /** "Your armor and infantry took (25,32) from Garrison infantry." */
+  /** "Your armor and infantry took (25,32) from Militia infantry." */
   summary: string;
 }
 
 const coordText = (a: Axial) => `(${a.q},${a.r})`;
 
 /**
- * "Your armor and infantry": names that share an owner word ("Your", "Garrison",
+ * "Your armor and infantry": names that share an owner word ("Your", "Militia",
  * a slot) carry it once, at the front.
  */
 export function joinNames(names: string[]): string {
@@ -142,6 +143,7 @@ export function engagements(pb: Playback, book: UnitBook): Engagement[] {
         if (a.owner !== pb.viewer && a.previousOwner !== pb.viewer) continue;
         const took = a.owner === pb.viewer;
         const site = a.site === null ? "a settlement" : `a ${a.site.replace("_", " ")}`;
+        const yours = `your ${site.replace(/^an? /, "")} at ${coordText(a.at)}`;
         out.push({
           beat: k,
           eventIndex: a.eventIndex,
@@ -152,7 +154,9 @@ export function engagements(pb: Playback, book: UnitBook): Engagement[] {
           theirs: [],
           summary: took
             ? `You took ${site} at ${coordText(a.at)}.`
-            : `${book.naming.player(a.owner)} took your ${site.replace(/^an? /, "")} at ${coordText(a.at)}.`,
+            : a.owner === NEUTRAL_OWNER
+              ? `The militia retook ${yours}.`
+              : `${book.naming.player(a.owner)} took ${yours}.`,
         });
       }
     }
