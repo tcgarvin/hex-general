@@ -121,7 +121,7 @@ export function unitReadout(input: ReadoutInput): Readout {
         for (const line of input.expected?.lines ?? []) add(line);
         add(input.expected?.note ?? null, "quiet");
         add(input.warning === null ? null : `${input.warning}.`, "bad");
-        return { title: `Attack ${at(route.attack)}`, kind: "attack", lines };
+        return { title: `${route.engage ? "Engage" : "Assault"} ${at(route.attack)}`, kind: "attack", lines };
       }
       add(input.blocked === null ? null : `${input.blocked}.`, "bad");
       add(`${order.path.length} hex${order.path.length === 1 ? "" : "es"}, this turn.`, "quiet");

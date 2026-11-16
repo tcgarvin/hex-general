@@ -8,6 +8,7 @@ import { UNIT_STATS } from "@/planning/rules";
 import clockPy from "../../../api/app/world/clock.py?raw";
 import combatPy from "../../../api/app/engine/combat.py?raw";
 import economyRulesPy from "../../../api/app/engine/economy_rules.py?raw";
+import modelsPy from "../../../api/app/engine/models.py?raw";
 import movementPy from "../../../api/app/engine/movement.py?raw";
 import repairPy from "../../../api/app/engine/repair.py?raw";
 import statsPy from "../../../api/app/engine/stats.py?raw";
@@ -44,6 +45,13 @@ describe("field manual rules match the engine", () => {
     expect(MANUAL_RULES.restAnywhere.heal).toBe(num(repairPy, /_REST_ANYWHERE = \((\d+), \d+\)/));
     expect(MANUAL_RULES.restAnywhere.ceiling).toBe(num(repairPy, /_REST_ANYWHERE = \(\d+, (\d+)\)/));
     expect(MANUAL_RULES.roadBonus).toBe(num(movementPy, /_path_is_all_road\(unit\.coord, path, hexes\):\s*return base \+ (\d+)/));
+  });
+
+  it("the kinds of attack, the engine's default first", () => {
+    const block = modelsPy.match(/class AttackKind\(StrEnum\):([\s\S]*?)\n\n\nclass /);
+    if (block === null) throw new Error("no AttackKind");
+    expect([...block[1].matchAll(/^ {4}[A-Z]+ = "(\w+)"/gm)].map((m) => m[1])).toEqual(MANUAL_RULES.attackKinds);
+    expect(modelsPy).toMatch(/attack: AttackKind = AttackKind\.ASSAULT/);
   });
 
   it("terrain defence", () => {

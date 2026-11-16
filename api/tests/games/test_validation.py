@@ -18,7 +18,7 @@ from app.engine.models import (
     TravelOrder,
 )
 from app.games.validation import OrderValidationError, validate_submission
-from engine.helpers import ax, barrage, build, hold, move, recruit
+from engine.helpers import ax, barrage, build, engage, hold, move, recruit
 
 # A compact board: three cities on the top row (blue holds the outer two, red the
 # middle), a river at (2,1), and blue/red infantry plus a blue artillery below.
@@ -50,6 +50,10 @@ def _state() -> GameState:
 
 def test_valid_submission_passes() -> None:
     validate_submission(_state(), "blue", [move(1, (1, 1), (1, 0))], [])
+
+
+def test_an_engage_move_passes() -> None:
+    validate_submission(_state(), "blue", [engage(1, (1, 1), (1, 0))], [])
 
 
 def test_move_for_enemy_unit_rejected() -> None:

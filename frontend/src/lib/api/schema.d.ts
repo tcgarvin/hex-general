@@ -473,6 +473,14 @@ export interface components {
             sites_per_point: number;
         };
         /**
+         * AttackKind
+         * @description How a Move order fights for a hostile hex (WORLD_SPEC §4.8).
+         *
+         *     Damage is the same either way; only occupation differs.
+         * @enum {string}
+         */
+        AttackKind: "assault" | "engage";
+        /**
          * Axial
          * @description An axial hex coordinate.
          *
@@ -645,6 +653,11 @@ export interface components {
             defense_penalty: number;
             /** Destroyed */
             destroyed: boolean;
+            /**
+             * Engaging
+             * @default false
+             */
+            engaging: boolean;
             /** Hold Bonus */
             hold_bonus: number;
             /** Hp After */
@@ -1099,16 +1112,19 @@ export interface components {
          * @description Why a unit's attempted step failed and ended its movement (SPEC §11.3).
          * @enum {string}
          */
-        MoveBlockedReason: "off_map" | "impassable" | "occupied" | "zoc_locked" | "attack_forbidden" | "disordered" | "column_sheltered" | "engaged_cannot_pack" | "pack_interrupted";
+        MoveBlockedReason: "off_map" | "impassable" | "occupied" | "zoc_locked" | "attack_forbidden" | "disordered" | "column_sheltered" | "engaged_cannot_pack" | "pack_interrupted" | "engage_halt";
         /**
          * MoveOrder
          * @description Follow an exact planned path of adjacent hexes (SPEC §7.1).
          *
          *     ``path`` is the sequence of hexes to enter, in order, one per movement
          *     pulse. Combat occurs if enemy contact happens; the unit does not reroute if
-         *     blocked.
+         *     blocked. ``attack`` picks assault (the default: take what it wins) or engage
+         *     (fight without entering, WORLD_SPEC §4.8).
          */
         MoveOrder: {
+            /** @default assault */
+            attack: components["schemas"]["AttackKind"];
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -1402,7 +1418,8 @@ export interface components {
          *     Every field defaults to empty: a player may legitimately submit no orders
          *     (every unit holds or keeps travelling), no recruits and no base orders.
          *     FastAPI parses ``orders`` into the discriminated `Order` union, so unknown
-         *     order shapes are rejected as 422 at the wire, as is a plan longer than
+         *     order shapes (and a Move ``attack`` other than ``assault``/``engage``,
+         *     WORLD_SPEC §4.8) are rejected as 422 at the wire, as is a plan longer than
          *     `MAX_PLAN_ENTRIES` entries per list or a path longer than `MAX_PATH_STEPS`.
          */
         SubmitOrdersRequest: {

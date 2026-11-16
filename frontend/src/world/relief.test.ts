@@ -13,8 +13,8 @@ const enemy = unit(9, "foe", coord(2, 0));
 
 /** Two plain Move orders, each unit into the other's hex: what a swap is. */
 const swap: Record<number, WorldOrder> = {
-  2: { kind: "move", path: [coord(1, 0)] },
-  1: { kind: "move", path: [coord(0, 0)] },
+  2: { kind: "move", path: [coord(1, 0)], attack: "assault" },
+  1: { kind: "move", path: [coord(0, 0)], attack: "assault" },
 };
 
 describe("relief swaps", () => {
@@ -28,13 +28,13 @@ describe("relief swaps", () => {
   it("finds the partner only when both moves step into each other's hex first", () => {
     const units = [front, fresh];
     expect(swapPartner(fresh, swap, units)?.id).toBe(1);
-    expect(swapPartner(fresh, { 2: { kind: "move", path: [coord(1, 0)] } }, units)).toBeNull();
+    expect(swapPartner(fresh, { 2: { kind: "move", path: [coord(1, 0)], attack: "assault" } }, units)).toBeNull();
   });
 
   it("finds the partner of a pass-through swap with longer paths", () => {
     const orders: Record<number, WorldOrder> = {
-      2: { kind: "move", path: [coord(1, 0), coord(2, -1)] },
-      1: { kind: "move", path: [coord(0, 0), coord(-1, 0)] },
+      2: { kind: "move", path: [coord(1, 0), coord(2, -1)], attack: "assault" },
+      1: { kind: "move", path: [coord(0, 0), coord(-1, 0)], attack: "assault" },
     };
     expect(swapPartner(front, orders, [front, fresh])?.id).toBe(2);
   });

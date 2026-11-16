@@ -156,6 +156,32 @@ export function attackPhrase(f: AttackForecast): string {
   return `You deal ${dealt}, take ${f.taken.damage}${clampNote(f.taken)}`;
 }
 
+// --- assault or engage (WORLD_SPEC §4.8) ---------------------------------------------
+
+type AttackKind = components["schemas"]["AttackKind"];
+
+/** The toggle's order: engage first, as a fresh attack defaults to it. */
+export const ATTACK_KINDS: readonly AttackKind[] = ["engage", "assault"];
+
+export const ATTACK_LABEL: Record<AttackKind, string> = { assault: "Assault", engage: "Engage" };
+
+/** What each kind does, for the toggle's tooltip and the manual. Damage is the same either way. */
+export const ATTACK_HELP: Record<AttackKind, string> = {
+  engage: "Strike from beside the hex and stay there. It never moves in, even if the defender falls.",
+  assault: "Fight for the hex: if the defender falls, move in and carry on along the path.",
+};
+
+/**
+ * Where the attacker ends up, in words: an engager always stays beside the hex;
+ * an assault moves in only if the hex is cleared (`kills`: this strike alone does it).
+ */
+export function occupationLine(attack: AttackKind, kills: boolean): string {
+  if (attack === "engage") return "Engaging: it stays beside the hex, even if the defender falls.";
+  return kills
+    ? "Assaulting: once the defender falls, it moves into the hex."
+    : "Assaulting: it moves in only if the defender falls.";
+}
+
 export interface BarrageForecast {
   type: UnitType;
   owner: string;

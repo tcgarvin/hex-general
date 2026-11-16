@@ -286,7 +286,8 @@ export function planConflicts(ctx: MoveContext): Map<number, MoveConflict> {
     }
     for (const { unit, path, step, conflict } of found) {
       conflicts.set(unit.id, conflict);
-      effective[unit.id] = { kind: "move", path: path.slice(0, step - 1) };
+      // Cut short, it no longer reaches its target, so it has no attack to make.
+      effective[unit.id] = { kind: "move", path: path.slice(0, step - 1), attack: "assault" };
       added = true;
     }
   }

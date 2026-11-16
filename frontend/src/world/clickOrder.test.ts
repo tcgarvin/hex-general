@@ -28,6 +28,7 @@ const click = (over: Partial<ClickInput> = {}): ClickInput => ({
   shift: false,
   mode: "select",
   ownHere: 0,
+  hostile: new Set(),
   hasTravel: false,
   reach: new Map(),
   freshReach: () => new Map(),
@@ -62,11 +63,24 @@ describe("desktopClick", () => {
     });
     expect(desktopClick(click({ mode: "move", hex, reach: reachTo(hex) }))).toEqual({
       kind: "order",
-      order: { kind: "move", path: [hex] },
+      order: { kind: "move", path: [hex], attack: "assault" },
     });
     expect(desktopClick(click({ mode: "barrage", hex, inRange: true }))).toEqual({
       kind: "order",
       order: { kind: "barrage", target: hex },
+    });
+  });
+
+  it("orders a Move onto a hostile hex as an engagement, any other Move as an assault", () => {
+    const hex = { q: 2, r: 0 };
+    const hostile = new Set([hexKey(hex.q, hex.r)]);
+    expect(desktopClick(click({ mode: "move", hex, reach: reachTo(hex), hostile }))).toEqual({
+      kind: "order",
+      order: { kind: "move", path: [hex], attack: "engage" },
+    });
+    const past = { q: 3, r: 0 };
+    expect(desktopClick(click({ mode: "move", hex: past, reach: reachTo(past), hostile }))).toMatchObject({
+      order: { attack: "assault" },
     });
   });
 
@@ -97,7 +111,7 @@ describe("desktopClick", () => {
     for (const mode of ["select", "travel", "move", "barrage"] as const) {
       expect(desktopClick(click({ mode, hex, shift: true, ownHere: 1, freshReach: () => reachTo(hex) }))).toEqual({
         kind: "order",
-        order: { kind: "move", path: [hex] },
+        order: { kind: "move", path: [hex], attack: "assault" },
       });
     }
   });

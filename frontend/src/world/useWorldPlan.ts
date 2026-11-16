@@ -67,6 +67,8 @@ import {
   samePlan,
   submissionKey,
   toSubmission,
+  withAttack,
+  type AttackKind,
   type WorldOrder,
   type WorldPlan,
 } from "./plan";
@@ -96,6 +98,11 @@ export interface PlannedRoute {
   waypoints: readonly Axial[];
   /** The hostile-held hex a move ends on: the move is an attack. */
   attack: Axial | null;
+  /**
+   * The attack engages (WORLD_SPEC §4.8): the unit strikes from the hex before
+   * `attack` and never enters it. `false` for an assault and for anything else.
+   */
+  engage: boolean;
   /** Where a travel or standing route halts on known contact, disordered (`haltHex`); `null`: it doesn't. */
   halt: Axial | null;
   /** The route hexes out of the viewer's sight (travel and standing only; none for a move). */
@@ -211,6 +218,8 @@ export interface WorldPlanning {
   setMode: (mode: PlanMode) => void;
   /** Set or clear a unit's order. */
   setOrder: (unitId: number, order: WorldOrder | null) => void;
+  /** Make the unit's staged attack an assault or an engagement (`withAttack`; anything else is left alone). */
+  setAttack: (unitId: number, attack: AttackKind) => void;
   setOnArrival: (unitId: number, posture: Posture) => void;
   setBuild: (building: Building | null) => void;
   setRecruit: (coord: Axial, type: UnitType | null) => void;
@@ -423,6 +432,7 @@ export function useWorldPlan(
         shift: mods.shift,
         mode: sel.mode,
         ownHere: onHex.length,
+        hostile,
         hasTravel: unit !== null && travelBase(unit, plan.orders, standing) !== null,
         reach: moveReach,
         freshReach: () => {
@@ -458,7 +468,7 @@ export function useWorldPlan(
           return;
       }
     },
-    [selectedUnit, sel, moveReach, moveCtx, ownUnits, map, costs, plan.orders, standing, setOrder, select, selectAt, addStop, warn],
+    [selectedUnit, sel, moveReach, moveCtx, ownUnits, map, costs, hostile, plan.orders, standing, setOrder, select, selectAt, addStop, warn],
   );
 
   /** A tap in auto mode: unarmed it selects or inspects, armed it orders (`autoTap`). */
@@ -649,6 +659,12 @@ export function useWorldPlan(
     clearWaypoints: (unitId) => editVia(unitId, () => []),
     setMode: (mode) => select(sel.unitId, sel.hex, mode),
     setOrder,
+    setAttack: (unitId, attack) =>
+      edit((p) => {
+        const order = p.orders[unitId];
+        if (order === undefined) return p;
+        return { ...p, orders: { ...p.orders, [unitId]: withAttack(order, attack, hostile) } };
+      }),
     setOnArrival: (unitId, posture) =>
       edit((p) => {
         const order = p.orders[unitId];
@@ -736,6 +752,7 @@ function plannedRoutes(
           kind: "standing",
           eta: travelEta(costs, s.route, { packed }),
           attack: null,
+          engage: false,
           waypoints: [],
           halt: haltHex(unit.coord, s.route, zone),
           fog: routeFog(s.route, visible),
@@ -752,6 +769,7 @@ function plannedRoutes(
         kind: "travel",
         eta: travelEta(costs, path, { packed }),
         attack: null,
+        engage: false,
         waypoints: order.via,
         halt: haltHex(unit.coord, path, zone),
         fog: routeFog(path, visible),
@@ -767,6 +785,7 @@ function plannedRoutes(
         kind: order.kind,
         eta: null,
         attack,
+        engage: attack !== null && order.kind === "move" && order.attack === "engage",
         waypoints: [],
         halt: null,
         fog: inView(order.path),

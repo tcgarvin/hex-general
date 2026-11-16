@@ -52,7 +52,8 @@ class SubmitOrdersRequest(BaseModel):
     Every field defaults to empty: a player may legitimately submit no orders
     (every unit holds or keeps travelling), no recruits and no base orders.
     FastAPI parses ``orders`` into the discriminated `Order` union, so unknown
-    order shapes are rejected as 422 at the wire, as is a plan longer than
+    order shapes (and a Move ``attack`` other than ``assault``/``engage``,
+    WORLD_SPEC §4.8) are rejected as 422 at the wire, as is a plan longer than
     `MAX_PLAN_ENTRIES` entries per list or a path longer than `MAX_PATH_STEPS`.
     """
 

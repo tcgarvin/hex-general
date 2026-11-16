@@ -13,6 +13,7 @@ import { Glyph } from "@/components/Glyph";
 import { UNIT_STATS } from "@/planning/rules";
 import type { GlyphName } from "@/ui-art/glyphs";
 
+import { ATTACK_HELP, ATTACK_LABEL } from "./combatPreview";
 import { DEPLOY_DISTANCE } from "./contact";
 import { RESOURCES, type Building, type Economy, type Stocks } from "./economy";
 import { GARRISON_FORCES, MANUAL_RULES as R } from "./manualRules";
@@ -334,6 +335,12 @@ function TurnPage({ view }: { view: WorldView }) {
         nobody retreats. A unit fights at full strength down to its last HP.
       </P>
       <P>
+        An attack is an assault or an engagement, and both strike the same. An assaulting unit that clears the hex moves
+        in and can carry on along its path. An engaging unit strikes from beside the hex and stays there: it never moves
+        in, not even when the defender falls or has already left, and it stops after any fight on the way. When several
+        of your units attack one hex, only the assaulting ones can take it.
+      </P>
+      <P>
         Every unit controls the six hexes around it. A unit that starts a pulse next to an enemy is engaged: it can attack
         that enemy, stay, or step back to a hex no enemy controls, but not slide along the enemy line.
       </P>
@@ -425,7 +432,7 @@ function OrdersPage() {
       </P>
       <P>
         On a phone: tap a unit to select it, press Move on its dock, then tap where it should go: a lit hex is a Move this
-        turn (a red one an attack), anywhere further a Travel. Guns shell the same way with Barrage. Without Move or
+        turn (a red one an attack, which engages unless you switch it to Assault on the dock), anywhere further a Travel. Guns shell the same way with Barrage. Without Move or
         Barrage pressed, a tap never gives an order: it selects your unit there or shows what is on the hex, so you can
         look around first.
       </P>
@@ -446,6 +453,10 @@ function OrdersPage() {
           [
             "Attack",
             "There is no attack order: infantry and armor attack by moving into an enemy's hex. Several units moving into the same hex all strike. In Move mode, hovering an enemy you can reach shows the expected damage both ways and the defender's bonuses (ground, Hold, disorder, the 1 to 5 limits); the unit panel repeats it once ordered. Another player's unit or a militia unit may or may not Hold, so both numbers are shown.",
+          ],
+          [
+            "Assault or Engage",
+            `A Move onto an enemy's hex starts as an engagement; switch it on the unit panel (or the phone's dock). ${ATTACK_LABEL.engage}: ${ATTACK_HELP.engage} ${ATTACK_LABEL.assault}: ${ATTACK_HELP.assault} Damage is the same either way. The map draws an engagement's line stopping on the hex the unit will hold, with a dashed strike at the enemy; an assault's line runs into the enemy's hex.`,
           ],
           [
             "Barrage",

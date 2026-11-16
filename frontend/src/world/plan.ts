@@ -32,11 +32,20 @@ type UnitType = components["schemas"]["UnitType"];
 type Posture = components["schemas"]["Posture"];
 export type Submission = components["schemas"]["SubmitOrdersRequest"];
 type WireOrder = NonNullable<Submission["orders"]>[number];
+/** How a Move fights for a hostile hex (WORLD_SPEC §4.8): take it, or strike from beside it. */
+export type AttackKind = components["schemas"]["AttackKind"];
+
+/** A staged Move: an exact path, and how it fights for a hostile hex it ends on. */
+export interface MoveOrder {
+  kind: "move";
+  path: Axial[];
+  attack: AttackKind;
+}
 
 /** A staged order for one unit, before projection to the wire `Order` union. */
 export type WorldOrder =
   | { kind: "travel"; destination: Axial; via: Axial[]; onArrival: Posture }
-  | { kind: "move"; path: Axial[] }
+  | MoveOrder
   | { kind: "march"; path: Axial[]; deployOnArrival: boolean }
   | { kind: "barrage"; target: Axial }
   | { kind: "rest" }
@@ -90,7 +99,7 @@ function fromWire(o: WireOrder): WorldOrder {
     case "travel":
       return { kind: "travel", destination: o.destination, via: o.via ?? [], onArrival: o.on_arrival ?? "deployed" };
     case "move":
-      return { kind: "move", path: o.path };
+      return { kind: "move", path: o.path, attack: o.attack };
     case "march":
       return { kind: "march", path: o.path, deployOnArrival: o.deploy_on_arrival ?? false };
     case "barrage":
@@ -116,7 +125,7 @@ function toWire(unitId: number, o: WorldOrder): WireOrder {
     case "travel":
       return { kind: "travel", unit_id: unitId, destination: o.destination, via: o.via, on_arrival: o.onArrival };
     case "move":
-      return { kind: "move", unit_id: unitId, path: o.path };
+      return { kind: "move", unit_id: unitId, path: o.path, attack: o.attack };
     case "march":
       return { kind: "march", unit_id: unitId, path: o.path, deploy_on_arrival: o.deployOnArrival };
     case "barrage":
@@ -166,6 +175,35 @@ export function planKey(plan: WorldPlan, slot: string): string {
 
 function byCoord(a: { coord: Axial }, b: { coord: Axial }): number {
   return a.coord.q - b.coord.q || a.coord.r - b.coord.r;
+}
+
+// --- attacks: assault or engage (WORLD_SPEC §4.8) -----------------------------------
+
+/** Whether a Move along `path` ends on a hex holding a visible hostile (`hostileHexes`): an attack. */
+export function endsOnHostile(path: readonly Axial[], hostile: ReadonlySet<string>): boolean {
+  const end = path[path.length - 1];
+  return end !== undefined && hostile.has(hexKey(end.q, end.r));
+}
+
+/**
+ * A fresh Move along `path`. Ending on a hostile hex it is an attack and engages
+ * (strikes from beside the hex, never entering) until the player flips it to
+ * assault; any other Move sends assault, the engine's default, and has no toggle.
+ */
+export function moveOrder(path: readonly Axial[], hostile: ReadonlySet<string>): MoveOrder {
+  return { kind: "move", path: [...path], attack: endsOnHostile(path, hostile) ? "engage" : "assault" };
+}
+
+/** The Assault / Engage choice a staged order offers (`null`: none, as it is no Move onto a hostile hex). */
+export function attackChoice(order: WorldOrder | undefined, hostile: ReadonlySet<string>): AttackKind | null {
+  if (order?.kind !== "move" || !endsOnHostile(order.path, hostile)) return null;
+  return order.attack;
+}
+
+/** `order` switched to `attack`; an order with no choice (`attackChoice`) comes back unchanged. */
+export function withAttack(order: WorldOrder, attack: AttackKind, hostile: ReadonlySet<string>): WorldOrder {
+  if (order.kind !== "move" || attackChoice(order, hostile) === null) return order;
+  return { ...order, attack };
 }
 
 // --- what a unit may be ordered to do -----------------------------------------------

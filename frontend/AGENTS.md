@@ -31,8 +31,8 @@ the unit, press the dock's Move key (or Barrage for guns, or a stop from More), 
 `useWorldPlan(..., auto = true)` adds `onHexTap` and `arm`; the rule is the pure
 `world/autoOrder.ts`. Unarmed, a tap never orders: it selects your unit there or inspects
 the hex (the move reach is lit only while Move is armed). With Move armed it orders as if
-none of your units stood on the hex: move within reach (an attack onto a hostile; guns
-can't attack), move toward a far hex from inside the contact zone, else travel with an
+none of your units stood on the hex: move within reach (an attack onto a hostile, which
+engages by default; guns can't attack), move toward a far hex from inside the contact zone, else travel with an
 automatic stop short of contact; an order disarms, a notice keeps Move armed, and the
 unit's own hex disarms. There is no long-press (Shift+click on desktop orders onto your
 own unit's hex). Your own units never make a hex unreachable (`planMoveReach` in `world/moveRules.ts`); a Move
@@ -47,6 +47,12 @@ The desktop layout works the same way: a selected unit opens in a neutral "selec
 so a plain click on empty ground deselects the unit and selects the hex, and a click only
 orders after Travel, Move or Barrage is chosen (panel chip or T / M / B). The pick is one
 shot: an order goes back to select, a notice keeps it (`world/clickOrder.ts`).
+
+Attacks (WORLD_SPEC §4.8): a Move whose path ends on a visible hostile hex is staged as an
+Engage (`moveOrder` in `world/plan.ts`); the desktop unit panel and the phone dock show an
+Assault / Engage toggle (`AttackToggle` in `world/parts.tsx`, `setAttack` on the planning
+hook). Any other Move sends assault, the engine default. The plan draws an engagement's line
+stopping beside the target with a dashed strike (`drawEngageStrike` in `WorldRenderer.ts`).
 
 ## Env vars
 

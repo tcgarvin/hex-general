@@ -34,6 +34,7 @@ export function overlayOf(
       selected: r.unitId === selectedId,
       highlighted: r.unitId === highlightUnit,
       attack: r.attack,
+      engage: r.engage,
       waypoints: r.waypoints,
       halt: r.halt,
       unscouted: r.fog.unscouted,

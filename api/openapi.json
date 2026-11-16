@@ -191,6 +191,15 @@
         "title": "ArmySize",
         "type": "object"
       },
+      "AttackKind": {
+        "description": "How a Move order fights for a hostile hex (WORLD_SPEC \u00a74.8).\n\nDamage is the same either way; only occupation differs.",
+        "enum": [
+          "assault",
+          "engage"
+        ],
+        "title": "AttackKind",
+        "type": "string"
+      },
       "Axial": {
         "description": "An axial hex coordinate.\n\n``q`` is the column-ish axis and ``r`` the row-ish axis. Frozen so two\ncoordinates with the same values are equal and hashable.",
         "properties": {
@@ -500,6 +509,11 @@
           },
           "destroyed": {
             "title": "Destroyed",
+            "type": "boolean"
+          },
+          "engaging": {
+            "default": false,
+            "title": "Engaging",
             "type": "boolean"
           },
           "hold_bonus": {
@@ -1231,14 +1245,19 @@
           "disordered",
           "column_sheltered",
           "engaged_cannot_pack",
-          "pack_interrupted"
+          "pack_interrupted",
+          "engage_halt"
         ],
         "title": "MoveBlockedReason",
         "type": "string"
       },
       "MoveOrder": {
-        "description": "Follow an exact planned path of adjacent hexes (SPEC \u00a77.1).\n\n``path`` is the sequence of hexes to enter, in order, one per movement\npulse. Combat occurs if enemy contact happens; the unit does not reroute if\nblocked.",
+        "description": "Follow an exact planned path of adjacent hexes (SPEC \u00a77.1).\n\n``path`` is the sequence of hexes to enter, in order, one per movement\npulse. Combat occurs if enemy contact happens; the unit does not reroute if\nblocked. ``attack`` picks assault (the default: take what it wins) or engage\n(fight without entering, WORLD_SPEC \u00a74.8).",
         "properties": {
+          "attack": {
+            "$ref": "#/components/schemas/AttackKind",
+            "default": "assault"
+          },
           "kind": {
             "const": "move",
             "default": "move",
@@ -1663,7 +1682,7 @@
       },
       "SubmitOrdersRequest": {
         "additionalProperties": false,
-        "description": "Body for ``POST /worlds/{id}/orders``: a player's full plan for the turn.\n\nEvery field defaults to empty: a player may legitimately submit no orders\n(every unit holds or keeps travelling), no recruits and no base orders.\nFastAPI parses ``orders`` into the discriminated `Order` union, so unknown\norder shapes are rejected as 422 at the wire, as is a plan longer than\n`MAX_PLAN_ENTRIES` entries per list or a path longer than `MAX_PATH_STEPS`.",
+        "description": "Body for ``POST /worlds/{id}/orders``: a player's full plan for the turn.\n\nEvery field defaults to empty: a player may legitimately submit no orders\n(every unit holds or keeps travelling), no recruits and no base orders.\nFastAPI parses ``orders`` into the discriminated `Order` union, so unknown\norder shapes (and a Move ``attack`` other than ``assault``/``engage``,\nWORLD_SPEC \u00a74.8) are rejected as 422 at the wire, as is a plan longer than\n`MAX_PLAN_ENTRIES` entries per list or a path longer than `MAX_PATH_STEPS`.",
         "properties": {
           "build": {
             "anyOf": [

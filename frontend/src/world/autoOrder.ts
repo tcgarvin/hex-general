@@ -18,8 +18,9 @@
 //  6. a deployed gun tapping a visible hostile: guns can't attack (say so, use
 //     Barrage);
 //  7. a deployed unit tapping a hex in this turn's move reach: Move there (onto a
-//     hostile, an attack). The reach ignores your own units where it must
-//     (`planMoveReach`): a Move into a friend's way is staged, and the plan warns
+//     hostile, an attack that engages by default, `moveOrder`). The reach
+//     ignores your own units where it must (`planMoveReach`): a Move into a
+//     friend's way is staged, and the plan warns
 //     (`planConflicts`) until the friend is ordered out; two units ordered into
 //     each other's hex swap;
 //  8. a deployed unit that a Travel would halt where it stands (it is inside the
@@ -39,7 +40,7 @@ import { axialDistance, axialEqual, hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
 import { haltHex, stopShort } from "./contact";
-import { inBarrageRange, type WorldOrder } from "./plan";
+import { inBarrageRange, moveOrder, type WorldOrder } from "./plan";
 
 type Unit = components["schemas"]["Unit"];
 type StandingTravel = components["schemas"]["StandingTravel"];
@@ -115,7 +116,7 @@ function moveTap(input: AutoTapInput): AutoTap {
   const deployed = unit.posture === "deployed";
   if (deployed && unit.type === "artillery" && hostile.has(key)) return stayArmed(GUNS_CANNOT_ATTACK);
   const path = reach.get(key);
-  if (deployed && path !== undefined) return { kind: "order", order: { kind: "move", path: [...path] }, notice: null };
+  if (deployed && path !== undefined) return { kind: "order", order: moveOrder(path, hostile), notice: null };
   if (!input.passable) return stayArmed(NO_ROUTE);
   const route = input.route(hex);
   const halt = route === null ? null : haltHex(unit.coord, route, input.zone);
@@ -123,7 +124,7 @@ function moveTap(input: AutoTapInput): AutoTap {
   if (deployed && (input.zone.has(hexKey(unit.coord.q, unit.coord.r)) || haltsAtOnce)) {
     const toward = closerMove(unit.coord, hex, reach, hostile);
     if (toward === null) return stayArmed(NOTHING_CLOSER);
-    return { kind: "order", order: { kind: "move", path: [...toward] }, notice: TOWARD_IT };
+    return { kind: "order", order: moveOrder(toward, hostile), notice: TOWARD_IT };
   }
   if (route === null) return stayArmed(NO_ROUTE);
   if (haltsAtOnce) return stayArmed(COLUMN_IN_CONTACT);

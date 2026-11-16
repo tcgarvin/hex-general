@@ -37,8 +37,11 @@ export const DEFAULT_NAMING: Naming = { player: cap, unit: unitName };
 
 const coord = (a: Axial): string => `(${a.q},${a.r})`;
 
+/** What a surviving engager did after its fight (WORLD_SPEC §4.8): it never takes the hex. */
+export const engagedText = (name: string): string => `${name} engaged: it struck from beside the hex and stayed put.`;
+
 const MOVE_BLOCKED_REASON: Record<
-  Exclude<components["schemas"]["MoveBlockedReason"], "zoc_locked">,
+  Exclude<components["schemas"]["MoveBlockedReason"], "zoc_locked" | "engage_halt">,
   string
 > = {
   off_map: "the move would leave the map",
@@ -168,6 +171,9 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
             : `${name} took the hex.`,
         });
       }
+      for (const p of event.participants) {
+        if (p.engaging && !p.destroyed) lines.push({ indent: 1, text: engagedText(nameOfP(p)) });
+      }
       return lines;
     }
 
@@ -281,6 +287,12 @@ export function eventLines(event: ReplayEvent, nameOf: NameOf, naming: Naming = 
           { indent: 0, text: `${who} began the pulse in enemy ZOC.` },
           { indent: 1, text: `Its move to ${coord(event.target)} would enter another enemy-controlled hex.` },
           { indent: 1, text: `That move is illegal — ${who} held position.` },
+        ];
+      }
+      if (event.reason === "engage_halt") {
+        // An engaging unit never enters its target hex (WORLD_SPEC §4.8).
+        return [
+          { indent: 0, text: `${who} stopped beside ${coord(event.target)}: it was ordered to engage, and no enemy held it.` },
         ];
       }
       return [

@@ -120,7 +120,8 @@ export function HoverInfo({
     if (hover === null || unit === null) return null;
     const key = hexKey(hover.hex.q, hover.hex.r);
     if (planning.mode === "move" && planning.moveReach.has(key) && planning.hostile.has(key)) {
-      return attackPreview(unit, hover.hex, map, view.state, view.your_slot, designate);
+      // A fresh attack engages until the player flips it (`moveOrder`).
+      return attackPreview(unit, hover.hex, "engage", map, view.state, view.your_slot, designate);
     }
     if (planning.mode === "barrage") {
       const d = axialDistance(unit.coord, hover.hex);

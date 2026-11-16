@@ -548,6 +548,11 @@ Players may recruit units if they have muster and are below the unit cap.
 
 ## 12. Combat Events
 
+> **World games split attacks into assault and engage** (WORLD_SPEC §4.8, 2026-11-15). The
+> rules below describe the **assault**, the engine default. An **engaging** Move deals and
+> takes the same damage but never enters its final path hex, is never a lead entrant
+> (§12.6 picks the lead from assaulting attackers only), and stops after any fight.
+
 ### 12.1 When Combat Occurs
 
 Combat occurs when opposing units contest a hex or edge during execution.
