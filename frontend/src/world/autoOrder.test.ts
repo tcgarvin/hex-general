@@ -142,7 +142,7 @@ describe("autoTap with Move armed", () => {
   });
 
   it("moves a deployed unit inside the contact zone toward a far hex instead of travelling", () => {
-    const zone = contactZone([{ q: 2, r: 2 }]);
+    const zone = contactZone([{ q: 2, r: 2 }], 3);
     const near = [{ q: 1, r: 0 }];
     const nearer = [{ q: 1, r: 0 }, { q: 2, r: 0 }];
     const result = autoTap(input({ hex: { q: 8, r: 0 }, zone, reach: reachOf(near, nearer) }));
@@ -150,7 +150,7 @@ describe("autoTap with Move armed", () => {
   });
 
   it("does not move toward a hostile hex, and says so when nothing gets closer, staying armed", () => {
-    const zone = contactZone([{ q: 0, r: 2 }]);
+    const zone = contactZone([{ q: 0, r: 2 }], 3);
     const ahead = [{ q: 1, r: 0 }];
     const back = [{ q: -1, r: 0 }];
     const result = autoTap(input({ hex: { q: 8, r: 0 }, zone, reach: reachOf(ahead, back), hostile: new Set([hexKey(1, 0)]) }));
@@ -159,7 +159,7 @@ describe("autoTap with Move armed", () => {
 
   it("treats a deployed unit whose first travel step enters the zone like one inside it", () => {
     // Contact source 4 hexes ahead: the origin is outside the zone, (1,0) is inside.
-    const zone = contactZone([{ q: 4, r: 0 }]);
+    const zone = contactZone([{ q: 4, r: 0 }], 3);
     const step = [{ q: -1, r: 1 }];
     const result = autoTap(input({ hex: { q: 8, r: 0 }, zone, reach: reachOf(step) }));
     expect(result).toEqual({ kind: "notice", text: NOTHING_CLOSER, armed: "move" });
@@ -181,7 +181,7 @@ describe("autoTap with Move armed", () => {
 
   it("stops a travel one hex short of known contact, deployed", () => {
     // Contact at (9,0): the zone starts at (6,0), so the column stops at (5,0).
-    const zone = contactZone([{ q: 9, r: 0 }]);
+    const zone = contactZone([{ q: 9, r: 0 }], 3);
     const result = autoTap(input({ unit: unit({ posture: "column" }), hex: { q: 8, r: 0 }, zone }));
     expect(result).toEqual({
       kind: "order",
@@ -191,7 +191,7 @@ describe("autoTap with Move armed", () => {
   });
 
   it("gives a column that would halt where it stands no order, staying armed", () => {
-    const zone = contactZone([{ q: 2, r: 0 }]);
+    const zone = contactZone([{ q: 2, r: 0 }], 3);
     expect(autoTap(input({ unit: unit({ posture: "column" }), zone }))).toEqual({
       kind: "notice",
       text: COLUMN_IN_CONTACT,

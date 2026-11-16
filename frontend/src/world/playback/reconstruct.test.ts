@@ -13,7 +13,7 @@ const view = (u: Pick<PlaybackUnit, "id" | "coord" | "hp" | "posture">) => ({ id
 const byId = (a: { id: number }, b: { id: number }) => a.id - b.id;
 
 // b001's armor before the turn-16 shelling (two hits of 1 land on it).
-const HP_BEFORE_SHELLING = 4;
+const HP_BEFORE_SHELLING = 7;
 
 describe("reconstruction on recorded turns", () => {
   for (const c of FIXTURE_CASES) {
@@ -124,70 +124,70 @@ describe("reconstruction on recorded turns", () => {
   });
 
   it("lands a barrage from a gun the viewer cannot see", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 16 && x.viewer === "b001")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 19 && x.viewer === "b001")!;
     const pb = casePlayback(c);
     const k = pb.beats.findIndex((b) => b.phase === "barrage" && b.actions.some((a) => a.kind === "barrage" && a.gunId === null));
     const unseen = pb.beats[k].actions.find((a) => a.kind === "barrage" && a.gunId === null)!;
-    expect(unseen).toMatchObject({ from: null, target: { q: 21, r: 17 }, strikes: [{ unitId: 7, owner: "b001", hpAfter: 2 }] });
-    expect(pb.snapshots[k].get(7)!.hp).toBe(HP_BEFORE_SHELLING);
-    expect(pb.snapshots[k + 1].get(7)!.hp).toBe(2);
+    expect(unseen).toMatchObject({ from: null, target: { q: 32, r: 21 }, strikes: [{ unitId: 72, owner: "b001", hpAfter: 6 }] });
+    expect(pb.snapshots[k].get(72)!.hp).toBe(HP_BEFORE_SHELLING);
+    expect(pb.snapshots[k + 1].get(72)!.hp).toBe(6);
   });
 
   it("draws another player's recruit, served without its cost", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 107 && x.viewer === "b002")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 44 && x.viewer === "b003")!;
     const pb = casePlayback(c);
-    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 121));
+    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 100));
     expect(pb.beats[k].phase).toBe("recruit");
-    expect(pb.snapshots[k].has(121)).toBe(false);
-    expect(pb.snapshots[k + 1].get(121)).toMatchObject({ owner: "b001", type: "artillery", coord: { q: 28, r: 3 }, post: null });
+    expect(pb.snapshots[k].has(100)).toBe(false);
+    expect(pb.snapshots[k + 1].get(100)).toMatchObject({ owner: "b002", type: "artillery", coord: { q: 28, r: 3 }, post: null });
   });
 
   it("musters a militia unit back at its starting HP in the last beat", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 97 && x.viewer === "b001")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 67 && x.viewer === "b001")!;
     const pb = casePlayback(c);
-    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 119));
+    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "recruit" && a.unitId === 108));
     expect(k).toBe(pb.beats.length - 1);
     expect(pb.beats[k].phase).toBe("muster");
-    expect(pb.snapshots[k].has(119)).toBe(false);
-    expect(pb.snapshots[k + 1].get(119)).toMatchObject({
+    expect(pb.snapshots[k].has(108)).toBe(false);
+    expect(pb.snapshots[k + 1].get(108)).toMatchObject({
       owner: "neutral",
       type: "artillery",
-      coord: { q: 47, r: 17 },
+      coord: { q: 1, r: 39 },
       hp: 10,
-      post: { q: 47, r: 16 },
+      post: { q: 2, r: 39 },
     });
   });
 
   it("heals a militia unit in the repair beat", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 97 && x.viewer === "b001")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 67 && x.viewer === "b001")!;
     const pb = casePlayback(c);
     const k = pb.beats.findIndex((b) => b.phase === "repair");
-    expect(pb.beats[k].actions).toContainEqual(expect.objectContaining({ kind: "repair", unitId: 23, hpBefore: 3, hpAfter: 4 }));
-    expect(pb.snapshots[k].get(23)!.hp).toBe(3);
-    expect(pb.snapshots[k + 1].get(23)).toMatchObject({ hp: 4, post: { q: 47, r: 16 } });
+    expect(pb.beats[k].actions).toContainEqual(expect.objectContaining({ kind: "repair", unitId: 19, hpBefore: 2, hpAfter: 3 }));
+    expect(pb.snapshots[k].get(19)!.hp).toBe(2);
+    expect(pb.snapshots[k + 1].get(19)).toMatchObject({ hp: 3, post: { q: 2, r: 39 } });
   });
 
   it("resolves barrage guns and recruits from the board", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 11 && x.viewer === "b001")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 19 && x.viewer === "b001")!;
     const pb = casePlayback(c);
     const barrage = pb.beats.flatMap((b) => b.actions).find((a) => a.kind === "barrage")!;
     expect(barrage.kind === "barrage" && barrage.from).toEqual(c.before!.units.find((u) => u.id === 8)!.coord);
-    const combat = pb.beats.flatMap((b) => b.actions).find((a) => a.kind === "combat")!;
-    expect(combat.kind === "combat" && combat.entrantTo).toEqual({ q: 38, r: 20 });
-    expect(pb.control[0].get(hexKey(38, 20))).toBe(null);
-    expect(pb.control.at(-1)!.get(hexKey(38, 20))).toBe("b001");
+    const combat = pb.beats.flatMap((b) => b.actions).find((a) => a.kind === "combat" && a.entrantTo !== null)!;
+    expect(combat.kind === "combat" && combat.entrantTo).toEqual({ q: 32, r: 20 });
+    expect(pb.control[0].get(hexKey(32, 20))).toBe(null);
+    expect(pb.control.at(-1)!.get(hexKey(32, 20))).toBe("b001");
   });
 
   it("draws every site's owner as of the played turn, not just the ones that change", () => {
-    const c = FIXTURE_CASES.find((x) => x.turn === 11 && x.viewer === "b001")!;
+    const c = FIXTURE_CASES.find((x) => x.turn === 19 && x.viewer === "b001")!;
     const pb = casePlayback(c);
     const end = new Map(c.replay.state_after.settlements.map((s) => [hexKey(s.coord.q, s.coord.r), s.controlled_by ?? null]));
     // The end boundary is exactly the turn's own end state, whatever the live board holds now.
     expect(new Map(pb.control.at(-1)!)).toEqual(end);
     // The start differs only where a site changed hands during the turn: the
-    // viewer's capture, and an oil field b000 took out of the viewer's sight.
+    // viewer's capture.
     const changed = [...end].filter(([key, owner]) => pb.control[0].get(key) !== owner).map(([key]) => key);
-    expect(changed).toEqual([hexKey(26, -9), hexKey(38, 20)]);
+    expect(changed).toEqual([hexKey(32, 20)]);
     expect(pb.control[0].size).toBe(end.size);
   });
 });

@@ -65,7 +65,7 @@ describe("unitReadout", () => {
     expect(unitReadout(input({ armed: "move", unit: unit({ type: "artillery" }) })).lines[0].text).toBe(
       "Tap where it should go: a lit hex this turn, anywhere further to travel there.",
     );
-    expect(unitReadout(input({ armed: "move", zone: contactZone([{ q: 1, r: 0 }]) })).lines[0].text).toBe(
+    expect(unitReadout(input({ armed: "move", zone: contactZone([{ q: 1, r: 0 }], 3) })).lines[0].text).toBe(
       "Tap a lit hex to move there (red: attack). Close to contact, it moves a step at a time.",
     );
     expect(unitReadout(input({ armed: "move", unit: unit({ posture: "column" }) })).lines[0].text).toBe("Tap where it should travel to.");
@@ -78,7 +78,7 @@ describe("unitReadout", () => {
   });
 
   it("names a travel's destination and arrival, and the stop short of contact", () => {
-    const zone = contactZone([{ q: 9, r: 0 }]);
+    const zone = contactZone([{ q: 9, r: 0 }], 3);
     const order = { kind: "travel" as const, destination: { q: 5, r: 0 }, via: [], onArrival: "deployed" as const };
     const read = unitReadout(input({ order, route: route({ eta: 3 }), zone }));
     expect(read.title).toBe("Travel to (5,0) · arrives in 3 turns");
@@ -120,7 +120,7 @@ describe("helpers", () => {
   });
 
   it("finds the edge of the contact zone", () => {
-    const zone = contactZone([{ q: 9, r: 0 }]);
+    const zone = contactZone([{ q: 9, r: 0 }], 3);
     expect(edgeOfContact({ q: 5, r: 0 }, zone)).toBe(true);
     expect(edgeOfContact({ q: 2, r: 0 }, zone)).toBe(false);
     expect(edgeOfContact({ q: 7, r: 0 }, zone)).toBe(false);

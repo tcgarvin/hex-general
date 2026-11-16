@@ -12,8 +12,14 @@ import type { WorldMap } from "./worldMap";
 type WorldState = components["schemas"]["WorldState"];
 type Unit = components["schemas"]["Unit"];
 
-/** `ColumnRules.deploy_distance` in `api/app/engine/stats.py`. */
-export const DEPLOY_DISTANCE = 3;
+/**
+ * `ColumnRules.deploy_distance` in `api/app/engine/stats.py`: a column deploys when
+ * a hostile unit is this close, so it halts with one empty hex before the enemy.
+ */
+export const DEPLOY_DISTANCE = 2;
+
+/** The engine refuses a column's step into any hex this close to a hostile unit. */
+export const STEP_REFUSAL_RADIUS = DEPLOY_DISTANCE - 1;
 
 /**
  * The lowest militia tier with more than one unit (WORLD_SPEC §7: tier 3 is an
@@ -41,7 +47,7 @@ export function contactSources(state: WorldState, map: WorldMap, viewer: string)
 }
 
 /** Every hex within `radius` of a source, so a route can be checked hex by hex. */
-export function contactZone(sources: readonly Axial[], radius = DEPLOY_DISTANCE): Set<string> {
+export function contactZone(sources: readonly Axial[], radius = STEP_REFUSAL_RADIUS): Set<string> {
   const zone = new Set<string>();
   for (const c of sources) {
     for (let dq = -radius; dq <= radius; dq++) {
@@ -84,7 +90,11 @@ export function haltText(halt: Axial, origin: Axial): string {
  * once, disordered (the unit panel warns when one is staged).
  */
 export function packsIntoContact(unit: Pick<Unit, "coord" | "posture">, zone: ReadonlySet<string>): boolean {
-  return unit.posture === "deployed" && zone.has(hexKey(unit.coord.q, unit.coord.r));
+  // The zone is the step-refusal radius; a unit within the deploy distance stands in it or beside it.
+  return (
+    unit.posture === "deployed" &&
+    [unit.coord, ...axialNeighbors(unit.coord)].some((a) => zone.has(hexKey(a.q, a.r)))
+  );
 }
 
 /**

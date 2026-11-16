@@ -73,7 +73,7 @@ Hold / Rest, deployed movement rates (infantry 2, armor 4, artillery 1).
 | Attack | Cannot attack |
 | Defense | Defense −3, no terrain or Hold bonus [tunable] |
 | Capture | Cannot capture |
-| Vision | As deployed (every unit type sees 4 hexes since 2026-11-11, one past the deploy distance, so a column halted on contact sees what stopped it) |
+| Vision | As deployed (every unit type sees 4 hexes since 2026-11-11, past the deploy distance, so a column halted on contact sees what stopped it) |
 | Repair | Rests like a deployed unit (+2 in a friendly settlement, so garrisons stack and heal) |
 
 ### 4.3 Turn pulses
@@ -99,10 +99,11 @@ Barrage still resolves before pulse 1.
   **Deploy** order. The unit deploys clean at the end of the turn in which it stops.
 - **Auto-deploy on contact:** at the start of each pulse, a column halts and
   deploys if any of these hold:
-  1. its next step would come within **X = 3** hexes of a hostile unit [tunable]. Distance
-     uses true positions, not the owner's fog view, so a column can blunder into an enemy
-     hidden in woods. The sizing study measured each extra hex of X at ~1.5 points of front
-     share; 3 leaves a hex of buffer outside hostile ZOC;
+  1. its next step would come within **X − 1** hexes of a hostile unit, that is, next to
+     it; with **X = 2** [tunable; 3 until 2026-11-15] a marching column therefore halts
+     with one empty hex between it and the enemy. Distance uses true positions, not the
+     owner's fog view, so a column can blunder into an enemy hidden in woods. The sizing
+     study measured each extra hex of X at ~1.5 points of front share (it was run at 3);
   2. a hostile unit comes within X of it (it was approached);
   3. it was attacked or barraged this turn (it deploys after that combat, if it survives).
 
@@ -122,7 +123,8 @@ Barrage still resolves before pulse 1.
   terrain/Hold bonus (less any disorder), and each column at −3 defense with no
   terrain or Hold bonus. Shelling a stacked road is brutal. Packed survivors deploy,
   disordered, before the first pulse.
-- **Melee:** because X ≥ 1 and contact is checked at the start of every pulse, a
+- **Melee:** because X ≥ 2 and contact is checked at the start of every pulse (and a
+  marching column never steps next to a hostile unit), a
   column is never adjacent to a hostile unit when attacks are declared; it has
   already deployed (disordered). Melee therefore always meets a deployed defender,
   and the disorder penalty is the ambush cost. The one exception is a column stuck

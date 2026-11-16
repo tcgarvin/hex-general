@@ -829,8 +829,9 @@ def _march_pulse(ctx: _PulseState) -> None:
 
     Each column gains one credit per pulse from ``ready_from``; a step costs the
     target's price (road or off-road). A step that would enter a hostile hex or
-    come within the deploy distance of a hostile unit halts the column, which
-    deploys disordered. A full friendly stack makes the column wait (it keeps its
+    come within one hex less than the deploy distance of a hostile unit halts the
+    column, which deploys disordered (a column that ends the step at the deploy
+    distance deploys at the start of the next pulse). A full friendly stack makes the column wait (it keeps its
     order). Columns are processed in id order.
     """
     for marcher in sorted(ctx.marchers.values(), key=lambda m: m.unit_id):
@@ -856,7 +857,7 @@ def _march_pulse(ctx: _PulseState) -> None:
         marcher.credit = min(marcher.credit + 1, cost)
         if marcher.credit < cost:
             continue
-        if _hostile_within(ctx, target, unit.owner, COLUMN_RULES.deploy_distance):
+        if _hostile_within(ctx, target, unit.owner, COLUMN_RULES.deploy_distance - 1):
             _deploy(ctx, unit.id, DeployCause.CONTACT, disordered=True)
             continue
         if len(ctx.columns.get(target, [])) >= COLUMN_RULES.stack_cap:

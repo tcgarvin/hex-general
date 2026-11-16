@@ -87,7 +87,7 @@ _HELD_GUESS_BASE = 20
 # Beyond this many hexes an objective is reached by Travel, not by Move.
 _TRAVEL_MIN = 6
 # Within this many hexes of a visible player unit a unit fights tactically.
-# Columns this close deploy on purpose (the engine auto-deploys them at 3,
+# Columns this close deploy on purpose (the engine auto-deploys them at 2,
 # disordered).
 _CONTACT_RADIUS = 6
 # A unit this worn drops out to rest; on settlement ground it rests until it is

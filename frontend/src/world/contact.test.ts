@@ -73,7 +73,7 @@ describe("contactSources", () => {
       sites: [{ coord: { q: 4, r: 2 }, kind: "steel_mill", garrison: 3, level: 1 }],
     });
     const state = { units: [], settlements: [{ coord: { q: 4, r: 2 }, controlled_by: null }] } as unknown as WorldState;
-    const zone = contactZone(contactSources(state, wide, "me"));
+    const zone = contactZone(contactSources(state, wide, "me"), 3);
     // Four from the site, three from the gun that may stand beside it.
     expect(zone.has(hexKey(4, 6))).toBe(true);
     expect(zone.has(hexKey(4, 7))).toBe(false);

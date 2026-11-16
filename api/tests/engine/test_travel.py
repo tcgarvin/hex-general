@@ -130,7 +130,7 @@ def test_contact_halts_travel_and_ends_the_order() -> None:
     state, log = run(state, [order, hold(2)], 3)
 
     blue = unit(state, 1)
-    assert blue.coord == ax(36, 0)  # stopped 4 hexes short: the next step is in X
+    assert blue.coord == ax(38, 0)  # stopped 2 hexes short: the next step is adjacent
     assert blue.posture is Posture.DEPLOYED
     assert state.standing_orders == []
     halts = [e for events in log for e in ended(events)]

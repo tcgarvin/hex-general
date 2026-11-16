@@ -511,8 +511,8 @@ function ColumnsPage() {
       />
       <H>Contact</H>
       <P>
-        A column halts and deploys when its next step would bring it within <N>{DEPLOY_DISTANCE}</N> hexes of a hostile
-        unit (even one hidden in woods), when an enemy comes within <N>{DEPLOY_DISTANCE}</N> of it, or when it is attacked
+        A column halts and deploys when its next step would bring it next to a hostile unit (even one hidden in
+        woods), so it stops <N>{DEPLOY_DISTANCE}</N> hexes off with one empty hex between, when an enemy comes within <N>{DEPLOY_DISTANCE}</N> of it, or when it is attacked
         or shelled. Militia count.
       </P>
       <P>

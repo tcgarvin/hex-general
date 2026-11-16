@@ -188,7 +188,9 @@ class ColumnRules(BaseModel):
     (a step onto a road hex costs ``road_step_pulses``, any other step
     ``offroad_step_pulses``), stacks with friendly columns up to ``stack_cap`` per
     hex, exerts no ZOC, cannot attack, and halts and deploys when a hostile unit
-    is within ``deploy_distance`` hexes. Games with no columns never consult these.
+    is within ``deploy_distance`` hexes (a marching column stops on the last hex
+    before one adjacent to a hostile unit, so with the default 2 one empty hex
+    stays between it and the enemy). Games with no columns never consult these.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -198,9 +200,13 @@ class ColumnRules(BaseModel):
     road_step_pulses: int = Field(default=1, gt=0)
     offroad_step_pulses: int = Field(default=2, gt=0)
     stack_cap: int = Field(default=6, gt=0)
-    # Must be >= 1: a column never ends a pulse adjacent to a hostile unit, which
-    # is what keeps columns out of melee (WORLD_SPEC §4.6).
-    deploy_distance: int = Field(default=3, ge=1)
+    # Invariant (WORLD_SPEC §4.6): a column never ends a pulse adjacent to a hostile
+    # unit, which keeps columns out of melee. A marching column refuses any step
+    # within ``deploy_distance - 1`` of a hostile unit, and any column within
+    # ``deploy_distance`` deploys at the start of the next pulse, so a hostile
+    # unit closing one hex a pulse is met at ``deploy_distance`` and never gets
+    # adjacent first. Hence >= 2.
+    deploy_distance: int = Field(default=2, ge=2)
     spill_radius: int = Field(default=2, ge=0)
     column_defense_penalty: int = Field(default=3, ge=0)
     disorder_defense_penalty: int = Field(default=2, ge=0)

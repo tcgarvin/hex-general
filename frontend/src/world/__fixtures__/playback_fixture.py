@@ -61,22 +61,23 @@ CASES: list[tuple[str, int]] = [
     # Garrisons destroyed, entrants taking the hexes, captures, own recruits.
     ("b002", 3),
     ("b002", 9),
-    # Columns stopped by contact; turn 11 also has the viewer's own barrage,
-    # a fight won and the capture it brings (the case the scenario tests use).
-    ("b001", 10),
-    ("b001", 11),
+    # Columns stopped by contact, and an enemy dropping out of sight.
+    ("b000", 14),
+    ("b002", 12),
+    # The viewer's own barrage, a fight won and the capture it brings (the case
+    # the scenario tests use).
+    ("b001", 19),
     # Enemies coming into sight mid-turn and dropping out of it, and barrages
     # by guns the viewer cannot see.
     ("b003", 15),
     ("b003", 16),
-    ("b001", 16),
     ("b000", 20),
     ("b003", 20),
     # Another player's recruit, seen without its cost.
-    ("b002", 107),
+    ("b003", 44),
     # Militia (WORLD_SPEC §7.1): a militia gun's barrage, militia healing and a
     # lost militia unit mustering back at its site.
-    ("b001", 97),
+    ("b001", 67),
 ]
 TURNS = max(turn for _, turn in CASES) + 1
 REQUIRED = {
