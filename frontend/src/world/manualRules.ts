@@ -30,6 +30,8 @@ export const MANUAL_RULES = {
    * `SETTLEMENT_DEFENSE_BONUS`, which a founded site's hex also gives). */
   terrainDefense: { plains: 0, woods: 2, hills: 1, town: 2, city: 2, bridge: 0 },
   settlementDefense: 2,
+  /** `AttackKind` in api/app/engine/models.py: the kinds of attack a Move makes (WORLD_SPEC §4.8). */
+  attackKinds: ["assault", "engage"],
   /** `TICK_HOURS` / `TICK_ZONE` in api/app/world/clock.py: a "twice_daily" world's turns. */
   tickTimes: "01:00 and 13:00 New York time",
 } as const;

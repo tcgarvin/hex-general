@@ -14,7 +14,7 @@
 import { axialDistance, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 import type { ReplayEvent } from "@/lib/api/types";
-import { eventLines, type NameOf, type Naming } from "@/replay/eventText";
+import { engagedText, eventLines, type NameOf, type Naming } from "@/replay/eventText";
 
 import { NEUTRAL_OWNER } from "./colors";
 import { DEPLOY_DISTANCE, SPREAD_GARRISON_TIER } from "./contact";
@@ -400,7 +400,7 @@ function mid(name: string): string {
  * One line per fight: who fought whom where, and each side's loss and what is
  * left, e.g. "Attack at (75,4): your armor −1 → 7 HP vs militia infantry
  * (dug in +3) −1 → 4 HP." Details only for what the line can't carry (who took
- * the hex).
+ * the hex, who engaged and stayed beside it).
  */
 function fightLine(e: CombatEvent, viewer: string, book: UnitBook): { text: string; detail: string[] } {
   const name = (p: Participant) => book.naming.unit(p.owner, p.unit_type, p.unit_id);
@@ -427,6 +427,9 @@ function fightLine(e: CombatEvent, viewer: string, book: UnitBook): { text: stri
     const entrant = e.participants.find((p) => p.unit_id === e.entrant_id);
     const who = entrant !== undefined ? name(entrant) : book.nameOf(e.entrant_id);
     detail.push(e.entrant_continued ? `${who} took the hex and moved on.` : `${who} took the hex.`);
+  }
+  for (const p of e.participants) {
+    if (p.engaging && !p.destroyed) detail.push(engagedText(name(p)));
   }
   return { text, detail };
 }

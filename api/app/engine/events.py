@@ -37,6 +37,9 @@ class MoveBlockedReason(StrEnum):
     COLUMN_SHELTERED = "column_sheltered"  # hostile columns hold the hex (§4.6)
     ENGAGED_CANNOT_PACK = "engaged_cannot_pack"  # began the turn in hostile ZOC (§4.4)
     PACK_INTERRUPTED = "pack_interrupted"  # attacked, or hostile came near, mid-pack
+    # WORLD_SPEC §4.8: an engaging unit never enters its final path hex; it found
+    # that hex clear of enemies (or held by a friend) and stopped beside it.
+    ENGAGE_HALT = "engage_halt"
 
 
 class UnitMoved(BaseModel):
@@ -182,6 +185,9 @@ class CombatParticipant(BaseModel):
     destroyed: bool
     # Disorder penalty to a defender's defense (WORLD_SPEC §4.5).
     defense_penalty: int = 0
+    # An attacker under an Engage order: it fought but never takes the hex
+    # (WORLD_SPEC §4.8). Always false for a defender.
+    engaging: bool = False
 
 
 class CombatResolved(BaseModel):

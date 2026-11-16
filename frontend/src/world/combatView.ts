@@ -7,15 +7,17 @@ import type { components } from "@/lib/api/schema";
 
 import { NEUTRAL_OWNER } from "./colors";
 import {
+  ATTACK_LABEL,
   attackPhrase,
   clampNote,
   forecastAttack,
   forecastBarrage,
+  occupationLine,
   type AttackForecast,
   type SeenDefender,
 } from "./combatPreview";
 import type { Designate } from "./designations";
-import type { WorldOrder } from "./plan";
+import type { AttackKind, WorldOrder } from "./plan";
 import type { WorldMap } from "./worldMap";
 
 type WorldState = components["schemas"]["WorldState"];
@@ -93,10 +95,14 @@ export function attackForecastAt(
   return { defender, forecast: forecastAttack(attacker, { ...d, hold: d.hold === "yes" ? "yes" : "maybe" }) };
 }
 
-/** The hover/panel preview of an attack. */
+/**
+ * The hover/panel preview of an attack, saying where an `attack` of that kind
+ * leaves the attacker (an engager stays beside the hex, WORLD_SPEC §4.8).
+ */
 export function attackPreview(
   attacker: Unit,
   hex: Axial,
+  attack: AttackKind,
   map: WorldMap,
   state: WorldState,
   viewer: string,
@@ -110,8 +116,9 @@ export function attackPreview(
   if (defender.posture === "column") lines.push("It is packed: it deploys, disordered, before you strike.");
   if (f.kills) lines.push(`That destroys it (${defender.hp} HP).`);
   if (f.dies) lines.push(`${unitName(attacker, viewer, designate)} would be destroyed (${attacker.hp} HP).`);
+  else lines.push(occupationLine(attack, f.kills));
   return {
-    title: `Attack ${unitName(defender, viewer, designate).replace(/^Militia/, "militia")}, ${defender.hp} HP`,
+    title: `${ATTACK_LABEL[attack]} ${unitName(defender, viewer, designate).replace(/^Militia/, "militia")}, ${defender.hp} HP`,
     lines,
     note: "If it stays put and nothing else joins: more attackers each strike, and it strikes each of them.",
   };

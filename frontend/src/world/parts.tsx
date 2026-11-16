@@ -1,13 +1,16 @@
 // Small pieces of the world screen shared by the desktop shell and the phone
-// layout: header readouts, the countdown, HP pips, costs as glyphs, report lines.
+// layout: header readouts, the countdown, HP pips, costs as glyphs, report lines,
+// the Assault / Engage switch.
 
 import { useEffect, useRef, useState } from "react";
 
 import { Glyph } from "@/components/Glyph";
 import type { GlyphName } from "@/ui-art/glyphs";
 
+import { ATTACK_HELP, ATTACK_KINDS, ATTACK_LABEL } from "./combatPreview";
 import { RESOURCES, type Stocks } from "./economy";
 import { stocksText, TONE_CLASS } from "./labels";
+import type { AttackKind } from "./plan";
 import type { TurnPlayback } from "./playback/useTurnPlayback";
 import type { Engagement } from "./playback/watchList";
 import type { ReportItem } from "./turnReport";
@@ -181,6 +184,39 @@ export function ReportLine({ item, current, onClick }: { item: ReportItem; curre
         </button>
       )}
     </li>
+  );
+}
+
+/**
+ * The Assault / Engage switch for a staged Move onto a hostile hex (WORLD_SPEC
+ * §4.8), on the desktop unit panel and the phone dock. `large`: phone-sized keys.
+ */
+export function AttackToggle({
+  value,
+  onChange,
+  large = false,
+}: {
+  value: AttackKind;
+  onChange: (attack: AttackKind) => void;
+  large?: boolean;
+}) {
+  return (
+    <div role="radiogroup" aria-label="Attack kind" className="flex gap-1">
+      {ATTACK_KINDS.map((kind) => (
+        <button
+          key={kind}
+          type="button"
+          role="radio"
+          aria-checked={value === kind}
+          data-active={value === kind}
+          title={ATTACK_HELP[kind]}
+          onClick={() => onChange(kind)}
+          className={`fhq-btn flex-1 whitespace-nowrap ${large ? "h-10 text-[13px]" : "text-xs"}`}
+        >
+          {ATTACK_LABEL[kind]}
+        </button>
+      ))}
+    </div>
   );
 }
 

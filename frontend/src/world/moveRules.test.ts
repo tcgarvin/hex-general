@@ -53,7 +53,7 @@ describe("move reach with own units", () => {
   it("lets a step land where a moving own unit has left", () => {
     const me = unit("me", "infantry", 4, 2);
     const friend = unit("me", "infantry", 4, 3);
-    const r = reach(me, [friend], { [friend.id]: { kind: "move", path: [{ q: 4, r: 4 }] } });
+    const r = reach(me, [friend], { [friend.id]: { kind: "move", path: [{ q: 4, r: 4 }], attack: "assault" } });
     expect(r.get(k(friend.coord))).toEqual([{ q: 4, r: 3 }]);
     // But not the hex that friend's move ends on.
     expect(r.has("4,4")).toBe(false);
@@ -64,7 +64,7 @@ describe("move reach with own units", () => {
     const friend = unit("me", "armor", 6, 3);
     // The friend enters (5,3) on pulse 1 and (4,3) on pulse 2.
     const orders: Record<number, WorldOrder> = {
-      [friend.id]: { kind: "move", path: [{ q: 5, r: 3 }, { q: 4, r: 3 }, { q: 3, r: 3 }] },
+      [friend.id]: { kind: "move", path: [{ q: 5, r: 3 }, { q: 4, r: 3 }, { q: 3, r: 3 }], attack: "assault" },
     };
     const r = reach(me, [friend], orders);
     // (4,3) on pulse 1 is fine: the friend gets there on pulse 2 and passes on.
@@ -108,7 +108,7 @@ describe("move reach with hostile units", () => {
     const first = unit("me", "infantry", 4, 2);
     const second = unit("me", "armor", 6, 2);
     const orders: Record<number, WorldOrder> = {
-      [first.id]: { kind: "move", path: [{ q: 4, r: 3 }, { q: 4, r: 4 }] },
+      [first.id]: { kind: "move", path: [{ q: 4, r: 3 }, { q: 4, r: 4 }], attack: "assault" },
     };
     expect(reach(second, [first, enemy], orders).has(k(enemy.coord))).toBe(true);
   });
@@ -117,7 +117,7 @@ describe("move reach with hostile units", () => {
     const enemy = unit("neutral", "infantry", 4, 5);
     const attacker = unit("me", "infantry", 4, 3);
     const orders: Record<number, WorldOrder> = {
-      [attacker.id]: { kind: "move", path: [{ q: 4, r: 4 }, { q: 4, r: 5 }] },
+      [attacker.id]: { kind: "move", path: [{ q: 4, r: 4 }, { q: 4, r: 5 }], attack: "assault" },
     };
     // Armor going by (4,4) would get there on pulse 3, after the attacker took it on pulse 1.
     const armor = unit("me", "armor", 5, 1);
@@ -131,7 +131,7 @@ describe("move reach with hostile units", () => {
   it("treats a unit attacking from where it stands as staying put", () => {
     const enemy = unit("neutral", "infantry", 4, 4);
     const attacker = unit("me", "infantry", 4, 3);
-    const orders: Record<number, WorldOrder> = { [attacker.id]: { kind: "move", path: [{ q: 4, r: 4 }] } };
+    const orders: Record<number, WorldOrder> = { [attacker.id]: { kind: "move", path: [{ q: 4, r: 4 }], attack: "assault" } };
     expect(reach(unit("me", "infantry", 4, 2), [attacker, enemy], orders).has(k(attacker.coord))).toBe(false);
   });
 
@@ -179,7 +179,7 @@ describe("withdrawal warning", () => {
   const enemy = unit("s2", "infantry", 5, 4); // adjacent (east)
   // A militia picket beside me whose site is two hexes east: I stand outside its zone.
   const militiaBeside = unit("neutral", "infantry", 5, 4, { post: { q: 6, r: 4 } });
-  const away: WorldOrder = { kind: "move", path: [{ q: 3, r: 4 }] };
+  const away: WorldOrder = { kind: "move", path: [{ q: 3, r: 4 }], attack: "assault" };
   const warn = (order: WorldOrder | undefined, others: Unit[]) =>
     withdrawalWarning(me, order, [me, ...others], "me", hostileHexes([me, ...others], "me"));
 
@@ -188,7 +188,7 @@ describe("withdrawal warning", () => {
   });
 
   it("does not warn an attack, a unit with no enemy beside it, or one beside militia whose zone it is outside", () => {
-    expect(warn({ kind: "move", path: [enemy.coord] }, [enemy])).toBeNull();
+    expect(warn({ kind: "move", path: [enemy.coord], attack: "assault" }, [enemy])).toBeNull();
     expect(warn(away, [unit("s2", "infantry", 7, 4)])).toBeNull();
     expect(warn(away, [militiaBeside])).toBeNull(); // militia strike only inside their zone
     expect(warn(undefined, [enemy])).toBeNull();
@@ -255,7 +255,7 @@ describe("move reach ignoring your own units where it must", () => {
 describe("plan conflicts", () => {
   const conflicts = (units: Unit[], orders: Record<number, WorldOrder>, standing: MoveContext["standing"] = []) =>
     planConflicts({ units, viewer: "me", orders, standing });
-  const move = (...path: [number, number][]): WorldOrder => ({ kind: "move", path: path.map(([q, r]) => ({ q, r })) });
+  const move = (...path: [number, number][]): WorldOrder => ({ kind: "move", path: path.map(([q, r]) => ({ q, r })), attack: "assault" });
   const name = (u: Unit) => `Unit ${u.id}`;
 
   it("blocks a Move into a friend that stays put, and clears once the friend is ordered out", () => {

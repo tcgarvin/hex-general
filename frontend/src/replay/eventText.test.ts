@@ -141,6 +141,41 @@ describe("eventLines", () => {
     ]);
   });
 
+  it("says a surviving engager stayed beside the hex it cleared", () => {
+    const side = { terrain_bonus: 0, hold_bonus: 0 };
+    expect(
+      linesFor({
+        kind: "combat_resolved",
+        coord: { q: 3, r: 3 },
+        pulse: 1,
+        entrant_id: null,
+        participants: [
+          { ...side, unit_id: 1, owner: "blue", unit_type: "armor", role: "attacker", damage_dealt: 2, damage_taken: 1, destroyed: false, hp_after: 9, engaging: true },
+          { ...side, unit_id: 2, owner: "red", unit_type: "infantry", role: "defender", damage_dealt: 1, damage_taken: 2, destroyed: true, hp_after: 0, engaging: false },
+        ],
+      }),
+    ).toEqual([
+      "Blue Armor attacked Red Infantry at (3,3).",
+      "Blue Armor dealt 2 damage.",
+      "Red Infantry dealt 1 damage.",
+      "Red Infantry was destroyed.",
+      "Blue Armor engaged: it struck from beside the hex and stayed put.",
+    ]);
+  });
+
+  it("explains an engager that found its target hex empty", () => {
+    expect(
+      linesFor({
+        kind: "move_blocked",
+        unit_id: 1,
+        origin: { q: 0, r: 0 },
+        target: { q: 1, r: 0 },
+        reason: "engage_halt",
+        pulse: 3,
+      }),
+    ).toEqual(["Blue Armor stopped beside (1,0): it was ordered to engage, and no enemy held it."]);
+  });
+
   it("renders the ZOC-lock move_blocked case across three lines", () => {
     expect(
       linesFor({

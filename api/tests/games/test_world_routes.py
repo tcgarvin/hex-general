@@ -258,6 +258,19 @@ def test_an_illegal_order_is_a_422(client: TestClient) -> None:
     assert "unknown unit" in response.json()["detail"]
 
 
+def test_an_unknown_attack_kind_is_a_422(client: TestClient) -> None:
+    game_id = _create(client)
+    _join(client, game_id)
+    order = {"kind": "move", "unit_id": 1, "path": [{"q": 0, "r": 0}]}
+    response = client.post(
+        f"/worlds/{game_id}/orders",
+        json={"orders": [{**order, "attack": "charge"}]},
+        headers=_as(PLAYER),
+    )
+    assert response.status_code == 422
+    assert "'assault' or 'engage'" in response.text
+
+
 @pytest.mark.parametrize(
     ("field", "entry"),
     [

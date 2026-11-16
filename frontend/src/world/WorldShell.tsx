@@ -49,7 +49,7 @@ import {
   unitTag,
 } from "./labels";
 import { isMilitia, militiaName, startingHp } from "./militia";
-import { Countdown, HpPips, PlayButton, ReportLine, Stat, StocksGlyphs, type ReportPlay } from "./parts";
+import { AttackToggle, Countdown, HpPips, PlayButton, ReportLine, Stat, StocksGlyphs, type ReportPlay } from "./parts";
 import { useSwaps } from "./useSwaps";
 import { attackPreview, barragePreview } from "./combatView";
 import { at, MAX_WAYPOINTS } from "./waypoints";
@@ -64,6 +64,7 @@ import { reportItemBeats } from "./playback/session";
 import { useTurnPlayback } from "./playback/useTurnPlayback";
 import { engagements } from "./playback/watchList";
 import {
+  attackChoice,
   buildOption,
   inBarrageRange,
   orderKindsFor,
@@ -818,7 +819,7 @@ const KIND_GLYPH: Partial<Record<OrderKind, GlyphName>> = { travel: "travel", de
 
 const KIND_HELP: Record<OrderKind, string> = {
   travel: "Click any hex: the unit packs into a column and marches there over as many turns as it takes.",
-  move: "Click a highlighted hex: a short move this turn, fighting as it goes.",
+  move: "Click a highlighted hex: a short move this turn, fighting as it goes. A red hex is an attack: it engages from beside the hex unless you switch it to Assault.",
   march: "",
   barrage: "Click a hex within 3: shell it this turn.",
   rest: "Stay put and repair.",
@@ -857,9 +858,10 @@ function UnitPanel({
       : null;
   const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
   // What the staged attack or barrage is expected to do, as the hover tip showed it.
+  const attack = attackChoice(order, planning.hostile);
   const expected =
     order?.kind === "move" && route?.attack
-      ? attackPreview(unit, route.attack, map, view.state, view.your_slot, designate)
+      ? attackPreview(unit, route.attack, order.attack, map, view.state, view.your_slot, designate)
       : order?.kind === "barrage"
         ? barragePreview(order.target, map, view.state, view.your_slot, visible, planning.plan.orders, designate)
         : null;
@@ -908,6 +910,11 @@ function UnitPanel({
               : "No orders: it stays put, without the Hold bonus. Choose Travel or Move, then click a hex."
             : `Ordered: ${orderText(order, route, swap, designate)}.`}
       </p>
+      {attack !== null && (
+        <div className="mt-2">
+          <AttackToggle value={attack} onChange={(kind) => planning.setAttack(unit.id, kind)} />
+        </div>
+      )}
       {expected !== null && (
         <div className="mt-1 text-xs" aria-label="Expected result">
           {expected.lines.map((line) => (

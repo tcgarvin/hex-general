@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { hexKey } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
 import { economyOf, forecast } from "./economy";
 import {
+  attackChoice,
   buildOption,
   EMPTY_PLAN,
+  endsOnHostile,
+  moveOrder,
   orderKindsFor,
   planCost,
   planFromSubmission,
@@ -13,6 +17,7 @@ import {
   recruitOptions,
   samePlan,
   toSubmission,
+  withAttack,
   type Submission,
   type WorldPlan,
 } from "./plan";
@@ -111,13 +116,52 @@ function state({
   } as WorldState;
 }
 
+describe("assault or engage", () => {
+  const enemy = at(2);
+  const hostile = new Set([hexKey(enemy.q, enemy.r)]);
+
+  it("defaults a Move onto a hostile hex to engage, and any other Move to assault", () => {
+    expect(endsOnHostile([at(1), enemy], hostile)).toBe(true);
+    expect(moveOrder([at(1), enemy], hostile)).toEqual({ kind: "move", path: [at(1), enemy], attack: "engage" });
+    expect(moveOrder([at(1)], hostile)).toEqual({ kind: "move", path: [at(1)], attack: "assault" });
+    // Passing through the hostile hex doesn't count: only where the Move ends.
+    expect(moveOrder([enemy, at(3)], hostile).attack).toBe("assault");
+  });
+
+  it("offers the toggle only on a Move that ends on a hostile hex", () => {
+    expect(attackChoice(moveOrder([enemy], hostile), hostile)).toBe("engage");
+    expect(attackChoice(moveOrder([at(1)], hostile), hostile)).toBeNull();
+    expect(attackChoice({ kind: "hold" }, hostile)).toBeNull();
+    expect(attackChoice(undefined, hostile)).toBeNull();
+  });
+
+  it("flips an attack between engage and assault, and leaves anything else alone", () => {
+    const attack = moveOrder([enemy], hostile);
+    const assault = withAttack(attack, "assault", hostile);
+    expect(assault).toEqual({ ...attack, attack: "assault" });
+    expect(withAttack(assault, "engage", hostile)).toEqual(attack);
+    const walk = moveOrder([at(1)], hostile);
+    expect(withAttack(walk, "engage", hostile)).toBe(walk);
+    expect(withAttack({ kind: "hold" }, "engage", hostile)).toEqual({ kind: "hold" });
+  });
+
+  it("sends the attack kind on the wire and reads it back", () => {
+    const plan: WorldPlan = { ...EMPTY_PLAN, orders: { 7: moveOrder([enemy], hostile) } };
+    const wire = toSubmission(plan, "p");
+    expect(wire.orders?.[0]).toEqual({ kind: "move", unit_id: 7, path: [enemy], attack: "engage" });
+    expect(planFromSubmission(wire)).toEqual(plan);
+    const flipped = { ...plan, orders: { 7: withAttack(plan.orders[7], "assault", hostile) } };
+    expect(samePlan(flipped, plan, "p")).toBe(false);
+  });
+});
+
 describe("submission round trip", () => {
   it("projects a staged plan to the wire and back", () => {
     const plan: WorldPlan = {
       orders: {
         3: { kind: "travel", destination: at(4), via: [], onArrival: "column" },
         1: { kind: "hold" },
-        2: { kind: "move", path: [at(2)] },
+        2: { kind: "move", path: [at(2)], attack: "assault" },
       },
       recruits: { a: { coord: at(1), type: "infantry" } },
       build: "barracks",

@@ -38,12 +38,27 @@ describe("combat preview text", () => {
 
   it("previews an assault on a militia unit with its site bonus and a Hold it may not take", () => {
     const me = unit(1, "me", 0, { type: "armor" });
-    const p = attackPreview(me, at(1), map, state([me, unit(5, "neutral", 1, { post: at(1) })]), "me", designate);
+    const s = state([me, unit(5, "neutral", 1, { post: at(1) })]);
+    const p = attackPreview(me, at(1), "assault", map, s, "me", designate);
     expect(p).toEqual({
-      title: "Attack militia infantry, 10 HP",
-      lines: ["You deal 1 (floor 1), take 1 (floor 1).", "Defender: +2 site, +1 if it holds."],
+      title: "Assault militia infantry, 10 HP",
+      lines: [
+        "You deal 1 (floor 1), take 1 (floor 1).",
+        "Defender: +2 site, +1 if it holds.",
+        "Assaulting: it moves in only if the defender falls.",
+      ],
       note: "If it stays put and nothing else joins: more attackers each strike, and it strikes each of them.",
     });
+  });
+
+  it("says an engagement stays beside the hex, even when it destroys the defender", () => {
+    const me = unit(1, "me", 0, { type: "armor" });
+    const p = attackPreview(me, at(2), "engage", map, state([me, unit(5, "s2", 2, { hp: 1 })]), "me", designate);
+    expect(p?.title).toBe("Engage s2 infantry, 1 HP");
+    expect(p?.lines.slice(-2)).toEqual([
+      "That destroys it (1 HP).",
+      "Engaging: it stays beside the hex, even if the defender falls.",
+    ]);
   });
 
   it("lists each unit a barrage would strike, and says when the hex is out of sight", () => {

@@ -184,6 +184,11 @@ export interface OverlayRoute {
   highlighted: boolean;
   /** The hostile-held hex a move ends on (drawn as an attack), else `null`. */
   attack: Axial | null;
+  /**
+   * The attack engages: the line stops on the hex before `attack`, where the unit
+   * stays, and a short dashed strike points at the target (WORLD_SPEC §4.8).
+   */
+  engage: boolean;
   /** A travel order's waypoints, drawn as small diamonds on the route. */
   waypoints: readonly Axial[];
   /** Where a travel halts on known contact (a stop mark, on a strong route), else `null`. */
@@ -1440,9 +1445,12 @@ export class WorldRenderer {
       const width = px(strong ? 4 : 2);
       const alpha = strong ? 0.95 : route.kind === "standing" ? 0.4 : 0.55;
       const pts = [route.from, ...route.path].map(centre);
+      // An engager never enters its target: its line ends where it will stand.
+      const engaging = route.attack !== null && route.engage;
+      const walked = engaging ? pts.slice(0, -1) : pts;
       // Scouted stretches solid, unscouted ones dotted: a column may meet something
       // hidden there.
-      const runs = fogRuns(pts, route.unscouted);
+      const runs = fogRuns(walked, route.unscouted);
       const line = () => {
         for (const run of runs) {
           if (run.hidden) continue;
@@ -1468,6 +1476,7 @@ export class WorldRenderer {
       for (const w of route.waypoints) drawWaypoint(g, centre(w), px, color, strong ? 1 : alpha);
       if (route.halt !== null && strong) drawHaltMark(g, route.from, route.path, route.halt, px, 1);
       const end = pts[pts.length - 1];
+      if (engaging) drawEngageStrike(g, walked[walked.length - 1], end, walked.length > 1, px, strong ? 1 : alpha);
       if (route.attack !== null) {
         // Up and left of centre, off the defender's HP bar.
         const r = Math.max(px(11), HEX_SIZE * 0.4);
@@ -1648,6 +1657,33 @@ function drawAttackMark(g: Graphics, x: number, y: number, r: number, px: (n: nu
   const k = r * 0.42;
   g.moveTo(x - k, y - k).lineTo(x + k, y + k).moveTo(x + k, y - k).lineTo(x - k, y + k);
   g.stroke({ color: IVORY, width: Math.max(px(2.5), r * 0.16), alpha, cap: "round" });
+}
+
+/**
+ * An engagement from `stand` on the hex at `target`: a dashed red strike that
+ * stops at the shared edge (the unit never crosses it) and, when the unit moves
+ * there first (`moved`), a ring on the hex it will hold.
+ */
+function drawEngageStrike(
+  g: Graphics,
+  stand: Point,
+  target: Point,
+  moved: boolean,
+  px: (n: number) => number,
+  alpha: number,
+): void {
+  const reach = { x: stand.x + (target.x - stand.x) * 0.5, y: stand.y + (target.y - stand.y) * 0.5 };
+  const dashes = dashSegments([stand, reach], px(6), px(4));
+  for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
+  g.stroke({ color: DARK, width: px(5), alpha: alpha * 0.6, cap: "round" });
+  for (const [x0, y0, x1, y1] of dashes) g.moveTo(x0, y0).lineTo(x1, y1);
+  g.stroke({ color: ATTACK_COLOR, width: px(3), alpha, cap: "round" });
+  if (moved) {
+    g.circle(stand.x, stand.y, Math.max(px(6), HEX_SIZE * 0.24))
+      .stroke({ color: DARK, width: px(4), alpha: alpha * 0.6 })
+      .circle(stand.x, stand.y, Math.max(px(6), HEX_SIZE * 0.24))
+      .stroke({ color: ATTACK_COLOR, width: px(2.5), alpha });
+  }
 }
 
 /** The disordered marker: a small amber warning triangle with a "!". */

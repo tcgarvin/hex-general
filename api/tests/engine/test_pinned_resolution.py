@@ -7,7 +7,10 @@ construction) from its starting state with the orders the bots gave, and checks
 each turn's resolved state and event log against the SHA-256 recorded when the
 fixture was made (2026-11-11, before the engine performance pass). Re-recorded
 2026-11-15 for the militia rules (WORLD_SPEC §7.1): the same starting state with
-posts assigned (`assign_posts`), and fresh bot orders for its 24 turns.
+posts assigned (`assign_posts`), and fresh bot orders for its 24 turns. Event
+hashes re-recorded 2026-11-15 for the `engaging` combat-participant field
+(WORLD_SPEC §4.8), after checking each turn's state hash was unchanged and its
+event log, with that field stripped, hashed to the recorded value.
 
 The orders are stored, not planned, so bot and world-generator changes never
 touch this test. A deliberate rule change will: regenerate the fixture then

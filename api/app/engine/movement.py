@@ -24,6 +24,11 @@ Resolution model (SPEC §11):
   * Combat itself is delegated to `app.engine.combat.resolve_contest` (simul-
     taneous damage, multi-unit/multi-side occupation). Edge swaps (SPEC §12.9)
     are handled here as a dedicated two-unit clash.
+  * **Assault and engage (WORLD_SPEC §4.8).** A Move order's ``attack`` kind
+    changes only occupation. An assaulting unit behaves as above. An engaging
+    unit never enters its final path hex: it attacks a hostile unit holding it,
+    and halts beside it (`engage_halt`) when it is empty or friendly. It is never
+    the entrant of any contest, and stops after any fight.
 
 Documented v0.1 limitations (rare simultaneity corners): a unit whose own hex is
 attacked is *pinned* — it defends and its own move is cancelled even in the edge
@@ -62,6 +67,7 @@ from app.engine.events import (
 )
 from app.engine.hex_coords import Axial, distance, is_adjacent, neighbors, within
 from app.engine.models import (
+    AttackKind,
     DeployOrder,
     Facing,
     GameState,
@@ -96,6 +102,7 @@ class _Mover:
     owner: PlayerId
     path: list[Axial]
     max_steps: int
+    engaging: bool = False
     steps_taken: int = 0
     stopped: bool = False
 
@@ -103,6 +110,11 @@ class _Mover:
     def active(self) -> bool:
         """Whether the unit still has a step to attempt this turn."""
         return not self.stopped and self.steps_taken < self.max_steps
+
+    @property
+    def halts_short(self) -> bool:
+        """Whether this step is an engaging unit's final one, never taken (§4.8)."""
+        return self.engaging and self.steps_taken == len(self.path) - 1
 
     def next_target(self) -> Axial:
         """The hex this unit will attempt to enter on its next pulse."""
@@ -283,6 +295,7 @@ def _build_movers(
                 owner=unit.owner,
                 path=list(order.path),
                 max_steps=max_steps,
+                engaging=order.attack is AttackKind.ENGAGE,
             )
     return movers, marchers, deploy_ids
 
@@ -371,6 +384,11 @@ def _classify(
             # Only reachable for a column stuck without room to deploy (§4.6).
             _block(ctx, mover, target, MoveBlockedReason.COLUMN_SHELTERED)
             continue
+        if mover.halts_short:
+            # An engager's final hex holds no enemy at pulse start. It never steps
+            # in, so ZOC is moot; it still fights an enemy racing it there (§4.8).
+            moves.append((mover, target))
+            continue
 
         # Empty or friendly-occupied target: a move. An engaged unit may not
         # step into another enemy-controlled hex (illegal ZOC→ZOC, SPEC §8.4).
@@ -436,29 +454,32 @@ def _resolve_one_swap(ctx: _PulseState, first: UnitId, second: UnitId) -> None:
     unit_b.hp = hp_b
     a_dead = hp_a == 0
     b_dead = hp_b == 0
+    mover_a = ctx.movers[first]
+    mover_b = ctx.movers[second]
 
-    a_target = ctx.movers[first].next_target()
-    b_target = ctx.movers[second].next_target()
+    a_target = mover_a.next_target()
+    b_target = mover_b.next_target()
     if a_dead:
         _kill(ctx, first)
     if b_dead:
         _kill(ctx, second)
 
+    # A lone survivor completes its move only if it assaults; an engager stays.
     entrant_id: UnitId | None = None
     continued = False
-    if not a_dead and not b_dead:
-        ctx.movers[first].stopped = True
-        ctx.movers[second].stopped = True
-    elif a_dead and not b_dead:
+    if a_dead and not b_dead and not mover_b.engaging:
         entrant_id = second
-        continued = _complete_move(ctx, ctx.movers[second], b_target)
-    elif b_dead and not a_dead:
+        continued = _complete_move(ctx, mover_b, b_target)
+    elif b_dead and not a_dead and not mover_a.engaging:
         entrant_id = first
-        continued = _complete_move(ctx, ctx.movers[first], a_target)
+        continued = _complete_move(ctx, mover_a, a_target)
+    for mover in (mover_a, mover_b):
+        if mover.unit_id != entrant_id:
+            mover.stopped = True
 
     participants = [
-        _swap_participant(unit_a, dmg_to_b, dmg_to_a, hp_a, a_dead),
-        _swap_participant(unit_b, dmg_to_a, dmg_to_b, hp_b, b_dead),
+        _swap_participant(unit_a, dmg_to_b, dmg_to_a, hp_a, a_dead, mover_a.engaging),
+        _swap_participant(unit_b, dmg_to_a, dmg_to_b, hp_b, b_dead, mover_b.engaging),
     ]
     coord = a_target if first < second else b_target
     ctx.events.append(
@@ -473,7 +494,12 @@ def _resolve_one_swap(ctx: _PulseState, first: UnitId, second: UnitId) -> None:
 
 
 def _swap_participant(
-    unit: Unit, dealt: int, taken: int, hp_after: int, destroyed: bool
+    unit: Unit,
+    dealt: int,
+    taken: int,
+    hp_after: int,
+    destroyed: bool,
+    engaging: bool,
 ) -> CombatParticipant:
     """Build the combat-event record for one edge-swap participant (no terrain)."""
     return CombatParticipant(
@@ -487,6 +513,7 @@ def _swap_participant(
         damage_taken=taken,
         hp_after=hp_after,
         destroyed=destroyed,
+        engaging=engaging,
     )
 
 
@@ -515,6 +542,7 @@ def _resolve_attacks(ctx: _PulseState, attacks: dict[Axial, list[_Mover]]) -> No
             attacker_units,
             ctx.hold_ids,
             ctx.terrain_defense(target),
+            _engagers(attacker_movers),
         )
         _settle_contest(ctx, target, defender_id, attacker_movers, outcome)
 
@@ -544,24 +572,49 @@ def _resolve_attacks(ctx: _PulseState, attacks: dict[Axial, list[_Mover]]) -> No
 def _resolve_moves(
     ctx: _PulseState, moves: list[tuple[_Mover, Axial]], combat_hexes: set[Axial]
 ) -> None:
-    """Resolve ordinary moves: empty-hex contests, traffic jams, follow chains."""
+    """Resolve ordinary moves: empty-hex contests, traffic jams, follow chains.
+
+    An engager on its final step (`_Mover.halts_short`) fights an enemy racing
+    for the hex but otherwise halts beside it, never counting toward a jam.
+    """
     by_target: dict[Axial, list[_Mover]] = defaultdict(list)
     for mover, target in moves:
         if target in combat_hexes:
-            _block(ctx, mover, target, MoveBlockedReason.OCCUPIED)
+            reason = (
+                MoveBlockedReason.ENGAGE_HALT
+                if mover.halts_short
+                else MoveBlockedReason.OCCUPIED
+            )
+            _block(ctx, mover, target, reason)
         else:
             by_target[target].append(mover)
 
     singles: dict[UnitId, Axial] = {}
-    for target, contenders in by_target.items():
-        if any(ctx.hostile(a.owner, b.owner) for a in contenders for b in contenders):
+    for target, all_contenders in by_target.items():
+        if any(
+            ctx.hostile(a.owner, b.owner)
+            for a in all_contenders
+            for b in all_contenders
+        ):
             # Enemies racing for the same empty hex — a contest (SPEC §12.1/§12.8).
-            attacker_units = [ctx.units[m.unit_id] for m in contenders]
+            attacker_units = [ctx.units[m.unit_id] for m in all_contenders]
             outcome = resolve_contest(
-                target, None, attacker_units, ctx.hold_ids, ctx.terrain_defense(target)
+                target,
+                None,
+                attacker_units,
+                ctx.hold_ids,
+                ctx.terrain_defense(target),
+                _engagers(all_contenders),
             )
-            _settle_contest(ctx, target, None, contenders, outcome)
-        elif len(contenders) == 1:
+            _settle_contest(ctx, target, None, all_contenders, outcome)
+            continue
+        for mover in all_contenders:
+            if mover.halts_short:
+                _block(ctx, mover, target, MoveBlockedReason.ENGAGE_HALT)
+        contenders = [m for m in all_contenders if not m.halts_short]
+        if not contenders:
+            continue
+        if len(contenders) == 1:
             singles[contenders[0].unit_id] = target
         else:
             ctx.events.append(
@@ -651,6 +704,11 @@ def _friendly_cycles(
 # --- Combat application -----------------------------------------------------
 
 
+def _engagers(movers: list[_Mover]) -> frozenset[UnitId]:
+    """The ids of the engaging units among ``movers`` (WORLD_SPEC §4.8)."""
+    return frozenset(m.unit_id for m in movers if m.engaging)
+
+
 def _settle_contest(
     ctx: _PulseState,
     coord: Axial,
@@ -659,6 +717,7 @@ def _settle_contest(
     outcome: ContestOutcome,
 ) -> None:
     """Apply a contest outcome: damage, removals, occupation, and the event."""
+    engagers = _engagers(attacker_movers)
     for unit_id, result in outcome.results.items():
         ctx.units[unit_id].hp = result.hp_after
     for unit_id, result in outcome.results.items():
@@ -698,6 +757,7 @@ def _settle_contest(
             damage_taken=result.damage_taken,
             hp_after=result.hp_after,
             destroyed=result.destroyed,
+            engaging=unit_id in engagers,
         )
         for unit_id, result in sorted(outcome.results.items())
     ]

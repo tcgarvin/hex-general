@@ -136,8 +136,9 @@ export function parsePlan(raw: string): WorldPlan | null {
   if (build !== null && build !== "barracks" && build !== "depot" && build !== "workshop") return null;
   if (!data.disband.every((id) => typeof id === "number")) return null;
   const orders: Record<number, WorldOrder> = {};
-  for (const [id, order] of Object.entries(data.orders)) {
-    if (!Number.isInteger(Number(id)) || !isOrder(order)) return null;
+  for (const [id, stored] of Object.entries(data.orders)) {
+    const order = parseOrder(stored);
+    if (!Number.isInteger(Number(id)) || order === null) return null;
     orders[Number(id)] = order;
   }
   const recruits: Record<string, StagedRecruit> = {};
@@ -160,13 +161,24 @@ function isPath(x: unknown): x is Axial[] {
   return Array.isArray(x) && x.every(isAxial);
 }
 
+/**
+ * A stored order, or `null`. A Move stored before attacks had a kind comes back
+ * as an assault: that is what those builds sent (the engine's default).
+ */
+function parseOrder(x: unknown): WorldOrder | null {
+  if (isRecord(x) && x.kind === "move" && x.attack === undefined && isPath(x.path)) {
+    return { kind: "move", path: x.path, attack: "assault" };
+  }
+  return isOrder(x) ? x : null;
+}
+
 function isOrder(x: unknown): x is WorldOrder {
   if (!isRecord(x)) return false;
   switch (x.kind) {
     case "travel":
       return isAxial(x.destination) && isPath(x.via) && (x.onArrival === "deployed" || x.onArrival === "column");
     case "move":
-      return isPath(x.path);
+      return isPath(x.path) && (x.attack === "assault" || x.attack === "engage");
     case "march":
       return isPath(x.path) && typeof x.deployOnArrival === "boolean";
     case "barrage":

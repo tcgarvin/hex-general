@@ -19,7 +19,8 @@
 //  4. that Shift+click in "select" mode otherwise: a plain click (select there);
 //  5. a hex with your units (not a Shift+click order): select there;
 //  6. Barrage: shell the hex if in range, else say it is out of range;
-//  7. Move: move there if in reach, else say it is not reachable;
+//  7. Move: move there if in reach (onto a hostile hex, an attack that engages
+//     by default, `moveOrder`), else say it is not reachable;
 //  8. Travel: travel there (keeping a previous travel's arrival posture) if it
 //     has a route, else say there is none;
 //  9. "select": inspect the hex.
@@ -28,7 +29,7 @@ import { axialEqual, hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
 import { NO_ROUTE } from "./autoOrder";
-import type { WorldOrder } from "./plan";
+import { moveOrder, type WorldOrder } from "./plan";
 
 type Unit = components["schemas"]["Unit"];
 
@@ -45,6 +46,8 @@ export interface ClickInput {
   ownHere: number;
   /** The unit has a staged or standing travel a waypoint would join (`travelBase`). */
   hasTravel: boolean;
+  /** Hexes holding a visible hostile unit (`hostileHexes`): a Move ending on one is an attack. */
+  hostile: ReadonlySet<string>;
   /** The move-mode reach (`moveReach`; empty outside Move mode). */
   reach: ReadonlyMap<string, readonly Axial[]>;
   /** A fresh move reach for the unit, ignoring your own units' hexes (`planMoveReach`), for rule 3. */
@@ -85,7 +88,7 @@ export function desktopClick(input: ClickInput): ClickResult {
   if (ordering) {
     // Packing to travel one hex onto a friend is never meant, so this is a Move or nothing.
     const path = unit.posture === "deployed" ? input.freshReach().get(key) : undefined;
-    if (path !== undefined) return { kind: "order", order: { kind: "move", path: [...path] } };
+    if (path !== undefined) return { kind: "order", order: moveOrder(path, input.hostile) };
     if (mode === "select") return { kind: "select" };
   } else if (input.ownHere > 0) {
     return { kind: "select" };
@@ -95,7 +98,7 @@ export function desktopClick(input: ClickInput): ClickResult {
       return input.inRange ? { kind: "order", order: { kind: "barrage", target: hex } } : { kind: "notice", text: input.outOfRange };
     case "move": {
       const path = input.reach.get(key);
-      return path !== undefined ? { kind: "order", order: { kind: "move", path: [...path] } } : { kind: "notice", text: input.notReachable };
+      return path !== undefined ? { kind: "order", order: moveOrder(path, input.hostile) } : { kind: "notice", text: input.notReachable };
     }
     case "travel": {
       if (!input.passable || input.route(hex) === null) return { kind: "notice", text: NO_ROUTE };

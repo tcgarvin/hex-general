@@ -67,7 +67,8 @@ export function orderText(
         if (swap.role === "relieved") return `relieved by ${partner}`;
         return `swap with ${partner}`;
       }
-      return route?.attack ? `attack ${at(route.attack)}` : `move ${order.path.length} hex${order.path.length === 1 ? "" : "es"}`;
+      if (route?.attack) return `${route.engage ? "engage" : "assault"} ${at(route.attack)}`;
+      return `move ${order.path.length} hex${order.path.length === 1 ? "" : "es"}`;
     case "march":
       return "march";
     case "barrage":

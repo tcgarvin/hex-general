@@ -28,6 +28,7 @@ const route = (over: Partial<PlannedRoute> = {}): PlannedRoute => ({
   eta: 1,
   waypoints: [],
   attack: null,
+  engage: false,
   halt: null,
   fog: inView([{ q: 1, r: 0 }]),
   ...over,
@@ -91,17 +92,22 @@ describe("unitReadout", () => {
     expect(read.lines).toContainEqual({ text: "Halts on contact at (2,0), disordered.", tone: "bad" });
   });
 
-  it("gives an attack its expected result", () => {
-    const order = { kind: "move" as const, path: [{ q: 1, r: 0 }] };
-    const expected = { title: "Attack", lines: ["You deal 4, take 2."], note: "If it stays put." };
+  it("gives an attack its expected result, titled by its kind", () => {
+    const order = { kind: "move" as const, path: [{ q: 1, r: 0 }], attack: "assault" as const };
+    const expected = { title: "Assault", lines: ["You deal 4, take 2."], note: "If it stays put." };
     const read = unitReadout(input({ order, route: route({ kind: "move", attack: { q: 1, r: 0 } }), expected }));
     expect(read.kind).toBe("attack");
-    expect(read.title).toBe("Attack (1,0)");
+    expect(read.title).toBe("Assault (1,0)");
     expect(read.lines.map((l) => l.text)).toEqual(["You deal 4, take 2.", "If it stays put."]);
+    const engage = { ...order, attack: "engage" as const };
+    const engaged = unitReadout(
+      input({ order: engage, route: route({ kind: "move", attack: { q: 1, r: 0 }, engage: true }), expected }),
+    );
+    expect(engaged.title).toBe("Engage (1,0)");
   });
 
   it("leads a Move your own units will block with the warning", () => {
-    const order = { kind: "move" as const, path: [{ q: 1, r: 0 }] };
+    const order = { kind: "move" as const, path: [{ q: 1, r: 0 }], attack: "assault" as const };
     const read = unitReadout(input({ order, route: route({ kind: "move" }), blocked: "Blocked unless 2nd Infantry moves out of the way first" }));
     expect(read.title).toBe("Move to (1,0)");
     expect(read.lines[0]).toEqual({ text: "Blocked unless 2nd Infantry moves out of the way first.", tone: "bad" });

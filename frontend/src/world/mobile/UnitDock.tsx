@@ -6,6 +6,8 @@
 // (`autoOrder.ts`): Move (first and primary; move, attack or travel) and, for
 // guns, Barrage. A tap with nothing armed only selects or inspects. The other
 // keys are the stay-put orders, Deploy, Clear (only with a staged order) and More.
+// A staged attack (a Move onto a hostile hex) adds the Assault / Engage switch
+// above the keys; it engages by default.
 
 import { useMemo } from "react";
 
@@ -17,7 +19,8 @@ import { attackPreview, barragePreview } from "../combatView";
 import type { Designate } from "../designations";
 import { orderText, UNIT_LABEL, unitTag } from "../labels";
 import { withdrawalWarning } from "../moveRules";
-import type { OrderKind } from "../plan";
+import { AttackToggle } from "../parts";
+import { attackChoice, type OrderKind } from "../plan";
 import type { WorldView } from "../useWorld";
 import { useSwaps } from "../useSwaps";
 import type { WorldPlanning } from "../useWorldPlan";
@@ -59,9 +62,10 @@ export function UnitDock({
   const route = planning.routes.find((r) => r.unitId === unit.id);
   const swap = useSwaps(view, planning).get(unit.id) ?? null;
   const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
+  const attack = attackChoice(order, planning.hostile);
   const expected =
     order?.kind === "move" && route?.attack
-      ? attackPreview(unit, route.attack, map, view.state, view.your_slot, designate)
+      ? attackPreview(unit, route.attack, order.attack, map, view.state, view.your_slot, designate)
       : order?.kind === "barrage"
         ? barragePreview(order.target, map, view.state, view.your_slot, visible, planning.plan.orders, designate)
         : null;
@@ -134,6 +138,9 @@ export function UnitDock({
           </>
         )}
       </div>
+      {attack !== null && planning.armed === null && (
+        <AttackToggle value={attack} onChange={(kind) => planning.setAttack(unit.id, kind)} large />
+      )}
       <div className="flex gap-1.5">
         <OrderKey
           icon="move"

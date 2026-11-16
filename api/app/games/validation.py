@@ -16,7 +16,8 @@ opponent's simultaneous orders:
     units);
   * one order per unit;
   * move and march paths are contiguous, on-map, and avoid impassable terrain
-    (SPEC §3.4);
+    (SPEC §3.4); a Move's ``attack`` kind (assault or engage, WORLD_SPEC §4.8)
+    is checked by the order model at parse time and needs no static check;
   * travel destinations and waypoints are on-map and passable, and a column
     route to them exists (WORLD_SPEC §5);
   * orders fit the unit's posture: Move and Barrage need a deployed unit, Deploy

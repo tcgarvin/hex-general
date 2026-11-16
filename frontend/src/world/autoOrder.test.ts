@@ -111,22 +111,22 @@ describe("autoTap with Move armed", () => {
     expect(autoTap(input({ hex: { q: 0, r: 0 }, ownHere: 1 }))).toEqual({ kind: "disarm" });
   });
 
-  it("moves (or attacks) a deployed unit to a hex in reach, and disarms", () => {
+  it("moves (or attacks, engaging by default) a deployed unit to a hex in reach, and disarms", () => {
     const path = [{ q: 1, r: 0 }, { q: 2, r: 0 }];
     expect(autoTap(input({ hex: { q: 2, r: 0 }, reach: reachOf(path) }))).toEqual({
       kind: "order",
-      order: { kind: "move", path },
+      order: { kind: "move", path, attack: "assault" },
       notice: null,
     });
     const attack = autoTap(input({ hex: { q: 2, r: 0 }, reach: reachOf(path), hostile: new Set([hexKey(2, 0)]) }));
-    expect(attack).toEqual({ kind: "order", order: { kind: "move", path }, notice: null });
+    expect(attack).toEqual({ kind: "order", order: { kind: "move", path, attack: "engage" }, notice: null });
   });
 
   it("orders the unit onto a hex one of your units stands on, as if it stood empty", () => {
     const path = [{ q: 1, r: 0 }];
     expect(autoTap(input({ hex: { q: 1, r: 0 }, ownHere: 1, reach: reachOf(path) }))).toEqual({
       kind: "order",
-      order: { kind: "move", path },
+      order: { kind: "move", path, attack: "assault" },
       notice: null,
     });
     expect(autoTap(input({ ownHere: 2 }))).toMatchObject({ kind: "order", order: { kind: "travel", destination: { q: 5, r: 0 } } });
@@ -146,7 +146,7 @@ describe("autoTap with Move armed", () => {
     const near = [{ q: 1, r: 0 }];
     const nearer = [{ q: 1, r: 0 }, { q: 2, r: 0 }];
     const result = autoTap(input({ hex: { q: 8, r: 0 }, zone, reach: reachOf(near, nearer) }));
-    expect(result).toEqual({ kind: "order", order: { kind: "move", path: nearer }, notice: TOWARD_IT });
+    expect(result).toEqual({ kind: "order", order: { kind: "move", path: nearer, attack: "assault" }, notice: TOWARD_IT });
   });
 
   it("does not move toward a hostile hex, and says so when nothing gets closer, staying armed", () => {

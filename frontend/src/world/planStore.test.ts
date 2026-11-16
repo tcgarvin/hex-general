@@ -29,7 +29,7 @@ function fakeStorage(): Storage {
 const plan: WorldPlan = {
   orders: {
     3: { kind: "travel", destination: { q: 4, r: 0 }, via: [], onArrival: "column" },
-    5: { kind: "move", path: [{ q: 1, r: 1 }] },
+    5: { kind: "move", path: [{ q: 1, r: 1 }], attack: "assault" },
     6: { kind: "hold" },
   },
   recruits: { "0,0": { coord: { q: 0, r: 0 }, type: "infantry" } },
@@ -77,6 +77,14 @@ describe("parsePlan", () => {
     expect(parsePlan("not json")).toBeNull();
     expect(parsePlan(JSON.stringify({ ...plan, build: "castle" }))).toBeNull();
     expect(parsePlan(JSON.stringify({ ...plan, orders: { 1: { kind: "fly" } } }))).toBeNull();
+    expect(parsePlan(JSON.stringify({ ...plan, orders: { 1: { kind: "move", path: [], attack: "charge" } } }))).toBeNull();
+  });
+
+  it("keeps an engagement, and reads a Move stored before attack kinds as the assault it was", () => {
+    const engage: WorldPlan = { ...EMPTY_PLAN, orders: { 2: { kind: "move", path: [{ q: 1, r: 0 }], attack: "engage" } } };
+    expect(parsePlan(JSON.stringify(engage))).toEqual(engage);
+    const old = { ...EMPTY_PLAN, orders: { 2: { kind: "move", path: [{ q: 1, r: 0 }] } } };
+    expect(parsePlan(JSON.stringify(old))?.orders[2]).toEqual({ kind: "move", path: [{ q: 1, r: 0 }], attack: "assault" });
   });
 });
 

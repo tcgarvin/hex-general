@@ -15,7 +15,9 @@ retaliates against all of them (SPEC §12.4).
 
 Occupation (SPEC §12.5/§12.6/§12.8): a unit enters the contested hex only if all
 opposition to its side is destroyed and the side's deterministically designated
-*lead entrant* survived. Otherwise nobody new enters.
+*lead entrant* survived. Otherwise nobody new enters. Only assaulting attackers
+are candidates for lead entrant; engaging ones fight but never enter
+(WORLD_SPEC §4.8).
 """
 
 from __future__ import annotations
@@ -122,6 +124,7 @@ def resolve_contest(
     attackers: list[Unit],
     hold_orders: set[UnitId],
     terrain_bonus: int,
+    engagers: frozenset[UnitId] = frozenset(),
 ) -> ContestOutcome:
     """Resolve one contested hex into simultaneous damage + an occupation outcome.
 
@@ -132,6 +135,8 @@ def resolve_contest(
     holds the ids of units with a Hold order, used only for the defender's bonus.
     ``terrain_bonus`` is the defence ``coord`` gives a stationary defender
     (`GameState.terrain_defense`: terrain, or settlement ground).
+    ``engagers`` names attackers under an Engage order (WORLD_SPEC §4.8): they
+    deal and take damage like any attacker but are never the entrant.
     """
     participants: list[Unit] = ([defender] if defender is not None else []) + attackers
 
@@ -160,7 +165,7 @@ def resolve_contest(
     }
     destroyed: set[UnitId] = {uid for uid, hp in hp_after.items() if hp == 0}
 
-    entrant_id = _decide_entrant(defender, attackers, destroyed)
+    entrant_id = _decide_entrant(defender, attackers, destroyed, engagers)
 
     results: dict[UnitId, UnitCombatResult] = {}
     for unit in participants:
@@ -184,13 +189,17 @@ def resolve_contest(
 
 
 def _decide_entrant(
-    defender: Unit | None, attackers: list[Unit], destroyed: set[UnitId]
+    defender: Unit | None,
+    attackers: list[Unit],
+    destroyed: set[UnitId],
+    engagers: frozenset[UnitId],
 ) -> UnitId | None:
     """Who, if anyone, occupies the contested hex after combat (SPEC §12.5/§12.8).
 
     Entry requires that exactly one side has survivors, that side is an attacking
     side (the stationary defender never "enters"), and that side's designated
-    lead entrant survived.
+    lead entrant survived. The lead is chosen among the side's *assaulting*
+    attackers only (WORLD_SPEC §4.8); a side of engagers takes nothing.
     """
     participants: list[Unit] = ([defender] if defender is not None else []) + attackers
     surviving_owners = {u.owner for u in participants if u.id not in destroyed}
@@ -203,5 +212,10 @@ def _decide_entrant(
         # Only the stationary defender survived; nobody new enters.
         return None
 
-    lead = lead_entrant(winner_attackers)
+    assaulters = [a for a in winner_attackers if a.id not in engagers]
+    if not assaulters:
+        # The winners all engaged: they fought from beside the hex.
+        return None
+
+    lead = lead_entrant(assaulters)
     return lead if lead not in destroyed else None

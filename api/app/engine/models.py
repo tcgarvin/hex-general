@@ -667,17 +667,32 @@ def _terrain_defense(game_map: GameMap, coord: Axial, on_ground: bool) -> int:
     return bonus
 
 
+class AttackKind(StrEnum):
+    """How a Move order fights for a hostile hex (WORLD_SPEC §4.8).
+
+    Damage is the same either way; only occupation differs.
+    """
+
+    # Win the hex and take it, then keep moving (SPEC §12.5, breakthroughs).
+    ASSAULT = "assault"
+    # Fight from beside the hex and never enter it: never the entrant of any
+    # contest, never steps into its final path hex, stops after any fight.
+    ENGAGE = "engage"
+
+
 class MoveOrder(BaseModel):
     """Follow an exact planned path of adjacent hexes (SPEC §7.1).
 
     ``path`` is the sequence of hexes to enter, in order, one per movement
     pulse. Combat occurs if enemy contact happens; the unit does not reroute if
-    blocked.
+    blocked. ``attack`` picks assault (the default: take what it wins) or engage
+    (fight without entering, WORLD_SPEC §4.8).
     """
 
     kind: Literal["move"] = "move"
     unit_id: UnitId
     path: list[Axial] = Field(min_length=1)
+    attack: AttackKind = AttackKind.ASSAULT
 
 
 class BarrageOrder(BaseModel):

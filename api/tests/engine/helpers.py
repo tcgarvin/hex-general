@@ -10,6 +10,7 @@ from typing import Any
 
 from app.engine.hex_coords import Axial
 from app.engine.models import (
+    AttackKind,
     BarrageOrder,
     GameState,
     HoldOrder,
@@ -83,6 +84,13 @@ def ax(q: int, r: int) -> Axial:
 
 def move(unit_id: int, *steps: tuple[int, int]) -> MoveOrder:
     return MoveOrder(unit_id=unit_id, path=[ax(q, r) for q, r in steps])
+
+
+def engage(unit_id: int, *steps: tuple[int, int]) -> MoveOrder:
+    """A Move order that attacks without entering (WORLD_SPEC §4.8)."""
+    return MoveOrder(
+        unit_id=unit_id, path=[ax(q, r) for q, r in steps], attack=AttackKind.ENGAGE
+    )
 
 
 def barrage(unit_id: int, q: int, r: int) -> BarrageOrder:

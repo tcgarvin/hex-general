@@ -150,6 +150,50 @@ This changes SPEC §8.2, where two friendly units trying to swap hexes jam.
   occupied slots, and clusters of slots locked for 50+ turns. Relief swaps added ~2 points
   of front share and cut line jams by two-thirds (VISION §12).
 
+### 4.8 Assault and engage
+
+A Move order carries an attack kind, `attack: assault | engage` (decided 2026-11-15). An
+attack is still a Move whose path steps into a hostile hex (SPEC §12.1); the kind changes
+only who occupies. **Damage is identical** for both.
+
+- **Assault** (the engine default, so bots, militia and stored orders are unchanged) is
+  SPEC §12 as written: win the hex and the lead entrant takes it, then may carry on along
+  its path (breakthroughs).
+- **Engage**: the unit **never enters its final path hex**.
+  - When it tries that final step and a hostile unit holds the hex, it attacks exactly as an
+    assault would (deals and takes the same damage) but is never the entrant and stays
+    where it is.
+  - If the hex holds no enemy at the start of that pulse (the enemy left earlier in the
+    turn) or a friend holds it, it stops beside it: `move_blocked` with reason
+    `engage_halt`. It does not count toward a friendly traffic jam there. If an enemy steps
+    into that empty hex in the same pulse, the engager contests it as an assault would, and
+    still never enters.
+  - Any other contest on the way (an enemy stepped onto its path, an empty-hex race, an
+    edge swap) is fought in full; the engager never occupies after winning and stops after
+    the fight. It never pursues a destroyed or departed enemy.
+- **Several attackers on one hex**: only assaulting units are candidates to take it. The
+  lead entrant (SPEC §12.6) is chosen from the winning side's *assaulting* attackers only;
+  with one assaulter, it takes the hex and the engagers don't; with none, nobody enters. If
+  the designated lead dies, nobody enters (no fallback, as before).
+- **Edge swaps**: a surviving engager does not cross into the other hex; a surviving
+  assaulter still does, even against an engager.
+- **Columns** (§4.6): unchanged. An engager into a hex sheltering a stuck column is blocked
+  (`column_sheltered`) like an assault, and hostile columns in the hex bar entry for both.
+- **Pinning** is unchanged: a unit whose own hex is attacked defends and its own Move (of
+  either kind) is cancelled. "The enemy left" therefore means it left before the engager
+  arrived, which is the `engage_halt` case.
+- The replay marks each engaging attacker (`CombatParticipant.engaging`) so the report can
+  say it struck from beside the hex and stayed put.
+- **Frontend**: players still give a Move. A Move whose path ends on a visible hostile hex
+  is an attack and **defaults to Engage**; the unit panel (desktop) and the dock (phone)
+  show an Assault / Engage toggle for it. Any other Move has no toggle and sends assault.
+  The plan draws an engagement's line stopping on the hex the unit will hold, with a dashed
+  strike at the target; an assault's line runs into the target.
+
+Implemented in `app/engine/movement.py` (`_Mover.halts_short`, `_engagers`) and
+`app/engine/combat.py` (`resolve_contest(..., engagers)`); tests in
+`tests/engine/test_engage.py`.
+
 ## 5. Travel orders (multi-turn)
 
 ```
