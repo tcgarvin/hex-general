@@ -199,8 +199,16 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
   bridges where roads cross them; lakes (impassable open water, never bridged). Every
   river and lake drains off the map (user, 2026-11-10): rivers rise at springs by
   hills or at lakes and always run to the map edge.
-- **Settlements:** about 1 per 70 hexes [tunable], roughly 3× v0.1's density, mostly
-  towns. Cities are rarer and anchor regions.
+- **Settlements:** about 1 per 50 hexes [tunable; 70 until 2026-11-15], mostly
+  towns. Cities are rarer and anchor regions. The user asked for towns about one hex
+  closer on average (2026-11-15), "a little more crowded" and less travel. Measured with
+  `scripts/settlement-spacing.py` (straight-line hex distance from each town or city to
+  its nearest other one, seeds 1-3): at 200 slots the mean went 6.34 → 5.44 and the median
+  6 → 5 (route 6.88 → 5.87 column pulses to the nearest of the three closest); at 12 slots
+  mean 6.47 → 5.56 (median 6 → 5). Settlements per world +36% (200 slots:
+  about 1,950 → 2,650; 12 slots: 117 → 159), and sites, dealt one per town, +40% (about
+  1,750 → 2,450; 12 slots 105 → 147), so the economy grows with the towns. Generation
+  time is unchanged within noise (about 20-25 s at 200 slots on the shared machine).
 - **Roads:** a spanning network linking settlements plus redundant links, so no
   single bridge decides a whole region. Every town in a territory must reach its seat by
   road inside the territory, and roads must reach its borders. (Until 2026-11-10 every
@@ -312,7 +320,7 @@ from the fix-ups. Terrain is now built from sized objects, in this order:
 - Seats: farthest-point sampling, 6 Lloyd steps on open hexes, then each seats on a
   nearby settlement (cities preferred) at least 60% of the ideal lattice spacing from
   the others. The seat becomes a town; territories are each seat's nearest land.
-  Provinces average ~70 hexes at the default density, not 20–40.
+  Provinces average ~50 hexes at the default density (70 before 2026-11-15), not 20–40.
 - `fill_order` orders slots so any prefix is spread out; `to_state(players)` seats the
   first N, each with a garrisoned base and the other three units beside it.
 

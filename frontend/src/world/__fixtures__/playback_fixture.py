@@ -35,6 +35,7 @@ world-generator change.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,7 @@ from app.world.season import _plan_all
 
 SLOTS = 4
 SEED = 1
+FIXTURE_HEXES_PER_SETTLEMENT = 70
 # (viewer, turn): a bot seat and the resolved turns to keep for it.
 CASES: list[tuple[str, int]] = [
     # The opening turn: no earlier replay to start from.
@@ -181,7 +183,13 @@ def build() -> tuple[str, set[str]]:
 
     Raises `StaleCasesError` when the cases miss a `REQUIRED` feature.
     """
-    world = generate(WorldParams.for_slots(SLOTS, SEED))
+    # Pinned at the settlement density before 2026-11-15 (70 hexes each), so tuning
+    # the generator's default density does not re-pick every case.
+    params = replace(
+        WorldParams.for_slots(SLOTS, SEED),
+        hexes_per_settlement=FIXTURE_HEXES_PER_SETTLEMENT,
+    )
+    world = generate(params)
     players = [f"b{k:03d}" for k in range(SLOTS)]
     state = world.to_state(players)
     policy = WorldPolicy(seed=SEED)

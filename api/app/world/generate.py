@@ -194,7 +194,7 @@ class WorldParams:
     height: int
     slots: int
     seed: int
-    hexes_per_settlement: int = 70
+    hexes_per_settlement: int = 50
     city_share: float = 0.15
     woods_share: float = 0.145
     hills_share: float = 0.07
