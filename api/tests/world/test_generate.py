@@ -7,6 +7,7 @@ or validity property the spec asks of every generated world.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import math
@@ -154,23 +155,27 @@ def test_direct_roads_on_request_regenerate_earlier_worlds_byte_identical(
 ) -> None:
     # Digests recorded before the natural road style existed (2026-11-11), when
     # direct was the only style: asking for it must keep reproducing those worlds.
-    params = WorldParams.for_slots(slots, seed, road_style="direct")
+    params = dataclasses.replace(
+        WorldParams.for_slots(slots, seed, road_style="direct"),
+        hexes_per_settlement=70,  # the density before 2026-11-15
+    )
     assert _fingerprint(generate(params)) == expected
 
 
 @pytest.mark.parametrize(
     ("slots", "seed", "expected"),
     [
-        (12, 1, "191fe607d2dd40de"),
-        (12, 2, "fe94dd073374cee8"),
-        (12, 3, "8f5c4f6949fdbd0b"),
-        (24, 7, "a7e966dedf7e9ecf"),
+        (12, 1, "eb9d2285cd5f2ac3"),
+        (12, 2, "30e8e1410ce5e804"),
+        (12, 3, "791d386eea9410f8"),
+        (24, 7, "433d8085871f18df"),
     ],
 )
 def test_default_natural_worlds_are_pinned(
     slots: int, seed: int, expected: str
 ) -> None:
-    # Digests recorded when natural became the default (2026-11-11). A change here
+    # Digests recorded when natural became the default (2026-11-11), re-recorded
+    # 2026-11-15 for the denser settlements (50 hexes each, was 70). A change here
     # changes every new world for a seed: make it on purpose and re-record.
     assert _fingerprint(generate(WorldParams.for_slots(slots, seed))) == expected
 
@@ -695,8 +700,8 @@ def test_natural_preview_shows_terrain_not_territories(world: GeneratedWorld) ->
 
 
 def test_a_town_cornered_in_its_territory_still_gets_a_site() -> None:
-    # Seed 331's town at a three-way border behind a river has no clear hex of its
+    # Seed 313's town at a three-way border behind a river has no clear hex of its
     # own territory within reach; its site stands in the neighbouring territory.
-    world = generate(WorldParams.for_slots(12, 331))
+    world = generate(WorldParams.for_slots(12, 313))
     assert world.stats["sites_off_territory"] >= 1
     assert world.stats["sites"] == len(world.game_map.sites)

@@ -20,6 +20,7 @@ from app.ai.world import (
 )
 from app.engine.economy_rules import Building, SiteKind, Stocks
 from app.engine.fog import redact_state
+from app.engine.stats import COLUMN_RULES
 from app.engine.hex_coords import Axial, distance, neighbors
 from app.engine.models import (
     BarrageOrder,
@@ -137,7 +138,7 @@ def test_a_column_stops_short_of_a_garrison_and_deploys_clean() -> None:
     )
     order = _plan(state)[1]
     assert isinstance(order, TravelOrder)
-    assert distance(order.destination, farm) > 3
+    assert distance(order.destination, farm) > COLUMN_RULES.deploy_distance
 
 
 def test_a_unit_on_the_base_steps_off_for_a_recruit() -> None:

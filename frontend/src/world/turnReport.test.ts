@@ -189,8 +189,8 @@ describe("turnReport: spending and contact", () => {
     ]);
   });
 
-  const steelMill = { coord: coord(10, 0), kind: "steel_mill" as const, garrison: 2, level: 1 };
-  const context: ReportContext = { sites: [steelMill], settlements: [{ coord: coord(10, 0), controlled_by: null, muster_clock: 0 }], units: [] };
+  const steelMill = { coord: coord(8, 0), kind: "steel_mill" as const, garrison: 2, level: 1 };
+  const context: ReportContext = { sites: [steelMill], settlements: [{ coord: coord(8, 0), controlled_by: null, muster_clock: 0 }], units: [] };
   const contactLog = events([
     { kind: "unit_deployed", pulse: 6, unit_id: 4, origin: coord(7, 0), dest: coord(6, 0), cause: "contact", disordered: true },
     { kind: "travel_ended", unit_id: 4, owner: ME, coord: coord(6, 0), destination: coord(12, 0), reason: "contact" },
@@ -202,7 +202,7 @@ describe("turnReport: spending and contact", () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ section: "movement", at: coord(6, 0), eventIndex: 0 });
     expect(items[0].text).toBe(
-      "Your infantry halted and deployed at (6,0) on contact with the militia at the steel mill (10,0).",
+      "Your infantry halted and deployed at (6,0) on contact with the militia at the steel mill (8,0).",
     );
     expect(items[0].detail).toEqual([
       "No room at (7,0).",
@@ -220,24 +220,24 @@ describe("turnReport: spending and contact", () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ eventIndex: 0, at: coord(7, 0), detail: ["It was bound for (12,0)."] });
     expect(items[0].text).toBe(
-      "Your infantry could not set off: contact with the militia at the steel mill (10,0). It stayed deployed at (7,0).",
+      "Your infantry could not set off: contact with the militia at the steel mill (8,0). It stayed deployed at (7,0).",
     );
   });
 
   it("names a several-unit militia met one hex further out, by the unit beside its site", () => {
     const spread: ReportContext = {
-      sites: [{ coord: coord(10, 0), kind: "steel_mill", garrison: 3, level: 2 }],
-      settlements: [{ coord: coord(10, 0), controlled_by: null, muster_clock: 0 }],
+      sites: [{ coord: coord(8, 0), kind: "steel_mill", garrison: 3, level: 2 }],
+      settlements: [{ coord: coord(8, 0), controlled_by: null, muster_clock: 0 }],
       units: [],
     };
-    expect(contactCause(coord(5, 0), ME, spread)).toBe("the militia at the steel mill (10,0)");
+    expect(contactCause(coord(5, 0), ME, spread)).toBe("the militia at the steel mill (8,0)");
     expect(contactCause(coord(4, 0), ME, spread)).toBe("the enemy");
   });
 
   it("says the enemy when a player's unit is in sight, or nothing on the map explains it", () => {
-    expect(contactCause(coord(6, 0), ME, { ...context, units: [unit(9, "s2", coord(8, 0))] })).toBe("the enemy");
+    expect(contactCause(coord(6, 0), ME, { ...context, units: [unit(9, "s2", coord(7, 0))] })).toBe("the enemy");
     expect(contactCause(coord(0, 0), ME, context)).toBe("the enemy"); // the mill is out of reach
-    expect(contactCause(coord(6, 0), ME, { ...context, settlements: [{ coord: coord(10, 0), controlled_by: "s2", muster_clock: 0 }] })).toBe(
+    expect(contactCause(coord(6, 0), ME, { ...context, settlements: [{ coord: coord(8, 0), controlled_by: "s2", muster_clock: 0 }] })).toBe(
       "the enemy",
     );
   });

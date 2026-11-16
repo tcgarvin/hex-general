@@ -35,6 +35,7 @@ world-generator change.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,7 @@ from app.world.season import _plan_all
 
 SLOTS = 4
 SEED = 1
+FIXTURE_HEXES_PER_SETTLEMENT = 70
 # (viewer, turn): a bot seat and the resolved turns to keep for it.
 CASES: list[tuple[str, int]] = [
     # The opening turn: no earlier replay to start from.
@@ -61,22 +63,23 @@ CASES: list[tuple[str, int]] = [
     # Garrisons destroyed, entrants taking the hexes, captures, own recruits.
     ("b002", 3),
     ("b002", 9),
-    # Columns stopped by contact; turn 11 also has the viewer's own barrage,
-    # a fight won and the capture it brings (the case the scenario tests use).
-    ("b001", 10),
-    ("b001", 11),
+    # Columns stopped by contact, and an enemy dropping out of sight.
+    ("b000", 14),
+    ("b002", 12),
+    # The viewer's own barrage, a fight won and the capture it brings (the case
+    # the scenario tests use).
+    ("b001", 19),
     # Enemies coming into sight mid-turn and dropping out of it, and barrages
     # by guns the viewer cannot see.
     ("b003", 15),
     ("b003", 16),
-    ("b001", 16),
     ("b000", 20),
     ("b003", 20),
     # Another player's recruit, seen without its cost.
-    ("b002", 107),
+    ("b003", 44),
     # Militia (WORLD_SPEC §7.1): a militia gun's barrage, militia healing and a
     # lost militia unit mustering back at its site.
-    ("b001", 97),
+    ("b001", 67),
 ]
 TURNS = max(turn for _, turn in CASES) + 1
 REQUIRED = {
@@ -180,7 +183,13 @@ def build() -> tuple[str, set[str]]:
 
     Raises `StaleCasesError` when the cases miss a `REQUIRED` feature.
     """
-    world = generate(WorldParams.for_slots(SLOTS, SEED))
+    # Pinned at the settlement density before 2026-11-15 (70 hexes each), so tuning
+    # the generator's default density does not re-pick every case.
+    params = replace(
+        WorldParams.for_slots(SLOTS, SEED),
+        hexes_per_settlement=FIXTURE_HEXES_PER_SETTLEMENT,
+    )
+    world = generate(params)
     players = [f"b{k:03d}" for k in range(SLOTS)]
     state = world.to_state(players)
     policy = WorldPolicy(seed=SEED)

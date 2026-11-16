@@ -73,7 +73,7 @@ Hold / Rest, deployed movement rates (infantry 2, armor 4, artillery 1).
 | Attack | Cannot attack |
 | Defense | Defense −3, no terrain or Hold bonus [tunable] |
 | Capture | Cannot capture |
-| Vision | As deployed (every unit type sees 4 hexes since 2026-11-11, one past the deploy distance, so a column halted on contact sees what stopped it) |
+| Vision | As deployed (every unit type sees 4 hexes since 2026-11-11, past the deploy distance, so a column halted on contact sees what stopped it) |
 | Repair | Rests like a deployed unit (+2 in a friendly settlement, so garrisons stack and heal) |
 
 ### 4.3 Turn pulses
@@ -99,10 +99,11 @@ Barrage still resolves before pulse 1.
   **Deploy** order. The unit deploys clean at the end of the turn in which it stops.
 - **Auto-deploy on contact:** at the start of each pulse, a column halts and
   deploys if any of these hold:
-  1. its next step would come within **X = 3** hexes of a hostile unit [tunable]. Distance
-     uses true positions, not the owner's fog view, so a column can blunder into an enemy
-     hidden in woods. The sizing study measured each extra hex of X at ~1.5 points of front
-     share; 3 leaves a hex of buffer outside hostile ZOC;
+  1. its next step would come within **X − 1** hexes of a hostile unit, that is, next to
+     it; with **X = 2** [tunable; 3 until 2026-11-15] a marching column therefore halts
+     with one empty hex between it and the enemy. Distance uses true positions, not the
+     owner's fog view, so a column can blunder into an enemy hidden in woods. The sizing
+     study measured each extra hex of X at ~1.5 points of front share (it was run at 3);
   2. a hostile unit comes within X of it (it was approached);
   3. it was attacked or barraged this turn (it deploys after that combat, if it survives).
 
@@ -122,7 +123,8 @@ Barrage still resolves before pulse 1.
   terrain/Hold bonus (less any disorder), and each column at −3 defense with no
   terrain or Hold bonus. Shelling a stacked road is brutal. Packed survivors deploy,
   disordered, before the first pulse.
-- **Melee:** because X ≥ 1 and contact is checked at the start of every pulse, a
+- **Melee:** because X ≥ 2 and contact is checked at the start of every pulse (and a
+  marching column never steps next to a hostile unit), a
   column is never adjacent to a hostile unit when attacks are declared; it has
   already deployed (disordered). Melee therefore always meets a deployed defender,
   and the disorder penalty is the ambush cost. The one exception is a column stuck
@@ -197,8 +199,16 @@ TravelOrder { unit_id, destination: Axial, via: list[Axial] (≤ 4 waypoints),
   bridges where roads cross them; lakes (impassable open water, never bridged). Every
   river and lake drains off the map (user, 2026-11-10): rivers rise at springs by
   hills or at lakes and always run to the map edge.
-- **Settlements:** about 1 per 70 hexes [tunable], roughly 3× v0.1's density, mostly
-  towns. Cities are rarer and anchor regions.
+- **Settlements:** about 1 per 50 hexes [tunable; 70 until 2026-11-15], mostly
+  towns. Cities are rarer and anchor regions. The user asked for towns about one hex
+  closer on average (2026-11-15), "a little more crowded" and less travel. Measured with
+  `scripts/settlement-spacing.py` (straight-line hex distance from each town or city to
+  its nearest other one, seeds 1-3): at 200 slots the mean went 6.34 → 5.44 and the median
+  6 → 5 (route 6.88 → 5.87 column pulses to the nearest of the three closest); at 12 slots
+  mean 6.47 → 5.56 (median 6 → 5). Settlements per world +36% (200 slots:
+  about 1,950 → 2,650; 12 slots: 117 → 159), and sites, dealt one per town, +40% (about
+  1,750 → 2,450; 12 slots 105 → 147), so the economy grows with the towns. Generation
+  time is unchanged within noise (about 20-25 s at 200 slots on the shared machine).
 - **Roads:** a spanning network linking settlements plus redundant links, so no
   single bridge decides a whole region. Every town in a territory must reach its seat by
   road inside the territory, and roads must reach its borders. (Until 2026-11-10 every
@@ -310,7 +320,7 @@ from the fix-ups. Terrain is now built from sized objects, in this order:
 - Seats: farthest-point sampling, 6 Lloyd steps on open hexes, then each seats on a
   nearby settlement (cities preferred) at least 60% of the ideal lattice spacing from
   the others. The seat becomes a town; territories are each seat's nearest land.
-  Provinces average ~70 hexes at the default density, not 20–40.
+  Provinces average ~50 hexes at the default density (70 before 2026-11-15), not 20–40.
 - `fill_order` orders slots so any prefix is spread out; `to_state(players)` seats the
   first N, each with a garrisoned base and the other three units beside it.
 

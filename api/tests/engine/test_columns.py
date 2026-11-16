@@ -2,7 +2,7 @@
 
 Rule constants under test come from `COLUMN_RULES`: 16 pulses per turn, packing
 takes pulses 1–4, road steps cost 1 pulse and off-road steps 2, stacks hold 6
-columns, and a column halts within 3 hexes of a hostile unit.
+columns, and a column halts when a hostile unit is within 2 hexes (one empty hex between).
 """
 
 from __future__ import annotations
@@ -158,11 +158,54 @@ def test_column_halts_outside_deploy_distance_and_deploys_disordered() -> None:
     state = pack(build([ROW], units, roads=[ROAD]), {1: (0, 0)})
     new, events = resolve_movement(state, [march(1, *east(1, 11))])
 
-    halt_q = 12 - COLUMN_RULES.deploy_distance - 1
+    halt_q = 12 - COLUMN_RULES.deploy_distance
     (deployed,) = of_kind(events, UnitDeployed)
     assert deployed.cause is DeployCause.CONTACT and deployed.disordered
     assert unit(new, 1).coord == ax(halt_q, 0)
     assert unit(new, 1).posture is Posture.DEPLOYED and unit(new, 1).disordered
+
+
+def test_marching_column_halts_with_one_empty_hex_before_the_enemy() -> None:
+    units = [
+        {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
+        {"type": "infantry", "owner": "red", "q": 12, "r": 0},
+    ]
+    state = pack(build([ROW], units, roads=[ROAD]), {1: (0, 0)})
+    new, _ = resolve_movement(state, [march(1, *east(1, 11))])
+
+    assert distance(unit(new, 1).coord, unit(new, 2).coord) == 2
+
+
+def test_two_marching_columns_closing_on_each_other_halt_two_apart() -> None:
+    units = [
+        {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
+        {"type": "infantry", "owner": "red", "q": 12, "r": 0},
+    ]
+    state = pack(build([ROW], units, roads=[ROAD]), {1: (0, 0), 2: (12, 0)})
+    west = [(q, 0) for q in range(11, 0, -1)]
+    new, events = resolve_movement(state, [march(1, *east(1, 11)), march(2, *west)])
+
+    assert len(of_kind(events, UnitDeployed)) == 2
+    assert distance(unit(new, 1).coord, unit(new, 2).coord) == 2
+    assert unit(new, 1).disordered and unit(new, 2).disordered
+
+
+def test_column_is_never_adjacent_to_a_deployed_enemy_marching_at_it() -> None:
+    units = [
+        {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
+        {"type": "armor", "owner": "red", "q": 6, "r": 0},
+    ]
+    state = pack(build([ROW], units), {1: (0, 0)})
+    west = [(q, 0) for q in range(5, 0, -1)]
+    new, events = resolve_movement(state, [move(2, *west)])
+
+    (deployed,) = of_kind(events, UnitDeployed)
+    assert deployed.unit_id == 1 and deployed.disordered
+    # The armour closes a hex a pulse and stands two hexes off at the end of pulse
+    # 4: the column deploys at the start of pulse 5, before it can get adjacent.
+    assert deployed.pulse == 5
+    before = [e for e in of_kind(events, UnitMoved) if e.pulse < deployed.pulse]
+    assert len(before) == 4 and all(distance(e.dest, ax(0, 0)) >= 2 for e in before)
 
 
 def test_stationary_column_deploys_when_approached() -> None:
@@ -175,8 +218,8 @@ def test_stationary_column_deploys_when_approached() -> None:
 
     (deployed,) = of_kind(events, UnitDeployed)
     assert deployed.unit_id == 1 and deployed.disordered
-    # Red reaches (3, 0) — within 3 — at the end of pulse 3; blue deploys at pulse 4.
-    assert deployed.pulse == 4
+    # Red reaches (2, 0) — within 2 — at the end of pulse 4; blue deploys at pulse 5.
+    assert deployed.pulse == 5
     assert unit(new, 1).posture is Posture.DEPLOYED
 
 
@@ -225,11 +268,11 @@ def test_engaged_unit_cannot_pack() -> None:
 def test_packing_is_interrupted_when_a_hostile_comes_near() -> None:
     units = [
         {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
-        {"type": "infantry", "owner": "red", "q": 5, "r": 0},
+        {"type": "infantry", "owner": "red", "q": 4, "r": 0},
     ]
     state = build([ROW], units)
     new, events = resolve_movement(
-        state, [march(1, *east(1, 3)), move(2, (4, 0), (3, 0))]
+        state, [march(1, *east(1, 3)), move(2, (3, 0), (2, 0))]
     )
 
     reasons = [b.reason for b in of_kind(events, MoveBlocked)]

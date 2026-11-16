@@ -146,9 +146,9 @@ class Intel:
     def _danger_buckets(self) -> dict[tuple[int, int], list[tuple[Axial, int]]]:
         """Danger spots (coord, radius) bucketed by coarse position.
 
-        A column halts when its next step would come within the deploy distance
-        of a hostile unit, so a hex is unsafe within that distance of a militia
-        unit. An unseen site's other units stand in the ring around it (or, as
+        A column deploys disordered when it stands within the deploy distance of
+        a hostile unit (it halts a step earlier, adjacent to that ring), so a hex
+        is unsafe within that distance of a militia unit. An unseen site's other units stand in the ring around it (or, as
         generation placed a few, a hex or two farther), so tier 3–4 sites get one
         more hex.
         """

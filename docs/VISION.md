@@ -58,7 +58,7 @@ escalates from local land-grabs to multi-player assaults on great cities.
 Two postures: **deployed** (v0.1 rules, one per hex) and **column** (packed for
 travel: fast, stacks, can't attack, fights badly). Study results (§12):
 
-- **Deploy distance X = 3 (proposal):** a column halts and deploys when its next step
+- **Deploy distance X = 3 (proposal; 2 since 2026-11-15, see WORLD_SPEC §4.5):** a column halts and deploys when its next step
   would come within 3 hexes of a hostile brigade (true positions, so columns can
   blunder into ambushes). Each extra hex of X cost ~1.5 points of front share; X = 3
   buys a hex of buffer outside enemy ZOC.

@@ -463,8 +463,8 @@ function contactLine(
  */
 export function contactCause(at: Axial, viewer: string, context: ReportContext | null): string {
   if (context === null) return "the enemy";
-  // A column checks contact one step ahead, so the source can be one hex past X.
-  const reach = DEPLOY_DISTANCE + 1;
+  // A column halts within the deploy distance of what stopped it.
+  const reach = DEPLOY_DISTANCE;
   const enemyNear = context.units.some(
     (u) => u.owner !== viewer && u.owner !== NEUTRAL_OWNER && axialDistance(u.coord, at) <= reach,
   );
