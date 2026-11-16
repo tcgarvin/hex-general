@@ -44,6 +44,8 @@ export interface WorldMap {
   /** Row-major: `hexes[row * width + col]`. */
   readonly hexes: readonly Hex[];
   readonly sites: readonly MapSite[];
+  /** Every town hex, in map order. A world town is held like a site (2026-11-15) but is not one. */
+  readonly towns: readonly Axial[];
   /** The hex at axial `(q, r)`, or `undefined` off the map (a real answer). */
   hexAt(q: number, r: number): Hex | undefined;
   /** The site at axial `(q, r)`, or `undefined` if the hex has none. */
@@ -79,11 +81,13 @@ export function decodeWorldMap(compact: CompactMap): WorldMap {
     return row * width + col;
   };
   for (const s of sites) siteIndex.set(indexOf(s.coord.q, s.coord.r), s);
+  const towns = hexes.filter((h) => h.terrain === "town").map((h) => h.coord);
   return {
     width,
     height,
     hexes,
     sites,
+    towns,
     hexAt(q, r) {
       const i = indexOf(q, r);
       return i < 0 ? undefined : hexes[i];

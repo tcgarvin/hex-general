@@ -53,30 +53,30 @@ from app.world.generate import WorldParams, generate
 from app.world.season import _plan_all
 
 SLOTS = 4
-SEED = 1
+# Seed 3 since 2026-11-15: with unit sight 6 and town sight 8, seed 1's bots no
+# longer let a viewer see a militia muster.
+SEED = 3
 # (viewer, turn): a bot seat and the resolved turns to keep for it.
 CASES: list[tuple[str, int]] = [
     # The opening turn: no earlier replay to start from.
     ("b002", 0),
     # Garrisons destroyed, entrants taking the hexes, captures, own recruits.
-    ("b002", 3),
+    ("b002", 4),
     ("b002", 9),
-    # Columns stopped by contact; turn 11 also has the viewer's own barrage,
-    # a fight won and the capture it brings (the case the scenario tests use).
-    ("b001", 10),
+    # Turn 11 has the viewer's own barrage, a fight won and the capture it
+    # brings (the case the scenario tests use).
     ("b001", 11),
-    # Enemies coming into sight mid-turn and dropping out of it, and barrages
-    # by guns the viewer cannot see.
-    ("b003", 15),
-    ("b003", 16),
-    ("b001", 16),
-    ("b000", 20),
-    ("b003", 20),
+    # A barrage by a gun the viewer cannot see, landing on the viewer's unit.
+    ("b001", 12),
+    # Columns stopped by contact; enemies coming into sight mid-turn and
+    # dropping out of it.
+    ("b000", 15),
+    ("b000", 16),
     # Another player's recruit, seen without its cost.
-    ("b002", 107),
-    # Militia (WORLD_SPEC §7.1): a militia gun's barrage, militia healing and a
-    # lost militia unit mustering back at its site.
-    ("b001", 97),
+    ("b002", 22),
+    # Militia (WORLD_SPEC §7.1): militia healing and a lost militia unit
+    # mustering back at its site.
+    ("b000", 39),
 ]
 TURNS = max(turn for _, turn in CASES) + 1
 REQUIRED = {

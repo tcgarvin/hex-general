@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import pytest
 
+from app.engine.hex_coords import Axial
 from app.engine.models import GameMap
 from app.engine.victory import victory_status
 from app.games.repo import MapCache, join_state, state_blob
 from app.world.generate import GeneratedWorld, WorldParams, generate
+from app.world.seating import add_town_settlements
 from games.fake_repo import FakeGameRepo
 
 
@@ -70,3 +72,31 @@ def test_world_states_and_turns_share_the_stored_map(world: GeneratedWorld) -> N
     repo.record_turn(game, 0, [], game.state, victory_status(game.state))
     turn = repo.get_turn(game.id, 0)
     assert turn is not None and turn.state_after.map is stored_map
+
+
+def test_join_state_gives_a_world_stored_before_towns_were_held_neutral_towns(
+    world: GeneratedWorld,
+) -> None:
+    state = world.to_state(["a", "b"])
+    towns = set(world.game_map.towns)
+    blob = state_blob(state)
+    # A state stored before 2026-11-15: settlements on sites only.
+    blob["settlements"] = [
+        s for s in blob["settlements"] if Axial.model_validate(s["coord"]) not in towns
+    ]
+
+    joined = join_state(blob, world.game_map)
+
+    added = [s for s in joined.settlements if s.coord in towns]
+    assert [s.coord for s in added] == world.game_map.towns
+    # The upgrade cannot tell whose seat a town was: every one comes back neutral.
+    assert all(s.controlled_by is None for s in added)
+    sites = [s for s in joined.settlements if s.coord not in towns]
+    assert sites == [s for s in state.settlements if s.coord not in towns]
+
+
+def test_join_state_leaves_a_state_with_its_towns_alone(world: GeneratedWorld) -> None:
+    state = world.to_state(["a", "b"])
+    joined = join_state(state_blob(state), world.game_map)
+    assert joined.settlements == state.settlements
+    assert add_town_settlements(joined) is joined

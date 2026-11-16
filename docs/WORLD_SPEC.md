@@ -73,7 +73,7 @@ Hold / Rest, deployed movement rates (infantry 2, armor 4, artillery 1).
 | Attack | Cannot attack |
 | Defense | Defense −3, no terrain or Hold bonus [tunable] |
 | Capture | Cannot capture |
-| Vision | As deployed (every unit type sees 4 hexes since 2026-11-11, one past the deploy distance, so a column halted on contact sees what stopped it) |
+| Vision | As deployed (every unit type sees 6 hexes since 2026-11-15, 4 before; beyond the deploy distance, so a column halted on contact sees what stopped it) |
 | Repair | Rests like a deployed unit (+2 in a friendly settlement, so garrisons stack and heal) |
 
 ### 4.3 Turn pulses
@@ -318,7 +318,8 @@ from the fix-ups. Terrain is now built from sized objects, in this order:
 
 1. **Sites leave the towns.** Farms, oil fields, steel mills and factories each stand
    on their own hex beside a town or a road. Towns stay as terrain (defence and repair
-   as before) but hold no ownership: no `Settlement`, no site. Site counts and the
+   as before) and are not sites. *Superseded in part on 2026-11-15: towns are held
+   again (below), but still earn nothing.* Site counts and the
    economy are unchanged (one site per former town site, dealt per territory by the
    same quotas). City sites are unchanged: on their city hex, capturable.
 2. **Bases are not on cities.** A base (and each vacant base slot) stands on open
@@ -347,6 +348,38 @@ beside the town, not beside another site, nearest. Woods or hills under a plot o
 become plains; no fit raises `WorldGenError`. Units never start on a site or plot hex.
 Seed 1 (terrain redesign, 2026-11-10): 12 slots convert 1 site and 9 footprint hexes,
 none widened; 200 slots convert 8 and 157, none widened.
+**Towns are held (user decision, 2026-11-15):** towns are "ownable like the other
+things", but are not sites.
+
+- Every town hex has a `Settlement` (`GeneratedWorld.to_state`). Towns start neutral,
+  except a seated player's **seat town** (the town their base was placed beside), which
+  starts theirs; a player joining later takes their seat town if it is still neutral
+  (one another player took stays theirs; `seating.seat_player`), and loses it back to
+  neutral if the join is undone. The seat town is found from the map alone
+  (`generate.seat_town`: the town nearest the base anchor within 5 hexes, ties by
+  `(r, q)`); `to_state` raises `WorldGenError` if that is not the generator's seat for
+  every slot (it is for every world tried, 180 slots over 24 worlds).
+- **Capture** is as for a site: deployed infantry or armor ending the turn on it
+  (`settlement_captured` with `settlement: town`, `site: null`). Towns have **no
+  militia** (posts are site hexes only, so nothing garrisons, retakes or musters there).
+- A town **earns nothing** and adds **nothing to army size** (army size counts held
+  sites); it is not a province anchor or a recruit site. It still gives settlement
+  defence and repair, as before, to whoever stands on it.
+- **Sight:** holding a town shows every hex within **8** of it, a flat radius that woods
+  do not block (`visibility.settlement_vision`; a held city or site still sees 1). The
+  fogged view and replay follow from `visible_hexes`.
+- Victory scoring counts a held town like any non-city settlement (1 point), but worlds
+  set no turn limit or city elimination, so nothing is decided by it.
+- Bots value a world town low (1.0, against 3–8 for sites) and leave towns out of
+  their strategic picture (holdings counts, neutral-near, attack focus, operations), so
+  they take towns on the way rather than chase them.
+- **Stored worlds** from before 2026-11-15 get a neutral settlement on every town at
+  the DB boundary (`seating.add_town_settlements`, from `repo.join_state`). All of them
+  neutral, seat towns too: the state alone does not say which slot a player holds, and
+  a base can change hands. A player takes their seat town by walking in.
+- The board rings a held town in its holder's colour (the same ring held sites get) and
+  dots it on the overview and minimap; no new tile art.
+
 - Known spread (seed 1, 200 slots, terrain redesign): territory size 240–878 hexes
   (middle half 504–677); settlements other than seats within 14 hexes of a capital 3–15
   (median 9). Over seeds 1–40 at 12 slots territories run 260–1,035 hexes with 4–21
@@ -379,13 +412,15 @@ revision 2; decisions in VISION §6) replaces v0.1 muster in world games.
 - **Buildings** at the base, one under construction at a time: barracks (5 levels),
   depot (2), workshop (1, unlocks guns). Tanks recruit only at a held factory;
   infantry and guns at the base or a held city.
-- **Army size:** `4 + 2 × barracks level + 1 per 4 held sites` (the base doesn't
-  count), up to 15.
+- **Army size:** `4 + 2 × barracks level + 1 per 4 held sites` (the base and held
+  towns don't count), up to 15.
 - **Shortages:** each turn the stock can't cover upkeep, one unit disbands per short
   resource (fuel: a tank or gun; manpower: any unit). The player's `disband` pick goes
   first, else the weakest (lowest HP, then newest).
 - **Healing:** resting on settlement ground (a town, a city, or a founded site's hex)
   restores **3 HP/turn**; the same ground gives +2 defence.
+- **Towns** are held (2026-11-15, §6) but earn nothing; a held town gives its holder
+  sight 8 hexes round it.
 - **Elimination:** a player with no settlements and no units is out of the world.
 - No victory condition in slice 1; the world simply runs.
 - *As built (2026-11-10):* rules data `app/engine/economy_rules.py` (`WorldEconomy`,

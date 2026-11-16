@@ -145,6 +145,15 @@ class BoardIndex:
         return False
 
 
+def is_world_town(view: GameState, coord: Axial) -> bool:
+    """Whether the settlement at ``coord`` is a world town: held, but no site.
+
+    A town earns nothing and recruits nothing, so a world bot takes one only
+    when nothing better is near; in a v0.1 game towns are the settlements.
+    """
+    return view.config.economy is not None and coord not in view.map.site_index
+
+
 def is_combat_unit(unit: Unit) -> bool:
     """Whether a unit can capture settlements (infantry/armor, SPEC §14.1)."""
     return UNIT_STATS[unit.type].can_capture

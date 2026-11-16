@@ -1,8 +1,8 @@
 """Capture phase — settlement control changes (SPEC §14, §11.3 Phase 3).
 
 The first end-of-turn phase: after movement and combat settle, every settlement (a
-town or city in v0.1; a world site, a base by its anchor hex) occupied by an
-infantry or armor unit flips to that unit's owner (SPEC §14.1).
+town or city in v0.1; in a world a site, a base by its anchor hex, or a town)
+occupied by an infantry or armor unit flips to that unit's owner (SPEC §14.1).
 Artillery cannot capture (SPEC §5.4), and an empty settlement is never neutralised
 — control changes only by an eligible unit *taking* it, never by abandonment
 (SPEC §14.2). A unit already standing on a settlement it controls produces no

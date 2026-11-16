@@ -59,18 +59,22 @@ export function staticSiteTiles(sites: readonly MapSite[]): Map<string, SiteTile
 
 /**
  * Painted tiles for every founded base: each base settlement's footprint at its
- * stage, all hexes from one variant so the painted edges line up. A settlement on
- * a hex with no map site is a broken state and throws.
+ * stage, all hexes from one variant so the painted edges line up. A town's
+ * settlement (held, but no site; 2026-11-15) paints nothing; any other settlement
+ * on a hex with no map site is a broken state and throws.
  */
 export function baseSiteTiles(
-  map: Pick<WorldMap, "siteAt">,
+  map: Pick<WorldMap, "siteAt" | "hexAt">,
   settlements: readonly Settlement[],
 ): Map<string, SiteTilePlacement> {
   const out = new Map<string, SiteTilePlacement>();
   for (const settlement of settlements) {
     const { q, r } = settlement.coord;
     const site = map.siteAt(q, r);
-    if (site === undefined) throw new Error(`settlement at (${q}, ${r}) has no map site`);
+    if (site === undefined) {
+      if (map.hexAt(q, r)?.terrain === "town") continue;
+      throw new Error(`settlement at (${q}, ${r}) has no map site`);
+    }
     if (site.kind !== "base") continue;
     for (const placement of baseTileKeys(settlement.coord, baseStageOf(settlement))) {
       out.set(hexKey(placement.coord.q, placement.coord.r), placement);

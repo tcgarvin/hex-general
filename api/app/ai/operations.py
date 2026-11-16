@@ -28,6 +28,7 @@ from collections import Counter
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.ai.board import is_world_town
 from app.engine.economy_rules import SiteKind
 from app.engine.hex_coords import Axial, distance, line, within
 from app.engine.models import NEUTRAL, GameState, PlayerId, Unit
@@ -139,7 +140,10 @@ def plan_operation(
     visible defence the free army cannot match at `_STRIKE_ODDS` is passed
     over, and with none left the bot runs no operation.
     """
-    held = [s.coord for s in view.settlements if s.controlled_by == slot]
+    # Holdings are sites: towns (everywhere, earning nothing) would only blur
+    # who is winning.
+    sited = [s for s in view.settlements if not is_world_town(view, s.coord)]
+    held = [s.coord for s in sited if s.controlled_by == slot]
     if not held:
         return None
     combat = [
@@ -154,7 +158,7 @@ def plan_operation(
     if _home_in_danger(view, slot, threats):
         return None
     candidates: dict[PlayerId, list[Axial]] = {}
-    for settlement in view.settlements:
+    for settlement in sited:
         owner = settlement.controlled_by
         if owner is None or not view.hostile(owner, slot):
             continue
@@ -177,7 +181,7 @@ def plan_operation(
             )
             if count >= _ENGAGED_UNITS:
                 engaged[c] = count
-    holdings = Counter(s.controlled_by for s in view.settlements if s.controlled_by)
+    holdings = Counter(s.controlled_by for s in sited if s.controlled_by)
     beaten = {
         p
         for p in candidates
@@ -314,7 +318,11 @@ def _rank_objectives(
     holdings, the one the force already stands at, the target's base once the
     bot clearly beats it."""
     sites = view.map.site_index
-    theirs = sum(1 for s in view.settlements if s.controlled_by == target)
+    theirs = sum(
+        1
+        for s in view.settlements
+        if s.controlled_by == target and not is_world_town(view, s.coord)
+    )
     winning = len(held) >= _WINNING_RATIO * theirs
 
     def key(coord: Axial) -> tuple[int, int, int]:

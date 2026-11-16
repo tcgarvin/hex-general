@@ -12,10 +12,7 @@ describe("playback session helpers", () => {
     const pb = casePlayback(turn11);
     expect(pb.beats.map((_, k) => beatTitle(pb.beats, k))).toEqual([
       "Barrage",
-      "Pulse 1 of 4",
-      "Pulse 2 of 4",
-      "Pulse 3 of 4",
-      "Pulse 4 of 4",
+      "Pulse 1 of 1",
       "Captures",
       "Supply and building",
     ]);
@@ -35,7 +32,7 @@ describe("playback session helpers", () => {
 
   it("marks the viewer's fights for the scrubber", () => {
     const pb = casePlayback(turn11);
-    expect(beatMarks(pb)).toEqual(["own_fight", "own_fight", null, null, null, null, null]);
+    expect(beatMarks(pb)).toEqual(["own_fight", "own_fight", null, null]);
   });
 
   it("maps report lines to the beats that show their events", () => {
@@ -52,7 +49,7 @@ describe("playback session helpers", () => {
       if (item.eventIndex === undefined) expect(beats[i]).toBe(-1);
       else expect(pb.beats[beats[i]].eventIndices).toContain(item.eventIndex);
     });
-    const fight = items.findIndex((it) => it.section === "fighting" && it.text.includes("(38,20)"));
+    const fight = items.findIndex((it) => it.section === "fighting" && it.text.includes("(38,15)"));
     expect(pb.beats[beats[fight]].phase).not.toBe("economy");
   });
 

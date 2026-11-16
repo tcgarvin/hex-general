@@ -32,7 +32,7 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.ai.base_plan import plan_base, site_needs
-from app.ai.board import BoardIndex, is_combat_unit
+from app.ai.board import BoardIndex, is_combat_unit, is_world_town
 from app.ai.candidates import moves_toward, unit_candidates
 from app.ai.intel import Box, Intel
 from app.ai.objectives import Objective, ObjectiveKind
@@ -77,6 +77,8 @@ _SITE_VALUE: dict[SiteKind, float] = {
 _SITE_LEVEL_VALUE = 0.25
 # Sites a bot garrisons and guards first, as it does cities on a v0.1 map.
 _KEY_SITES = frozenset({SiteKind.BASE, SiteKind.CITY})
+# A world town earns nothing (it gives sight): worth taking only on the way.
+_WORLD_TOWN_VALUE = 1.0
 # A garrison is worth this much less per HP it has left to wear down.
 _GARRISON_HP_DISCOUNT = 0.15
 # A hostile-held settlement out of view is assumed held by one unit (a base by
@@ -216,7 +218,12 @@ class ScriptedStrategist:
         self.personality = personality
 
     def choose(self, view: GameState, slot: PlayerId) -> StrategistArgs:
-        held = [s.coord for s in view.settlements if s.controlled_by == slot]
+        # Towns are left out: a threatened town is not worth a defensive stance.
+        held = [
+            s.coord
+            for s in view.settlements
+            if s.controlled_by == slot and not is_world_town(view, s.coord)
+        ]
         threats = Intel.player_threats(view, slot)
         reserve = self.personality.garrison_share
         aggression = self.personality.aggression
@@ -228,8 +235,10 @@ class ScriptedStrategist:
         anchors = held or [u.coord for u in view.units if u.owner == slot]
         sites = view.map.site_index
         cheap = _CHEAP_HP_MAX - (_CHEAP_HP_MAX - _CHEAP_HP_MIN) * aggression
+        # Towns don't count: they are everywhere and worth little.
         neutral_near = any(
             s.controlled_by is None
+            and not is_world_town(view, s.coord)
             and _tier_hp(sites.get(s.coord)) <= cheap
             and _nearest(s.coord, anchors) <= self.personality.reach
             for s in view.settlements
@@ -260,7 +269,9 @@ class ScriptedStrategist:
         targets = [
             s.coord
             for s in view.settlements
-            if s.controlled_by is not None and view.hostile(s.controlled_by, slot)
+            if s.controlled_by is not None
+            and view.hostile(s.controlled_by, slot)
+            and not is_world_town(view, s.coord)
         ]
         if not targets:
             return expand
@@ -1140,11 +1151,12 @@ def _targets(
         ):
             continue
         site = view.map.site_index.get(settlement.coord)
-        base = (
-            _CAPTURE_VALUE[index[settlement.coord].terrain]
-            if site is None
-            else _site_value(site, needs)
-        )
+        if site is not None:
+            base = _site_value(site, needs)
+        elif is_world_town(view, settlement.coord):
+            base = _WORLD_TOWN_VALUE
+        else:
+            base = _CAPTURE_VALUE[index[settlement.coord].terrain]
         owner = settlement.controlled_by
         if owner == slot:
             threat = len(intel.threats_within(settlement.coord, _THREAT_RADIUS))

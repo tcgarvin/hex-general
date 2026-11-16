@@ -16,6 +16,7 @@ import type { GlyphName } from "@/ui-art/glyphs";
 import { DEPLOY_DISTANCE } from "./contact";
 import { RESOURCES, type Building, type Economy, type Stocks } from "./economy";
 import { GARRISON_FORCES, MANUAL_RULES as R } from "./manualRules";
+import { TOWN_VISION } from "./playback/visibility";
 import { RECRUIT_NEEDS, RECRUIT_SITES } from "./plan";
 import { COLUMN_RULES as C } from "./routing";
 import { SHORTCUTS } from "./useWorldHotkeys";
@@ -351,7 +352,7 @@ function TurnPage({ view }: { view: WorldView }) {
           ["Plains", <N>+{R.terrainDefense.plains}</N>, "Open ground."],
           ["Woods", <N>+{R.terrainDefense.woods}</N>, "Blocks sight: you see into woods, not through them."],
           ["Hills", <N>+{R.terrainDefense.hills}</N>, ""],
-          ["Town, city, site", <N>+{R.settlementDefense}</N>, "Any site's hex counts. Resting here repairs faster."],
+          ["Town, city, site", <N>+{R.settlementDefense}</N>, "Any site's hex counts. Resting here repairs faster. Towns can be held: see Sites."],
           ["Bridge", <N>+{R.terrainDefense.bridge}</N>, "The only way over a river."],
           ["River, lake", "", "Impassable."],
           [
@@ -370,8 +371,8 @@ function ArmyPage({ ctx }: { ctx: Ctx }) {
   const { economy, view } = ctx;
   const heal = view.state.config.settlement_repair;
   const role: Record<UnitType, string> = {
-    infantry: "Cheap, steady line troops. Holds ground and captures sites.",
-    armor: "Fastest and hardest hitting. Captures sites.",
+    infantry: "Cheap, steady line troops. Holds ground and captures sites and towns.",
+    armor: "Fastest and hardest hitting. Captures sites and towns.",
     artillery: `Shells a hex up to ${UNIT_STATS.artillery.range} away before anyone moves. Weak up close; cannot capture.`,
   };
   return (
@@ -393,8 +394,9 @@ function ArmyPage({ ctx }: { ctx: Ctx }) {
         })}
       />
       <P>
-        You see only what your units see: the hexes within their sight, but not through woods. Enemy units out of sight
-        are simply not shown.
+        You see only what your units see: the hexes within their sight, but not through woods. Each town you hold also
+        shows you every hex within <N>{TOWN_VISION}</N> of it, woods or not, and each site you hold the hexes beside it.
+        Enemy units out of sight are simply not shown.
       </P>
       <H>Health</H>
       <P>
@@ -604,6 +606,13 @@ function SitesPage({ economy }: { economy: Economy }) {
       </P>
       <P>
         Every <N>{economy.army.sites_per_point}</N> sites you hold (your base does not count) add 1 to your army size.
+      </P>
+      <H>Towns</H>
+      <P>
+        Towns can be held too. A new player starts with the town beside their base; every other town starts neutral,
+        with no militia. Take one as you take a site: end the turn with deployed infantry or armor on it. A town pays nothing
+        and adds nothing to your army size, but whoever holds it sees every hex within <N>{TOWN_VISION}</N> of it, through
+        woods. Its hex is ringed in the holder's colour.
       </P>
     </>
   );

@@ -313,11 +313,11 @@ class SettlementCaptured(BaseModel):
     changes — a unit sitting on a settlement it already controls produces no
     event. ``previous_owner`` is ``None`` when the
     settlement was neutral before capture (a single, well-defined meaning).
-    ``settlement`` is the terrain of the captured hex: in a v0.1 game that is what
-    was taken (town or city). ``site`` is the world site that was taken (farm,
-    base, …), whose hex is usually plains; it is ``None`` exactly when the hex is
-    not a world site, which is every v0.1 capture (and events stored before the
-    field existed).
+    ``settlement`` is the terrain of the captured hex: in a v0.1 game, or for a
+    world town, that is what was taken (town or city). ``site`` is the world site
+    that was taken (farm, base, …), whose hex is usually plains; it is ``None``
+    exactly when the hex is not a world site: every v0.1 capture, every world
+    town (2026-11-15), and events stored before the field existed.
     """
 
     model_config = ConfigDict(extra="forbid")

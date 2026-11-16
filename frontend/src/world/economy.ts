@@ -140,7 +140,11 @@ export function forecast(state: WorldState, map: WorldMap, slot: string): Foreca
   for (const s of state.settlements) {
     if (s.controlled_by !== slot) continue;
     const site = map.siteAt(s.coord.q, s.coord.r);
-    if (site === undefined) throw new Error(`settlement at ${s.coord.q},${s.coord.r} has no site`);
+    if (site === undefined) {
+      // A town is held but earns nothing and adds no army size (2026-11-15).
+      if (map.hexAt(s.coord.q, s.coord.r)?.terrain === "town") continue;
+      throw new Error(`settlement at ${s.coord.q},${s.coord.r} has no site`);
+    }
     income = add(income, siteIncome(economy, site));
     if (site.kind !== "base") heldSites += 1;
   }

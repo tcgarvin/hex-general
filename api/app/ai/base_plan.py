@@ -77,7 +77,12 @@ def plan_base(view: GameState, slot: PlayerId) -> BasePlan:
         raise ValueError("plan_base needs a world economy")
     player = view.player(slot)
     sites = view.map.site_index
-    held = [s.coord for s in view.settlements if s.controlled_by == slot]
+    # Held sites only: a town earns nothing and recruits nothing.
+    held = [
+        s.coord
+        for s in view.settlements
+        if s.controlled_by == slot and s.coord in sites
+    ]
     own = [u for u in view.units if u.owner == slot]
 
     income = Stocks()
@@ -231,7 +236,11 @@ def site_needs(view: GameState, slot: PlayerId) -> dict[SiteKind, float]:
         raise ValueError("site_needs needs a world economy")
     player = view.player(slot)
     sites = view.map.site_index
-    held_sites = [sites[s.coord] for s in view.settlements if s.controlled_by == slot]
+    held_sites = [
+        sites[s.coord]
+        for s in view.settlements
+        if s.controlled_by == slot and s.coord in sites
+    ]
     income = Stocks()
     for site in held_sites:
         income += economy.income(site.kind, site.level)

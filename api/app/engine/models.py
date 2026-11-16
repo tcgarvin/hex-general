@@ -120,10 +120,11 @@ def base_footprint(anchor: Axial) -> tuple[Axial, ...]:
 class MapSite(BaseModel):
     """A site's static role in a world economy, fixed at generation.
 
-    A site is the ownership-bearing thing in a world (VISION §6): its `Settlement`
-    record in the state says who holds it. A city site stands on its city hex; a
-    farm, oil field, steel mill, factory or base stands on its own plains hex
-    beside a town or a road (towns themselves hold no ownership in a world).
+    A site is the economic thing in a world (VISION §6): its `Settlement` record in
+    the state says who holds it. A city site stands on its city hex; a farm, oil
+    field, steel mill, factory or base stands on its own plains hex beside a town
+    or a road. Towns are not sites: a town is held too (its own `Settlement`,
+    since 2026-11-15) but earns nothing and has no garrison.
     ``garrison`` is the tier (1–4) of the neutral garrison the site starts with,
     or 0 for a base, which is never garrisoned. It stays on the map after the
     garrison is gone so the strategic view can always show how hard a site was.
@@ -178,6 +179,7 @@ class GameMap(BaseModel):
     _plot_hexes: frozenset[Axial] | None = PrivateAttr(default=None)
     _column_costs: dict[tuple[int, int], int] | None = PrivateAttr(default=None)
     _sight_blockers: frozenset[Axial] | None = PrivateAttr(default=None)
+    _towns: list[Axial] | None = PrivateAttr(default=None)
 
     @property
     def index(self) -> dict[Axial, Hex]:
@@ -200,6 +202,13 @@ class GameMap(BaseModel):
         if self._plot_hexes is None:
             self._plot_hexes = frozenset(c for s in self.sites for c in s.plot)
         return self._plot_hexes
+
+    @property
+    def towns(self) -> list[Axial]:
+        """Every town hex, in map order. Built once, then cached."""
+        if self._towns is None:
+            self._towns = [h.coord for h in self.hexes if h.terrain is Terrain.TOWN]
+        return self._towns
 
     @property
     def sight_blockers(self) -> frozenset[Axial]:
@@ -241,8 +250,12 @@ class Settlement(BaseModel):
     The settlement's *kind* is static map data, not stored here, so there is one
     source of truth: in a v0.1 game it is the terrain at ``coord``
     (``Terrain.TOWN``/``Terrain.CITY``); in a world it is the `MapSite` at
-    ``coord`` (every site but a vacant base slot has a settlement, and towns have
-    none). This record carries only the part that changes during play:
+    ``coord`` (every site but a vacant base slot has a settlement), or, on a hex
+    with no site, town terrain: every world town has a settlement too (user,
+    2026-11-15; states stored before then get theirs at the DB boundary,
+    `app.world.seating.add_town_settlements`). A town earns nothing and has no
+    militia; holding one gives sight around it (`app.engine.visibility`). This
+    record carries only the part that changes during play:
     ``controlled_by``, where ``None`` means neutral / uncontrolled (a single,
     well-defined meaning). Control changes via the capture phase (SPEC §14.1), and
     in a world when militia retake their site (WORLD_SPEC §7.1).
@@ -555,11 +568,13 @@ class GameState(BaseModel):
     def _unit_cap(self, player: PlayerId, *, recruiting: bool) -> int:
         economy = self.config.economy
         if economy is not None:
+            # Held sites grow the army; towns (no site) and bases do not.
             sites = self.map.site_index
             held = sum(
                 1
                 for s in self.settlements
                 if s.controlled_by == player
+                and s.coord in sites
                 and sites[s.coord].kind is not SiteKind.BASE
             )
             owner = self.player(player)
@@ -601,8 +616,8 @@ class GameState(BaseModel):
         """Whether ``coord`` gives the settlement defence and repair bonus.
 
         Town and city terrain always does: that is the whole v0.1 rule, and in a
-        world a town keeps its terrain bonus though it holds no ownership. A world
-        site's hex does too once its settlement exists, which is every site but a
+        world a town gives it whoever holds the town. A world site's hex does too
+        once its settlement exists, which is every site but a
         vacant base slot (no settlement, nothing there yet). Every base is size
         one today, so a base covers only its anchor hex; when bases grow over
         `BASE_FOOTPRINT`, the other hexes a grown base covers belong here.

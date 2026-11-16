@@ -971,10 +971,11 @@ export interface components {
          * MapSite
          * @description A site's static role in a world economy, fixed at generation.
          *
-         *     A site is the ownership-bearing thing in a world (VISION §6): its `Settlement`
-         *     record in the state says who holds it. A city site stands on its city hex; a
-         *     farm, oil field, steel mill, factory or base stands on its own plains hex
-         *     beside a town or a road (towns themselves hold no ownership in a world).
+         *     A site is the economic thing in a world (VISION §6): its `Settlement` record in
+         *     the state says who holds it. A city site stands on its city hex; a farm, oil
+         *     field, steel mill, factory or base stands on its own plains hex beside a town
+         *     or a road. Towns are not sites: a town is held too (its own `Settlement`,
+         *     since 2026-11-15) but earns nothing and has no garrison.
          *     ``garrison`` is the tier (1–4) of the neutral garrison the site starts with,
          *     or 0 for a base, which is never garrisoned. It stays on the map after the
          *     garrison is gone so the strategic view can always show how hard a site was.
@@ -1269,8 +1270,12 @@ export interface components {
          *     The settlement's *kind* is static map data, not stored here, so there is one
          *     source of truth: in a v0.1 game it is the terrain at ``coord``
          *     (``Terrain.TOWN``/``Terrain.CITY``); in a world it is the `MapSite` at
-         *     ``coord`` (every site but a vacant base slot has a settlement, and towns have
-         *     none). This record carries only the part that changes during play:
+         *     ``coord`` (every site but a vacant base slot has a settlement), or, on a hex
+         *     with no site, town terrain: every world town has a settlement too (user,
+         *     2026-11-15; states stored before then get theirs at the DB boundary,
+         *     `app.world.seating.add_town_settlements`). A town earns nothing and has no
+         *     militia; holding one gives sight around it (`app.engine.visibility`). This
+         *     record carries only the part that changes during play:
          *     ``controlled_by``, where ``None`` means neutral / uncontrolled (a single,
          *     well-defined meaning). Control changes via the capture phase (SPEC §14.1), and
          *     in a world when militia retake their site (WORLD_SPEC §7.1).
@@ -1300,11 +1305,11 @@ export interface components {
          *     changes — a unit sitting on a settlement it already controls produces no
          *     event. ``previous_owner`` is ``None`` when the
          *     settlement was neutral before capture (a single, well-defined meaning).
-         *     ``settlement`` is the terrain of the captured hex: in a v0.1 game that is what
-         *     was taken (town or city). ``site`` is the world site that was taken (farm,
-         *     base, …), whose hex is usually plains; it is ``None`` exactly when the hex is
-         *     not a world site, which is every v0.1 capture (and events stored before the
-         *     field existed).
+         *     ``settlement`` is the terrain of the captured hex: in a v0.1 game, or for a
+         *     world town, that is what was taken (town or city). ``site`` is the world site
+         *     that was taken (farm, base, …), whose hex is usually plains; it is ``None``
+         *     exactly when the hex is not a world site: every v0.1 capture, every world
+         *     town (2026-11-15), and events stored before the field existed.
          */
         SettlementCaptured: {
             /** Captured By */

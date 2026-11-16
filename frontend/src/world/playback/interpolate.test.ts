@@ -28,22 +28,22 @@ describe("frameAt endpoints on recorded turns", () => {
   }
 
   it("slides a moving unit along the line between its hexes", () => {
-    const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 11)!;
+    const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 12)!;
     const pb = casePlayback(c);
-    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "move" && a.unitId === 5));
-    const mid = frameAt(pb, k, 0.5).units.find((u) => u.id === 5)!;
+    const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "move" && a.unitId === 74));
+    const mid = frameAt(pb, k, 0.5).units.find((u) => u.id === 74)!;
     expect(mid.moving).toBe(true);
-    // Its first step is (40,20) -> (40,19).
-    expect(mid.at.q).toBe(40);
-    expect(mid.at.r).toBeGreaterThan(19);
-    expect(mid.at.r).toBeLessThan(20);
+    // Its first step is (37,16) -> (37,15).
+    expect(mid.at.q).toBe(37);
+    expect(mid.at.r).toBeGreaterThan(15);
+    expect(mid.at.r).toBeLessThan(16);
   });
 
   it("fades out a unit destroyed in combat and shows the damage", () => {
     const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 11)!;
     const pb = casePlayback(c);
     const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "combat"));
-    const dying = (p: number) => frameAt(pb, k, p).units.find((u) => u.id === 52);
+    const dying = (p: number) => frameAt(pb, k, p).units.find((u) => u.id === 34);
     expect(dying(0.3)!.alpha).toBe(1);
     expect(dying(0.7)!.alpha).toBeGreaterThan(0);
     expect(dying(0.7)!.alpha).toBeLessThan(1);
@@ -54,7 +54,7 @@ describe("frameAt endpoints on recorded turns", () => {
     expect(effects).toContain("damage");
     // The barrage beat flies a shell from the gun to its target.
     const shell = frameAt(pb, 0, 0.25).effects.find((e) => e.kind === "shell");
-    expect(shell).toMatchObject({ from: { q: 40, r: 21 }, to: { q: 38, r: 20 } });
+    expect(shell).toMatchObject({ from: { q: 41, r: 24 }, to: { q: 44, r: 23 } });
   });
 });
 
@@ -126,7 +126,7 @@ describe("camera hints", () => {
     const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 11)!;
     const pb = casePlayback(c);
     const k = pb.beats.findIndex((b) => b.actions.some((a) => a.kind === "combat"));
-    expect(cameraHint(pb, k)).toMatchObject({ focus: "fight", hexes: [{ q: 38, r: 20 }] });
+    expect(cameraHint(pb, k)).toMatchObject({ focus: "fight", hexes: [{ q: 38, r: 15 }, { q: 44, r: 23 }] });
     const track = cameraTrack(pb);
     expect(track).toHaveLength(pb.beats.length);
     pb.beats.forEach((_, i) => {

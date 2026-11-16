@@ -32,6 +32,7 @@ from app.world.generate import (
     WorldParams,
     _garrison_tier,
     generate,
+    seat_town,
 )
 from app.world.grid import HexGrid, patches
 from app.world.land import LAKE_SIZES, SPRING_EDGE_MARGIN
@@ -422,13 +423,16 @@ def test_to_state_seats_players_and_resolves_a_turn(world: GeneratedWorld) -> No
     state = world.to_state(players)
 
     seated = {world.capitals[world.fill_order[k]]: p for k, p in enumerate(players)}
+    seat_towns = {world.seats[world.fill_order[k]]: p for k, p in enumerate(players)}
     vacant = set(world.capitals) - set(seated)
     sites = world.game_map.site_index
+    towns = set(world.game_map.towns)
     for settlement in state.settlements:
-        assert settlement.controlled_by == seated.get(settlement.coord)
+        owner = seated.get(settlement.coord, seat_towns.get(settlement.coord))
+        assert settlement.controlled_by == owner
         assert settlement.coord not in vacant
-        assert settlement.coord in sites
-    assert len(state.settlements) == len(sites) - len(vacant)
+        assert settlement.coord in sites or settlement.coord in towns
+    assert len(state.settlements) == len(sites) - len(vacant) + len(towns)
     player_units = [u for u in state.units if u.owner != NEUTRAL]
     assert len(player_units) == len(STARTING_UNITS) * len(players)
     assert len({u.coord for u in state.units}) == len(state.units)
@@ -550,10 +554,25 @@ def test_every_slot_has_a_clear_four_hex_base_plot(world: GeneratedWorld) -> Non
     assert plots <= world.game_map.plot_hexes
 
 
-def test_towns_hold_no_settlement(world: GeneratedWorld) -> None:
-    index = world.game_map.index
+def test_every_town_is_a_settlement_neutral_but_seated_players_seat_towns(
+    world: GeneratedWorld,
+) -> None:
     state = world.to_state(["p0", "p1"])
-    assert all(index[s.coord].terrain is not Terrain.TOWN for s in state.settlements)
+    seat_towns = {
+        world.seats[world.fill_order[k]]: p for k, p in enumerate(["p0", "p1"])
+    }
+    held = {s.coord: s.controlled_by for s in state.settlements}
+    for town in world.game_map.towns:
+        assert town not in world.game_map.site_index
+        assert held[town] == seat_towns.get(town)
+    # A town has no militia: every militia unit is posted to a site.
+    posts = {u.post for u in state.units if u.post is not None}
+    assert posts <= set(world.game_map.site_index)
+
+
+def test_seat_town_finds_every_slots_seat_from_its_base(world: GeneratedWorld) -> None:
+    for capital, seat in zip(world.capitals, world.seats, strict=True):
+        assert seat_town(world.game_map, capital) == seat
 
 
 def test_units_start_off_the_site_and_plot_hexes(world: GeneratedWorld) -> None:

@@ -138,6 +138,14 @@ export function siteTitle(site: MapSite, owner: string | null | undefined, slot:
     : SITE_LABEL[site.kind];
 }
 
+/**
+ * A town's status line (a town is held like a site, but earns nothing; its
+ * holder sees `TOWN_VISION` hexes around it): "Held by you", "Neutral".
+ */
+export function townStatus(owner: string | null, slot: string): string {
+  return owner === null ? "Neutral" : owner === slot ? "Held by you" : `Held by ${owner}`;
+}
+
 /** "5 manpower, 20 fuel, 2 steel": what the stocks hold after the plan's spending. */
 export function stocksLeft(s: Stocks): string {
   return RESOURCES.map((r) => `${s[r]} ${r}`).join(", ");

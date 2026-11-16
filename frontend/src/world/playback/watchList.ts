@@ -142,7 +142,8 @@ export function engagements(pb: Playback, book: UnitBook): Engagement[] {
       } else if (a.kind === "capture") {
         if (a.owner !== pb.viewer && a.previousOwner !== pb.viewer) continue;
         const took = a.owner === pb.viewer;
-        const site = a.site === null ? "a settlement" : `a ${a.site.replace("_", " ")}`;
+        // A capture with no site is a town: world cities are sites (2026-11-15).
+        const site = a.site === null ? "a town" : `a ${a.site.replace("_", " ")}`;
         const yours = `your ${site.replace(/^an? /, "")} at ${coordText(a.at)}`;
         out.push({
           beat: k,

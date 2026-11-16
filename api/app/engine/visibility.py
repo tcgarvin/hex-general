@@ -9,10 +9,12 @@ lives in `app.engine.fog`.
 
 Visibility in v0.1 is binary (SPEC §9.1): a hex is either visible or not, with no
 concealment state. A player sees a hex if any of their units has line of sight to
-it within that unit's vision radius (SPEC §9.3). Woods block line of sight (SPEC
-§9.2): a sightline is clear only if no hex strictly between the observer and the
-target is woods — the observer still sees *into* an adjacent or unobstructed woods
-hex (the blocking hex itself is visible), but not through it.
+it within that unit's vision radius (SPEC §9.3), or if it lies within the flat
+radius of a settlement they control (`settlement_vision`). Woods block a unit's
+line of sight (SPEC §9.2): a sightline is clear only if no hex strictly between
+the observer and the target is woods — the observer still sees *into* an adjacent
+or unobstructed woods hex (the blocking hex itself is visible), but not through
+it.
 
 All functions are pure queries over a `GameState`; they never mutate it.
 """
@@ -21,7 +23,7 @@ from __future__ import annotations
 
 from app.engine.hex_coords import Axial, line_interior, within
 from app.engine.models import GameState, PlayerId, Unit
-from app.engine.stats import UNIT_STATS
+from app.engine.stats import UNIT_STATS, Terrain
 
 
 def has_line_of_sight(state: GameState, source: Axial, target: Axial) -> bool:
@@ -62,15 +64,26 @@ def unit_visible_hexes(state: GameState, unit: Unit) -> set[Axial]:
 
 
 _SETTLEMENT_VISION = 1
+_TOWN_VISION = 8
+
+
+def settlement_vision(terrain: Terrain) -> int:
+    """The flat radius a controlled settlement on ``terrain`` sees.
+
+    A town sees 8 hexes (user, 2026-11-15); a city or a world site's hex 1.
+    Neither checks sightlines: woods do not block what a settlement sees.
+    """
+    return _TOWN_VISION if terrain is Terrain.TOWN else _SETTLEMENT_VISION
 
 
 def visible_hexes(state: GameState, player_id: PlayerId) -> set[Axial]:
     """Return the union of all hexes ``player_id``'s units and controlled settlements can see.
 
     Units contribute their full vision radius (SPEC §9). Controlled settlements
-    (towns and cities in v0.1, sites in a world) additionally contribute a fixed radius of 1 hex, giving
-    each player persistent local awareness around their territory even when
-    no unit is present.
+    additionally contribute a fixed radius with no sightline check
+    (`settlement_vision`): 8 hexes around a town, 1 around a city or a world
+    site, giving each player persistent awareness around their territory even
+    when no unit is present.
 
     A player with no units and no controlled settlements sees nothing.
     """
@@ -81,7 +94,6 @@ def visible_hexes(state: GameState, player_id: PlayerId) -> set[Axial]:
     on_map = state.map.index
     for settlement in state.settlements:
         if settlement.controlled_by == player_id:
-            visible.update(
-                c for c in within(settlement.coord, _SETTLEMENT_VISION) if c in on_map
-            )
+            radius = settlement_vision(on_map[settlement.coord].terrain)
+            visible.update(c for c in within(settlement.coord, radius) if c in on_map)
     return visible

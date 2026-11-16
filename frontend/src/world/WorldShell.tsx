@@ -45,6 +45,7 @@ import {
   stocksLeft,
   stocksText,
   TONE_CLASS,
+  townStatus,
   UNIT_LABEL,
   unitTag,
 } from "./labels";
@@ -61,6 +62,7 @@ import { consoleHeight, useMinimapSize } from "./minimapConsole";
 import { overlayOf } from "./overlay";
 import { PlaybackBar, type BeatJump } from "./PlaybackBar";
 import { reportItemBeats } from "./playback/session";
+import { TOWN_VISION } from "./playback/visibility";
 import { useTurnPlayback } from "./playback/useTurnPlayback";
 import { engagements } from "./playback/watchList";
 import {
@@ -1157,6 +1159,14 @@ function HexPanel({
                 : owner === slot
                   ? "Held by you."
                   : `Held by ${owner}.`}
+          </span>
+        </div>
+      )}
+      {site === undefined && cell?.terrain === "town" && settlement !== undefined && (
+        <div className="mt-1 flex flex-col gap-0.5">
+          <span>{townStatus(owner, slot)}.</span>
+          <span className="text-xs text-wood-500">
+            Earns nothing; whoever holds it sees {TOWN_VISION} hexes around it, through woods.
           </span>
         </div>
       )}

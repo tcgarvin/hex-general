@@ -12,7 +12,8 @@
 //
 // Rules mirrored: a unit sees every on-map hex within its vision radius with a
 // clear sightline (woods strictly between the endpoints block it; the endpoints
-// never do); a controlled settlement sees radius 1 with no sightline check.
+// never do); a controlled settlement sees a flat radius with no sightline check:
+// 8 for a town, 1 for a city or a site.
 
 import { hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
@@ -87,8 +88,15 @@ function forDisc(center: Axial, radius: number, visit: (c: Axial) => void): void
   }
 }
 
-/** Radius a controlled settlement sees (`visibility._SETTLEMENT_VISION`). */
+/** Radius a controlled city or site sees (`visibility._SETTLEMENT_VISION`). */
 const SETTLEMENT_VISION = 1;
+/** Radius a controlled town sees, through woods (`visibility._TOWN_VISION`, 2026-11-15). */
+export const TOWN_VISION = 8;
+
+/** `visibility.settlement_vision`: the flat radius a held settlement on `terrain` sees. */
+export function settlementVision(terrain: Terrain | undefined): number {
+  return terrain === "town" ? TOWN_VISION : SETTLEMENT_VISION;
+}
 
 export interface Observer {
   owner: string;
@@ -122,7 +130,7 @@ export function visibleHexKeys(
   }
   for (const s of settlements) {
     if (s.controlled_by !== viewer) continue;
-    forDisc(s.coord, SETTLEMENT_VISION, (c) => {
+    forDisc(s.coord, settlementVision(terrainAt(s.coord.q, s.coord.r)), (c) => {
       if (terrainAt(c.q, c.r) !== undefined) seen.add(hexKey(c.q, c.r));
     });
   }
