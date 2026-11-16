@@ -1112,6 +1112,21 @@ export class WorldRenderer {
         g.circle(x, y, r).fill({ color }).stroke({ color: owner === scene.viewer ? IVORY : DARK, width: 1 / scale });
       }
     }
+    // Held towns (2026-11-15) read as held the way sites do: the owner's hex ring
+    // up close, a dot on the overview. A neutral town is just terrain: nothing.
+    for (const town of this.map.towns) {
+      const { col, row } = { col: town.q, row: town.r + (town.q - (town.q & 1)) / 2 };
+      if (col < range.col0 || col > range.col1 || row < range.row0 || row > range.row1) continue;
+      const owner = control.get(hexKey(town.q, town.r)) ?? null;
+      if (owner === null) continue;
+      const { x, y } = axialToPixel(town.q, town.r, HEX_SIZE);
+      const color = ownerColor(owner, scene.viewer);
+      if (tileMode) {
+        g.poly(hexCornerPoints(x, y, radius)).stroke({ color, width: 4, alpha: 0.95 });
+      } else {
+        g.circle(x, y, 3.5 / scale).fill({ color }).stroke({ color: owner === scene.viewer ? IVORY : DARK, width: 1 / scale });
+      }
+    }
     for (const [key, sprite] of this.siteSprites) {
       if (!shown.has(key)) {
         sprite.destroy();
@@ -1600,7 +1615,7 @@ export class WorldRenderer {
     this.minimapFrame.clear().rect(left, top, right - left, bottom - top).stroke({ color: IVORY, width: 1.5 });
   }
 
-  /** Held settlements, plus your own units and base, which stand out from everyone else's. */
+  /** Held sites and towns, plus your own units and base, which stand out from everyone else's. */
   private drawMinimapSites(): void {
     const g = this.minimapSites.clear();
     const scene = this.scene;
@@ -1621,6 +1636,12 @@ export class WorldRenderer {
         base = site.coord;
         continue;
       }
+      g.circle(p.x, p.y, owner === scene.viewer ? 2.2 : 1.4).fill(ownerColor(owner, scene.viewer));
+    }
+    for (const town of this.map.towns) {
+      const owner = this.control.get(hexKey(town.q, town.r)) ?? null;
+      if (owner === null) continue;
+      const p = at(town);
       g.circle(p.x, p.y, owner === scene.viewer ? 2.2 : 1.4).fill(ownerColor(owner, scene.viewer));
     }
     const viewer = ownerColor(scene.viewer, scene.viewer);

@@ -12,8 +12,10 @@ import modelsPy from "../../../api/app/engine/models.py?raw";
 import movementPy from "../../../api/app/engine/movement.py?raw";
 import repairPy from "../../../api/app/engine/repair.py?raw";
 import statsPy from "../../../api/app/engine/stats.py?raw";
+import visibilityPy from "../../../api/app/engine/visibility.py?raw";
 import { DEPLOY_DISTANCE } from "./contact";
 import { GARRISON_FORCES, MANUAL_RULES } from "./manualRules";
+import { settlementVision, TOWN_VISION } from "./playback/visibility";
 import { COLUMN_RULES } from "./routing";
 
 /** The single capture group of `pattern` in `source`, as a number. */
@@ -76,6 +78,13 @@ describe("field manual rules match the engine", () => {
       expect(stats.range, type).toBe(num(block[1], /attack_range=(\d+)/));
       expect(stats.vision, type).toBe(num(block[1], /vision=(\d+)/));
     }
+  });
+
+  it("settlement sight", () => {
+    expect(TOWN_VISION).toBe(num(visibilityPy, /_TOWN_VISION = (\d+)/));
+    expect(settlementVision("town")).toBe(TOWN_VISION);
+    expect(settlementVision("city")).toBe(num(visibilityPy, /_SETTLEMENT_VISION = (\d+)/));
+    expect(settlementVision("plains")).toBe(num(visibilityPy, /_SETTLEMENT_VISION = (\d+)/));
   });
 
   it("garrisons and the clock", () => {

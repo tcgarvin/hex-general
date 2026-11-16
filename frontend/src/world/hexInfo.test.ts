@@ -73,6 +73,15 @@ describe("hexInfo", () => {
     });
   });
 
+  it("says who holds a town, which has no site", () => {
+    const towns = decodeWorldMap({ width: 2, height: 1, terrain: "t.", roads: "..", sites: [] });
+    const held = (owner: string | null) =>
+      ({ units: [], settlements: [{ coord: at(0), controlled_by: owner, muster_clock: 0 }] }) as unknown as WorldState;
+    expect(hexInfo(towns, held("me"), all, "me", at(0))).toEqual({ title: "Town", lines: ["Held by you"] });
+    expect(hexInfo(towns, held("p7"), all, "me", at(0)).lines).toEqual(["Held by p7"]);
+    expect(hexInfo(towns, held(null), all, "me", at(0)).lines).toEqual(["Neutral"]);
+  });
+
   it("hides units out of sight", () => {
     expect(hexInfo(map, state, new Set(), "me", at(1)).lines).toEqual(["Neutral; militia: one infantry", "Not in sight"]);
   });

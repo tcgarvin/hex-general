@@ -34,6 +34,7 @@ from app.engine.map_codec import CompactMap, decode_map, encode_map
 from app.engine.militia import assign_posts
 from app.engine.models import GameMap, GameState
 from app.engine.victory import VictoryStatus
+from app.world.seating import add_town_settlements
 
 
 class RepoError(RuntimeError):
@@ -281,9 +282,12 @@ def join_state(blob: dict[str, Any], game_map: GameMap) -> GameState:
     The map is passed as the decoded instance, which pydantic keeps as is, so
     every state of a world shares one map object rather than re-validating it.
     Militia stored before they had posts (before 2026-11-15) get one here
-    (`assign_posts`), so the engine can trust every neutral unit has a post.
+    (`assign_posts`), so the engine can trust every neutral unit has a post, and
+    a world stored before towns were held gets a neutral settlement on each
+    town (`add_town_settlements`).
     """
-    return assign_posts(GameState.model_validate({**blob, "map": game_map}))
+    state = GameState.model_validate({**blob, "map": game_map})
+    return add_town_settlements(assign_posts(state))
 
 
 class MapCache:

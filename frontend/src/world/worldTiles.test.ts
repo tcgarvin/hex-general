@@ -7,7 +7,7 @@ import { baseTileKeys, siteTileKey } from "./siteTiles";
 import { decodeWorldMap, offsetToAxial, type MapSite } from "./worldMap";
 import { overviewHexFill, SITE_OVERVIEW_FILL, baseSiteTiles, baseStageOf, changedBaseTiles, hexTileChoice, staticSiteTiles } from "./worldTiles";
 
-// A 4x3 world: plains everywhere except a town at (1,0) offset and a city at (3,2).
+// A 4x3 world: plains everywhere except towns at (1,0) and (3,0) offset and a city at (3,2).
 const FARM = offsetToAxial(0, 0);
 const OLD_FARM = offsetToAxial(1, 0); // an old stored map: the farm stands on its town hex
 const FACTORY = offsetToAxial(2, 0);
@@ -15,6 +15,7 @@ const BASE = offsetToAxial(0, 1);
 const VACANT = offsetToAxial(2, 1);
 const CITY = offsetToAxial(3, 2);
 const PLAIN = offsetToAxial(1, 2);
+const TOWN = offsetToAxial(3, 0); // a town with no site, held like one (2026-11-15)
 
 const SITES: MapSite[] = [
   { coord: FARM, kind: "farm", level: 2, garrison: 1 },
@@ -25,7 +26,7 @@ const SITES: MapSite[] = [
   { coord: CITY, kind: "city", level: 1, garrison: 3 },
 ];
 
-const map = decodeWorldMap({ width: 4, height: 3, terrain: ".t.........c", roads: "............", sites: SITES });
+const map = decodeWorldMap({ width: 4, height: 3, terrain: ".t.t.......c", roads: "............", sites: SITES });
 
 // The founded base and every garrisoned site have settlements; the vacant slot has none.
 const settlements = [
@@ -66,6 +67,11 @@ describe("world hex tile choice", () => {
   it("throws on a site level outside 1-3", () => {
     expect(() => staticSiteTiles([{ coord: FARM, kind: "farm", level: 4, garrison: 1 }])).toThrow(/level/);
     expect(() => staticSiteTiles([{ coord: FARM, kind: "oil_field", level: 0, garrison: 1 }])).toThrow(/level/);
+  });
+
+  it("paints nothing for a held town", () => {
+    const held = baseSiteTiles(map, [...settlements, { coord: TOWN, controlled_by: "p1", muster_clock: 0 }]);
+    expect(changedBaseTiles(baseTiles, held)).toEqual([]);
   });
 
   it("throws on a settlement that stands on no map site", () => {

@@ -29,7 +29,8 @@
 7. **Sites** (the ownership-bearing things, VISION §6): every city is a city
    site; every other town but a seat gets a farm, oil field, steel mill or
    factory on its own plains hex beside the town or a road, with a level drawn
-   by `SITE_LEVEL_WEIGHTS`. Towns themselves hold no ownership.
+   by `SITE_LEVEL_WEIGHTS`. Towns are not sites, but each is held too (a
+   `Settlement` in the state, `GeneratedWorld.to_state`).
 8. **Provinces:** every site anchors the hexes nearest it by column travel cost.
 
 Woods or hills under a base plot or a site become plains. Same params → same
@@ -244,8 +245,8 @@ class WorldParams:
 class GeneratedWorld:
     """A generated world: the static map plus the layout facts built with it.
 
-    ``settlements`` are the town and city hexes (terrain; ownership lives on
-    ``game_map.sites``). Per slot, ``capitals`` is the base's anchor hex and
+    ``settlements`` are the town and city hexes (terrain; a city is a site in
+    ``game_map.sites``, a town is not). Per slot, ``capitals`` is the base's anchor hex and
     ``seats`` the town it stands beside. Per-hex lists (``territory``,
     ``province``) align with ``game_map.hexes``. ``territory`` is the slot whose
     start region holds the hex, ``province`` the position in ``game_map.sites`` of
@@ -273,12 +274,15 @@ class GeneratedWorld:
     def to_state(self, players: list[PlayerId]) -> GameState:
         """A turn-0 state with ``players`` filling the first slots of ``fill_order``.
 
-        Each player holds their base and gets `STARTING_UNITS` on and around it
-        (never on a site or base plot hex), plus the economy's starting stocks. Every other site starts neutral with
-        its tier's garrison (`GARRISON_FORCES`); the base sites of unfilled slots
-        stay vacant (no settlement, nothing to capture) until someone is seated
-        there. Raises `WorldGenError` if there are more players than slots or a
-        player id repeats.
+        Each player holds their base and its seat town and gets `STARTING_UNITS`
+        on and around the base (never on a site or base plot hex), plus the
+        economy's starting stocks. Every other site starts neutral with its
+        tier's garrison (`GARRISON_FORCES`); the base sites of unfilled slots stay
+        vacant (no settlement, nothing to capture) until someone is seated there.
+        Every other town starts neutral, ungarrisoned (user, 2026-11-15). Raises
+        `WorldGenError` if there are more players than slots, a player id
+        repeats, or a seat is not the town `seat_town` finds for its base (a
+        later join finds the seat that way).
         """
         if len(players) > self.params.slots:
             raise WorldGenError(
@@ -286,15 +290,26 @@ class GeneratedWorld:
             )
         if len(set(players)) != len(players):
             raise WorldGenError("player ids must be unique")
+        for capital, seat in zip(self.capitals, self.seats, strict=True):
+            if seat_town(self.game_map, capital) != seat:
+                raise WorldGenError(
+                    f"the base at {capital} is not nearest its seat town at {seat}"
+                )
         base_owner = {
             self.capitals[self.fill_order[k]]: player
             for k, player in enumerate(players)
+        }
+        town_owner = {
+            self.seats[self.fill_order[k]]: player for k, player in enumerate(players)
         }
         economy = WorldEconomy()
         settlements = [
             Settlement(coord=site.coord, controlled_by=base_owner.get(site.coord))
             for site in self.game_map.sites
             if site.kind is not SiteKind.BASE or site.coord in base_owner
+        ] + [
+            Settlement(coord=town, controlled_by=town_owner.get(town))
+            for town in self.game_map.towns
         ]
         units = self._starting_units(players)
         for unit in units:
@@ -365,6 +380,25 @@ class GeneratedWorld:
                     )
                 )
         return units
+
+
+def seat_town(game_map: GameMap, capital: Axial) -> Axial:
+    """The seat town of the slot whose base is anchored at ``capital``.
+
+    The town nearest the anchor, within the farthest a base may stand from its
+    seat (`_BASE_RADII`); ties go to the lowest ``(r, q)``. `GeneratedWorld.to_state`
+    checks that this is the generator's seat for every slot, so a join can find
+    it from the map alone. Raises `WorldGenError` if no town is that near.
+    """
+    index = game_map.index
+    towns = [
+        c
+        for c in within(capital, _BASE_RADII[-1])
+        if c in index and index[c].terrain is Terrain.TOWN
+    ]
+    if not towns:
+        raise WorldGenError(f"no town within {_BASE_RADII[-1]} hexes of {capital}")
+    return min(towns, key=lambda c: (distance(capital, c), c.r, c.q))
 
 
 def nearest_open(
@@ -1118,11 +1152,25 @@ def _place_bases(draft: _Draft) -> None:
     territory and within 3 hexes of the seat (5 if nothing fits in 3), and at
     least one must touch a road. The nearest anchor wins, then the one needing
     the fewest woods or hills turned to plains, then a seeded coin. Raises
-    `WorldGenError` if a seat has no room for a base.
+    `WorldGenError` if a seat has no room for a base. The seat must also be the
+    town `seat_town` finds for the anchor (nearest, ties to the lowest ``(r, q)``),
+    which denser towns can otherwise break.
     """
     grid = draft.grid
     settlements = set(draft.settlements)
+    towns = [
+        s for s, city in zip(draft.settlements, draft.cities, strict=True) if not city
+    ]
+
+    def seat_rank(anchor: int, town: int) -> tuple[int, int, int]:
+        return (grid.distance(anchor, town), grid.r[town], grid.q[town])
+
     for p, seat in enumerate(draft.seats):
+        rivals = [
+            t
+            for t in towns
+            if t != seat and grid.distance(t, seat) <= 2 * _BASE_RADII[-1]
+        ]
         chosen: list[int] | None = None
         for radius in _BASE_RADII:
             options: list[tuple[int, list[int]]] = []
@@ -1137,18 +1185,39 @@ def _place_bases(draft: _Draft) -> None:
                     continue
                 if any(_beside_road(draft, i) for i in plot):
                     options.append((anchor, plot))
-            if options:
-                if radius != _BASE_RADII[0]:
-                    draft.widened_bases += 1
-                _, chosen = min(
-                    options,
+            if not options:
+                continue
+
+            def pick(
+                candidates: list[tuple[int, list[int]]], seat: int = seat
+            ) -> list[int]:
+                return min(
+                    candidates,
                     key=lambda option: (
                         grid.distance(option[0], seat),
                         sum(draft.terrain[i] is not Terrain.PLAINS for i in option[1]),
                         draft.rng.random(),
                     ),
+                )[1]
+
+            def seat_nearest(anchor: int) -> bool:
+                return not any(
+                    seat_rank(anchor, t) < seat_rank(anchor, seat) for t in rivals
                 )
-                break
+
+            picked = pick(options)
+            if not seat_nearest(picked[0]):
+                # Rare: a denser town beats the seat from this anchor. Redraw among
+                # the anchors that keep the seat nearest (the first draw leaves
+                # every other world's random stream untouched).
+                keepers = [o for o in options if seat_nearest(o[0])]
+                if not keepers:
+                    continue
+                picked = pick(keepers)
+            if radius != _BASE_RADII[0]:
+                draft.widened_bases += 1
+            chosen = picked
+            break
         if chosen is None:
             raise WorldGenError(
                 f"slot {p} has no clear base plot within {_BASE_RADII[-1]} hexes of "

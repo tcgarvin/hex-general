@@ -6,36 +6,35 @@ import { engagements, joinNames } from "./watchList";
 
 describe("your fights", () => {
   it("lists the viewer's combat, barrage and capture with beats to jump to", () => {
-    const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 19)!;
+    const c = FIXTURE_CASES.find((x) => x.viewer === "b000" && x.turn === 9)!;
     const pb = casePlayback(c);
     const list = engagements(pb, unitBook(c.replay.events, c.replay.state_after.units, c.viewer));
     expect(list.map((e) => [e.kind, e.result])).toEqual([
       ["barrage", "shelled"],
       ["barrage", "under_fire"],
-      ["combat", "repulsed"],
       ["combat", "won"],
       ["capture", "took"],
     ]);
-    const fight = list[3];
+    const fight = list[2];
     expect(pb.beats[fight.beat].actions.some((a) => a.kind === "combat")).toBe(true);
-    expect(fight.at).toEqual({ q: 32, r: 20 });
-    expect(fight.ours.map((u) => u.unitId)).toEqual([6]);
-    expect(fight.theirs).toMatchObject([{ unitId: 44, destroyed: true }]);
-    expect(fight.summary).toBe("Your infantry took (32,20) from Militia infantry.");
+    expect(fight.at).toEqual({ q: 10, r: 17 });
+    expect(fight.ours.map((u) => u.unitId)).toEqual([1]);
+    expect(fight.theirs).toMatchObject([{ unitId: 53, destroyed: true }]);
+    expect(fight.summary).toBe("Your infantry took (10,17) from Militia infantry.");
     expect(list.map((e) => e.beat)).toEqual([...list.map((e) => e.beat)].sort((a, b) => a - b));
   });
 
   it("lists fire from a gun the viewer cannot see on their own unit", () => {
-    const c = FIXTURE_CASES.find((x) => x.viewer === "b001" && x.turn === 19)!;
+    const c = FIXTURE_CASES.find((x) => x.viewer === "b003" && x.turn === 8)!;
     const pb = casePlayback(c);
     const list = engagements(pb, unitBook(c.replay.events, c.replay.state_after.units, c.viewer));
     const unseen = c.replay.events.findIndex((e) => e.kind === "barrage_resolved" && e.artillery_id === null);
     expect(list.find((e) => e.eventIndex === unseen)).toMatchObject({
       kind: "barrage",
       result: "under_fire",
-      at: { q: 32, r: 21 },
-      ours: [{ unitId: 72 }],
-      summary: "Your infantry came under fire at (32,21).",
+      at: { q: 10, r: 7 },
+      ours: [{ unitId: 14 }],
+      summary: "Your infantry came under fire at (10,7).",
     });
   });
 

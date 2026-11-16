@@ -123,6 +123,8 @@ def test_replayed_site_owners_match_the_final_state(season: Season) -> None:
     site_of = {s.coord: k for k, s in enumerate(state.map.sites)}
     expected = [-1] * len(state.map.sites)
     for settlement in state.settlements:
+        if settlement.coord not in site_of:
+            continue  # a town: the record follows sites only
         held = settlement.controlled_by
         expected[site_of[settlement.coord]] = 0 if held is None else owner[held]
     assert _replay_holders(record) == expected

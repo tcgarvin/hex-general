@@ -4,7 +4,7 @@ import { hexKey, type Axial } from "@/board/hex";
 import type { components } from "@/lib/api/schema";
 
 import type { Designate } from "./designations";
-import { GARRISON_TEXT } from "./labels";
+import { GARRISON_TEXT, townStatus } from "./labels";
 import { isMilitia, militiaName, startingHp } from "./militia";
 import type { WorldMap } from "./worldMap";
 
@@ -78,6 +78,10 @@ export function hexInfo(
             ? "Held by you"
             : `Held by ${owner}`,
     );
+  } else if (cell.terrain === "town") {
+    // A town is held like a site: every world town has a settlement since 2026-11-15.
+    const settlement = state.settlements.find((s) => s.coord.q === hex.q && s.coord.r === hex.r);
+    if (settlement !== undefined) lines.push(townStatus(settlement.controlled_by ?? null, viewer));
   }
   if (!visible.has(hexKey(hex.q, hex.r))) {
     lines.push("Not in sight");

@@ -54,32 +54,28 @@ from app.world.generate import WorldParams, generate
 from app.world.season import _plan_all
 
 SLOTS = 4
-SEED = 1
+# Seed 2 since 2026-11-15: with unit sight 6 and town sight 8, the earlier seeds'
+# bots never let a viewer see a militia muster within a short run.
+SEED = 2
 FIXTURE_HEXES_PER_SETTLEMENT = 70
 # (viewer, turn): a bot seat and the resolved turns to keep for it.
 CASES: list[tuple[str, int]] = [
     # The opening turn: no earlier replay to start from.
-    ("b002", 0),
-    # Garrisons destroyed, entrants taking the hexes, captures, own recruits.
-    ("b002", 3),
-    ("b002", 9),
-    # Columns stopped by contact, and an enemy dropping out of sight.
-    ("b000", 14),
-    ("b002", 12),
-    # The viewer's own barrage, a fight won and the capture it brings (the case
-    # the scenario tests use).
-    ("b001", 19),
-    # Enemies coming into sight mid-turn and dropping out of it, and barrages
-    # by guns the viewer cannot see.
-    ("b003", 15),
-    ("b003", 16),
-    ("b000", 20),
-    ("b003", 20),
+    ("b000", 0),
+    # A fight with a unit destroyed and recruits; columns packing.
+    ("b000", 4),
+    # A barrage by a gun the viewer cannot see, a militia unit mustering back
+    # at its site, and an enemy coming into sight.
+    ("b003", 8),
+    # The viewer's own barrage, a fight won with an entrant taking the hex and
+    # the capture it brings (the case the scenario tests use).
+    ("b000", 9),
+    # Enemies coming into sight and dropping out of it, an own recruit.
+    ("b000", 13),
+    # Columns stopped by contact, and militia healing at its post.
+    ("b001", 23),
     # Another player's recruit, seen without its cost.
-    ("b003", 44),
-    # Militia (WORLD_SPEC §7.1): a militia gun's barrage, militia healing and a
-    # lost militia unit mustering back at its site.
-    ("b001", 67),
+    ("b002", 34),
 ]
 TURNS = max(turn for _, turn in CASES) + 1
 REQUIRED = {
@@ -96,6 +92,7 @@ REQUIRED = {
     "recruit:foreign",
     "unit_repaired",
     "militia_mustered",
+    "militia:repair",
     "sight:enter",
     "sight:leave",
 }
@@ -129,6 +126,13 @@ def _features(events: list[ReplayEvent], viewer: str) -> set[str]:
         if event.kind == "world_unit_recruited" and event.owner != viewer:
             found.add("recruit:foreign")
     return found
+
+
+def _militia_features(events: list[ReplayEvent], after: dict[str, Any]) -> set[str]:
+    """Whether a militia unit (one with a post) is healed in the served turn."""
+    posted = {u["id"] for u in after["units"] if u["post"] is not None}
+    healed = any(e.kind == "unit_repaired" and e.unit_id in posted for e in events)
+    return {"militia:repair"} if healed else set()
 
 
 def _sight_features(
@@ -227,6 +231,7 @@ def build() -> tuple[str, set[str]]:
         )
         served = _EVENTS.validate_python(replay["events"])
         covered |= _features(served, viewer)
+        covered |= _militia_features(served, replay["state_after"])
         if before_state is not None:
             covered |= _sight_features(
                 served, before_state, replay["state_after"], viewer

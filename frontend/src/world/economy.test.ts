@@ -85,6 +85,14 @@ describe("forecast", () => {
     expect(f.short).toEqual([]);
   });
 
+  it("earns nothing from a held town and adds no army size", () => {
+    const withTown = decodeWorldMap({ width: 4, height: 1, terrain: "cttt", roads: "....", sites: [...map.sites] });
+    const plain = state([0, 1], ["infantry"], S(10, 10, 10));
+    const town = { coord: offsetToAxial(3, 0), controlled_by: "p", muster_clock: 0 };
+    const held = { ...plain, settlements: [...plain.settlements, town] };
+    expect(forecast(held, withTown, "p")).toEqual(forecast(plain, withTown, "p"));
+  });
+
   it("flags a resource that will run out", () => {
     const f = forecast(state([1], ["armor"], S(0, 1)), map, "p");
     expect(f.short).toEqual(["fuel"]);

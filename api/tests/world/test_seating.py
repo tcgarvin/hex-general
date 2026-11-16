@@ -116,3 +116,40 @@ def test_unseating_a_newcomer_restores_the_world_and_reopens_the_slot(
     assert seated.model_dump(mode="json") == before
     assert unseated.model_dump(mode="json") == state.model_dump(mode="json")
     assert open_slot(unseated, world.slots) == 2
+
+
+def _seat_of(world: GeneratedWorld, position: int) -> Settlement:
+    return Settlement(coord=world.seats[world.fill_order[position]])
+
+
+def test_a_newcomer_takes_their_neutral_seat_town(world: GeneratedWorld) -> None:
+    state = world.to_state([slot_id(0)])
+    town = _seat_of(world, 1).coord
+    assert state.settlement_at(town) == Settlement(coord=town)
+
+    seated, player = seat_player(state, world.slots)
+
+    assert seated.settlement_at(town) == Settlement(coord=town, controlled_by=player)
+    towns = [s for s in seated.settlements if s.coord in seated.map.towns]
+    assert [s.coord for s in towns if s.controlled_by == player] == [town]
+
+
+def test_a_seat_town_another_player_took_stays_theirs(world: GeneratedWorld) -> None:
+    state = world.to_state([slot_id(0)])
+    town = state.settlement_at(_seat_of(world, 1).coord)
+    assert town is not None
+    town.controlled_by = slot_id(0)
+
+    seated, _ = seat_player(state, world.slots)
+
+    assert seated.settlement_at(town.coord) == town
+
+
+def test_unseating_returns_the_seat_town_to_neutral(world: GeneratedWorld) -> None:
+    state = world.to_state([slot_id(0)])
+    seated, player = seat_player(state, world.slots)
+    town = _seat_of(world, 1).coord
+
+    unseated = unseat_player(seated, world.slots, player)
+
+    assert unseated.settlement_at(town) == Settlement(coord=town)

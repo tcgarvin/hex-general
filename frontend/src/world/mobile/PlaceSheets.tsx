@@ -8,11 +8,12 @@ import type { components } from "@/lib/api/schema";
 
 import type { Designate } from "../designations";
 import { levelOf, RESOURCES, siteIncome, stocksOf, type Building, type Economy, type Forecast } from "../economy";
-import { BUILDING_LABEL, RESOURCE_LABEL, siteTitle, stocksText, UNIT_LABEL } from "../labels";
+import { BUILDING_LABEL, RESOURCE_LABEL, siteTitle, stocksText, townStatus, UNIT_LABEL } from "../labels";
 import { neutralStatus } from "../hexInfo";
 import { isMilitia, militiaName, startingHp } from "../militia";
 import { StocksGlyphs } from "../parts";
 import { buildOption, recruitOptions } from "../plan";
+import { TOWN_VISION } from "../playback/visibility";
 import { siteIconUrl } from "../siteArt";
 import type { WorldPlanning } from "../useWorldPlan";
 import type { WorldMap } from "../worldMap";
@@ -236,6 +237,12 @@ export function HexSheet({
               {settlement === undefined ? "Vacant base site." : owner === null ? `${neutralStatus(site.garrison)}.` : owner === slot ? "Held by you." : `Held by ${owner}.`}
             </span>
           </div>
+        </div>
+      )}
+      {site === undefined && cell?.terrain === "town" && settlement !== undefined && (
+        <div className="flex flex-col gap-1 border-b border-ink-900/20 px-3 py-2 text-[15px]">
+          <span>{townStatus(owner, slot)}.</span>
+          <span className="text-sm text-wood-500">Earns nothing; whoever holds it sees {TOWN_VISION} hexes around it, through woods.</span>
         </div>
       )}
       {site === undefined && others.length === 0 && <p className="px-3 py-3 text-sm text-wood-500">Nothing to order here. Tap one of your units to give it orders.</p>}

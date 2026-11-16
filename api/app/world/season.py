@@ -99,7 +99,7 @@ _COMBAT, _BARRAGE, _CAPTURE, _DESTROYED, _DISBAND, _ELIMINATED, _RECRUIT, _BUILT
 
 PLAYER_FIELDS: tuple[str, ...] = (
     "units",
-    "holdings",  # settlements held, the base included
+    "holdings",  # settlements held (sites and towns), the base included
     "manpower",
     "fuel",
     "steel",
@@ -314,7 +314,9 @@ def _frame(
 
     now = list(holders)
     for settlement in state.settlements:
-        now[codes.site[settlement.coord]] = codes.holder(settlement.controlled_by)
+        # The record follows sites only: towns (no site) are left out.
+        if settlement.coord in codes.site:
+            now[codes.site[settlement.coord]] = codes.holder(settlement.controlled_by)
     site_changes = [
         value
         for k, (old, new) in enumerate(zip(holders, now, strict=True))
@@ -426,16 +428,17 @@ def _events(codes: _Codes, before: GameState, events: list[Event]) -> list[list[
                 if h.destroyed
             )
         elif isinstance(event, SettlementCaptured):
-            out.append(
-                [
-                    _CAPTURE,
-                    codes.hex(event.coord),
-                    codes.site[event.coord],
-                    owner[event.captured_by],
-                    codes.holder(event.previous_owner),
-                    event.unit_id,
-                ]
-            )
+            if event.site is not None:  # a town capture is not a site change
+                out.append(
+                    [
+                        _CAPTURE,
+                        codes.hex(event.coord),
+                        codes.site[event.coord],
+                        owner[event.captured_by],
+                        codes.holder(event.previous_owner),
+                        event.unit_id,
+                    ]
+                )
         elif isinstance(event, UnitDisbanded):
             out.append(
                 [

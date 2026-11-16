@@ -428,11 +428,14 @@ Do not add special rules for hidden units inside woods yet. Either the hex is vi
 
 | Unit      | Vision |
 | --------- | -----: |
-| Infantry  |      4 |
-| Armor     |      4 |
-| Artillery |      4 |
+| Infantry  |      6 |
+| Armor     |      6 |
+| Artillery |      6 |
 
-World games (2026-11-11): every unit type sees 4 hexes, one past the deploy distance; see `WORLD_SPEC.md`.
+Every unit type sees 6 hexes since 2026-11-15 (4 before); see `WORLD_SPEC.md`.
+
+A controlled settlement also sees the hexes around it with no sightline check: a
+city or a world site 1 hex, a town 8 hexes (user, 2026-11-15; woods do not block it).
 
 Dedicated recon units are deferred.
 

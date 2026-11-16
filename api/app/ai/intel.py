@@ -116,6 +116,7 @@ class Intel:
             for s in self.view.settlements
             if s.controlled_by is None
             and s.coord in self.area
+            and s.coord in sites
             and sites[s.coord].garrison > 0
         }
         seen_units: dict[Axial, list[Unit]] = {}

@@ -1,5 +1,7 @@
 """Tests for line-of-sight and per-player visibility (SPEC §9, roadmap P6)."""
 
+import pytest
+
 from app.engine.hex_coords import Axial
 from app.engine.visibility import (
     has_line_of_sight,
@@ -14,18 +16,14 @@ def test_line_of_sight_to_self_is_clear() -> None:
     assert has_line_of_sight(state, Axial(q=0, r=0), Axial(q=0, r=0))
 
 
-def test_unit_sees_within_vision_radius_on_open_ground() -> None:
-    # Vision 4: on plains the unit sees its hex and the four beyond.
-    state = build(["......."], [{"type": "infantry", "owner": "blue", "q": 0, "r": 0}])
-    unit = state.units[0]
-    seen = unit_visible_hexes(state, unit)
-    assert Axial(q=0, r=0) in seen
-    assert Axial(q=1, r=0) in seen
-    assert Axial(q=2, r=0) in seen
-    assert Axial(q=3, r=0) in seen
-    assert Axial(q=4, r=0) in seen
-    # The sixth hex is out of vision range.
-    assert Axial(q=5, r=0) not in seen
+@pytest.mark.parametrize("unit_type", ["infantry", "armor", "artillery"])
+def test_every_unit_type_sees_six_hexes_on_open_ground(unit_type: str) -> None:
+    # Vision 6 (user, 2026-11-15): on plains the unit sees its hex and the six beyond.
+    state = build(["........."], [{"type": unit_type, "owner": "blue", "q": 0, "r": 0}])
+    seen = unit_visible_hexes(state, state.units[0])
+    assert {Axial(q=q, r=0) for q in range(7)} <= seen
+    # The seventh hex is out of vision range.
+    assert Axial(q=7, r=0) not in seen
 
 
 def test_woods_block_sight_beyond_but_the_woods_hex_is_seen() -> None:
@@ -49,33 +47,33 @@ def test_unit_standing_in_woods_still_sees_out() -> None:
 def test_visible_hexes_unions_over_all_a_players_units() -> None:
     # Two units far apart each contribute their own field of view.
     state = build(
-        ["............"],
+        ["................"],
         [
             {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
-            {"type": "infantry", "owner": "blue", "q": 10, "r": 0},
+            {"type": "infantry", "owner": "blue", "q": 14, "r": 0},
         ],
     )
     seen = visible_hexes(state, "blue")
     assert Axial(q=0, r=0) in seen
-    assert Axial(q=10, r=0) in seen
+    assert Axial(q=14, r=0) in seen
     # The gap between them is unseen by either unit.
-    assert Axial(q=5, r=0) not in seen
+    assert Axial(q=7, r=0) not in seen
 
 
 def test_visibility_is_per_player() -> None:
     state = build(
-        ["......"],
+        ["........"],
         [
             {"type": "infantry", "owner": "blue", "q": 0, "r": 0},
-            {"type": "infantry", "owner": "red", "q": 5, "r": 0},
+            {"type": "infantry", "owner": "red", "q": 7, "r": 0},
         ],
     )
     blue_seen = visible_hexes(state, "blue")
     red_seen = visible_hexes(state, "red")
     assert Axial(q=0, r=0) in blue_seen
     assert Axial(q=0, r=0) not in red_seen
-    assert Axial(q=5, r=0) in red_seen
-    assert Axial(q=5, r=0) not in blue_seen
+    assert Axial(q=7, r=0) in red_seen
+    assert Axial(q=7, r=0) not in blue_seen
 
 
 def test_player_with_no_units_sees_nothing() -> None:
@@ -104,11 +102,38 @@ def test_controlled_settlement_grants_vision_radius_1() -> None:
 
 def test_neutral_settlement_grants_no_vision() -> None:
     state = build(
-        [".....c"],
+        ["...........c"],
         [{"type": "infantry", "owner": "blue", "q": 0, "r": 0}],
-        settlements=[{"q": 5, "r": 0}],
+        settlements=[{"q": 11, "r": 0}],
         players=["blue", "red"],
     )
     seen = visible_hexes(state, "blue")
-    # City at q=5 is not controlled — shouldn't appear in blue's vision
-    assert Axial(q=5, r=0) not in seen
+    # City at q=11 is not controlled — shouldn't appear in blue's vision
+    assert Axial(q=11, r=0) not in seen
+
+
+def test_a_controlled_town_sees_eight_hexes_through_woods() -> None:
+    # A town (user, 2026-11-15) sees a flat 8-hex radius: woods between the town
+    # and a hex do not hide it, unlike a unit's sight.
+    row = "t" + "w" * 3 + "." * 6 + "......"
+    state = build(
+        [row, "." * len(row)],
+        [{"type": "infantry", "owner": "blue", "q": 15, "r": 0}],
+        settlements=[{"q": 0, "r": 0, "owner": "blue"}],
+        players=["blue", "red"],
+    )
+    seen = visible_hexes(state, "blue")
+    for q in range(9):
+        assert Axial(q=q, r=0) in seen  # past the woods, up to 8 away
+    assert Axial(q=8, r=1) not in seen  # 9 away
+    assert Axial(q=0, r=1) in seen
+
+
+def test_a_neutral_or_enemy_town_gives_no_sight() -> None:
+    state = build(
+        ["t.........", ".........t"],
+        [{"type": "infantry", "owner": "red", "q": 0, "r": 0}],
+        settlements=[{"q": 0, "r": 0, "owner": "red"}, {"q": 9, "r": 1}],
+        players=["blue", "red"],
+    )
+    assert visible_hexes(state, "blue") == set()
