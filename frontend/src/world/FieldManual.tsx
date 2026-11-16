@@ -418,7 +418,11 @@ function ArmyPage({ ctx }: { ctx: Ctx }) {
 function OrdersPage() {
   return (
     <>
-      <P>Select a unit (click it, or Tab through your army), pick an order on its panel, then click the map.</P>
+      <P>
+        Select a unit (click it, or Tab through your army), pick an order on its panel (or press T, M or B), then click
+        the map. Each pick is good for one order: once it is given you are back to selecting. Without one, a click never
+        orders: it selects your unit there, or lets the unit go and shows the hex.
+      </P>
       <P>
         On a phone: tap a unit to select it, press Move on its dock, then tap where it should go: a lit hex is a Move this
         turn (a red one an attack), anywhere further a Travel. Guns shell the same way with Barrage. Without Move or
@@ -429,11 +433,11 @@ function OrdersPage() {
         items={[
           [
             "Travel",
-            "Click any hex. The unit packs into a column and marches there over as many turns as it takes, along the route shown. Hover a hex first to see the arrival time. Choose Deploy or Stay packed for arrival. It keeps marching each turn until it arrives, runs into the enemy, or you give it a new order.",
+            "Choose Travel, then click any hex. The unit packs into a column and marches there over as many turns as it takes, along the route shown. Hover a hex first to see the arrival time. Choose Deploy or Stay packed for arrival. It keeps marching each turn until it arrives, runs into the enemy, or you give it a new order.",
           ],
           [
             "Waypoints",
-            "To steer a Travel route (round a militia's site, along a road you prefer), Shift+click hexes after setting the destination: the route passes through them in the order clicked, up to 4, shown as diamonds. Holding Shift while hovering shows the route and arrival time with that hex added. Remove one, or clear them all, on the unit panel. Clicking a new destination starts again without waypoints. Shift+click on a hex one of your units stands on orders the unit there instead.",
+            "To steer a Travel route (round a militia's site, along a road you prefer), Shift+click hexes after setting the destination: the route passes through them in the order clicked, up to 4, shown as diamonds. Holding Shift while hovering shows the route and arrival time with that hex added. Remove one, or clear them all, on the unit panel. Once a unit has a travel, Shift+click adds waypoints without choosing Travel again. A new destination clicked in Travel starts again without waypoints. Shift+click on a hex one of your units stands on orders the unit there instead.",
           ],
           [
             "Move",
@@ -515,8 +519,9 @@ function ColumnsPage() {
         While you plan a Travel order, and after you give it, the route shows where the column would halt on contact
         (an amber ring with a stop bar), and the hover note, the unit panel and the Army list say so. Stop short ends
         the travel on that hex and deploys there by choice, in order. Route hexes you cannot see this turn are drawn
-        dotted: something hidden there halts the column too. A deployed unit already within{" "}
-        <N>{DEPLOY_DISTANCE}</N> hexes of contact opens in Move, since a Travel would pack it and halt it at once.
+        dotted: something hidden there halts the column too. For a deployed unit already within{" "}
+        <N>{DEPLOY_DISTANCE}</N> hexes of contact, use Move: a Travel would pack it and halt it at once, and the unit
+        panel warns if one is staged.
       </P>
       <P>
         A column that deploys on contact is <b>disordered</b> for the next turn: −<N>{R.disorderDefensePenalty}</N>{" "}

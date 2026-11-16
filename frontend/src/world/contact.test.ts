@@ -6,7 +6,7 @@ import type { components } from "@/lib/api/schema";
 import {
   contactSources,
   contactZone,
-  defaultPlanMode,
+  packsIntoContact,
   fogText,
   haltHex,
   haltText,
@@ -104,13 +104,13 @@ describe("haltHex", () => {
   });
 });
 
-describe("defaultPlanMode", () => {
+describe("packsIntoContact", () => {
   const zone = contactZone([{ q: 10, r: 0 }], 3);
 
-  it("is Move for a deployed unit inside the zone, Travel otherwise", () => {
-    expect(defaultPlanMode({ coord: { q: 8, r: 0 }, posture: "deployed" }, zone)).toBe("move");
-    expect(defaultPlanMode({ coord: { q: 8, r: 0 }, posture: "column" }, zone)).toBe("travel");
-    expect(defaultPlanMode({ coord: { q: 0, r: 0 }, posture: "deployed" }, zone)).toBe("travel");
+  it("holds only for a deployed unit inside the zone", () => {
+    expect(packsIntoContact({ coord: { q: 8, r: 0 }, posture: "deployed" }, zone)).toBe(true);
+    expect(packsIntoContact({ coord: { q: 8, r: 0 }, posture: "column" }, zone)).toBe(false);
+    expect(packsIntoContact({ coord: { q: 0, r: 0 }, posture: "deployed" }, zone)).toBe(false);
   });
 });
 

@@ -60,9 +60,10 @@ export function HoverInfo({
   // Shift held: the travel preview shows the hovered hex as the next waypoint.
   const shift = useShiftHeld();
 
-  // The travel preview, searched once the pointer settles on a hex.
+  // The travel preview, searched once the pointer settles on a hex: in Travel mode,
+  // or in select mode with Shift held (a waypoint, when the unit has a travel to extend).
   const unit = planning.selectedUnit;
-  const travelling = unit !== null && planning.mode === "travel";
+  const travelling = unit !== null && (planning.mode === "travel" || (planning.mode === "select" && shift));
   const { previewTravel } = planning;
   const ownHere =
     hover !== null && view.state.units.some((u) => u.owner === view.your_slot && u.coord.q === hover.hex.q && u.coord.r === hover.hex.r);

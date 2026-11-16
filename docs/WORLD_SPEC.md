@@ -784,7 +784,7 @@ hovering a hostile hex the unit can reach shows the expected damage both ways an
 defender's modifiers; in Barrage mode, hovering a hex in range shows the expected damage
 to each unit seen there; the unit panel repeats it for a staged attack or barrage. The maths
 (`combatPreview.ts`) is pinned to the engine by `__fixtures__/combat_fixture.py`, which runs the
-real combat and barrage code over a table of matchups. In Travel mode, Shift+click adds a
+real combat and barrage code over a table of matchups. In Travel mode (or, on desktop, once the unit has a travel), Shift+click adds a
 waypoint to the selected unit's route (up to 4, drawn as diamonds, refused at the click when
 the server would refuse it), Shift while hovering previews it, and the unit panel removes one
 or all; Shift+click on a deployed unit of yours next door still means a swap. The unit panel
@@ -808,9 +808,9 @@ unit panel offers "Stop short at (q,r), deploy clean", which rewrites the travel
 halt hex deployed, keeping the waypoints before it (`stopShort`). Route hexes outside the
 viewer's sight are unscouted: drawn dotted on the preview and on staged and standing routes,
 and counted in the hover tip and unit panel (`routeFog`, `fogText`), since anything hidden
-there halts the column too. A deployed unit already inside the zone opens in Move rather than
-Travel (`defaultPlanMode`; Escape and the stay-put orders return to it), and the unit panel
-warns if a Travel is still staged for it. Planner cues only; the engine rules (§4.5, §5) are
+there halts the column too. The unit panel warns if a Travel is staged for a deployed unit
+already inside the zone (`packsIntoContact`). (Superseded 2026-11-15: it used to open such a
+unit in Move; every selected unit now opens in a neutral select mode, below.) Planner cues only; the engine rules (§4.5, §5) are
 unchanged.
 
 **As built (2026-11-13, unpushed): the phone layout.** Below 768 px wide (or a phone
@@ -846,7 +846,13 @@ instead, with a notice; anything else travels there, deploying on arrival, and a
 runs into known contact stops one hex short and deploys in order. An order disarms Move;
 a notice with nothing staged (no route, nothing closer) keeps it armed. "Hold all" holds deployed
 units with nothing to do; columns are left out, since Hold gives a column no bonus. The
-desktop layout is unchanged.
+desktop layout followed (2026-11-15): a selected unit opens in a neutral select mode, where a
+plain click selects your unit there or, anywhere else, lets the unit go and selects the hex.
+Travel, Move and Barrage are chosen on the unit panel or with T / M / B and are one shot: an
+order goes back to select, a notice (not reachable, out of range, no route) keeps the mode.
+Shift+click adds a waypoint in Travel, or in select once the unit has a travel; Shift+click
+onto a hex of your units still orders a Move there when the reach covers it
+(`clickOrder.ts`).
 
 ## 12. Implementation phases
 

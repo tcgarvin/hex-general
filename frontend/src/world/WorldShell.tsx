@@ -17,7 +17,7 @@ import { ButtonLink, Card, Centered, ErrorBanner, Loading } from "@/components/u
 import type { components } from "@/lib/api/schema";
 import type { GlyphName } from "@/ui-art/glyphs";
 
-import { DEPLOY_DISTANCE, fogText, haltText, stopShort } from "./contact";
+import { DEPLOY_DISTANCE, fogText, haltText, packsIntoContact, stopShort } from "./contact";
 import type { Designate } from "./designations";
 import { neutralStatus } from "./hexInfo";
 import {
@@ -829,13 +829,12 @@ function UnitPanel({
   const route = planning.routes.find((r) => r.unitId === unit.id);
   const kinds = orderKindsFor(unit).filter((k) => k !== "march");
   const disbandRank = planning.plan.disband.indexOf(unit.id);
-  const active: OrderKind | null =
-    planning.mode === "move" || planning.mode === "barrage" ? planning.mode : (order?.kind ?? null);
+  const active: OrderKind | null = planning.mode !== "select" ? planning.mode : (order?.kind ?? null);
   const swap = useSwaps(view, planning).get(unit.id) ?? null;
   const blocked = planning.conflicts.get(unit.id) ?? null;
   const warning = withdrawalWarning(unit, order, view.state.units, view.your_slot, planning.hostile);
-  // A deployed unit already within contact distance (it opens in Move) told to Travel.
-  const packIntoContact = order?.kind === "travel" && planning.defaultMode === "move";
+  // A deployed unit already within contact distance told to Travel.
+  const packIntoContact = order?.kind === "travel" && packsIntoContact(unit, planning.contactZone);
   const travelling = route !== undefined && (route.kind === "travel" || route.kind === "standing");
   const fog = travelling ? fogText(route.fog) : null;
   const shortStop =
@@ -856,7 +855,7 @@ function UnitPanel({
       planning.setMode(kind);
       return;
     }
-    planning.setMode(planning.defaultMode);
+    planning.setMode("select");
     planning.setOrder(unit.id, { kind } as WorldOrder);
   };
 
@@ -887,12 +886,12 @@ function UnitPanel({
         })}
       </div>
       <p className="mt-2 text-xs">
-        {planning.mode === "move" || planning.mode === "barrage"
+        {planning.mode !== "select"
           ? KIND_HELP[planning.mode]
           : order === undefined
             ? route?.kind === "standing"
-              ? `Carrying on its travel order: ${route.halt !== null ? haltText(route.halt, route.from) : etaText(route.eta)}. Click a hex to send it elsewhere.`
-              : `No orders: it stays put, without the Hold bonus. ${KIND_HELP.travel}`
+              ? `Carrying on its travel order: ${route.halt !== null ? haltText(route.halt, route.from) : etaText(route.eta)}. Choose Travel to send it elsewhere.`
+              : "No orders: it stays put, without the Hold bonus. Choose Travel or Move, then click a hex."
             : `Ordered: ${orderText(order, route, swap, designate)}.`}
       </p>
       {expected !== null && (

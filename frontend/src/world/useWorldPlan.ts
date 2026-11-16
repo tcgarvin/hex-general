@@ -8,23 +8,27 @@
 // replaces the whole plan (WORLD_SPEC §10.1), so the local copy is always sent in
 // full.
 //
-// Board clicks: one of your own units selects it (a stack cycles), in every mode.
-// Shift+click on a hex holding your units orders the selected unit there as if
-// they weren't (a Move when this turn's reach covers it): two units ordered into
-// each other's hex swap (WORLD_SPEC §4.7). Otherwise, in Travel mode, Shift+click adds a waypoint to the
-// selected unit's travel (`waypoints.ts`); a plain click on a new destination
-// starts a fresh route without waypoints. With a unit selected, Move and Barrage
-// clicks outside the reach keep the selection and leave a `notice` saying why,
-// rather than silently dropping it. Move reach follows the engine's occupancy
+// Board clicks (desktop) follow the pure rule in `clickOrder.ts`. A selected unit
+// opens in "select" mode, where a plain click never orders: your unit there selects
+// (a stack cycles), any other hex is selected and the unit let go. Travel, Move and
+// Barrage are chosen on the unit panel or with T / M / B and are one shot: a click
+// that stages an order goes back to "select", keeping the unit; a click that only
+// leaves a `notice` (not reachable, out of range, no route) keeps the mode. A plain
+// Travel click on a new destination starts a fresh route without waypoints;
+// Shift+click adds a waypoint (`waypoints.ts`) in Travel mode, or in "select" mode
+// when the unit has a travel to extend. Shift+click on a hex holding your units
+// orders the selected unit there as if they weren't (a Move when this turn's reach
+// covers it, in any mode): two units ordered into each other's hex swap
+// (WORLD_SPEC §4.7). Move reach follows the engine's occupancy
 // rules where it can (`moveRules.ts`): it doesn't run past an enemy, and it goes
 // round your own units when it can, but your own units never make a hex
 // unreachable. A Move they will block is staged anyway, and `conflicts` says why
 // (`planConflicts`), recomputed whenever the plan changes.
 //
-// A selected unit opens in Travel mode, except a deployed unit already within
-// contact distance (`defaultPlanMode`), which opens in Move: a Travel would pack
-// it and then halt it at once, disordered. Escape and the stay-put orders go back
-// to that default.
+// Escape leaves an ordering mode for "select", then drops the selection; the
+// stay-put orders (Rest, Hold, Deploy) go back to "select" too. The unit panel warns
+// when a Travel is staged for a deployed unit inside the contact zone
+// (`packsIntoContact`): it would pack, then halt at once, disordered.
 //
 // Tap orders ("auto", the phone layout): `onHexTap` lets the tap pick the order
 // (`autoOrder.ts`) instead of a mode, but only once the next tap is armed (`arm`):
@@ -50,7 +54,8 @@ import { ARTILLERY_RANGE, isPassable, UNIT_MOVE } from "@/planning/rules";
 import type { components } from "@/lib/api/schema";
 
 import { autoTap, holdAllUnits, type Armed } from "./autoOrder";
-import { contactSources, contactZone, defaultPlanMode, haltHex, inView, routeFog, type RouteFog } from "./contact";
+import { desktopClick, type PlanMode } from "./clickOrder";
+import { contactSources, contactZone, haltHex, inView, routeFog, type RouteFog } from "./contact";
 import type { Designate } from "./designations";
 import type { Building } from "./economy";
 import { unitTag } from "./labels";
@@ -76,8 +81,7 @@ type Unit = components["schemas"]["Unit"];
 type UnitType = components["schemas"]["UnitType"];
 type Posture = components["schemas"]["Posture"];
 
-/** What a board click means while a unit is selected. */
-export type PlanMode = "travel" | "move" | "barrage";
+export type { PlanMode } from "./clickOrder";
 
 /** A unit's planned path this turn or beyond, for drawing and the panels. */
 export interface PlannedRoute {
@@ -151,12 +155,8 @@ export interface WorldPlanning {
   dismissSetAside: () => void;
   selectedUnit: Unit | null;
   selectedHex: Axial | null;
+  /** How the next board click is read ("select" with no unit selected). */
   mode: PlanMode;
-  /**
-   * The selected unit's mode when nothing else is chosen: Move for a deployed unit
-   * already within contact distance (`defaultPlanMode`), else Travel.
-   */
-  defaultMode: PlanMode;
   routes: readonly PlannedRoute[];
   /**
    * Hexes a click would extend the selected unit's move to (move mode; auto mode:
@@ -194,7 +194,7 @@ export interface WorldPlanning {
   selectUnit: (unitId: number | null) => void;
   /** Select the next (1) or previous (-1) own unit, idle ones first; returns it. */
   cycleUnit: (dir: 1 | -1) => Unit | null;
-  /** Escape: back to the unit's default mode, else drop the selection. */
+  /** Escape: leave an ordering mode for "select", else drop the selection. */
   cancel: () => void;
   /**
    * Search, without blocking the page, the travel route a click on `hex` would
@@ -281,10 +281,10 @@ export function useWorldPlan(
     else clearUnsentPlan(gameId, turn);
   }, [gameId, turn, plan, dirty, current, asideNow]);
 
-  const [selection, setSelection] = useState<Selection>({ turn: view.turn, unitId: null, hex: null, mode: "travel", armed: null });
+  const [selection, setSelection] = useState<Selection>({ turn: view.turn, unitId: null, hex: null, mode: "select", armed: null });
   const sel = useMemo(
     (): Selection =>
-      selection.turn === view.turn ? selection : { turn: view.turn, unitId: null, hex: null, mode: "travel", armed: null },
+      selection.turn === view.turn ? selection : { turn: view.turn, unitId: null, hex: null, mode: "select", armed: null },
     [selection, view.turn],
   );
   const ownUnits = useMemo(() => state.units.filter((u) => u.owner === slot), [state.units, slot]);
@@ -294,14 +294,6 @@ export function useWorldPlan(
   const hostile = useMemo(() => hostileHexes(state.units, slot), [state.units, slot]);
   const zone = useMemo(() => contactZone(contactSources(state, map, slot)), [state, map, slot]);
   const visible = useMemo(() => new Set(view.visible.map((c) => hexKey(c.q, c.r))), [view.visible]);
-  const modeFor = useCallback(
-    (unitId: number | null): PlanMode => {
-      const unit = ownUnits.find((u) => u.id === unitId);
-      return unit === undefined ? "travel" : defaultPlanMode(unit, zone);
-    },
-    [ownUnits, zone],
-  );
-  const defaultMode = modeFor(selectedUnit?.id ?? null);
   const standing = useMemo(() => state.standing_orders ?? [], [state.standing_orders]);
   const [notice, setNotice] = useState<Notice | null>(null);
   const warn = useCallback((text: string) => setNotice((n) => ({ text, seq: (n?.seq ?? 0) + 1 })), []);
@@ -390,9 +382,9 @@ export function useWorldPlan(
   }, [auto, sel.armed, selectedUnit, state.units, slot]);
 
   const select = useCallback(
-    (unitId: number | null, hex: Axial | null, mode: PlanMode = modeFor(unitId)) =>
+    (unitId: number | null, hex: Axial | null, mode: PlanMode = "select") =>
       setSelection({ turn: view.turn, unitId, hex, mode, armed: null }),
-    [view.turn, modeFor],
+    [view.turn],
   );
 
   /** Add `hex` as the next waypoint of the unit's travel (Shift+click, or an armed tap). */
@@ -419,64 +411,54 @@ export function useWorldPlan(
     [sel.unitId, select],
   );
 
-  /**
-   * A click; Shift+click on a hex holding your units (a unit selected) gives the
-   * mode's order as if none of them stood there.
-   */
+  /** A desktop click or Shift+click (`desktopClick`). */
   const onHexClick = useCallback(
     (hex: Axial, mods: ClickMods = { shift: false }) => {
-      const key = hexKey(hex.q, hex.r);
       const onHex = ownUnits.filter((u) => u.coord.q === hex.q && u.coord.r === hex.r);
-      const ordering = mods.shift && onHex.length > 0 && selectedUnit !== null && !axialEqual(hex, selectedUnit.coord);
-      const here = ordering ? [] : onHex;
-      // Shift+click elsewhere in Travel mode: the next waypoint.
-      if (mods.shift && !ordering && selectedUnit !== null && sel.mode === "travel") {
-        addStop(selectedUnit, hex);
-        return;
-      }
-      if (ordering && selectedUnit !== null && selectedUnit.posture === "deployed") {
-        // Onto a hex one of your units stands on: a Move when this turn's reach
-        // covers it, whatever the mode (packing to travel one hex is never meant).
-        const index = localIndex(map, selectedUnit.coord, UNIT_MOVE[selectedUnit.type] + 2);
-        const path = planMoveReach(selectedUnit, [], index, moveCtx).get(key);
-        if (path !== undefined) {
-          setOrder(selectedUnit.id, { kind: "move", path });
+      const unit = selectedUnit;
+      const cell = map.hexAt(hex.q, hex.r);
+      const result = desktopClick({
+        unit,
+        hex,
+        shift: mods.shift,
+        mode: sel.mode,
+        ownHere: onHex.length,
+        hasTravel: unit !== null && travelBase(unit, plan.orders, standing) !== null,
+        reach: moveReach,
+        freshReach: () => {
+          if (unit === null) return new Map();
+          const index = localIndex(map, unit.coord, UNIT_MOVE[unit.type] + 2);
+          return planMoveReach(unit, [], index, moveCtx);
+        },
+        inRange: unit !== null && inBarrageRange(unit, hex),
+        passable: cell !== undefined && isPassable(cell.terrain),
+        route: (to) => (unit === null ? null : cachedRoute(costs, unit.coord, to, [])),
+        previous: unit === null ? undefined : plan.orders[unit.id],
+        notReachable: NOT_REACHABLE,
+        outOfRange: OUT_OF_RANGE,
+      });
+      switch (result.kind) {
+        case "select":
+          selectAt(onHex, hex);
           return;
-        }
-      }
-      if (here.length > 0) {
-        // Your own unit selects, in every mode. Clicking a stack again steps
-        // through its units, then the hex itself.
-        selectAt(here, hex);
-        return;
-      }
-      if (selectedUnit !== null && sel.mode === "barrage") {
-        if (inBarrageRange(selectedUnit, hex)) {
-          setOrder(selectedUnit.id, { kind: "barrage", target: hex });
-          select(selectedUnit.id, sel.hex);
-        } else {
-          warn(OUT_OF_RANGE);
-        }
-        return;
-      }
-      if (selectedUnit !== null && sel.mode === "move") {
-        const path = moveReach.get(key);
-        if (path !== undefined) setOrder(selectedUnit.id, { kind: "move", path });
-        else warn(NOT_REACHABLE);
-        return;
-      }
-      if (selectedUnit !== null && sel.mode === "travel") {
-        const cell = map.hexAt(hex.q, hex.r);
-        if (cell !== undefined && isPassable(cell.terrain) && cachedRoute(costs, selectedUnit.coord, hex, []) !== null) {
-          const prev = plan.orders[selectedUnit.id];
-          const onArrival = prev?.kind === "travel" ? prev.onArrival : "deployed";
-          setOrder(selectedUnit.id, { kind: "travel", destination: hex, via: [], onArrival });
+        case "inspect":
+          select(null, hex);
           return;
-        }
+        case "waypoint":
+          if (unit === null) throw new Error("a click waypoint with no unit selected");
+          addStop(unit, hex);
+          return;
+        case "order":
+          if (unit === null) throw new Error("a click order with no unit selected");
+          setOrder(unit.id, result.order);
+          select(unit.id, sel.hex);
+          return;
+        case "notice":
+          warn(result.text);
+          return;
       }
-      select(null, hex);
     },
-    [selectedUnit, sel, moveReach, moveCtx, ownUnits, map, costs, plan.orders, setOrder, select, selectAt, addStop, warn],
+    [selectedUnit, sel, moveReach, moveCtx, ownUnits, map, costs, plan.orders, standing, setOrder, select, selectAt, addStop, warn],
   );
 
   /** A tap in auto mode: unarmed it selects or inspects, armed it orders (`autoTap`). */
@@ -629,8 +611,7 @@ export function useWorldPlan(
     dismissSetAside: () => setSetAside(null),
     selectedUnit,
     selectedHex: sel.hex,
-    mode: selectedUnit === null ? defaultMode : sel.mode,
-    defaultMode,
+    mode: selectedUnit === null ? "select" : sel.mode,
     routes,
     moveReach,
     hostile,
@@ -660,7 +641,7 @@ export function useWorldPlan(
       return next;
     },
     cancel: () => {
-      if (selectedUnit !== null && sel.mode !== defaultMode) select(sel.unitId, sel.hex, defaultMode);
+      if (selectedUnit !== null && sel.mode !== "select") select(sel.unitId, sel.hex);
       else select(null, null);
     },
     previewTravel,

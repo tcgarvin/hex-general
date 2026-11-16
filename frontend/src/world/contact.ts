@@ -80,12 +80,11 @@ export function haltText(halt: Axial, origin: Axial): string {
 }
 
 /**
- * The default plan mode for a selected unit: Move for a deployed unit already
- * inside the contact zone (a Travel would pack it, then halt it at once,
- * disordered), else Travel.
+ * A deployed unit inside the contact zone: a Travel would pack it, then halt it at
+ * once, disordered (the unit panel warns when one is staged).
  */
-export function defaultPlanMode(unit: Pick<Unit, "coord" | "posture">, zone: ReadonlySet<string>): "travel" | "move" {
-  return unit.posture === "deployed" && zone.has(hexKey(unit.coord.q, unit.coord.r)) ? "move" : "travel";
+export function packsIntoContact(unit: Pick<Unit, "coord" | "posture">, zone: ReadonlySet<string>): boolean {
+  return unit.posture === "deployed" && zone.has(hexKey(unit.coord.q, unit.coord.r));
 }
 
 /**

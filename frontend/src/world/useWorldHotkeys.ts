@@ -26,14 +26,14 @@ export const SHORTCUTS: readonly { keys: string; does: string }[] = [
   { keys: "Home or Space", does: "Centre on your base (Home only in playback)" },
   { keys: "F or 0", does: "Show the whole world" },
   { keys: "Tab / Shift+Tab or . / ,", does: "Next / previous unit (idle first)" },
-  { keys: "T", does: "Travel mode" },
-  { keys: "M", does: "Move mode" },
-  { keys: "B", does: "Barrage mode (artillery)" },
+  { keys: "T", does: "Travel: the next click sends the unit there" },
+  { keys: "M", does: "Move: the next click on a lit hex moves it there" },
+  { keys: "B", does: "Barrage: the next click shells that hex (artillery)" },
   { keys: "R / H", does: "Rest / Hold" },
   { keys: "X or Delete", does: "Clear the unit's order" },
   { keys: "Shift+click", does: "On a hex one of your units stands on: order the selected unit there anyway" },
-  { keys: "Shift+click", does: "Travel mode, anywhere else: add a waypoint to the unit's route (hold Shift to preview it)" },
-  { keys: "Esc", does: "Leave the mode, then deselect" },
+  { keys: "Shift+click", does: "Anywhere else, in Travel or once the unit has a travel: add a waypoint to its route (hold Shift to preview it)" },
+  { keys: "Esc", does: "Leave Travel, Move or Barrage, then deselect" },
   { keys: "Ctrl+Enter", does: "Submit the plan" },
   { keys: "?", does: "This field manual" },
   { keys: "Space", does: "Playback: play / pause" },
@@ -213,7 +213,7 @@ function handleKey(e: KeyboardEvent, o: HotkeyOptions, renderer: WorldRenderer):
   if (kind === "travel" || kind === "move" || kind === "barrage") {
     planning.setMode(kind);
   } else {
-    planning.setMode(planning.defaultMode);
+    planning.setMode("select");
     planning.setOrder(unit.id, { kind } as { kind: "rest" | "hold" });
   }
   return true;

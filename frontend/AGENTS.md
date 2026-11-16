@@ -43,6 +43,11 @@ Line icons with no glyph yet (Move, Hold, Rest, Barrage, Clear, Report, More, me
 chevrons) are placeholders in `mobile/icons.tsx`. Check it at phone width with the dev
 harness `/phone-frame.html?path=/world/<id>` (docs/FRONTEND.md).
 
+The desktop layout works the same way: a selected unit opens in a neutral "select" mode,
+so a plain click on empty ground deselects the unit and selects the hex, and a click only
+orders after Travel, Move or Barrage is chosen (panel chip or T / M / B). The pick is one
+shot: an order goes back to select, a notice keeps it (`world/clickOrder.ts`).
+
 ## Env vars
 
 Browser config is `VITE_`-prefixed and read via `import.meta.env`
