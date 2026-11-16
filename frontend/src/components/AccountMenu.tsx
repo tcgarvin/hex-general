@@ -8,6 +8,7 @@ import {
   IMPERSONATION_CHANGED,
   setImpersonatedUserId,
 } from "@/dev/impersonation";
+import { ResolveTurnItem } from "@/admin/ResolveTurnItem";
 import { api } from "@/lib/api/client";
 import type { DevProfile } from "@/lib/api/types";
 
@@ -24,8 +25,14 @@ import type { DevProfile } from "@/lib/api/types";
  * user's active game is re-resolved cleanly rather than leaving stale state.
  * For admins (`GET /me`'s `is_admin`; every dev is one) it links the admin screen.
  */
-/** `onFieldManual`: on the world screen, a menu item opens the field manual. */
-export function AccountMenu({ onFieldManual }: { onFieldManual?: () => void } = {}) {
+/** The world the menu sits on, for the admin "resolve turn now" item. */
+export type MenuWorld = { gameId: string; turn: number; active: boolean; onResolved: () => void };
+
+/**
+ * `onFieldManual`: on the world screen, a menu item opens the field manual.
+ * `world`: on the world screen, admins also get "Resolve turn now" for it.
+ */
+export function AccountMenu({ onFieldManual, world }: { onFieldManual?: () => void; world?: MenuWorld } = {}) {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [isDev, setIsDev] = useState(false);
@@ -141,6 +148,19 @@ export function AccountMenu({ onFieldManual }: { onFieldManual?: () => void } = 
               >
                 Field manual
               </button>
+            )}
+
+            {isAdmin && world !== undefined && (
+              <ResolveTurnItem
+                gameId={world.gameId}
+                turn={world.turn}
+                active={world.active}
+                onResolved={() => {
+                  setOpen(false);
+                  world.onResolved();
+                }}
+                className="w-full px-3 py-1.5 text-left text-ivory-100 hover:bg-ink-900/60"
+              />
             )}
 
             {isDev && profiles.length > 0 && (

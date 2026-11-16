@@ -19,7 +19,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import type { Axial } from "@/board/hex";
+import { ResolveTurnItem } from "@/admin/ResolveTurnItem";
 import { useAuth } from "@/auth/useAuth";
+import { useMe } from "@/auth/useMe";
 import { Glyph } from "@/components/Glyph";
 import { ErrorBanner } from "@/components/ui";
 import type { components } from "@/lib/api/schema";
@@ -85,6 +87,8 @@ export interface PhoneWorldProps {
   onBeatNow: (beat: number) => void;
   onExitWatch: () => void;
   manual: { open: boolean; setOpen: (open: boolean) => void; section: ManualSection; setSection: (s: ManualSection) => void };
+  /** Reload the world after an admin resolves the turn from the menu. */
+  onResolved: () => void;
 }
 
 export function PhoneWorld(props: PhoneWorldProps) {
@@ -118,7 +122,12 @@ export function PhoneWorld(props: PhoneWorldProps) {
 
   return (
     <div className="fixed inset-0 flex touch-manipulation flex-col overflow-hidden overscroll-none bg-[#1a1d22] text-ivory-100">
-      <TopBar view={view} outlook={props.outlook} onFieldManual={() => props.manual.setOpen(true)} />
+      <TopBar
+        view={view}
+        outlook={props.outlook}
+        onFieldManual={() => props.manual.setOpen(true)}
+        onResolved={props.onResolved}
+      />
       <div className="relative min-h-0 flex-1">
         <WorldBoard
           map={map}
@@ -268,7 +277,17 @@ function useNoPageBounce(): void {
 
 // --- top bar ----------------------------------------------------------------------
 
-function TopBar({ view, outlook, onFieldManual }: { view: WorldView; outlook: Forecast; onFieldManual: () => void }) {
+function TopBar({
+  view,
+  outlook,
+  onFieldManual,
+  onResolved,
+}: {
+  view: WorldView;
+  outlook: Forecast;
+  onFieldManual: () => void;
+  onResolved: () => void;
+}) {
   const player = view.state.players.find((p) => p.id === view.your_slot);
   const stocks = player === undefined ? null : stocksOf(player);
   return (
@@ -291,13 +310,23 @@ function TopBar({ view, outlook, onFieldManual }: { view: WorldView; outlook: Fo
           {outlook.units}/{outlook.armySize}
         </span>
       </div>
-      <Menu onFieldManual={onFieldManual} />
+      <Menu view={view} onFieldManual={onFieldManual} onResolved={onResolved} />
     </header>
   );
 }
 
-function Menu({ onFieldManual }: { onFieldManual: () => void }) {
+function Menu({
+  view,
+  onFieldManual,
+  onResolved,
+}: {
+  view: WorldView;
+  onFieldManual: () => void;
+  onResolved: () => void;
+}) {
   const { user, signOut } = useAuth();
+  const me = useMe();
+  const isAdmin = me.status === "ready" && me.me.is_admin;
   const [open, setOpen] = useState(false);
   const item = "flex min-h-12 w-full items-center px-4 text-left font-label text-base text-ivory-100 active:bg-ink-900/60";
   return (
@@ -332,6 +361,18 @@ function Menu({ onFieldManual }: { onFieldManual: () => void }) {
             <Link to="/account" className={item} onClick={() => setOpen(false)}>
               Account
             </Link>
+            {isAdmin && (
+              <ResolveTurnItem
+                gameId={view.game_id}
+                turn={view.turn}
+                active={view.status === "active"}
+                onResolved={() => {
+                  setOpen(false);
+                  onResolved();
+                }}
+                className={item}
+              />
+            )}
             <button
               type="button"
               className={`${item} border-t border-wood-500/40`}

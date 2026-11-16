@@ -280,13 +280,14 @@ function WorldScreen({
         onBeatNow={setBeatNow}
         onExitWatch={exitWatch}
         manual={{ open: manualOpen, setOpen: setManualOpen, section: manualSection, setSection: setManualSection }}
+        onResolved={refresh}
       />
     );
   }
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#1a1d22] text-ivory-100">
-      <WorldHeader view={view} plan={outlook} onFieldManual={() => setManualOpen(true)} />
+      <WorldHeader view={view} plan={outlook} onFieldManual={() => setManualOpen(true)} onResolved={refresh} />
       {error !== null && (
         <div className="absolute left-1/2 top-14 z-10 -translate-x-1/2">
           <ErrorBanner message={error} />
@@ -472,7 +473,17 @@ function baseOf(state: WorldState, map: WorldMap, slot: string): Axial | null {
  * One line at any width: resources and army size are named by their glyphs, and
  * below 1280 px the per-turn forecast goes, so the bar never wraps.
  */
-function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: Forecast; onFieldManual: () => void }) {
+function WorldHeader({
+  view,
+  plan,
+  onFieldManual,
+  onResolved,
+}: {
+  view: WorldView;
+  plan: Forecast;
+  onFieldManual: () => void;
+  onResolved: () => void;
+}) {
   const player = view.state.players.find((p) => p.id === view.your_slot);
   const stocks = player === undefined ? null : stocksOf(player);
   return (
@@ -514,7 +525,10 @@ function WorldHeader({ view, plan, onFieldManual }: { view: WorldView; plan: For
         )}
       </div>
       <div className="shrink-0">
-        <AccountMenu onFieldManual={onFieldManual} />
+        <AccountMenu
+          onFieldManual={onFieldManual}
+          world={{ gameId: view.game_id, turn: view.turn, active: view.status === "active", onResolved }}
+        />
       </div>
     </header>
   );
